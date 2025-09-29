@@ -12,7 +12,7 @@
         <circle cx="18" cy="12" r="1.5" />
       </svg>
     </button>
-    
+
     <!-- Dropdown menu (fixed, positioned at runtime to avoid clipping) -->
     <div
       v-if="showMenu"
@@ -22,7 +22,7 @@
     >
       <button
         @click="handleEdit"
-  class="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-gray-100"
+        class="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-gray-100"
       >
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L15.232 5.232z"></path>
@@ -136,13 +136,13 @@ function toggleMenu() {
   if (willOpen) {
     // First position dropdown off-screen to measure, then position correctly
     dropdownStyle.value = { position: 'fixed', left: '-9999px', top: '-9999px', zIndex: 9999 };
-    
+
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         positionDropdown();
       });
     });
-    
+
     const payload = { id: props.itemId, type: props.menuType };
     try {
       window.dispatchEvent(new CustomEvent('overflow-menu-open', { detail: payload }));

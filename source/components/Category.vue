@@ -1,10 +1,12 @@
 <template>
-  <div :class="[
+  <div
+    :class="[
       'p-3 rounded-xl shadow-md transition-shadow duration-200 group',
       isCompleted ? 'bg-green-50 hover:shadow-lg' : 'bg-white hover:shadow-lg'
-    ]">
+    ]"
+  >
     <!-- Category Header -->
-  <div class="flex items-center justify-between mb-3 relative">
+    <div class="flex items-center justify-between mb-3 relative">
       <input
         v-if="isEditing"
         v-model="editedName"
@@ -33,8 +35,8 @@
       class="mb-3"
     />
 
-  <!-- Items List -->
-  <div class="space-y-0.5">
+    <!-- Items List -->
+    <div class="space-y-0.5">
       <Item
         v-for="item in itemsForCategory"
         :key="item.id"
@@ -44,7 +46,12 @@
         @update:item="$emit('update:item', $event)"
         @delete="$emit('delete:item', item.id)"
       />
-  <AddItemButton class="px-2 py-1 text-sm" :category-completed="isCompleted" @click="$emit('create:item', category.id)" />
+
+      <AddItemButton
+        class="px-2 py-1 text-sm"
+        :category-completed="isCompleted"
+        @click="$emit('create:item', category.id)"
+      />
     </div>
   </div>
 </template>

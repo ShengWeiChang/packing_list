@@ -13,12 +13,7 @@
       </h3>
       <form @submit.prevent="handleSubmit">
         <div class="mb-4">
-          <label
-            for="checklist-destination"
-            class="block text-primary"
-          >
-            Destination
-          </label>
+          <label for="checklist-destination" class="block text-primary">Destination</label>
           <input
             type="text"
             id="checklist-destination"
@@ -29,12 +24,7 @@
         </div>
 
         <div class="mb-4">
-          <label
-            for="checklist-date"
-            class="block text-primary"
-          >
-            Travel Dates
-          </label>
+          <label for="checklist-date" class="block text-primary">Travel Dates</label>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <span class="text-sm text-secondary mt-1">Start</span>
@@ -61,12 +51,7 @@
         </div>
 
         <div class="mb-4">
-          <label
-            for="checklist-notes"
-            class="block text-primary"
-          >
-            Notes
-          </label>
+          <label for="checklist-notes" class="block text-primary">Notes</label>
           <textarea
             id="checklist-notes"
             v-model="form.notes"

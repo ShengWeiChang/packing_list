@@ -14,9 +14,9 @@
         'flex-none flex-shrink-0 w-4 h-4 mr-2 rounded-full',
         isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600'
       ]"
-  :style="isItemPacked ? { accentColor: 'var(--color-theme-primary)' } : {}"
-    >
-    
+      :style="isItemPacked ? { accentColor: 'var(--color-theme-primary)' } : {}"
+    />
+
     <!-- Item name - editable when in edit mode -->
     <div class="flex-grow" @blur="handleEditBlur" @focusout="handleEditBlur">
       <input
@@ -26,19 +26,25 @@
         @keyup.escape="cancelEdit"
         ref="editInput"
         class="w-full text-base bg-transparent border-b border-blue-300 focus:outline-none focus:border-blue-500"
-  :class="{ 'line-through text-secondary': item.isPacked }"
-      >
+        :class="{ 'line-through text-secondary': item.isPacked }"
+      />
+
       <span
         v-else
         class="text-base"
-  :class="{ 'line-through text-secondary': item.isPacked }"
+        :class="{ 'line-through text-secondary': item.isPacked }"
       >
         {{ item.name }}
       </span>
     </div>
-    
+
     <!-- Quantity - editable when in edit mode, hidden when quantity is 1 -->
-    <div v-if="isEditing || item.quantity > 1" class="ml-2" @blur="handleEditBlur" @focusout="handleEditBlur">
+    <div
+      v-if="isEditing || item.quantity > 1"
+      class="ml-2"
+      @blur="handleEditBlur"
+      @focusout="handleEditBlur"
+    >
       <input
         v-if="isEditing"
         v-model.number="editedQuantity"
@@ -48,16 +54,17 @@
         @keyup.escape="cancelEdit"
         @click.stop
         ref="quantityInput"
-  class="w-12 px-1 py-0.5 text-xs font-semibold text-secondary bg-gray-100 border border-gray-300 rounded-full text-center focus:outline-none focus:border-gray-500"
-      >
+        class="w-12 px-1 py-0.5 text-xs font-semibold text-secondary bg-gray-100 border border-gray-300 rounded-full text-center focus:outline-none focus:border-gray-500"
+      />
+
       <span
         v-else-if="item.quantity > 1"
-  class="px-1.5 py-0.5 text-xs font-semibold text-secondary bg-gray-100 rounded-full"
+        class="px-1.5 py-0.5 text-xs font-semibold text-secondary bg-gray-100 rounded-full"
       >
         x{{ item.quantity }}
       </span>
     </div>
-    
+
     <!-- Overflow menu -->
     <OverflowMenu
       :item-id="item.id"
@@ -110,7 +117,7 @@ function handleEditBlur(event) {
     // Check if focus is still within editing elements
     const activeElement = document.activeElement;
     const isStillEditing = activeElement === editInput.value || activeElement === quantityInput.value;
-    
+
     if (!isStillEditing && isEditing.value) {
       saveEdit();
     }
@@ -122,7 +129,7 @@ async function startEdit() {
   isEditing.value = true;
   editedName.value = props.item.name;
   editedQuantity.value = props.item.quantity;
-  
+
   await nextTick();
   if (editInput.value) {
     editInput.value.focus();
@@ -134,7 +141,7 @@ async function startEdit() {
 function saveEdit() {
   const hasNameChanged = editedName.value.trim() && editedName.value !== props.item.name;
   const hasQuantityChanged = editedQuantity.value !== props.item.quantity;
-  
+
   if (hasNameChanged || hasQuantityChanged) {
     const updatedItem = new Item({
       ...props.item,
@@ -173,7 +180,7 @@ const isItemPacked = computed({
   },
   set: (newValue) => {
     // update emitted to parent
-    
+
     const updatedItem = new Item({
       id: props.item.id,
       name: props.item.name,

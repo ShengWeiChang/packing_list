@@ -35,11 +35,12 @@
         :newly-created-item-id="newlyCreatedItemId"
         @update:item="$emit('update:item', $event)"
         @delete:item="$emit('delete:item', $event)"
-  @create:item="$emit('create:item', $event)"
+        @create:item="$emit('create:item', $event)"
         @update:category="$emit('update:category', $event)"
         @delete:category="$emit('delete:category', $event)"
       />
-  <AddCategoryButton @click="$emit('create:category')" />
+
+      <AddCategoryButton @click="$emit('create:category')" />
     </div>
   </div>
 </template>

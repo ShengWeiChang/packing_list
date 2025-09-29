@@ -1,8 +1,10 @@
 <template>
-  <div :class="[
-    'min-h-screen text-slate-800',
-    isMobile ? 'flex flex-col' : 'flex'
-  ]">
+  <div
+    :class="[
+      'min-h-screen text-slate-800',
+      isMobile ? 'flex flex-col' : 'flex'
+    ]"
+  >
     <!-- Overlay for narrow screens when sidebar is open -->
     <div
       v-if="(isMobile || (isNarrow && isSidebarExpanded)) && isSidebarExpanded"
@@ -76,10 +78,8 @@
           @create:category="handleCreateCategoryClick"
         />
       </div>
-      <div
-        v-else
-        class="text-center text-secondary mt-20"
-      >
+
+      <div v-else class="text-center text-secondary mt-20">
         Please create a checklist first.
       </div>
     </main>

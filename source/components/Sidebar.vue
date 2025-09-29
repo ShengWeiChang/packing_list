@@ -41,7 +41,7 @@
       :class="[isExpanded || isMobile ? 'pr-4' : '']"
     >
       <div class="p-2 flex-shrink-0">
-        <svg 
+        <svg
           class="w-6 h-6 text-secondary"
           fill="none"
           stroke="currentColor"
@@ -56,17 +56,19 @@
           </path>
         </svg>
       </div>
-      <span 
+      <span
         class="text-secondary transition-opacity duration-300 ease-in-out ml-4"
         :class="{ 'opacity-0': !isExpanded && !isMobile, 'opacity-100 delay-150': isExpanded || isMobile }"
-      >New Checklist</span>
+      >
+        New Checklist
+      </span>
     </button>
 
     <!-- Checklist Items -->
     <div class="mt-2">
       <div class="flex flex-col">
         <h1 class="text-xl font-bold mb-2 px-2 overflow-hidden whitespace-nowrap">
-          <span 
+          <span
             class="inline-block text-primary transition-all duration-300 ease-in-out"
             :class="{ 'opacity-0 -translate-x-4': !isExpanded && !isMobile, 'opacity-100 translate-x-0 delay-150': isExpanded || isMobile }"
           >
@@ -79,7 +81,7 @@
             :key="checklist.id"
             class="whitespace-nowrap"
           >
-            <div 
+            <div
               class="flex items-center group rounded-lg transition-colors duration-200 px-1"
               :class="(selectedChecklistId === checklist.id && (isExpanded || isMobile)) ? 'bg-gray-100' : 'hover:bg-gray-100'"
             >
@@ -94,13 +96,14 @@
                   ] : ''
                 ]"
               >
-                <span 
+                <span
                   class="inline-block transition-all duration-300 ease-in-out"
                   :class="{ 'opacity-0 -translate-x-4': !isExpanded && !isMobile, 'opacity-100 translate-x-0 delay-200': isExpanded || isMobile }"
                 >
                   {{ checklist.destination }}
                 </span>
               </button>
+
               <OverflowMenu
                 v-if="isExpanded || isMobile"
                 :item-id="String(checklist.id)"

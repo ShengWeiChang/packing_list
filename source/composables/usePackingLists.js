@@ -18,7 +18,6 @@ export function usePackingLists() {
   const selectedChecklist = computed(() =>
     checklists.value.find(cl => cl.id === selectedChecklistId.value)
   );
-
   const totalItems = computed(() => items.value.length);
   const packedItems = computed(() => items.value.filter(item => item.isPacked).length);
   const progress = computed(() => {
@@ -60,9 +59,10 @@ export function usePackingLists() {
       const preCategories = (raw.categories || []).map(cat => Category.fromJSON(cat));
       const preItems = (raw.items || []).map(it => Item.fromJSON(it));
 
+      // Load checklists
       checklists.value = preChecklists;
 
-      // Load categories scoped to the selected checklist (if any)
+      // Load categories for currently selected checklist
       if (selectedChecklistId.value) {
         categories.value = preCategories.filter(c => c.checklistId === selectedChecklistId.value);
       } else {
@@ -236,7 +236,7 @@ export function usePackingLists() {
     }
   });
 
-  // When checklist selection changes, reload categories for that checklist
+  // Watch for checklist changes to load relevant categories
   watch(selectedChecklistId, (newId) => {
     if (newId) {
       readCategories();

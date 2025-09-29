@@ -7,12 +7,8 @@
       ></div>
     </div>
     <div class="flex justify-between items-center">
-      <p class="text-sm font-medium" :style="{ color: textColor }">
-        {{ text }}
-      </p>
-      <p class="text-sm font-medium" :style="{ color: textColor }">
-        {{ percentage }}%
-      </p>
+      <p class="text-sm font-medium" :style="{ color: textColor }">{{ text }}</p>
+      <p class="text-sm font-medium" :style="{ color: textColor }">{{ percentage }}%</p>
     </div>
   </div>
 </template>
