@@ -1,0 +1,75 @@
+import { VALIDATION } from '../utils/constants.js';
+import { generateSecureId } from '../utils/helpers.js';
+
+/**
+ * Represents a packing list with basic information and metadata
+ */
+export class Checklist {
+  constructor({
+    id = generateSecureId('checklist-'),
+    destination = '',
+    startDate = new Date().toISOString().slice(0, 10),
+    endDate = new Date().toISOString().slice(0, 10),
+    notes = ''
+  } = {}) {
+    this.id = id;
+    this.destination = this.validateDestination(destination);
+    this.startDate = startDate;
+    this.endDate = endDate;
+    this.notes = this.validateNotes(notes);
+  }
+
+  /**
+   * Validate checklist destination
+   * @param {string} destination - The destination to validate
+   * @returns {string} Validated destination
+   */
+  validateDestination(destination) {
+    if (typeof destination !== 'string') {
+      throw new Error('Destination must be a string');
+    }
+    // Allow empty destination for initial creation, but enforce max length
+    if (destination.length > VALIDATION.NAME_MAX_LENGTH) {
+      throw new Error(`Destination must be less than ${VALIDATION.NAME_MAX_LENGTH} characters`);
+    }
+    return destination;
+  }
+
+  /**
+   * Validate checklist notes
+   * @param {string} notes - The notes to validate
+   * @returns {string} Validated notes
+   */
+  validateNotes(notes) {
+    if (typeof notes !== 'string') {
+      throw new Error('Notes must be a string');
+    }
+    if (notes.length > VALIDATION.NOTES_MAX_LENGTH) {
+      throw new Error(`Notes must be less than ${VALIDATION.NOTES_MAX_LENGTH} characters`);
+    }
+    return notes;
+  }
+
+  /**
+   * Creates a Checklist instance from JSON data
+   * @param {Object} json - The JSON data to create the checklist from
+   * @returns {Checklist} A new Checklist instance
+   */
+  static fromJSON(json) {
+    return new Checklist(json);
+  }
+
+  /**
+   * Converts the checklist instance to JSON format
+   * @returns {Object} The JSON representation of the checklist
+   */
+  toJSON() {
+    return {
+      id: this.id,
+      destination: this.destination,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      notes: this.notes
+    };
+  }
+}
