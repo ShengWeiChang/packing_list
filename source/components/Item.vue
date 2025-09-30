@@ -80,18 +80,27 @@
 </template>
 
 <script setup>
+import { computed, nextTick, ref, watch } from 'vue';
 import { Item } from '../models/Item';
-import { computed, ref, nextTick, onMounted, watch } from 'vue';
 import OverflowMenu from './OverflowMenu.vue';
 
 const props = defineProps({
   item: {
     type: Object,
     required: true,
-    validator: (value) => value instanceof Item
+    validator: (value) => {
+      // Validate that the object has the required properties for an item
+      return value &&
+             typeof value.id === 'string' &&
+             typeof value.name === 'string' &&
+             typeof value.quantity === 'number' &&
+             typeof value.categoryId === 'string' &&
+             typeof value.isPacked === 'boolean' &&
+             typeof value.checklistId === 'string';
+    }
   },
   newlyCreatedItemId: {
-    type: Object,
+    type: String,
     default: null
   },
   categoryCompleted: {
@@ -166,7 +175,7 @@ function handleDelete() {
 }
 
 // Watch for newly created items and auto-start edit
-watch(() => props.newlyCreatedItemId?.value || props.newlyCreatedItemId, (newId) => {
+watch(() => props.newlyCreatedItemId, (newId) => {
   if (newId === props.item.id) {
     nextTick(() => {
       startEdit();

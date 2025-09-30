@@ -68,14 +68,20 @@ const props = defineProps({
   category: {
     type: Object,
     required: true,
-    validator: (value) => value instanceof Category
+    validator: (value) => {
+      // Validate that the object has the required properties for a category
+      return value &&
+             typeof value.id === 'string' &&
+             typeof value.name === 'string' &&
+             typeof value.checklistId === 'string';
+    }
   },
   items: {
     type: Array,
     required: true
   },
   newlyCreatedItemId: {
-    type: Object,
+    type: String,
     default: null
   }
 });

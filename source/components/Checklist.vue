@@ -46,7 +46,6 @@
 </template>
 
 <script setup>
-import { Checklist } from '../models/Checklist';
 import AddCategoryButton from './AddCategoryButton.vue';
 import Category from './Category.vue';
 import ProgressBar from './ProgressBar.vue';
@@ -55,7 +54,15 @@ const props = defineProps({
   checklist: {
     type: Object,
     required: true,
-    validator: (value) => value instanceof Checklist
+    validator: (value) => {
+      // Validate that the object has the required properties for a checklist
+      return value &&
+             typeof value.id === 'string' &&
+             typeof value.destination === 'string' &&
+             typeof value.startDate === 'string' &&
+             typeof value.endDate === 'string' &&
+             typeof value.notes === 'string';
+    }
   },
   categories: {
     type: Array,

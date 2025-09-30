@@ -47,8 +47,8 @@ export class Category {
   toJSON() {
     return {
       id: this.id,
-      name: this.name
-      ,checklistId: this.checklistId
+      name: this.name,
+      checklistId: this.checklistId
     };
   }
 }

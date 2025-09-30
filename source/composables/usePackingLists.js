@@ -95,20 +95,22 @@ export function usePackingLists() {
   // ============================================================================
 
   async function createChecklist(checklistData) {
-    const checklist = new Checklist(checklistData);
-    await loadData(
-      () => dataService.saveChecklist(checklist),
+    const result = await loadData(
+      () => dataService.createChecklist(checklistData),
       'Error creating checklist'
     );
-    await readChecklists();
-    selectedChecklistId.value = checklist.id;
-    return checklist;
+    if (result) {
+      await getChecklists();
+      selectedChecklistId.value = result.id;
+      return result;
+    }
+    return null;
   }
 
-  async function readChecklists() {
+  async function getChecklists() {
     const result = await loadData(
       () => dataService.getChecklists(),
-      'Error reading checklists'
+      'Error getting checklists'
     );
     checklists.value = result || [];
     if (checklists.value.length > 0 && !selectedChecklistId.value) {
@@ -118,13 +120,15 @@ export function usePackingLists() {
   }
 
   async function updateChecklist(checklistData) {
-    const checklist = new Checklist(checklistData);
-    await loadData(
-      () => dataService.saveChecklist(checklist),
+    const result = await loadData(
+      () => dataService.updateChecklist(checklistData),
       'Error updating checklist'
     );
-    await readChecklists();
-    return checklist;
+    if (result) {
+      await getChecklists();
+      return result;
+    }
+    return null;
   }
 
   async function deleteChecklist(id) {
@@ -132,7 +136,7 @@ export function usePackingLists() {
       () => dataService.deleteChecklist(id),
       'Error deleting checklist'
     );
-    await readChecklists();
+    await getChecklists();
     if (selectedChecklistId.value === id) {
       selectedChecklistId.value = checklists.value[0]?.id || null;
     }
@@ -143,32 +147,41 @@ export function usePackingLists() {
   // ============================================================================
 
   async function createCategory(categoryData) {
-    const category = new Category({ ...categoryData, checklistId: selectedChecklistId.value });
-    await loadData(
-      () => dataService.saveCategory(category),
+    if (!selectedChecklistId.value) return null;
+    const result = await loadData(
+      () => dataService.createCategory(selectedChecklistId.value, categoryData),
       'Error creating category'
     );
-    await readCategories();
-    return category;
+    if (result) {
+      await getCategories();
+      return result;
+    }
+    return null;
   }
 
-  async function readCategories() {
+  async function getCategories() {
+    if (!selectedChecklistId.value) {
+      categories.value = [];
+      return [];
+    }
     const result = await loadData(
-      () => dataService.getCategoriesForChecklist(selectedChecklistId.value),
-      'Error reading categories'
+      () => dataService.getCategories(selectedChecklistId.value),
+      'Error getting categories'
     );
     categories.value = result || [];
     return categories.value;
   }
 
   async function updateCategory(categoryData) {
-    const category = new Category({ ...categoryData, checklistId: selectedChecklistId.value });
-    await loadData(
-      () => dataService.saveCategory(category),
+    const result = await loadData(
+      () => dataService.updateCategory(categoryData),
       'Error updating category'
     );
-    await readCategories();
-    return category;
+    if (result) {
+      await getCategories();
+      return result;
+    }
+    return null;
   }
 
   async function deleteCategory(categoryId) {
@@ -176,7 +189,7 @@ export function usePackingLists() {
       () => dataService.deleteCategory(categoryId),
       'Error deleting category'
     );
-    await Promise.all([readCategories(), readItems()]);
+    await Promise.all([getCategories(), getItems()]);
   }
 
   // ============================================================================
@@ -184,38 +197,42 @@ export function usePackingLists() {
   // ============================================================================
 
   async function createItem(itemData) {
-    if (!selectedChecklistId.value) return;
-    const item = new Item({ ...itemData, checklistId: selectedChecklistId.value });
-    await loadData(
-      () => dataService.saveItem(selectedChecklistId.value, item),
+    if (!selectedChecklistId.value) return null;
+    const result = await loadData(
+      () => dataService.createItem(selectedChecklistId.value, itemData),
       'Error creating item'
     );
-    await readItems();
-    return item;
+    if (result) {
+      await getItems();
+      return result;
+    }
+    return null;
   }
 
-  async function readItems() {
+  async function getItems() {
     if (!selectedChecklistId.value) {
       items.value = [];
       return [];
     }
     const result = await loadData(
       () => dataService.getItems(selectedChecklistId.value),
-      'Error reading items'
+      'Error getting items'
     );
     items.value = result || [];
     return items.value;
   }
 
   async function updateItem(itemData) {
-    if (!selectedChecklistId.value) return;
-    const item = new Item({ ...itemData, checklistId: selectedChecklistId.value });
-    await loadData(
-      () => dataService.saveItem(selectedChecklistId.value, item),
+    if (!selectedChecklistId.value) return null;
+    const result = await loadData(
+      () => dataService.updateItem(selectedChecklistId.value, itemData),
       'Error updating item'
     );
-    await readItems();
-    return item;
+    if (result) {
+      await getItems();
+      return result;
+    }
+    return null;
   }
 
   async function deleteItem(itemId) {
@@ -224,13 +241,13 @@ export function usePackingLists() {
       () => dataService.deleteItem(selectedChecklistId.value, itemId),
       'Error deleting item'
     );
-    await readItems();
+    await getItems();
   }
 
   // Watch for checklist changes to load relevant items
   watch(selectedChecklistId, (newId) => {
     if (newId) {
-      readItems();
+      getItems();
     } else {
       items.value = [];
     }
@@ -239,7 +256,7 @@ export function usePackingLists() {
   // Watch for checklist changes to load relevant categories
   watch(selectedChecklistId, (newId) => {
     if (newId) {
-      readCategories();
+      getCategories();
     } else {
       categories.value = [];
     }
@@ -265,19 +282,19 @@ export function usePackingLists() {
 
     // CRUD Operations - Checklists
     createChecklist,
-    readChecklists,
+    getChecklists,
     updateChecklist,
     deleteChecklist,
 
     // CRUD Operations - Categories
     createCategory,
-    readCategories,
+    getCategories,
     updateCategory,
     deleteCategory,
 
     // CRUD Operations - Items
     createItem,
-    readItems,
+    getItems,
     updateItem,
     deleteItem,
 

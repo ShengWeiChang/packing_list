@@ -49,9 +49,54 @@ export class LocalStorageService extends DataService {
    */
 
 
+  // ========================================
+  // PRIVATE HELPER METHODS
+  // ========================================
+
   /**
-   * Get default categories
-   * @returns {Array} Array of default categories
+   * Get all stored data from localStorage
+   * @returns {Object} Parsed data object
+   */
+  getData() {
+    const data = localStorage.getItem(this.STORAGE_KEY);
+    return JSON.parse(data || '{}');
+  }
+
+  /**
+   * Get parsed app data with a simple in-memory cache
+   * Consumers can call this once at startup to avoid multiple parses
+   * @returns {Object} Cached data object
+   */
+  getAll() {
+    if (this._cache) return this._cache;
+    const data = this.getData();
+    this._cache = data;
+    return data;
+  }
+
+  /**
+   * Save all data to localStorage and update cache
+   * @param {Object} data - Data object to save
+   */
+  saveData(data) {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+    // update cache so subsequent reads stay consistent
+    this._cache = data;
+  }
+
+  /**
+   * Generate default categories for a specific checklist (categories are scoped to a checklist)
+   * @param {string} checklistId - The checklist ID to scope categories to
+   * @returns {Array} Array of default Category objects
+   */
+  getDefaultCategoriesForChecklist(checklistId) {
+    const categoryNames = [...new Set(defaultItems.map(item => item.category))];
+    return categoryNames.map(name => new Category({ name, checklistId }));
+  }
+
+  /**
+   * Get default categories (unscoped)
+   * @returns {Array} Array of default Category objects
    */
   getDefaultCategories() {
     const categoryNames = [...new Set(defaultItems.map(item => item.category))];
@@ -61,16 +106,9 @@ export class LocalStorageService extends DataService {
   }
 
   /**
-   * Generate default categories for a specific checklist (categories are scoped to a checklist)
-   */
-  getDefaultCategoriesForChecklist(checklistId) {
-    const categoryNames = [...new Set(defaultItems.map(item => item.category))];
-    return categoryNames.map(name => new Category({ name, checklistId }));
-  }
-
-  /**
    * Get default items with unique IDs for a new checklist
-   * @returns {Array} Array of default items
+   * @param {string} checklistId - The checklist ID to scope items to
+   * @returns {Array} Array of default Item objects
    */
   getDefaultItems(checklistId) {
     const categories = this.getDefaultCategoriesForChecklist(checklistId);
@@ -86,80 +124,95 @@ export class LocalStorageService extends DataService {
     }));
   }
 
-  /**
-   * Get all stored data
-   */
-  getData() {
-    const data = localStorage.getItem(this.STORAGE_KEY);
-    return JSON.parse(data || '{}');
-  }
+  // ========================================
+  // CHECKLIST CRUD
+  // ========================================
 
   /**
-   * Get parsed app data with a simple in-memory cache.
-   * Consumers can call this once at startup to avoid multiple parses.
+   * Create a new checklist with default categories and items
+   * @param {Object} checklist - Checklist to create
+   * @returns {Promise<Object>} Created checklist
    */
-  getAll() {
-    if (this._cache) return this._cache;
+  async createChecklist(checklist) {
     const data = this.getData();
-    this._cache = data;
-    return data;
+    const checklists = data.checklists || [];
+
+    // Create a proper Checklist instance to ensure consistent structure
+    const newChecklist = new Checklist(checklist);
+
+    checklists.push(newChecklist.toJSON());
+
+    // Generate default categories scoped to this checklist
+    const newCategories = this.getDefaultCategoriesForChecklist(newChecklist.id);
+    data.categories = [...(data.categories || []), ...newCategories.map(c => c.toJSON())];
+
+    // Generate default items mapped to those new categories
+    const categoryMap = Object.fromEntries(newCategories.map(cat => [cat.name, cat.id]));
+    const newItems = defaultItems.map(item => new Item({
+      id: generateSecureId('item-'),
+      name: item.name,
+      quantity: item.quantity,
+      categoryId: categoryMap[item.category],
+      isPacked: false,
+      checklistId: newChecklist.id
+    }));
+    data.items = [...(data.items || []), ...newItems.map(i => i.toJSON())];
+
+    data.checklists = checklists;
+    this.saveData(data);
+    return Promise.resolve(newChecklist.toJSON());
   }
 
   /**
-   * Save all data
+   * Get all checklists
+   * @returns {Promise<Array>} Array of Checklist objects
    */
-  saveData(data) {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-    // update cache so subsequent reads stay consistent
-    this._cache = data;
-  }
-
-  // DataService implementation
-  getChecklists() {
+  async getChecklists() {
     const data = this.getData();
-    const checklists = (data.checklists || []).map(cl => Checklist.fromJSON(cl));
+    const checklists = (data.checklists || []).map(cl => Checklist.fromJSON(cl).toJSON());
     return Promise.resolve(checklists);
   }
 
-  getChecklistById(id) {
+  /**
+   * Get a specific checklist by ID
+   * @param {string} id - Checklist ID
+   * @returns {Promise<Object|null>} Checklist object or null if not found
+   */
+  async getChecklistById(id) {
     const data = this.getData();
     const checklistData = (data.checklists || []).find(cl => cl.id === id);
-    const checklist = checklistData ? Checklist.fromJSON(checklistData) : null;
+    const checklist = checklistData ? Checklist.fromJSON(checklistData).toJSON() : null;
     return Promise.resolve(checklist);
   }
 
-  saveChecklist(checklist) {
+  /**
+   * Update an existing checklist
+   * @param {Object} checklist - Checklist to update (must include id)
+   * @returns {Promise<Object>} Updated checklist
+   */
+  async updateChecklist(checklist) {
     const data = this.getData();
     const checklists = data.checklists || [];
     const index = checklists.findIndex(cl => cl.id === checklist.id);
 
-    if (index !== -1) {
-      checklists[index] = checklist;
-    } else {
-      checklists.push(checklist);
-      // For new checklists, generate default categories scoped to this checklist
-      const newCategories = this.getDefaultCategoriesForChecklist(checklist.id);
-      data.categories = [...(data.categories || []), ...newCategories.map(c => c.toJSON())];
-
-      // Then generate default items mapped to those new categories
-      const categoryMap = Object.fromEntries(newCategories.map(cat => [cat.name, cat.id]));
-      const newItems = defaultItems.map(item => new Item({
-        id: generateSecureId('item-'),
-        name: item.name,
-        quantity: item.quantity,
-        categoryId: categoryMap[item.category],
-        isPacked: false,
-        checklistId: checklist.id
-      }));
-      data.items = [...(data.items || []), ...newItems.map(i => i.toJSON())];
+    if (index === -1) {
+      throw new Error(`Checklist with id ${checklist.id} not found`);
     }
 
+    // Create a proper Checklist instance to ensure consistent structure
+    const updatedChecklist = new Checklist(checklist);
+    checklists[index] = updatedChecklist.toJSON();
     data.checklists = checklists;
     this.saveData(data);
-    return Promise.resolve(checklist);
+    return Promise.resolve(updatedChecklist.toJSON());
   }
 
-  deleteChecklist(id) {
+  /**
+   * Delete a checklist and all associated categories and items
+   * @param {string} id - Checklist ID to delete
+   * @returns {Promise<void>}
+   */
+  async deleteChecklist(id) {
     const data = this.getData();
     data.checklists = (data.checklists || []).filter(cl => cl.id !== id);
     // Also remove categories and items associated with the checklist
@@ -169,38 +222,82 @@ export class LocalStorageService extends DataService {
     return Promise.resolve();
   }
 
-  getCategories() {
+  // ========================================
+  // CATEGORY CRUD
+  // ========================================
+
+  /**
+   * Create a new category within a checklist
+   * @param {string} checklistId - Checklist ID
+   * @param {Object} category - Category to create
+   * @returns {Promise<Object>} Created category
+   */
+  async createCategory(checklistId, category) {
     const data = this.getData();
-    const categories = (data.categories || []).map(cat => Category.fromJSON(cat));
-    return Promise.resolve(categories);
+    const categories = data.categories || [];
+
+    // Create a proper Category instance to ensure consistent structure
+    const newCategory = new Category({ ...category, checklistId });
+
+    categories.push(newCategory.toJSON());
+    data.categories = categories;
+    this.saveData(data);
+    return Promise.resolve(newCategory.toJSON());
   }
 
-  // Get categories optionally filtered by checklistId
-  getCategoriesForChecklist(checklistId) {
+  /**
+   * Get all categories (optionally filtered by checklist)
+   * @param {string} [checklistId] - Optional checklist ID to filter by
+   * @returns {Promise<Array>} Array of Category objects
+   */
+  async getCategories(checklistId) {
     const data = this.getData();
     const categories = (data.categories || [])
       .map(cat => Category.fromJSON(cat))
-      .filter(cat => (checklistId ? cat.checklistId === checklistId : true));
+      .filter(cat => (checklistId ? cat.checklistId === checklistId : true))
+      .map(cat => cat.toJSON());
     return Promise.resolve(categories);
   }
 
-  saveCategory(category) {
+  /**
+   * Get a specific category by ID
+   * @param {string} categoryId - Category ID
+   * @returns {Promise<Object|null>} Category object or null if not found
+   */
+  async getCategoryById(categoryId) {
+    const data = this.getData();
+    const catData = (data.categories || []).find(c => c.id === categoryId);
+    const category = catData ? Category.fromJSON(catData).toJSON() : null;
+    return Promise.resolve(category);
+  }
+
+  /**
+   * Update an existing category
+   * @param {Object} category - Category to update (must include id)
+   * @returns {Promise<Object>} Updated category
+   */
+  async updateCategory(category) {
     const data = this.getData();
     const categories = data.categories || [];
     const index = categories.findIndex(cat => cat.id === category.id);
 
-    if (index !== -1) {
-      categories[index] = category;
-    } else {
-      categories.push(category);
+    if (index === -1) {
+      throw new Error(`Category with id ${category.id} not found`);
     }
 
+    const updatedCategory = new Category(category);
+    categories[index] = updatedCategory.toJSON();
     data.categories = categories;
     this.saveData(data);
-    return Promise.resolve(category);
+    return Promise.resolve(updatedCategory.toJSON());
   }
 
-  deleteCategory(categoryId) {
+  /**
+   * Delete a category and all associated items
+   * @param {string} categoryId - Category ID to delete
+   * @returns {Promise<void>}
+   */
+  async deleteCategory(categoryId) {
     const data = this.getData();
     data.categories = (data.categories || []).filter(cat => cat.id !== categoryId);
     // Also delete all items in this category across all checklists
@@ -209,37 +306,85 @@ export class LocalStorageService extends DataService {
     return Promise.resolve();
   }
 
-  getItems(checklistId) {
+  // ========================================
+  // ITEM CRUD
+  // ========================================
+
+  /**
+   * Create a new item within a checklist
+   * @param {string} checklistId - Checklist ID
+   * @param {Object} item - Item to create
+   * @returns {Promise<Object>} Created Item object
+   */
+  async createItem(checklistId, item) {
+    const data = this.getData();
+    const items = data.items || [];
+
+    // Create a proper Item instance to ensure consistent structure
+    const newItem = new Item({ ...item, checklistId });
+
+    items.push(newItem.toJSON());
+    data.items = items;
+    this.saveData(data);
+    return Promise.resolve(newItem.toJSON());
+  }
+
+  /**
+   * Get all items for a specific checklist
+   * @param {string} checklistId - Checklist ID
+   * @returns {Promise<Array>} Array of Item objects
+   */
+  async getItems(checklistId) {
     const data = this.getData();
     const items = (data.items || [])
       .filter(item => item.checklistId === checklistId)
-      .map(item => Item.fromJSON(item));
+      .map(item => Item.fromJSON(item).toJSON());
     return Promise.resolve(items);
   }
 
-  saveItem(checklistId, item) {
+  /**
+   * Get a specific item by ID within a checklist
+   * @param {string} checklistId - Checklist ID
+   * @param {string} itemId - Item ID
+   * @returns {Promise<Object|null>} Item object or null if not found
+   */
+  async getItemById(checklistId, itemId) {
     const data = this.getData();
-    const items = data.items || [];
-    const index = items.findIndex(i => i.id === item.id);
-
-    const itemToSave = { ...item, checklistId };
-
-    if (index !== -1) {
-      items[index] = itemToSave;
-    } else {
-      // Ensure new items have a unique ID
-      if (!itemToSave.id) {
-        itemToSave.id = generateSecureId('item-');
-      }
-      items.push(itemToSave);
-    }
-
-    data.items = items;
-    this.saveData(data);
-    return Promise.resolve(Item.fromJSON(itemToSave));
+    const itemData = (data.items || []).find(i => i.checklistId === checklistId && i.id === itemId);
+    const item = itemData ? Item.fromJSON(itemData).toJSON() : null;
+    return Promise.resolve(item);
   }
 
-  deleteItem(checklistId, itemId) {
+  /**
+   * Update an existing item within a checklist
+   * @param {string} checklistId - Checklist ID
+   * @param {Object} item - Item to update (must include id)
+   * @returns {Promise<Object>} Updated Item object
+   */
+  async updateItem(checklistId, item) {
+    const data = this.getData();
+    const items = data.items || [];
+    const index = items.findIndex(i => i.id === item.id && i.checklistId === checklistId);
+
+    if (index === -1) {
+      throw new Error(`Item with id ${item.id} not found in checklist ${checklistId}`);
+    }
+
+    // Create a proper Item instance to ensure consistent structure
+    const updatedItem = new Item({ ...item, checklistId });
+    items[index] = updatedItem.toJSON();
+    data.items = items;
+    this.saveData(data);
+    return Promise.resolve(updatedItem.toJSON());
+  }
+
+  /**
+   * Delete an item from a checklist
+   * @param {string} checklistId - Checklist ID
+   * @param {string} itemId - Item ID to delete
+   * @returns {Promise<void>}
+   */
+  async deleteItem(checklistId, itemId) {
     const data = this.getData();
     data.items = (data.items || []).filter(
       item => !(item.checklistId === checklistId && item.id === itemId)
@@ -247,4 +392,5 @@ export class LocalStorageService extends DataService {
     this.saveData(data);
     return Promise.resolve();
   }
+
 }
