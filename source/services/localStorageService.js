@@ -1,3 +1,15 @@
+/*
+================================================================================
+File: source/services/localStorageService.js
+Description: LocalStorage implementation of DataService providing persistent
+             storage for checklists, categories and items.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+*/
+
 import { defaultItems } from '../data/defaultItems';
 import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';

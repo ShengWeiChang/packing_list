@@ -1,3 +1,15 @@
+<!--
+================================================================================
+File: source/components/Topbar.vue
+Description: Mobile topbar component - provides navigation and actions for
+             mobile viewport layout.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+-->
+
 <template>
   <header class="w-full bg-white border-b border-gray-200 px-3 py-2 flex items-center justify-between md:hidden">
     <button

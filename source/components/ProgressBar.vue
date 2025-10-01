@@ -1,3 +1,15 @@
+<!--
+================================================================================
+File: source/components/ProgressBar.vue
+Description: Progress bar component - shows completion percentage for
+             category or checklist items.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+-->
+
 <template>
   <div class="w-full">
     <div class="w-full h-2 mb-2 rounded-full overflow-hidden" :style="{ background: backgroundColor }">

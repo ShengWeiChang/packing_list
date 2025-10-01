@@ -1,3 +1,15 @@
+/*
+================================================================================
+File: source/composables/usePackingLists.js
+Description: Composable to manage checklists, categories and items state and CRUD
+             operations using the configured data service.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+*/
+
 import { computed, readonly, ref, watch } from 'vue';
 import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';

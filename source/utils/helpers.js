@@ -1,3 +1,15 @@
+/*
+================================================================================
+File: source/utils/helpers.js
+Description: Utility helper functions for ID generation, validation and
+             common operations.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+*/
+
 /**
  * Format a date string to localized date format
  * @param {string} dateString - ISO date string

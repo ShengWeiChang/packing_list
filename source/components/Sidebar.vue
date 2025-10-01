@@ -1,3 +1,15 @@
+<!--
+================================================================================
+File: source/components/Sidebar.vue
+Description: Sidebar component - displays list of checklists with navigation
+             and creation functionality.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+-->
+
 <template>
   <aside
     :class="[

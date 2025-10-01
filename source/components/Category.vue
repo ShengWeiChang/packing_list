@@ -1,3 +1,15 @@
+<!--
+================================================================================
+File: source/components/Category.vue
+Description: Category component - groups items, shows progress and allows editing
+             of the category name.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+-->
+
 <template>
   <div
     :class="[

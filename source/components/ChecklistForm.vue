@@ -1,3 +1,15 @@
+<!--
+================================================================================
+File: source/components/ChecklistForm.vue
+Description: Modal form component for creating and editing checklist details
+             including destination, dates and notes.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+-->
+
 <template>
   <div
     class="fixed inset-0 z-50 flex items-center justify-center backdrop"

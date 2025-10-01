@@ -1,3 +1,15 @@
+/*!
+================================================================================
+File: source/index.css
+Description: Global CSS styles with Tailwind directives and custom CSS
+             variables for theming.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+*/
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

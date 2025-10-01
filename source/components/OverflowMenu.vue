@@ -1,3 +1,15 @@
+<!--
+================================================================================
+File: source/components/OverflowMenu.vue
+Description: Overflow menu component - provides contextual actions for items,
+             categories and checklists.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+-->
+
 <template>
   <div class="relative" ref="root">
     <button

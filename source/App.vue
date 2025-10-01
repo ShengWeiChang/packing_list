@@ -1,3 +1,15 @@
+<!--
+================================================================================
+File: source/App.vue
+Description: Main application component handling layout, routing and state
+             management for the packing list application.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+-->
+
 <template>
   <div :class="[
     'min-h-screen text-slate-800',

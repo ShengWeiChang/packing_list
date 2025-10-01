@@ -1,3 +1,15 @@
+/*
+================================================================================
+File: source/utils/constants.js
+Description: Application constants including theme colors, storage keys and
+             configuration values.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+*/
+
 /**
  * Storage keys for localStorage
  */

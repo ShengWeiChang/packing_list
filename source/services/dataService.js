@@ -1,3 +1,15 @@
+/*
+================================================================================
+File: source/services/dataService.js
+Description: Abstract data service interface defining CRUD operations for
+             checklists, categories and items.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+*/
+
 /**
  * Abstract data service interface defining all required methods
  * for managing packing list data following CRUD patterns

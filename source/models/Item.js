@@ -1,3 +1,15 @@
+/*
+================================================================================
+File: source/models/Item.js
+Description: Item model class with validation, serialization and
+             secure ID generation.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+*/
+
 import { VALIDATION } from '../utils/constants.js';
 import { generateSecureId } from '../utils/helpers.js';
 

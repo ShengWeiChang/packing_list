@@ -1,3 +1,15 @@
+<!--
+================================================================================
+File: source/components/Checklist.vue
+Description: Checklist component - displays a checklist with categories and items
+             for a specific travel destination.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+-->
+
 <template>
   <div>
     <!-- Checklist Header -->

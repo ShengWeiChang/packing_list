@@ -1,3 +1,15 @@
+<!--
+================================================================================
+File: source/components/AddItemButton.vue
+Description: Add item button component - triggers creation of new items
+             within a category.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+-->
+
 <template>
   <button
     @click="$emit('click')"

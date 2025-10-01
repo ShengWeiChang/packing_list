@@ -1,3 +1,15 @@
+/*
+================================================================================
+File: source/data/defaultItems.js
+Description: Default packing items data with categories for new checklists
+             initialization.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+Last-Modified: 2025-09-30
+================================================================================
+*/
+
 export const defaultItems = [
   // Summer Wear
   { id: "1", name: "T-shirt", category: "Summer Wear", isPacked: false, quantity: 1 },
