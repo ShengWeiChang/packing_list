@@ -7,16 +7,20 @@
   >
     <!-- Category Header -->
     <div class="flex items-center justify-between mb-3 relative">
-      <input
-        v-if="isEditing"
-        v-model="editedName"
-        @keyup.enter="saveEdit"
-        @keyup.escape="cancelEdit"
-        @blur="saveEdit"
-        ref="editInput"
-        class="text-xl font-semibold text-slate-800 bg-transparent border-b border-blue-300 focus:outline-none focus:border-blue-500 flex-grow"
-      >
-      <h3 v-else class="text-xl font-semibold text-primary">{{ category.name }}</h3>
+      <div class="flex-grow">
+        <input
+          v-if="isEditing"
+          :id="`category-${category.id}-name`"
+          :name="`category-${category.id}-name`"
+          v-model="editedName"
+          @keyup.enter="saveEdit"
+          @keyup.escape="cancelEdit"
+          @blur="saveEdit"
+          ref="editInput"
+          class="w-full text-xl font-semibold text-slate-800 bg-transparent border-b border-blue-300 focus:outline-none focus:border-blue-500"
+        >
+        <h3 v-else class="text-xl font-semibold text-primary">{{ category.name }}</h3>
+      </div>
 
       <!-- Overflow menu -->
       <OverflowMenu
@@ -25,6 +29,7 @@
         alignment="left"
         @edit="startEdit"
         @delete="handleDelete"
+        class="ml-2"
       />
     </div>
 
@@ -57,7 +62,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { Category } from '../models/Category';
 import AddItemButton from './AddItemButton.vue';
 import Item from './Item.vue';
@@ -84,9 +89,20 @@ const props = defineProps({
     type: String,
     default: null
   }
+  ,
+  newlyCreatedCategoryId: {
+    type: String,
+    default: null
+  }
 });
 
-const emit = defineEmits(['update:item', 'delete:item', 'create:item', 'update:category', 'delete:category']);
+const emit = defineEmits([
+  'update:item',
+  'delete:item',
+  'create:item',
+  'update:category',
+  'delete:category'
+]);
 
 // Editing state
 const isEditing = ref(false);
@@ -141,4 +157,13 @@ function cancelEdit() {
 function handleDelete() {
   emit('delete:category', props.category.id);
 }
+
+// Watch for newly created category and auto-start edit
+watch(() => props.newlyCreatedCategoryId, (newId) => {
+  if (newId === props.category.id) {
+    nextTick(() => {
+      startEdit();
+    });
+  }
+});
 </script>

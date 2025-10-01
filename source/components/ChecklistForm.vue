@@ -23,11 +23,11 @@
           >
         </div>
 
-        <div class="mb-4">
-          <label for="checklist-date" class="block text-primary">Travel Dates</label>
+        <fieldset class="mb-4">
+          <legend class="block text-primary">Travel Dates</legend>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <span class="text-sm text-secondary mt-1">Start</span>
+              <label for="checklist-start-date" class="text-sm text-secondary mt-1 block">Start</label>
               <input
                 type="date"
                 id="checklist-start-date"
@@ -37,7 +37,7 @@
               >
             </div>
             <div>
-              <span class="text-sm text-secondary mt-1">End</span>
+              <label for="checklist-end-date" class="text-sm text-secondary mt-1 block">End</label>
               <input
                 type="date"
                 id="checklist-end-date"
@@ -48,7 +48,7 @@
               >
             </div>
           </div>
-        </div>
+        </fieldset>
 
         <div class="mb-4">
           <label for="checklist-notes" class="block text-primary">Notes</label>
@@ -87,7 +87,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { THEME_COLORS } from '../utils/constants';
 
 const props = defineProps({

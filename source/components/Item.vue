@@ -9,6 +9,8 @@
   >
     <input
       type="checkbox"
+      :id="`item-${item.id}-packed`"
+      :name="`item-${item.id}-packed`"
       v-model="isItemPacked"
       :class="[
         'flex-none flex-shrink-0 w-4 h-4 mr-2 rounded-full',
@@ -21,6 +23,8 @@
     <div class="flex-grow" @blur="handleEditBlur" @focusout="handleEditBlur">
       <input
         v-if="isEditing"
+        :id="`item-${item.id}-name`"
+        :name="`item-${item.id}-name`"
         v-model="editedName"
         @keyup.enter="saveEdit"
         @keyup.escape="cancelEdit"
@@ -47,6 +51,8 @@
     >
       <input
         v-if="isEditing"
+        :id="`item-${item.id}-quantity`"
+        :name="`item-${item.id}-quantity`"
         v-model.number="editedQuantity"
         type="number"
         min="1"
@@ -109,7 +115,10 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:item', 'delete']);
+const emit = defineEmits([
+  'update:item',
+  'delete'
+]);
 
 // Editing state
 const isEditing = ref(false);

@@ -61,23 +61,17 @@ export function usePackingLists() {
 
       // Load checklists
       checklists.value = preChecklists;
-
-      // Load categories for currently selected checklist
-      if (selectedChecklistId.value) {
-        categories.value = preCategories.filter(c => c.checklistId === selectedChecklistId.value);
-      } else {
-        categories.value = [];
-      }
-
       // If no selected checklist yet, pick the first
       if (checklists.value.length > 0 && !selectedChecklistId.value) {
         selectedChecklistId.value = checklists.value[0].id;
       }
 
-      // Load items for currently selected checklist
+      // Load categories and items for the currently selected checklist
       if (selectedChecklistId.value) {
+        categories.value = preCategories.filter(c => c.checklistId === selectedChecklistId.value);
         items.value = preItems.filter(i => i.checklistId === selectedChecklistId.value);
       } else {
+        categories.value = [];
         items.value = [];
       }
     } catch (e) {

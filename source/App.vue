@@ -1,20 +1,18 @@
 <template>
-  <div
-    :class="[
-      'min-h-screen text-slate-800',
-      isMobile ? 'flex flex-col' : 'flex'
-    ]"
-  >
+  <div :class="[
+    'min-h-screen text-slate-800',
+    isMobileViewport ? 'flex flex-col' : 'flex'
+  ]">
     <!-- Overlay for narrow screens when sidebar is open -->
     <div
-      v-if="(isMobile || (isNarrow && isSidebarExpanded)) && isSidebarExpanded"
+      v-if="(isMobileViewport || (isSmallDesktop && isSidebarOpen)) && isSidebarOpen"
       class="fixed inset-0 bg-black bg-opacity-40 z-40 backdrop-blur-sm"
       @click="toggleSidebar"
     ></div>
 
     <!-- Mobile Topbar -->
     <Topbar
-      v-if="isMobile"
+      v-if="isMobileViewport"
       :title="selectedChecklist ? selectedChecklist.destination : 'Packing List'"
       @toggle="toggleSidebar"
       @new="showAddChecklistModal = true"
@@ -25,9 +23,9 @@
     <teleport to="body" v-if="isOverlayVisible">
       <div class="fixed inset-y-0 left-0 z-50">
         <Sidebar
-          :is-expanded="isSidebarExpanded"
-          :is-mobile="isMobile"
-          :is-narrow="isNarrow"
+          :is-expanded="isSidebarOpen"
+          :is-mobile="isMobileViewport"
+          :is-narrow="isSmallDesktop"
           :checklists="checklists"
           :selected-checklist-id="selectedChecklistId"
           @toggle-sidebar="toggleSidebar"
@@ -40,11 +38,11 @@
     </teleport>
 
     <!-- Inline Sidebar (Desktop only, when not in overlay mode) -->
-    <div v-else-if="!isMobile" class="relative z-50">
+    <div v-else-if="!isMobileViewport" class="relative z-50">
       <Sidebar
-        :is-expanded="isSidebarExpanded"
-        :is-mobile="isMobile"
-        :is-narrow="isNarrow"
+        :is-expanded="isSidebarOpen"
+        :is-mobile="isMobileViewport"
+        :is-narrow="isSmallDesktop"
         :checklists="checklists"
         :selected-checklist-id="selectedChecklistId"
         @toggle-sidebar="toggleSidebar"
@@ -59,8 +57,8 @@
     <main
       :class="[
         'p-4 md:p-6 overflow-y-auto bg-gray-50 min-w-0 transition-filter duration-200',
-        isMobile ? 'flex-1' : 'flex-1',
-        { 'filter blur-sm pointer-events-none': (isSidebarExpanded && (isMobile || isNarrow)) }
+        isMobileViewport ? 'flex-1' : 'flex-1',
+        { 'filter blur-sm pointer-events-none': (isSidebarOpen && (isMobileViewport || isSmallDesktop)) }
       ]"
     >
       <div v-if="selectedChecklist">
@@ -69,18 +67,21 @@
           :categories="categories"
           :items="items"
           :newly-created-item-id="newlyCreatedItemId"
+          :newly-created-category-id="newlyCreatedCategoryId"
           @edit-checklist="showEditChecklistModal = true"
+          @create:item="handleItemCreate"
           @update:item="handleItemUpdate"
           @delete:item="handleItemDelete"
-          @create:item="handleCreateItemClick"
+          @create:category="handleCategoryCreate"
           @update:category="handleCategoryUpdate"
           @delete:category="handleCategoryDelete"
-          @create:category="handleCreateCategoryClick"
         />
       </div>
-
-      <div v-else class="text-center text-secondary mt-20">
-        Please create a checklist first.
+      <div
+        v-else
+        class="text-center text-secondary mt-20"
+      >
+        Please create a new checklist first.
       </div>
     </main>
 
@@ -135,16 +136,22 @@ const BREAKPOINTS = {
 };
 
 // UI State
-const isSidebarExpanded = ref(true);
-const isMobile = ref(false);
-const isNarrow = ref(false);
+// Renamed for clearer intent:
+// - isSidebarOpen: whether the sidebar is currently open/expanded
+// - isMobileViewport: true when viewport is mobile-sized
+// - isSmallDesktop: a narrow desktop / small-window breakpoint where the
+//   sidebar should behave as an overlay
+const isSidebarOpen = ref(true);
+const isMobileViewport = ref(false);
+const isSmallDesktop = ref(false);
 const showAddChecklistModal = ref(false);
 const showEditChecklistModal = ref(false);
 const newlyCreatedItemId = ref(null);
+const newlyCreatedCategoryId = ref(null);
 
 // Computed properties for template logic
 const isOverlayVisible = computed(() =>
-  (isMobile.value || (isNarrow.value && isSidebarExpanded.value)) && isSidebarExpanded.value
+  (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value)) && isSidebarOpen.value
 );
 
 // Generic error handler
@@ -159,16 +166,16 @@ const handleAsyncAction = async (action, ...args) => {
 
 // Check if screen is mobile size
 function checkScreenSize() {
-  isMobile.value = window.innerWidth < BREAKPOINTS.MOBILE;
-  isNarrow.value = window.innerWidth < BREAKPOINTS.SIDEBAR_OVERLAY;
+  isMobileViewport.value = window.innerWidth < BREAKPOINTS.MOBILE;
+  isSmallDesktop.value = window.innerWidth < BREAKPOINTS.SIDEBAR_OVERLAY;
 
   // Auto-collapse sidebar on small screens
-  if (isMobile.value || isNarrow.value) {
-    isSidebarExpanded.value = false;
+  if (isMobileViewport.value || isSmallDesktop.value) {
+    isSidebarOpen.value = false;
   } else {
     // Auto-expand on desktop if not manually collapsed
     if (!localStorage.getItem(SIDEBAR_COLLAPSED_KEY)) {
-      isSidebarExpanded.value = true;
+      isSidebarOpen.value = true;
     }
   }
 }
@@ -180,11 +187,11 @@ function handleResize() {
 
 // Methods
 function toggleSidebar() {
-  isSidebarExpanded.value = !isSidebarExpanded.value;
+  isSidebarOpen.value = !isSidebarOpen.value;
 
   // Remember manual toggle on desktop
-    if (!isMobile.value) {
-    if (isSidebarExpanded.value) {
+  if (!isMobileViewport.value) {
+    if (isSidebarOpen.value) {
       localStorage.removeItem(SIDEBAR_COLLAPSED_KEY);
     } else {
       localStorage.setItem(SIDEBAR_COLLAPSED_KEY, 'true');
@@ -197,7 +204,11 @@ function closeChecklistModal() {
   showEditChecklistModal.value = false;
 }
 
-async function handleCreateItemClick(categoryId) {
+// ----------------------
+// Item handlers
+// ----------------------
+
+async function handleItemCreate(categoryId) {
   const newItemData = {
     name: 'New Item',
     quantity: 1,
@@ -211,21 +222,50 @@ async function handleCreateItemClick(categoryId) {
   }
 }
 
-async function handleCreateCategoryClick() {
+async function handleItemUpdate(item) {
+  await handleAsyncAction(updateItem, item);
+
+  // Clear the newly created flag if this was the item being edited
+  if (newlyCreatedItemId.value === item.id) {
+    newlyCreatedItemId.value = null;
+  }
+}
+
+async function handleItemDelete(itemId) {
+  await handleAsyncAction(deleteItem, itemId);
+}
+
+// ----------------------
+// Category handlers
+// ----------------------
+
+async function handleCategoryCreate() {
   const newCategoryData = {
     name: 'New Category'
   };
 
-  await handleAsyncAction(createCategory, newCategoryData);
+  const newCategory = await handleAsyncAction(createCategory, newCategoryData);
+  if (newCategory) {
+    newlyCreatedCategoryId.value = newCategory.id;
+  }
 }
 
 async function handleCategoryUpdate(category) {
   await handleAsyncAction(updateCategory, category);
+
+  // Clear the newly-created flag if this was the category being edited
+  if (newlyCreatedCategoryId.value === category.id) {
+    newlyCreatedCategoryId.value = null;
+  }
 }
 
 async function handleCategoryDelete(categoryId) {
   await handleAsyncAction(deleteCategory, categoryId);
 }
+
+// ----------------------
+// Checklist handlers
+// ----------------------
 
 async function handleChecklistSubmit(formData) {
   if (showEditChecklistModal.value) {
@@ -255,19 +295,6 @@ async function handleDeleteChecklist(checklistId) {
   }
 }
 
-async function handleItemUpdate(item) {
-  await handleAsyncAction(updateItem, item);
-
-  // Clear the newly created flag if this was the item being edited
-  if (newlyCreatedItemId.value === item.id) {
-    newlyCreatedItemId.value = null;
-  }
-}
-
-async function handleItemDelete(itemId) {
-  await handleAsyncAction(deleteItem, itemId);
-}
-
 // Lifecycle hooks
 onMounted(async () => {
   await initialize();
@@ -282,8 +309,8 @@ onUnmounted(() => {
 });
 
 // Prevent layout shift caused by scrollbar/body resizing when overlay drawer is active
-watch([isSidebarExpanded, isMobile, isNarrow], () => {
-  const overlayActive = isSidebarExpanded.value && (isMobile.value || (isNarrow.value && isSidebarExpanded.value));
+watch([isSidebarOpen, isMobileViewport, isSmallDesktop], () => {
+  const overlayActive = isSidebarOpen.value && (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value));
   if (overlayActive) {
     document.body.style.overflow = 'hidden';
   } else {

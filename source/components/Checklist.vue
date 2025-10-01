@@ -33,6 +33,7 @@
         :category="category"
         :items="items"
         :newly-created-item-id="newlyCreatedItemId"
+        :newly-created-category-id="newlyCreatedCategoryId"
         @update:item="$emit('update:item', $event)"
         @delete:item="$emit('delete:item', $event)"
         @create:item="$emit('create:item', $event)"
@@ -73,6 +74,10 @@ const props = defineProps({
     required: true
   },
   newlyCreatedItemId: {
+    type: String,
+    default: null
+  },
+  newlyCreatedCategoryId: {
     type: String,
     default: null
   }
