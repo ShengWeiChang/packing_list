@@ -22,13 +22,11 @@ export class Checklist {
     destination = '',
     startDate = new Date().toISOString().slice(0, 10),
     endDate = new Date().toISOString().slice(0, 10),
-    notes = ''
   } = {}) {
     this.id = id;
     this.destination = this.validateDestination(destination);
     this.startDate = startDate;
     this.endDate = endDate;
-    this.notes = this.validateNotes(notes);
   }
 
   /**
@@ -47,20 +45,6 @@ export class Checklist {
     return destination;
   }
 
-  /**
-   * Validate checklist notes
-   * @param {string} notes - The notes to validate
-   * @returns {string} Validated notes
-   */
-  validateNotes(notes) {
-    if (typeof notes !== 'string') {
-      throw new Error('Notes must be a string');
-    }
-    if (notes.length > VALIDATION.NOTES_MAX_LENGTH) {
-      throw new Error(`Notes must be less than ${VALIDATION.NOTES_MAX_LENGTH} characters`);
-    }
-    return notes;
-  }
 
   /**
    * Creates a Checklist instance from JSON data
@@ -81,7 +65,6 @@ export class Checklist {
       destination: this.destination,
       startDate: this.startDate,
       endDate: this.endDate,
-      notes: this.notes
     };
   }
 }

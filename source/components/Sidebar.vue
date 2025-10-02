@@ -48,7 +48,7 @@ Last-Modified: 2025-09-30
 
     <!-- New Checklist Button -->
     <button
-      @click="$emit('new-checklist')"
+      @click="$emit('create-checklist')"
       class="rounded-lg hover:bg-gray-100 mb-12 flex items-center overflow-hidden whitespace-nowrap"
       :class="[isExpanded || isMobile ? 'pr-4' : '']"
     >
@@ -100,7 +100,7 @@ Last-Modified: 2025-09-30
               <button
                 @click="$emit('select-checklist', checklist.id)"
                 :class="[
-                  'flex-grow text-left py-2 px-4 transition-colors duration-300 ease-in-out',
+                  'w-full text-left py-2 px-4 transition-colors duration-300 ease-in-out',
                   (isExpanded || isMobile) ? [
                     selectedChecklistId === checklist.id
                       ? 'text-primary font-medium'
@@ -115,18 +115,6 @@ Last-Modified: 2025-09-30
                   {{ checklist.destination }}
                 </span>
               </button>
-
-              <OverflowMenu
-                v-if="isExpanded || isMobile"
-                :item-id="String(checklist.id)"
-                menu-type="category"
-                size="small"
-                :force-visible="true"
-                :use-group-hover="false"
-                class="ml-2"
-                @edit="$emit('edit-checklist', checklist.id)"
-                @delete="$emit('delete-checklist', checklist.id)"
-              />
             </div>
           </li>
         </ul>
@@ -136,8 +124,6 @@ Last-Modified: 2025-09-30
 </template>
 
 <script setup>
-import OverflowMenu from './OverflowMenu.vue';
-
 defineProps({
   isExpanded: {
     type: Boolean,
@@ -161,5 +147,5 @@ defineProps({
   }
 });
 
-defineEmits(['toggle-sidebar', 'new-checklist', 'select-checklist', 'edit-checklist', 'delete-checklist']);
+defineEmits(['toggle-sidebar', 'create-checklist', 'select-checklist']);
 </script>

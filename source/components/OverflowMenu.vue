@@ -55,7 +55,7 @@ Last-Modified: 2025-09-30
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 const props = defineProps({
   itemId: {

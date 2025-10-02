@@ -27,7 +27,7 @@ Last-Modified: 2025-09-30
       v-if="isMobileViewport"
       :title="selectedChecklist ? selectedChecklist.destination : 'Packing List'"
       @toggle="toggleSidebar"
-      @new="showAddChecklistModal = true"
+      @new="handleChecklistCreate"
     />
 
     <!-- Sidebar -->
@@ -41,10 +41,9 @@ Last-Modified: 2025-09-30
           :checklists="checklists"
           :selected-checklist-id="selectedChecklistId"
           @toggle-sidebar="toggleSidebar"
-          @new-checklist="showAddChecklistModal = true"
+          @create-checklist="handleChecklistCreate"
           @select-checklist="selectedChecklistId = $event"
-          @edit-checklist="handleEditChecklist"
-          @delete-checklist="handleDeleteChecklist"
+          @delete-checklist="handleChecklistDelete"
         />
       </div>
     </teleport>
@@ -58,10 +57,9 @@ Last-Modified: 2025-09-30
         :checklists="checklists"
         :selected-checklist-id="selectedChecklistId"
         @toggle-sidebar="toggleSidebar"
-        @new-checklist="showAddChecklistModal = true"
+        @create-checklist="handleChecklistCreate"
         @select-checklist="selectedChecklistId = $event"
-        @edit-checklist="handleEditChecklist"
-        @delete-checklist="handleDeleteChecklist"
+        @delete-checklist="handleChecklistDelete"
       />
     </div>
 
@@ -80,7 +78,9 @@ Last-Modified: 2025-09-30
           :items="items"
           :newly-created-item-id="newlyCreatedItemId"
           :newly-created-category-id="newlyCreatedCategoryId"
-          @edit-checklist="showEditChecklistModal = true"
+          :newly-created-checklist-id="newlyCreatedChecklistId"
+          @update:checklist="handleChecklistUpdate"
+          @delete:checklist="handleChecklistDelete"
           @create:item="handleItemCreate"
           @update:item="handleItemUpdate"
           @delete:item="handleItemDelete"
@@ -96,24 +96,12 @@ Last-Modified: 2025-09-30
         Please create a new checklist first.
       </div>
     </main>
-
-    <!-- Add/Edit Checklist Modal -->
-    <Teleport to="body">
-      <ChecklistForm
-        v-if="showAddChecklistModal || showEditChecklistModal"
-        :checklist="showEditChecklistModal ? selectedChecklist : null"
-        :is-editing="showEditChecklistModal"
-        @submit="handleChecklistSubmit"
-        @close="closeChecklistModal"
-      />
-    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import ChecklistComponent from './components/Checklist.vue';
-import ChecklistForm from './components/ChecklistForm.vue';
 import Sidebar from './components/Sidebar.vue';
 import Topbar from './components/Topbar.vue';
 import { usePackingLists } from './composables/usePackingLists';
@@ -156,10 +144,9 @@ const BREAKPOINTS = {
 const isSidebarOpen = ref(true);
 const isMobileViewport = ref(false);
 const isSmallDesktop = ref(false);
-const showAddChecklistModal = ref(false);
-const showEditChecklistModal = ref(false);
 const newlyCreatedItemId = ref(null);
 const newlyCreatedCategoryId = ref(null);
+const newlyCreatedChecklistId = ref(null);
 
 // Computed properties for template logic
 const isOverlayVisible = computed(() =>
@@ -209,11 +196,6 @@ function toggleSidebar() {
       localStorage.setItem(SIDEBAR_COLLAPSED_KEY, 'true');
     }
   }
-}
-
-function closeChecklistModal() {
-  showAddChecklistModal.value = false;
-  showEditChecklistModal.value = false;
 }
 
 // ----------------------
@@ -279,27 +261,35 @@ async function handleCategoryDelete(categoryId) {
 // Checklist handlers
 // ----------------------
 
-async function handleChecklistSubmit(formData) {
-  if (showEditChecklistModal.value) {
-    await handleAsyncAction(updateChecklist, {
-      ...selectedChecklist.value,
-      ...formData
-    });
-  } else {
-    const newChecklist = await handleAsyncAction(createChecklist, formData);
-    if (newChecklist) {
-      selectedChecklistId.value = newChecklist.id;
-    }
+async function handleChecklistCreate() {
+  const newChecklistData = {
+    destination: 'New Checklist',
+    startDate: new Date().toISOString().slice(0, 10),
+    endDate: new Date().toISOString().slice(0, 10)
+  };
+
+  const newChecklist = await handleAsyncAction(createChecklist, newChecklistData);
+  if (newChecklist) {
+    selectedChecklistId.value = newChecklist.id;
+    newlyCreatedChecklistId.value = newChecklist.id;
   }
-  closeChecklistModal();
 }
 
-async function handleEditChecklist(checklistId) {
-  selectedChecklistId.value = checklistId;
-  showEditChecklistModal.value = true;
+async function handleChecklistUpdate(checklist) {
+  await handleAsyncAction(updateChecklist, checklist);
+
+  // Clear the newly created flag if this was the checklist being edited
+  if (newlyCreatedChecklistId.value === checklist.id) {
+    newlyCreatedChecklistId.value = null;
+  }
+
+  // Clear the edit triggered flag if this was the checklist being edited
+  if (editTriggeredChecklistId.value === checklist.id) {
+    editTriggeredChecklistId.value = null;
+  }
 }
 
-async function handleDeleteChecklist(checklistId) {
+async function handleChecklistDelete(checklistId) {
   await handleAsyncAction(deleteChecklist, checklistId);
   // If the deleted checklist was selected, clear selection
   if (selectedChecklistId.value === checklistId) {

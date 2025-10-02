@@ -47,8 +47,9 @@ Last-Modified: 2025-09-30
 
       <span
         v-else
-        class="text-base"
+        class="text-base cursor-pointer hover:bg-gray-50 px-1 py-1 rounded"
         :class="{ 'line-through text-secondary': item.isPacked }"
+        @click="startEdit"
       >
         {{ item.name }}
       </span>

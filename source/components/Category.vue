@@ -31,7 +31,13 @@ Last-Modified: 2025-09-30
           ref="editInput"
           class="w-full text-xl font-semibold text-slate-800 bg-transparent border-b border-blue-300 focus:outline-none focus:border-blue-500"
         >
-        <h3 v-else class="text-xl font-semibold text-primary">{{ category.name }}</h3>
+        <h3
+          v-else
+          class="text-xl font-semibold text-primary cursor-pointer hover:bg-gray-50 px-1 py-1 rounded"
+          @click="startEdit"
+        >
+          {{ category.name }}
+        </h3>
       </div>
 
       <!-- Overflow menu -->
