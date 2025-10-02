@@ -25,9 +25,18 @@ export class LocalStorageService extends DataService {
   constructor() {
     super();
     this.STORAGE_KEY = STORAGE_KEYS.APP_DATA;
-    // simple in-memory cache to avoid repeated JSON.parse on startup
-    this._cache = null;
-    this.initializeStorage();
+    this._cache = null; // simple in-memory cache to avoid repeated JSON.parse on startup
+    this._initialized = false; // track if storage has been initialized
+    // Invalidate in-memory cache when localStorage is changed in another tab/window
+    // (the storage event is fired on other windows, not the originator window)
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      this._storageListener = (e) => {
+        if (e.key === this.STORAGE_KEY) {
+          this._cache = null;
+        }
+      };
+      window.addEventListener('storage', this._storageListener);
+    }
   }
 
   /**
@@ -46,7 +55,7 @@ export class LocalStorageService extends DataService {
 
     const initialData = {
       // Start empty. Default categories/items are generated per-checklist
-      // when a checklist is created (see saveChecklist).
+      // when a checklist is created (see createChecklist).
       checklists: [],
       categories: [],
       items: []
@@ -54,79 +63,47 @@ export class LocalStorageService extends DataService {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(initialData));
   }
 
-  /**
-   * Migrate legacy category IDs like `cat-1`, `cat-2`, ... to secure IDs.
-   * Updates category IDs and fixes item.categoryId references.
-   * Returns true if a migration happened.
-   */
-
-
   // ========================================
   // PRIVATE HELPER METHODS
   // ========================================
 
   /**
-   * Get all stored data from localStorage
-   * @returns {Object} Parsed data object
+   * Ensure storage is initialized before first access
    */
-  getData() {
-    const data = localStorage.getItem(this.STORAGE_KEY);
-    return JSON.parse(data || '{}');
-  }
-
-  /**
-   * Get parsed app data with a simple in-memory cache
-   * Consumers can call this once at startup to avoid multiple parses
-   * @returns {Object} Cached data object
-   */
-  getAll() {
-    if (this._cache) return this._cache;
-    const data = this.getData();
-    this._cache = data;
-    return data;
+  async _ensureInitialized() {
+    if (!this._initialized) {
+      this.initializeStorage();
+      this._initialized = true;
+    }
   }
 
   /**
    * Save all data to localStorage and update cache
    * @param {Object} data - Data object to save
    */
-  saveData(data) {
+  _saveData(data) {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
     // update cache so subsequent reads stay consistent
     this._cache = data;
   }
 
   /**
-   * Generate default categories for a specific checklist (categories are scoped to a checklist)
-   * @param {string} checklistId - The checklist ID to scope categories to
-   * @returns {Array} Array of default Category objects
+   * Create default categories and items for a new checklist
+   * @param {string} checklistId - The checklist ID
+   * @returns {Object} Object containing { categories: Array, items: Array }
    */
-  getDefaultCategoriesForChecklist(checklistId) {
+  _createDefaultData(checklistId) {
+    // Extract unique category names from default items
     const categoryNames = [...new Set(defaultItems.map(item => item.category))];
-    return categoryNames.map(name => new Category({ name, checklistId }));
-  }
-
-  /**
-   * Get default categories (unscoped)
-   * @returns {Array} Array of default Category objects
-   */
-  getDefaultCategories() {
-    const categoryNames = [...new Set(defaultItems.map(item => item.category))];
-    // Let the Category constructor generate secure IDs so IDs are consistent
-    // with other entities (checklists/items) which use crypto.randomUUID when available.
-    return categoryNames.map(name => new Category({ name }));
-  }
-
-  /**
-   * Get default items with unique IDs for a new checklist
-   * @param {string} checklistId - The checklist ID to scope items to
-   * @returns {Array} Array of default Item objects
-   */
-  getDefaultItems(checklistId) {
-    const categories = this.getDefaultCategoriesForChecklist(checklistId);
+    
+    // Create Category objects
+    const categories = categoryNames.map(name => new Category({ name, checklistId }));
+    
+    // Create a mapping from category name to category ID
     const categoryMap = Object.fromEntries(categories.map(cat => [cat.name, cat.id]));
-
-    return defaultItems.map(item => new Item({
+    
+    // Create Item objects mapped to the correct categories
+    const items = defaultItems.map(item => new Item({
       id: generateSecureId('item-'),
       name: item.name,
       quantity: item.quantity,
@@ -134,10 +111,30 @@ export class LocalStorageService extends DataService {
       isPacked: false,
       checklistId: checklistId
     }));
+    
+    return { categories, items };
   }
 
   // ========================================
-  // CHECKLIST CRUD
+  // PUBLIC BULK DATA ACCESS
+  // ========================================
+
+  /**
+   * Get all data with automatic caching
+   * @returns {Promise<Object>} Object containing { checklists: Array, categories: Array, items: Array }
+   */
+  async getData() {
+    await this._ensureInitialized();
+    if (this._cache)
+      return this._cache;
+    const data = localStorage.getItem(this.STORAGE_KEY);
+    const parsed = JSON.parse(data || '{}');
+    this._cache = parsed;
+    return parsed;
+  }
+
+  // ========================================
+  // PUBLIC CHECKLIST CRUD
   // ========================================
 
   /**
@@ -146,7 +143,7 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<Object>} Created checklist
    */
   async createChecklist(checklist) {
-    const data = this.getData();
+    const data = await this.getData();
     const checklists = data.checklists || [];
 
     // Create a proper Checklist instance to ensure consistent structure
@@ -154,25 +151,16 @@ export class LocalStorageService extends DataService {
 
     checklists.push(newChecklist.toJSON());
 
-    // Generate default categories scoped to this checklist
-    const newCategories = this.getDefaultCategoriesForChecklist(newChecklist.id);
+    // Generate default categories and items for this checklist
+    const { categories: newCategories, items: newItems } = this._createDefaultData(newChecklist.id);
+    
+    // Add categories and items to storage
     data.categories = [...(data.categories || []), ...newCategories.map(c => c.toJSON())];
-
-    // Generate default items mapped to those new categories
-    const categoryMap = Object.fromEntries(newCategories.map(cat => [cat.name, cat.id]));
-    const newItems = defaultItems.map(item => new Item({
-      id: generateSecureId('item-'),
-      name: item.name,
-      quantity: item.quantity,
-      categoryId: categoryMap[item.category],
-      isPacked: false,
-      checklistId: newChecklist.id
-    }));
     data.items = [...(data.items || []), ...newItems.map(i => i.toJSON())];
 
     data.checklists = checklists;
-    this.saveData(data);
-    return Promise.resolve(newChecklist.toJSON());
+    this._saveData(data);
+    return newChecklist.toJSON();
   }
 
   /**
@@ -180,9 +168,8 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<Array>} Array of Checklist objects
    */
   async getChecklists() {
-    const data = this.getData();
-    const checklists = (data.checklists || []).map(cl => Checklist.fromJSON(cl).toJSON());
-    return Promise.resolve(checklists);
+    const data = await this.getData();
+    return (data.checklists || []).map(cl => Checklist.fromJSON(cl).toJSON());
   }
 
   /**
@@ -191,10 +178,9 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<Object|null>} Checklist object or null if not found
    */
   async getChecklistById(id) {
-    const data = this.getData();
+    const data = await this.getData();
     const checklistData = (data.checklists || []).find(cl => cl.id === id);
-    const checklist = checklistData ? Checklist.fromJSON(checklistData).toJSON() : null;
-    return Promise.resolve(checklist);
+    return checklistData ? Checklist.fromJSON(checklistData).toJSON() : null;
   }
 
   /**
@@ -203,7 +189,7 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<Object>} Updated checklist
    */
   async updateChecklist(checklist) {
-    const data = this.getData();
+    const data = await this.getData();
     const checklists = data.checklists || [];
     const index = checklists.findIndex(cl => cl.id === checklist.id);
 
@@ -215,8 +201,8 @@ export class LocalStorageService extends DataService {
     const updatedChecklist = new Checklist(checklist);
     checklists[index] = updatedChecklist.toJSON();
     data.checklists = checklists;
-    this.saveData(data);
-    return Promise.resolve(updatedChecklist.toJSON());
+    this._saveData(data);
+    return updatedChecklist.toJSON();
   }
 
   /**
@@ -225,17 +211,16 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<void>}
    */
   async deleteChecklist(id) {
-    const data = this.getData();
+    const data = await this.getData();
     data.checklists = (data.checklists || []).filter(cl => cl.id !== id);
     // Also remove categories and items associated with the checklist
     data.categories = (data.categories || []).filter(cat => cat.checklistId !== id);
     data.items = (data.items || []).filter(item => item.checklistId !== id);
-    this.saveData(data);
-    return Promise.resolve();
+    this._saveData(data);
   }
 
   // ========================================
-  // CATEGORY CRUD
+  // PUBLIC CATEGORY CRUD
   // ========================================
 
   /**
@@ -245,7 +230,7 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<Object>} Created category
    */
   async createCategory(checklistId, category) {
-    const data = this.getData();
+    const data = await this.getData();
     const categories = data.categories || [];
 
     // Create a proper Category instance to ensure consistent structure
@@ -253,8 +238,8 @@ export class LocalStorageService extends DataService {
 
     categories.push(newCategory.toJSON());
     data.categories = categories;
-    this.saveData(data);
-    return Promise.resolve(newCategory.toJSON());
+    this._saveData(data);
+    return newCategory.toJSON();
   }
 
   /**
@@ -263,12 +248,11 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<Array>} Array of Category objects
    */
   async getCategories(checklistId) {
-    const data = this.getData();
-    const categories = (data.categories || [])
+    const data = await this.getData();
+    return (data.categories || [])
       .map(cat => Category.fromJSON(cat))
       .filter(cat => (checklistId ? cat.checklistId === checklistId : true))
       .map(cat => cat.toJSON());
-    return Promise.resolve(categories);
   }
 
   /**
@@ -277,10 +261,9 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<Object|null>} Category object or null if not found
    */
   async getCategoryById(categoryId) {
-    const data = this.getData();
+    const data = await this.getData();
     const catData = (data.categories || []).find(c => c.id === categoryId);
-    const category = catData ? Category.fromJSON(catData).toJSON() : null;
-    return Promise.resolve(category);
+    return catData ? Category.fromJSON(catData).toJSON() : null;
   }
 
   /**
@@ -289,7 +272,7 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<Object>} Updated category
    */
   async updateCategory(category) {
-    const data = this.getData();
+    const data = await this.getData();
     const categories = data.categories || [];
     const index = categories.findIndex(cat => cat.id === category.id);
 
@@ -300,8 +283,8 @@ export class LocalStorageService extends DataService {
     const updatedCategory = new Category(category);
     categories[index] = updatedCategory.toJSON();
     data.categories = categories;
-    this.saveData(data);
-    return Promise.resolve(updatedCategory.toJSON());
+    this._saveData(data);
+    return updatedCategory.toJSON();
   }
 
   /**
@@ -310,16 +293,15 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<void>}
    */
   async deleteCategory(categoryId) {
-    const data = this.getData();
+    const data = await this.getData();
     data.categories = (data.categories || []).filter(cat => cat.id !== categoryId);
     // Also delete all items in this category across all checklists
     data.items = (data.items || []).filter(item => item.categoryId !== categoryId);
-    this.saveData(data);
-    return Promise.resolve();
+    this._saveData(data);
   }
 
   // ========================================
-  // ITEM CRUD
+  // PUBLIC ITEM CRUD
   // ========================================
 
   /**
@@ -329,7 +311,7 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<Object>} Created Item object
    */
   async createItem(checklistId, item) {
-    const data = this.getData();
+    const data = await this.getData();
     const items = data.items || [];
 
     // Create a proper Item instance to ensure consistent structure
@@ -337,8 +319,8 @@ export class LocalStorageService extends DataService {
 
     items.push(newItem.toJSON());
     data.items = items;
-    this.saveData(data);
-    return Promise.resolve(newItem.toJSON());
+    this._saveData(data);
+    return newItem.toJSON();
   }
 
   /**
@@ -347,11 +329,10 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<Array>} Array of Item objects
    */
   async getItems(checklistId) {
-    const data = this.getData();
-    const items = (data.items || [])
+    const data = await this.getData();
+    return (data.items || [])
       .filter(item => item.checklistId === checklistId)
       .map(item => Item.fromJSON(item).toJSON());
-    return Promise.resolve(items);
   }
 
   /**
@@ -361,10 +342,9 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<Object|null>} Item object or null if not found
    */
   async getItemById(checklistId, itemId) {
-    const data = this.getData();
+    const data = await this.getData();
     const itemData = (data.items || []).find(i => i.checklistId === checklistId && i.id === itemId);
-    const item = itemData ? Item.fromJSON(itemData).toJSON() : null;
-    return Promise.resolve(item);
+    return itemData ? Item.fromJSON(itemData).toJSON() : null;
   }
 
   /**
@@ -374,7 +354,7 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<Object>} Updated Item object
    */
   async updateItem(checklistId, item) {
-    const data = this.getData();
+    const data = await this.getData();
     const items = data.items || [];
     const index = items.findIndex(i => i.id === item.id && i.checklistId === checklistId);
 
@@ -386,8 +366,8 @@ export class LocalStorageService extends DataService {
     const updatedItem = new Item({ ...item, checklistId });
     items[index] = updatedItem.toJSON();
     data.items = items;
-    this.saveData(data);
-    return Promise.resolve(updatedItem.toJSON());
+    this._saveData(data);
+    return updatedItem.toJSON();
   }
 
   /**
@@ -397,12 +377,21 @@ export class LocalStorageService extends DataService {
    * @returns {Promise<void>}
    */
   async deleteItem(checklistId, itemId) {
-    const data = this.getData();
+    const data = await this.getData();
     data.items = (data.items || []).filter(
       item => !(item.checklistId === checklistId && item.id === itemId)
     );
-    this.saveData(data);
-    return Promise.resolve();
+    this._saveData(data);
+  }
+
+  /**
+   * Dispose service resources (e.g., remove event listeners)
+   */
+  dispose() {
+    if (this._storageListener && typeof window !== 'undefined' && window.removeEventListener) {
+      window.removeEventListener('storage', this._storageListener);
+      this._storageListener = null;
+    }
   }
 
 }

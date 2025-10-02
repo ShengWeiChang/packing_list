@@ -64,7 +64,7 @@ export function usePackingLists() {
     try {
       isLoading.value = true;
       error.value = null;
-      const raw = await dataService.getAll();
+      const raw = await dataService.getData();
 
       // Populate checklists, categories and items from the raw data
       const preChecklists = (raw.checklists || []).map(cl => Checklist.fromJSON(cl));

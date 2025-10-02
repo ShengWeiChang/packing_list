@@ -16,6 +16,18 @@ Last-Modified: 2025-09-30
  */
 export class DataService {
   // ========================================
+  // BULK DATA ACCESS
+  // ========================================
+
+  /**
+   * Get all data (checklists, categories, items) for efficient bulk loading
+   * @returns {Promise<Object>} Object containing { checklists: Array, categories: Array, items: Array }
+   */
+  async getData() {
+    throw new Error('Not implemented');
+  }
+
+  // ========================================
   // CHECKLIST CRUD
   // ========================================
 
