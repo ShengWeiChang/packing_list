@@ -33,6 +33,9 @@ export class LocalStorageService extends DataService {
       this._storageListener = (e) => {
         if (e.key === this.STORAGE_KEY) {
           this._cache = null;
+          if (e.newValue === null) {
+            this._initialized = false;
+          }
         }
       };
       window.addEventListener('storage', this._storageListener);
@@ -82,9 +85,13 @@ export class LocalStorageService extends DataService {
    * @param {Object} data - Data object to save
    */
   _saveData(data) {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-    // update cache so subsequent reads stay consistent
-    this._cache = data;
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+      this._cache = data;
+    } catch (error) {
+      console.error('Failed to save data to localStorage:', error);
+      throw new Error(`Storage operation failed: ${error.message}`);
+    }
   }
 
   /**
@@ -125,12 +132,27 @@ export class LocalStorageService extends DataService {
    */
   async getData() {
     await this._ensureInitialized();
-    if (this._cache)
+    if (this._cache) {
       return this._cache;
+    }
     const data = localStorage.getItem(this.STORAGE_KEY);
-    const parsed = JSON.parse(data || '{}');
-    this._cache = parsed;
-    return parsed;
+    try {
+      const parsed = JSON.parse(data || '{}');
+
+      // Validate structure and types
+      const validatedData = {
+        checklists: Array.isArray(parsed.checklists) ? parsed.checklists : [],
+        categories: Array.isArray(parsed.categories) ? parsed.categories : [],
+        items: Array.isArray(parsed.items) ? parsed.items : []
+      };
+
+      this._cache = validatedData;
+      return validatedData;
+    } catch (error) {
+      console.warn('Corrupted localStorage data, reinitializing...', error);
+      this.initializeStorage();
+      return { checklists: [], categories: [], items: [] };
+    }
   }
 
   // ========================================
@@ -388,10 +410,16 @@ export class LocalStorageService extends DataService {
    * Dispose service resources (e.g., remove event listeners)
    */
   dispose() {
-    if (this._storageListener && typeof window !== 'undefined' && window.removeEventListener) {
+    // Clear storage event listener if it exists
+    const isBrowser = typeof window !== 'undefined' && typeof window.addEventListener === 'function';
+    if (isBrowser) {
       window.removeEventListener('storage', this._storageListener);
       this._storageListener = null;
     }
+
+    // Clear in-memory cache and reset initialization flag
+    this._cache = null;
+    this._initialized = false;
   }
 
 }
