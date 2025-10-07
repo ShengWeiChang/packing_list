@@ -6,125 +6,136 @@ Description: Default packing items data with categories for new checklists
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
 Created: 2025-09-19
-Last-Modified: 2025-09-30
 ================================================================================
 */
 
 export const defaultItems = [
+  // Note: `id` and `isPacked` are intentionally ignored here. The runtime
+  // `Item` instances are created with generated IDs (`generateSecureId`) and
+  // `isPacked` defaults to false. Keeping IDs out of this static file avoids
+  // confusion and ensures the application uses secure/deterministic ID
+  // generation at runtime.
+
   // Summer Wear
-  { id: "1", name: "T-shirt", category: "Summer Wear", isPacked: false, quantity: 1 },
-  { id: "2", name: "Shirt", category: "Summer Wear", isPacked: false, quantity: 1 },
-  { id: "3", name: "Sun Protection Jacket", category: "Summer Wear", isPacked: false, quantity: 1 },
-  { id: "4", name: "Shorts", category: "Summer Wear", isPacked: false, quantity: 1 },
+  { name: "T-shirt",                          category: "Summer Wear",      quantity: 1 },
+  { name: "Shirt",                            category: "Summer Wear",      quantity: 1 },
+  { name: "Light Jacket",                     category: "Summer Wear",      quantity: 1 },
+  { name: "Shorts",                           category: "Summer Wear",      quantity: 1 },
 
   // Winter Wear
-  { id: "5", name: "Long Sleeve Shirt", category: "Winter Wear", isPacked: false, quantity: 1 },
-  { id: "6", name: "Shirt", category: "Winter Wear", isPacked: false, quantity: 1 },
-  { id: "7", name: "Jacket", category: "Winter Wear", isPacked: false, quantity: 1 },
-  { id: "8", name: "Down Jacket", category: "Winter Wear", isPacked: false, quantity: 1 },
-  { id: "9", name: "Trench Coat", category: "Winter Wear", isPacked: false, quantity: 1 },
-  { id: "10", name: "Long Pants", category: "Winter Wear", isPacked: false, quantity: 1 },
-  { id: "11", name: "Thermal Leggings", category: "Winter Wear", isPacked: false, quantity: 1 },
+  { name: "Base Layer",                       category: "Winter Wear",      quantity: 1 },
+  { name: "Long Sleeve Shirt",                category: "Winter Wear",      quantity: 1 },
+  { name: "Hoodie",                           category: "Winter Wear",      quantity: 1 },
+  { name: "Jacket",                           category: "Winter Wear",      quantity: 1 },
+  { name: "Down Jacket",                      category: "Winter Wear",      quantity: 1 },
+  { name: "Windbreaker",                      category: "Winter Wear",      quantity: 1 },
+  { name: "Pants",                            category: "Winter Wear",      quantity: 1 },
 
   // Underwear
-  { id: "12", name: "Underwear", category: "Underwear", isPacked: false, quantity: 1 },
-  { id: "13", name: "Socks", category: "Underwear", isPacked: false, quantity: 1 },
-  { id: "14", name: "Pajama Pants", category: "Underwear", isPacked: false, quantity: 1 },
-  { id: "15", name: "Pillowcase", category: "Underwear", isPacked: false, quantity: 1 },
+  { name: "Underwear",                        category: "Underwear",        quantity: 1 },
+  { name: "Socks",                            category: "Underwear",        quantity: 1 },
+  { name: "Pajamas",                          category: "Underwear",        quantity: 1 },
 
   // Accessories
-  { id: "16", name: "Cap / Hiking Hat / Bucket Hat", category: "Accessories", isPacked: false, quantity: 1 },
-  { id: "17", name: "Beanie", category: "Accessories", isPacked: false, quantity: 1 },
-  { id: "18", name: "Sunglasses", category: "Accessories", isPacked: false, quantity: 1 },
-  { id: "19", name: "Scarf / Neck Warmer", category: "Accessories", isPacked: false, quantity: 1 },
-  { id: "20", name: "Gloves", category: "Accessories", isPacked: false, quantity: 1 },
-  { id: "21", name: "Belt", category: "Accessories", isPacked: false, quantity: 1 },
+  { name: "Cap / Hat",                        category: "Accessories",      quantity: 1 },
+  { name: "Beanie",                           category: "Accessories",      quantity: 1 },
+  { name: "Sunglasses",                       category: "Accessories",      quantity: 1 },
+  { name: "Scarf",                            category: "Accessories",      quantity: 1 },
+  { name: "Gloves",                           category: "Accessories",      quantity: 1 },
+  { name: "Belt",                             category: "Accessories",      quantity: 1 },
+  { name: "Shoes",                            category: "Accessories",      quantity: 1 },
+  { name: "Sandals / Flip Flops",             category: "Accessories",      quantity: 1 },
+  { name: "Backpack",                         category: "Accessories",      quantity: 1 },
+  { name: "Sling Bag",                        category: "Accessories",      quantity: 1 },
+  { name: "Packing Cubes",                    category: "Accessories",      quantity: 1 },
+  { name: "Laundry Bag",                      category: "Travel Items",     quantity: 1 },
+  { name: "Swimsuit",                         category: "Accessories",      quantity: 1 },
 
   // Toiletries
-  { id: "22", name: "Towel", category: "Toiletries", isPacked: false, quantity: 1 },
-  { id: "23", name: "Toothbrush", category: "Toiletries", isPacked: false, quantity: 1 },
-  { id: "24", name: "Dental Floss", category: "Toiletries", isPacked: false, quantity: 1 },
-  { id: "25", name: "Toothpaste", category: "Toiletries", isPacked: false, quantity: 1 },
-  { id: "26", name: "Facial Cleanser", category: "Toiletries", isPacked: false, quantity: 1 },
-  { id: "27", name: "Cotton Swabs", category: "Toiletries", isPacked: false, quantity: 1 },
-  { id: "28", name: "Tissues / Wet Wipes", category: "Toiletries", isPacked: false, quantity: 1 },
-
+  { name: "Towel",                            category: "Toiletries",       quantity: 1 },
+  { name: "Toothbrush",                       category: "Toiletries",       quantity: 1 },
+  { name: "Toothpaste",                       category: "Toiletries",       quantity: 1 },
+  { name: "Dental Floss",                     category: "Toiletries",       quantity: 1 },
+  { name: "Facial Cleanser",                  category: "Toiletries",       quantity: 1 },
+  { name: "Cotton Swabs",                     category: "Toiletries",       quantity: 1 },
+  { name: "Comb",                             category: "Toiletries",       quantity: 1 },
+  { name: "Tissues / Wet Wipes",              category: "Toiletries",       quantity: 1 },
+  { name: "Razor / Shaver",                   category: "Toiletries",       quantity: 1 },
+  { name: "Shampoo / Conditioner",            category: "Toiletries",       quantity: 1 },
+  { name: "Soap / Body Wash",                 category: "Toiletries",       quantity: 1 },
+  { name: "Menstrual Products",               category: "Toiletries",       quantity: 1 },
+  
   // Skincare
-  { id: "29", name: "Sunscreen", category: "Skincare", isPacked: false, quantity: 1 },
-  { id: "30", name: "Skincare Products", category: "Skincare", isPacked: false, quantity: 1 },
-  { id: "31", name: "Lip Balm", category: "Skincare", isPacked: false, quantity: 1 },
-  { id: "32", name: "Oil Blotting Paper", category: "Skincare", isPacked: false, quantity: 1 },
-  { id: "33", name: "Body Lotion", category: "Skincare", isPacked: false, quantity: 1 },
-  { id: "34", name: "Hand Cream", category: "Skincare", isPacked: false, quantity: 1 },
-  { id: "35", name: "Comb", category: "Skincare", isPacked: false, quantity: 1 },
-  { id: "36", name: "Acne Ointment", category: "Skincare", isPacked: false, quantity: 1 },
-
-  // Activity Items
-  { id: "37", name: "Bath Towel", category: "Activity Items", isPacked: false, quantity: 1 },
-  { id: "38", name: "Beach Mat", category: "Activity Items", isPacked: false, quantity: 1 },
+  { name: "Sunscreen",                        category: "Skincare",         quantity: 1 },
+  { name: "Skincare Products",                category: "Skincare",         quantity: 1 },
+  { name: "Lip Balm",                         category: "Skincare",         quantity: 1 },
+  { name: "Body Lotion",                      category: "Skincare",         quantity: 1 },
+  { name: "Hand Cream",                       category: "Skincare",         quantity: 1 },
 
   // Smart Devices
-  { id: "39", name: "Phone / Charger", category: "Smart Devices", isPacked: false, quantity: 1 },
-  { id: "40", name: "Personal Laptop / Charger", category: "Smart Devices", isPacked: false, quantity: 1 },
-  { id: "41", name: "Work Laptop / Charger", category: "Smart Devices", isPacked: false, quantity: 1 },
-  { id: "42", name: "Earphones / Charger", category: "Smart Devices", isPacked: false, quantity: 1 },
-  { id: "43", name: "Earplugs / Headphones", category: "Smart Devices", isPacked: false, quantity: 1 },
+  { name: "Phone / Charger",                  category: "Smart Devices",    quantity: 1 },
+  { name: "Tablet / Charger",                 category: "Smart Devices",    quantity: 1 },
+  { name: "Laptop / Charger",                 category: "Smart Devices",    quantity: 1 },
+  { name: "Headphones / Charger",             category: "Smart Devices",    quantity: 1 },
 
   // Photography
-  { id: "44", name: "Camera", category: "Photography", isPacked: false, quantity: 1 },
-  { id: "45", name: "Lens", category: "Photography", isPacked: false, quantity: 1 },
-  { id: "46", name: "Camera Battery / Charger", category: "Photography", isPacked: false, quantity: 1 },
-  { id: "47", name: "Memory Card", category: "Photography", isPacked: false, quantity: 1 },
-  { id: "48", name: "Tripod", category: "Photography", isPacked: false, quantity: 1 },
-  { id: "49", name: "Phone Tripod", category: "Photography", isPacked: false, quantity: 1 },
-  { id: "50", name: "Camera Remote", category: "Photography", isPacked: false, quantity: 1 },
+  { name: "Camera",                           category: "Photography",      quantity: 1 },
+  { name: "Lens",                             category: "Photography",      quantity: 1 },
+  { name: "Camera Battery / Charger",         category: "Photography",      quantity: 1 },
+  { name: "Memory Card",                      category: "Photography",      quantity: 1 },
+  { name: "Tripod",                           category: "Photography",      quantity: 1 },
 
   // Documents
-  { id: "51", name: "Passport", category: "Documents", isPacked: false, quantity: 1 },
-  { id: "52", name: "Visa", category: "Documents", isPacked: false, quantity: 1 },
-  { id: "53", name: "Driver's License / International License", category: "Documents", isPacked: false, quantity: 1 },
-  { id: "54", name: "ID Photo / Passport Copy", category: "Documents", isPacked: false, quantity: 1 },
-  { id: "55", name: "Accommodation Confirmation (Customs)", category: "Documents", isPacked: false, quantity: 1 },
+  { name: "Passport",                         category: "Documents",        quantity: 1 },
+  { name: "Visa",                             category: "Documents",        quantity: 1 },
+  { name: "(International) Driver's License", category: "Documents",        quantity: 1 },
+  { name: "ID Photo / Passport Copy",         category: "Documents",        quantity: 1 },
+  { name: "Accommodation Confirmation",       category: "Documents",        quantity: 1 },
+  { name: "Travel Insurance Info",            category: "Documents",        quantity: 1 },
+  { name: "Boarding Pass / Itinerary",        category: "Documents",        quantity: 1 },
+  { name: "Emergency Contacts",               category: "Documents",        quantity: 1 },
 
   // Finance
-  { id: "56", name: "Cash / Foreign Currency", category: "Finance", isPacked: false, quantity: 1 },
-  { id: "57", name: "Credit Card", category: "Finance", isPacked: false, quantity: 1 },
-  { id: "58", name: "Wallet", category: "Finance", isPacked: false, quantity: 1 },
-  { id: "59", name: "Keys", category: "Finance", isPacked: false, quantity: 1 },
+  { name: "Cash / Foreign Currency",          category: "Finance",          quantity: 1 },
+  { name: "Credit Card",                      category: "Finance",          quantity: 1 },
+  { name: "Wallet",                           category: "Finance",          quantity: 1 },
+  { name: "Keys",                             category: "Finance",          quantity: 1 },
 
   // Medicine
-  { id: "60", name: "First Aid Kit", category: "Medicine", isPacked: false, quantity: 1 },
-  { id: "61", name: "Alcohol Sanitizer", category: "Medicine", isPacked: false, quantity: 1 },
-  { id: "62", name: "Cold Medicine", category: "Medicine", isPacked: false, quantity: 1 },
-  { id: "63", name: "Pain Relief Medicine", category: "Medicine", isPacked: false, quantity: 1 },
-  { id: "64", name: "Stomach Medicine (Diarrhea / Motion Sickness)", category: "Medicine", isPacked: false, quantity: 1 },
-  { id: "65", name: "Eczema / Blister Ointment", category: "Medicine", isPacked: false, quantity: 1 },
-  { id: "66", name: "Allergy Medicine / Eye Drops", category: "Medicine", isPacked: false, quantity: 1 },
-  { id: "67", name: "Insect Repellent / White Flower Oil", category: "Medicine", isPacked: false, quantity: 1 },
-  { id: "68", name: "Medical Masks", category: "Medicine", isPacked: false, quantity: 1 },
+  { name: "First Aid Kit",                    category: "Medicine",         quantity: 1 },
+  { name: "Hand Sanitizer",                   category: "Medicine",         quantity: 1 },
+  { name: "Cold Medicine",                    category: "Medicine",         quantity: 1 },
+  { name: "Pain Relief Medicine",             category: "Medicine",         quantity: 1 },
+  { name: "Stomach Medicine",                 category: "Medicine",         quantity: 1 },
+  { name: "Allergy Medicine",                 category: "Medicine",         quantity: 1 },
+  { name: "Insect Repellent",                 category: "Medicine",         quantity: 1 },
+  { name: "Face Masks",                       category: "Medicine",         quantity: 1 },
+  { name: "Prescription Medication",          category: "Medicine",         quantity: 1 },
+  { name: "Motion Sickness Pills",            category: "Medicine",         quantity: 1 },
 
   // Food & Drink
-  { id: "69", name: "Water Bottle", category: "Food & Drink", isPacked: false, quantity: 1 },
-  { id: "70", name: "Tableware", category: "Food & Drink", isPacked: false, quantity: 1 },
-  { id: "71", name: "Lunch Box", category: "Food & Drink", isPacked: false, quantity: 1 },
-  { id: "72", name: "Cup", category: "Food & Drink", isPacked: false, quantity: 1 },
-  { id: "73", name: "Snacks", category: "Food & Drink", isPacked: false, quantity: 1 },
-  { id: "74", name: "Dry Food", category: "Food & Drink", isPacked: false, quantity: 1 },
+  { name: "Water Bottle",                     category: "Food & Drink",     quantity: 1 },
+  { name: "Tableware",                        category: "Food & Drink",     quantity: 1 },
+  { name: "Lunch Box",                        category: "Food & Drink",     quantity: 1 },
+  { name: "Cup",                              category: "Food & Drink",     quantity: 1 },
+  { name: "Snacks",                           category: "Food & Drink",     quantity: 1 },
 
   // Travel Items
-  { id: "75", name: "Phone Lanyard", category: "Travel Items", isPacked: false, quantity: 1 },
-  { id: "76", name: "Umbrella", category: "Travel Items", isPacked: false, quantity: 1 },
-  { id: "77", name: "Raincoat", category: "Travel Items", isPacked: false, quantity: 1 },
-  { id: "78", name: "Backpack Rain Cover", category: "Travel Items", isPacked: false, quantity: 1 },
-  { id: "79", name: "Neck Pillow / Eye Mask", category: "Travel Items", isPacked: false, quantity: 1 },
-  { id: "80", name: "Pen", category: "Travel Items", isPacked: false, quantity: 1 },
-  { id: "81", name: "Postage Stamps", category: "Travel Items", isPacked: false, quantity: 1 },
-  { id: "82", name: "Book (In-flight)", category: "Travel Items", isPacked: false, quantity: 1 },
-  { id: "83", name: "Luggage Strap", category: "Travel Items", isPacked: false, quantity: 1 },
+  { name: "Phone Lanyard",                    category: "Travel Items",     quantity: 1 },
+  { name: "Neck Pillow",                      category: "Travel Items",     quantity: 1 },
+  { name: "Eye Mask",                         category: "Travel Items",     quantity: 1 },
+  { name: "Pen",                              category: "Travel Items",     quantity: 1 },
+  { name: "Internet (eSIM / WiFi)",           category: "Travel Items",     quantity: 1 },
+  { name: "Power Bank",                       category: "Travel Items",     quantity: 1 },
+  { name: "Travel Plug Adapter",              category: "Travel Items",     quantity: 1 },
+  { name: "Luggage Strap",                    category: "Travel Items",     quantity: 1 },
+  { name: "Luggage Tags",                     category: "Travel Items",     quantity: 1 },
 
   // Outdoor Items
-  { id: "84", name: "Swiss Knife", category: "Outdoor Items", isPacked: false, quantity: 1 },
-  { id: "85", name: "Headlamp / Flashlight", category: "Outdoor Items", isPacked: false, quantity: 1 },
-  { id: "86", name: "Batteries", category: "Outdoor Items", isPacked: false, quantity: 1 },
-  { id: "87", name: "Internet (eSIM / SIM Tool / WiFi)", category: "Outdoor Items", isPacked: false, quantity: 1 }
+  { name: "Swiss Knife",                      category: "Outdoor Items",    quantity: 1 },
+  { name: "Headlamp / Flashlight",            category: "Outdoor Items",    quantity: 1 },
+  { name: "Batteries",                        category: "Outdoor Items",    quantity: 1 },
+  { name: "Binoculars",                       category: "Outdoor Items",    quantity: 1 },
+  { name: "Umbrella",                         category: "Outdoor Items",    quantity: 1 },
+  { name: "Raincoat",                         category: "Outdoor Items",    quantity: 1 }
 ];
