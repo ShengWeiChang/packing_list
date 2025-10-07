@@ -6,7 +6,6 @@ Description: Add category button component - triggers creation of new categories
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
 Created: 2025-09-19
-Last-Modified: 2025-09-30
 ================================================================================
 -->
 

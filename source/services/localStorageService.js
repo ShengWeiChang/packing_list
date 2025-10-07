@@ -6,7 +6,6 @@ Description: LocalStorage implementation of DataService providing persistent
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
 Created: 2025-09-19
-Last-Modified: 2025-09-30
 ================================================================================
 */
 

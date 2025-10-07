@@ -6,7 +6,6 @@ Description: Item component - displays a single packing item with inline edit
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
 Created: 2025-09-19
-Last-Modified: 2025-09-30
 ================================================================================
 -->
 

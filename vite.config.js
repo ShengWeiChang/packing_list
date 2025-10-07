@@ -5,7 +5,6 @@ Description: Vite configuration - sets up Vue plugin and path aliases for the pr
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
 Created: 2025-09-19
-Last-Modified: 2025-10-01
 ================================================================================
 */
 
