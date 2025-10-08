@@ -1,7 +1,7 @@
 /*
 ================================================================================
-File: source/models/Category.js
-Description: Category model class with validation, serialization and
+File: source/models/Checklist.js
+Description: Checklist model class with validation, serialization and
              secure ID generation.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)

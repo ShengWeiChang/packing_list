@@ -281,11 +281,6 @@ async function handleChecklistUpdate(checklist) {
   if (newlyCreatedChecklistId.value === checklist.id) {
     newlyCreatedChecklistId.value = null;
   }
-
-  // Clear the edit triggered flag if this was the checklist being edited
-  if (editTriggeredChecklistId.value === checklist.id) {
-    editTriggeredChecklistId.value = null;
-  }
 }
 
 async function handleChecklistDelete(checklistId) {

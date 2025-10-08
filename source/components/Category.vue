@@ -105,8 +105,7 @@ const props = defineProps({
   newlyCreatedItemId: {
     type: String,
     default: null
-  }
-  ,
+  },
   newlyCreatedCategoryId: {
     type: String,
     default: null

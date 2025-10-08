@@ -48,7 +48,7 @@ export const defaultItems = [
   { name: "Backpack",                         category: "Accessories",      quantity: 1 },
   { name: "Sling Bag",                        category: "Accessories",      quantity: 1 },
   { name: "Packing Cubes",                    category: "Accessories",      quantity: 1 },
-  { name: "Laundry Bag",                      category: "Travel Items",     quantity: 1 },
+  { name: "Laundry Bag",                      category: "Accessories",      quantity: 1 },
   { name: "Swimsuit",                         category: "Accessories",      quantity: 1 },
 
   // Toiletries
