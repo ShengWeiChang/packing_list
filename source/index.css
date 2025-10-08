@@ -1,0 +1,38 @@
+/*!
+================================================================================
+File: source/index.css
+Description: Global CSS styles with Tailwind directives and custom CSS
+             variables for theming.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+================================================================================
+*/
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+	/* 6-Color Theme System - CSS Variables with Fallbacks */
+	--color-text-primary: #212121;        /* dark gray */
+	--color-text-secondary: #646464;      /* lighter gray */
+	--color-theme-primary: #2F6B46;             /* deep forest green */
+	--color-theme-secondary: #D3E3DB;           /* gray-green */
+	--color-background-primary: #FFFFFF;  /* white */
+	--color-background-secondary: #F8FAFC; /* light gray */
+}
+
+body {
+	background: var(--color-background-secondary);
+	color: var(--color-text-primary);
+}
+
+/* Semantic utilities using theme variables */
+.text-primary { color: var(--color-text-primary) !important; }
+.text-secondary { color: var(--color-text-secondary) !important; }
+.text-theme-primary { color: var(--color-theme-primary) !important; }
+.text-theme-secondary { color: var(--color-theme-secondary) !important; }
+
+.bg-theme-primary { background-color: var(--color-background-primary) !important; }
+.bg-theme-secondary { background-color: var(--color-background-secondary) !important; }
