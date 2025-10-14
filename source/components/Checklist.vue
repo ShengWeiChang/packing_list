@@ -114,7 +114,7 @@ Created: 2025-09-19
         :chosen-class="'chosen-category'"
         :drag-class="'drag-category'"
         :class="[
-          'flex flex-wrap gap-2',
+          'categories-masonry',
           isDraggingCategory ? 'dragging' : ''
         ]"
         @start="onCategoryDragStart"
@@ -424,39 +424,49 @@ watch(() => props.newlyCreatedChecklistId, (newId) => {
   z-index: 1000;
 }
 
-/* Category item responsive width with gap calculation */
+/* Masonry layout using CSS columns */
+.categories-masonry {
+  column-count: 1;
+  column-gap: 0.5rem; /* gap-2 */
+}
+
+@media (min-width: 600px) {
+  .categories-masonry {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 840px) {
+  .categories-masonry {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1280px) {
+  .categories-masonry {
+    column-count: 4;
+  }
+}
+
+/* Prevent categories from breaking across columns */
 .category-item {
+  break-inside: avoid;
+  page-break-inside: avoid; /* For older browsers */
+  margin-bottom: 0.5rem; /* gap-2 */
+  display: inline-block;
   width: 100%;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (min-width: 640px) {
-  .category-item {
-    width: calc(50% - 0.25rem); /* 2 columns, accounting for gap-2 (0.5rem) */
-  }
-}
-
-@media (min-width: 768px) {
-  .category-item {
-    width: calc(33.333333% - 0.333rem); /* 3 columns */
-  }
-}
-
-@media (min-width: 1024px) {
-  .category-item {
-    width: calc(25% - 0.375rem); /* 4 columns */
-  }
-}
-
-/* Flex layout preservation during drag */
-.flex.dragging > * {
+/* Layout preservation during drag */
+.categories-masonry.dragging > * {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
               opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity;
 }
 
-/* Smooth transitions for flex items */
-.flex > * {
+/* Smooth transitions for masonry items */
+.categories-masonry > * {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

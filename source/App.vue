@@ -116,8 +116,8 @@ const SIDEBAR_COLLAPSED_KEY = 'sidebar-manually-collapsed';
 
 // Responsive breakpoints
 const BREAKPOINTS = {
-  MOBILE: 768, // md breakpoint
-  SIDEBAR_OVERLAY: 900 // width under which sidebar becomes overlay
+  MOBILE: 600, // md breakpoint
+  SIDEBAR_OVERLAY: 1000 // width under which sidebar becomes overlay
 };
 
 // ----------------------
