@@ -19,11 +19,13 @@ export class Category {
   constructor({
     id = generateSecureId('category-'),
     name = '',
-    checklistId = null
+    checklistId = null,
+    order = 0
   } = {}) {
     this.id = id;
     this.name = this.validateName(name);
     this.checklistId = checklistId;
+    this.order = Number(order) || 0;
   }
 
   /**
@@ -59,7 +61,8 @@ export class Category {
     return {
       id: this.id,
       name: this.name,
-      checklistId: this.checklistId
+      checklistId: this.checklistId,
+      order: this.order
     };
   }
 }

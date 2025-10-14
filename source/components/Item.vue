@@ -12,8 +12,9 @@ Created: 2025-09-19
 <template>
   <div
     :class="[
-      'flex items-center py-0.5 pl-2 pr-1 rounded-md transition-colors duration-200',
-      categoryCompleted ? 'bg-green-50 text-green-800' : 'bg-white hover:bg-gray-100'
+      'flex items-center py-0.5 pl-2 pr-1 rounded-md transition-all duration-200 group cursor-grab',
+      categoryCompleted ? 'bg-green-50 text-green-800' : 'bg-white hover:bg-gray-100',
+      isDragging ? 'opacity-50 shadow-lg scale-105 cursor-grabbing' : ''
     ]"
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
@@ -102,6 +103,11 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { Item } from '../models/Item';
 import OverflowMenu from './OverflowMenu.vue';
 
+// ----------------------
+// Props & Emits
+// ----------------------
+
+// Props validation
 const props = defineProps({
   item: {
     type: Object,
@@ -124,6 +130,10 @@ const props = defineProps({
   categoryCompleted: {
     type: Boolean,
     default: false
+  },
+  isDragging: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -132,6 +142,10 @@ const emit = defineEmits([
   'delete'
 ]);
 
+// ----------------------
+// States
+// ----------------------
+
 // Editing state
 const isEditing = ref(false);
 const isHovered = ref(false);
@@ -139,6 +153,35 @@ const editedName = ref('');
 const editedQuantity = ref(1);
 const editInput = ref(null);
 const quantityInput = ref(null);
+
+// ----------------------
+// Computed
+// ----------------------
+
+// Packing state
+const isItemPacked = computed({
+  get: () => {
+    return props.item.isPacked;
+  },
+  set: (newValue) => {
+    // update emitted to parent
+
+    const updatedItem = new Item({
+      id: props.item.id,
+      name: props.item.name,
+      quantity: props.item.quantity,
+      categoryId: props.item.categoryId,
+      isPacked: newValue,
+      checklistId: props.item.checklistId,
+      order: props.item.order // Preserve order to prevent reordering
+    });
+    emit('update:item', updatedItem);
+  }
+});
+
+// ----------------------
+// Editing functions
+// ----------------------
 
 // Handle edit blur - only save if focus is moving outside edit area
 function handleEditBlur(event) {
@@ -167,7 +210,7 @@ async function startEdit() {
   }
 }
 
-// Save edited name
+// Save edited item
 function saveEdit() {
   const hasNameChanged = editedName.value.trim() && editedName.value !== props.item.name;
   const hasQuantityChanged = editedQuantity.value !== props.item.quantity;
@@ -190,10 +233,18 @@ function cancelEdit() {
   editedQuantity.value = props.item.quantity;
 }
 
+// ----------------------
+// Item management
+// ----------------------
+
 // Handle delete action
 function handleDelete() {
   emit('delete');
 }
+
+// ----------------------
+// Watchers
+// ----------------------
 
 // Watch for newly created items and auto-start edit
 watch(() => props.newlyCreatedItemId, (newId) => {
@@ -204,22 +255,4 @@ watch(() => props.newlyCreatedItemId, (newId) => {
   }
 });
 
-const isItemPacked = computed({
-  get: () => {
-    return props.item.isPacked;
-  },
-  set: (newValue) => {
-    // update emitted to parent
-
-    const updatedItem = new Item({
-      id: props.item.id,
-      name: props.item.name,
-      quantity: props.item.quantity,
-      categoryId: props.item.categoryId,
-      isPacked: newValue,
-      checklistId: props.item.checklistId
-    });
-    emit('update:item', updatedItem);
-  }
-});
 </script>

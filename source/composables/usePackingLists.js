@@ -173,7 +173,7 @@ export function usePackingLists() {
       () => dataService.getCategories(selectedChecklistId.value),
       'Error getting categories'
     );
-    categories.value = result || [];
+    categories.value = (result || []).sort((a, b) => (a.order || 0) - (b.order || 0));
     return categories.value;
   }
 
@@ -223,7 +223,18 @@ export function usePackingLists() {
       () => dataService.getItems(selectedChecklistId.value),
       'Error getting items'
     );
-    items.value = result || [];
+    items.value = (result || []).sort((a, b) => {
+      // First sort by category order, then by item order within category
+      const catA = categories.value.find(c => c.id === a.categoryId);
+      const catB = categories.value.find(c => c.id === b.categoryId);
+      const catOrderA = catA ? catA.order || 0 : 0;
+      const catOrderB = catB ? catB.order || 0 : 0;
+      
+      if (catOrderA !== catOrderB) {
+        return catOrderA - catOrderB;
+      }
+      return (a.order || 0) - (b.order || 0);
+    });
     return items.value;
   }
 

@@ -86,6 +86,8 @@ Created: 2025-09-19
           @create:category="handleCategoryCreate"
           @update:category="handleCategoryUpdate"
           @delete:category="handleCategoryDelete"
+          @reorder:categories="handleCategoryReorder"
+          @move:item="handleItemMove"
         />
       </div>
       <div
@@ -105,11 +107,24 @@ import Sidebar from './components/Sidebar.vue';
 import Topbar from './components/Topbar.vue';
 import { usePackingLists } from './composables/usePackingLists';
 
-// Local key for remembering manual sidebar collapse on desktop.
-// Kept local because only App.vue uses this preference.
+// ----------------------
+// Constants
+// ----------------------
+
+// Local key for remembering manual sidebar collapse on desktop
 const SIDEBAR_COLLAPSED_KEY = 'sidebar-manually-collapsed';
 
-// Initialize composable
+// Responsive breakpoints
+const BREAKPOINTS = {
+  MOBILE: 768, // md breakpoint
+  SIDEBAR_OVERLAY: 900 // width under which sidebar becomes overlay
+};
+
+// ----------------------
+// Composable
+// ----------------------
+
+// Initialize packing lists composable
 const {
   checklists,
   categories,
@@ -121,48 +136,53 @@ const {
   updateChecklist,
   deleteChecklist,
   createCategory,
+  getCategories,
   updateCategory,
   deleteCategory,
   createItem,
+  getItems,
   updateItem,
   deleteItem
 } = usePackingLists();
 
-// Responsive breakpoints
-const BREAKPOINTS = {
-  MOBILE: 768, // md breakpoint
-  SIDEBAR_OVERLAY: 900 // width under which sidebar becomes overlay
-};
+// ----------------------
+// States
+// ----------------------
 
-// UI State
-// Renamed for clearer intent:
-// - isSidebarOpen: whether the sidebar is currently open/expanded
-// - isMobileViewport: true when viewport is mobile-sized
-// - isSmallDesktop: a narrow desktop / small-window breakpoint where the
-//   sidebar should behave as an overlay
+// UI state
 const isSidebarOpen = ref(true);
 const isMobileViewport = ref(false);
 const isSmallDesktop = ref(false);
+
+// Newly created item tracking for auto-edit
 const newlyCreatedItemId = ref(null);
 const newlyCreatedCategoryId = ref(null);
 const newlyCreatedChecklistId = ref(null);
 
-// Computed properties for template logic
+// ----------------------
+// Computed
+// ----------------------
+
+// Determine if sidebar should show as overlay
 const isOverlayVisible = computed(() =>
   (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value)) && isSidebarOpen.value
 );
 
-// Generic error handler
+// ----------------------
+// Helpers
+// ----------------------
+
+// Generic error handler for async operations
 const handleAsyncAction = async (action, ...args) => {
   try {
     return await action(...args);
   } catch (err) {
-    // Error is already handled by useCheckList, just propagate if needed
+    // Error is already handled by usePackingLists, just propagate if needed
     throw err;
   }
 };
 
-// Check if screen is mobile size
+// Check if screen is mobile size and adjust UI accordingly
 function checkScreenSize() {
   isMobileViewport.value = window.innerWidth < BREAKPOINTS.MOBILE;
   isSmallDesktop.value = window.innerWidth < BREAKPOINTS.SIDEBAR_OVERLAY;
@@ -178,12 +198,16 @@ function checkScreenSize() {
   }
 }
 
-// Handle window resize
+// ----------------------
+// UI Handlers
+// ----------------------
+
+// Handle window resize events
 function handleResize() {
   checkScreenSize();
 }
 
-// Methods
+// Toggle sidebar open/closed state
 function toggleSidebar() {
   isSidebarOpen.value = !isSidebarOpen.value;
 
@@ -198,15 +222,21 @@ function toggleSidebar() {
 }
 
 // ----------------------
-// Item handlers
+// Item Handlers
 // ----------------------
 
+// Create a new item in the specified category
 async function handleItemCreate(categoryId) {
+  // Find the max order in this category
+  const categoryItems = items.value.filter(item => item.categoryId === categoryId);
+  const maxOrder = categoryItems.length > 0 ? Math.max(...categoryItems.map(item => item.order || 0)) : -1;
+  
   const newItemData = {
     name: 'New Item',
     quantity: 1,
     categoryId: categoryId,
-    isPacked: false
+    isPacked: false,
+    order: maxOrder + 1
   };
 
   const newItem = await handleAsyncAction(createItem, newItemData);
@@ -215,6 +245,7 @@ async function handleItemCreate(categoryId) {
   }
 }
 
+// Update an existing item
 async function handleItemUpdate(item) {
   await handleAsyncAction(updateItem, item);
 
@@ -224,17 +255,50 @@ async function handleItemUpdate(item) {
   }
 }
 
+// Delete an item
 async function handleItemDelete(itemId) {
   await handleAsyncAction(deleteItem, itemId);
 }
 
+// Handle item movement between categories or reordering
+async function handleItemMove(moveData) {
+  if (moveData.type === 'move') {
+    // Item moved to different category
+    const updatedItem = {
+      ...moveData.item,
+      categoryId: moveData.newCategoryId
+    };
+    await handleAsyncAction(updateItem, updatedItem);
+    
+    // Also update the reordered items in the target category
+    if (moveData.reorderedItems && moveData.reorderedItems.length > 0) {
+      for (const item of moveData.reorderedItems) {
+        await handleAsyncAction(updateItem, item);
+      }
+    }
+  } else if (moveData.type === 'reorder') {
+    // Items reordered within same category
+    for (const item of moveData.items) {
+      await handleAsyncAction(updateItem, item);
+    }
+  }
+  
+  // Refresh items list
+  await getItems();
+}
+
 // ----------------------
-// Category handlers
+// Category Handlers
 // ----------------------
 
+// Create a new category
 async function handleCategoryCreate() {
+  // Find the highest order among all categories
+  const maxOrder = categories.value.length > 0 ? Math.max(...categories.value.map(cat => cat.order || 0)) : -1;
+  
   const newCategoryData = {
-    name: 'New Category'
+    name: 'New Category',
+    order: maxOrder + 1
   };
 
   const newCategory = await handleAsyncAction(createCategory, newCategoryData);
@@ -243,6 +307,7 @@ async function handleCategoryCreate() {
   }
 }
 
+// Update an existing category
 async function handleCategoryUpdate(category) {
   await handleAsyncAction(updateCategory, category);
 
@@ -252,46 +317,67 @@ async function handleCategoryUpdate(category) {
   }
 }
 
+// Delete a category
 async function handleCategoryDelete(categoryId) {
   await handleAsyncAction(deleteCategory, categoryId);
 }
 
+// Handle category reorder after drag-and-drop
+async function handleCategoryReorder(reorderedCategories) {
+  // Update all categories with new order
+  for (const category of reorderedCategories) {
+    await handleAsyncAction(updateCategory, category);
+  }
+  
+  // Force refresh of categories after a short delay to ensure consistency
+  setTimeout(async () => {
+    await getCategories();
+  }, 100);
+}
+
 // ----------------------
-// Checklist handlers
+// Checklist Handlers
 // ----------------------
 
+// Create a new checklist
 async function handleChecklistCreate() {
   const newChecklistData = {
-    destination: 'New Checklist',
-    startDate: new Date().toISOString().slice(0, 10),
-    endDate: new Date().toISOString().slice(0, 10)
+    name: 'My New Checklist',
   };
-
   const newChecklist = await handleAsyncAction(createChecklist, newChecklistData);
   if (newChecklist) {
-    selectedChecklistId.value = newChecklist.id;
-    newlyCreatedChecklistId.value = newChecklist.id;
+    currentChecklistId.value = newChecklist.id;
   }
 }
 
+// Update an existing checklist
 async function handleChecklistUpdate(checklist) {
   await handleAsyncAction(updateChecklist, checklist);
-
-  // Clear the newly created flag if this was the checklist being edited
-  if (newlyCreatedChecklistId.value === checklist.id) {
-    newlyCreatedChecklistId.value = null;
-  }
 }
 
+// Delete a checklist
 async function handleChecklistDelete(checklistId) {
+  if (checklists.value.length <= 1) {
+    alert('Cannot delete the last checklist');
+    return;
+  }
+
+  const confirmed = confirm('Are you sure you want to delete this checklist?');
+  if (!confirmed) return;
+
   await handleAsyncAction(deleteChecklist, checklistId);
-  // If the deleted checklist was selected, clear selection
-  if (selectedChecklistId.value === checklistId) {
-    selectedChecklistId.value = null;
+
+  if (currentChecklistId.value === checklistId) {
+    // Switch to first available checklist
+    currentChecklistId.value = checklists.value[0]?.id || null;
   }
 }
 
-// Lifecycle hooks
+// ----------------------
+// Lifecycle Hooks
+// ----------------------
+
+// Initialize app and set up responsive behavior
 onMounted(async () => {
   await initialize();
 
@@ -300,9 +386,14 @@ onMounted(async () => {
   window.addEventListener('resize', handleResize);
 });
 
+// Clean up event listeners
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
+
+// ----------------------
+// Watchers
+// ----------------------
 
 // Prevent layout shift caused by scrollbar/body resizing when overlay drawer is active
 watch([isSidebarOpen, isMobileViewport, isSmallDesktop], () => {
