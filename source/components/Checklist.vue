@@ -196,6 +196,7 @@ const props = defineProps({
   }
 });
 
+// Emits
 const emit = defineEmits([
   'update:checklist',
   'delete:checklist',
@@ -230,12 +231,12 @@ const isDraggingCategory = ref(false);
 // Computed
 // ----------------------
 
-// Sorted categories for display
+// Sorted categories for this checklist (sorted by order)
 const sortedCategories = computed(() => {
   return [...props.categories].sort((a, b) => (a.order || 0) - (b.order || 0));
 });
 
-// Writable computed for draggable v-model
+// Draggable categories (two-way binding with vuedraggable)
 const draggableCategories = computed({
   get() {
     return sortedCategories.value;
@@ -285,7 +286,7 @@ async function startEdit() {
   }
 }
 
-// Save edited values
+// Save edited checklist
 function saveEdit() {
   const hasDestinationChanged = editedDestination.value.trim() !== props.checklist.destination;
   const hasStartDateChanged = editedStartDate.value !== props.checklist.startDate;
@@ -402,6 +403,7 @@ watch(() => props.newlyCreatedChecklistId, (newId) => {
     });
   }
 });
+
 </script>
 
 <style scoped>

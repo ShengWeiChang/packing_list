@@ -28,6 +28,11 @@ Created: 2025-09-19
 import { computed } from 'vue';
 import { THEME_COLORS } from '../utils/constants';
 
+// ----------------------
+// Props & Emits
+// ----------------------
+
+// Props
 const props = defineProps({
   total: {
     type: Number,
@@ -39,16 +44,28 @@ const props = defineProps({
   }
 });
 
+// ----------------------
+// Computed
+// ----------------------
+
+// Calculate completion percentage
 const percentage = computed(() => {
   if (props.total === 0) return 0;
   return Math.round((props.completed / props.total) * 100);
 });
 
+// Display text for progress
 const text = computed(() => {
   return `${props.completed} / ${props.total}`;
 });
 
+// ----------------------
+// Constants
+// ----------------------
+
+// Theme colors
 const progressColor = THEME_COLORS.PRIMARY;
 const textColor = THEME_COLORS.TEXT_PRIMARY;
 const backgroundColor = THEME_COLORS.SECONDARY;
+
 </script>

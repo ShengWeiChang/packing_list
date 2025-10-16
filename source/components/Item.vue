@@ -107,7 +107,7 @@ import OverflowMenu from './OverflowMenu.vue';
 // Props & Emits
 // ----------------------
 
-// Props validation
+// Props
 const props = defineProps({
   item: {
     type: Object,
@@ -137,9 +137,10 @@ const props = defineProps({
   }
 });
 
+// Emits
 const emit = defineEmits([
   'update:item',
-  'delete'
+  'delete:item'
 ]);
 
 // ----------------------
@@ -239,7 +240,7 @@ function cancelEdit() {
 
 // Handle delete action
 function handleDelete() {
-  emit('delete');
+  emit('delete:item', props.item.id);
 }
 
 // ----------------------

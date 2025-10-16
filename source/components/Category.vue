@@ -52,8 +52,8 @@ Created: 2025-09-19
 
     <!-- Category Progress Bar -->
     <ProgressBar
-      :total="itemsForCategory.length"
-      :completed="itemsForCategory.filter(item => item.isPacked).length"
+      :total="sortedItems.length"
+      :completed="sortedItems.filter(item => item.isPacked).length"
       class="mb-3"
     />
 
@@ -74,8 +74,8 @@ Created: 2025-09-19
         :ghost-class="'ghost-item'"
         :chosen-class="'chosen-item'"
         :drag-class="'drag-item'"
-        @start="onDragStart"
-        @end="onDragEnd"
+        @start="onItemDragStart"
+        @end="onItemDragEnd"
         @add="onItemAdd"
         @remove="onItemRemove"
         @update="onItemUpdate"
@@ -88,7 +88,7 @@ Created: 2025-09-19
               :category-completed="isCompleted"
               :is-dragging="draggingItemId === item.id"
               @update:item="$emit('update:item', $event)"
-              @delete="$emit('delete:item', item.id)"
+              @delete:item="$emit('delete:item', $event)"
             />
           </div>
         </template>
@@ -116,7 +116,7 @@ import ProgressBar from './ProgressBar.vue';
 // Props & Emits
 // ----------------------
 
-// Props validation
+// Props
 const props = defineProps({
   category: {
     type: Object,
@@ -143,6 +143,7 @@ const props = defineProps({
   }
 });
 
+// Emits
 const emit = defineEmits([
   'update:item',
   'delete:item',
@@ -168,23 +169,25 @@ const draggingItemId = ref(null);
 // Computed
 // ----------------------
 
-const itemsForCategory = computed(() => {
+// Sorted items for this category (filtered from all items, then sorted by order)
+const sortedItems = computed(() => {
   const filteredItems = props.items.filter(item => item.categoryId === props.category.id);
   // Sort by order field to maintain correct sequence
   return filteredItems.sort((a, b) => (a.order || 0) - (b.order || 0));
 });
 
+// Draggable items (two-way binding with vuedraggable)
 const draggableItems = computed({
   get() {
-    return itemsForCategory.value;
+    return sortedItems.value;
   },
   set(newItems) {
     // When vuedraggable updates the array, emit the reorder event
     // Check if this is a cross-category move (new item added)
-    const currentItemIds = new Set(itemsForCategory.value.map(i => i.id));
+    const currentItemIds = new Set(sortedItems.value.map(i => i.id));
     const newItemIds = new Set(newItems.map(i => i.id));
     const addedItems = newItems.filter(item => !currentItemIds.has(item.id));
-    const removedItems = itemsForCategory.value.filter(item => !newItemIds.has(item.id));
+    const removedItems = sortedItems.value.filter(item => !newItemIds.has(item.id));
     
     if (addedItems.length > 0) {
       // Don't handle cross-category moves here, let onItemAdd handle them
@@ -212,7 +215,7 @@ const draggableItems = computed({
 
 // Completing state
 const isCompleted = computed(() => {
-  const items = itemsForCategory.value;
+  const items = sortedItems.value;
   if (!items.length) return false;
   return items.every(i => i.isPacked);
 });
@@ -233,7 +236,7 @@ async function startEdit() {
   }
 }
 
-// Save edited values
+// Save edited category
 function saveEdit() {
   const hasNameChanged = editedName.value.trim() && editedName.value !== props.category.name;
 
@@ -267,7 +270,7 @@ function handleDelete() {
 // ----------------------
 
 // Track which item is being dragged
-function onDragStart(evt) {
+function onItemDragStart(evt) {
   const item = evt.item.querySelector('[data-item-id]');
   if (item) {
     draggingItemId.value = item.dataset.itemId;
@@ -275,7 +278,7 @@ function onDragStart(evt) {
 }
 
 // Clean up drag state when drag ends
-function onDragEnd(evt) {
+function onItemDragEnd(evt) {
   draggingItemId.value = null;
 }
 
@@ -295,7 +298,7 @@ function onItemAdd(evt) {
     if (item && item.categoryId !== props.category.id) {
       
       // Get current items in this category (excluding the newly added item)
-      const currentCategoryItems = itemsForCategory.value.filter(i => i.id !== itemId);
+      const currentCategoryItems = sortedItems.value.filter(i => i.id !== itemId);
       
       // Create new item with updated category and order
       const updatedItem = {
@@ -332,7 +335,7 @@ function onItemAdd(evt) {
 function onItemRemove(evt) {
   // After item removal, reorder the remaining items
   setTimeout(() => {
-    const remainingItems = itemsForCategory.value.map((item, index) => ({
+    const remainingItems = sortedItems.value.map((item, index) => ({
       ...item,
       order: index
     }));
@@ -359,6 +362,7 @@ watch(() => props.newlyCreatedCategoryId, (newId) => {
     });
   }
 });
+
 </script>
 
 <style scoped>

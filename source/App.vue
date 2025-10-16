@@ -404,6 +404,7 @@ watch([isSidebarOpen, isMobileViewport, isSmallDesktop], () => {
     document.body.style.overflow = '';
   }
 });
+
 </script>
 
 <style>

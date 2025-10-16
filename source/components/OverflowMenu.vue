@@ -56,6 +56,11 @@ Created: 2025-09-19
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
+// ----------------------
+// Props & Emits
+// ----------------------
+
+// Props
 const props = defineProps({
   itemId: {
     type: String,
@@ -81,11 +86,25 @@ const props = defineProps({
   }
 });
 
+// Emits
 const emit = defineEmits(['edit', 'delete']);
 
-const showMenu = ref(false);
+// ----------------------
+// States
+// ----------------------
 
-// Computed classes based on props
+// Menu state
+const showMenu = ref(false);
+const dropdownStyle = ref({});
+const dropdownRef = ref(null);
+const buttonRef = ref(null);
+const root = ref(null);
+
+// ----------------------
+// Computed
+// ----------------------
+
+// Button visibility based on props and menu state
 const buttonClass = computed(() => {
   const baseClass = 'p-1 flex items-center justify-center text-secondary rounded-md transition-opacity duration-200 hover:bg-gray-200 hover:text-primary';
 
@@ -103,28 +122,30 @@ const buttonClass = computed(() => {
   return `${baseClass} opacity-0`;
 });
 
-// Dropdown styling: let width size to content, cap max width
+// Dropdown styling
 const dropdownClass = computed(() =>
   `mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-auto max-w-xs`
 );
 
+// SVG icon size based on menu type
 const svgClass = computed(() => {
-  // category uses larger icon
   return props.menuType === 'item' ? 'w-5 h-5' : 'w-6 h-6';
 });
 
-// Dropdown positioning
-const dropdownStyle = ref({});
-const dropdownRef = ref(null);
-const buttonRef = ref(null);
+// ----------------------
+// Menu positioning
+// ----------------------
+
+// Position dropdown relative to button
 function positionDropdown() {
   if (!buttonRef.value || !dropdownRef.value) return;
   const btnRect = buttonRef.value.getBoundingClientRect();
   const ddRect = dropdownRef.value.getBoundingClientRect();
-  // Align dropdown right edge with the button's right edge so it appears directly under the icon
+  
+  // Align dropdown right edge with the button's right edge
   let left = btnRect.right - ddRect.width;
 
-  // clamp within viewport with 8px padding
+  // Clamp within viewport with 8px padding
   const minPadding = 8;
   const maxLeft = window.innerWidth - ddRect.width - minPadding;
   if (left < minPadding) left = minPadding;
@@ -140,10 +161,15 @@ function positionDropdown() {
   };
 }
 
+// ----------------------
+// Menu actions
+// ----------------------
+
 // Toggle dropdown menu
 function toggleMenu() {
   const willOpen = !showMenu.value;
   showMenu.value = willOpen;
+  
   if (willOpen) {
     // First position dropdown off-screen to measure, then position correctly
     dropdownStyle.value = { position: 'fixed', left: '-9999px', top: '-9999px', zIndex: 9999 };
@@ -177,13 +203,16 @@ function handleDelete() {
   emit('delete');
 }
 
+// ----------------------
+// Event handlers
+// ----------------------
+
 // Close menu when clicking outside
-const root = ref(null);
 function closeMenu(event) {
-  // If click is outside both the button root and the fixed dropdown, close the menu
   const target = event.target;
   const clickedInsideRoot = root.value && root.value.contains(target);
   const clickedInsideDropdown = dropdownRef.value && dropdownRef.value.contains(target);
+  
   if (!clickedInsideRoot && !clickedInsideDropdown) {
     showMenu.value = false;
   }
@@ -194,25 +223,32 @@ function closeMenuOnScroll() {
   showMenu.value = false;
 }
 
-// Close when another menu opens (any type)
+// Close when another menu opens
 function closeWhenOtherOpens(e) {
   const detail = e?.detail || {};
   const otherId = detail.id;
+  
   if (otherId && otherId !== props.itemId) {
     showMenu.value = false;
   }
 }
 
-// Add event listeners
+// ----------------------
+// Lifecycle Hooks
+// ----------------------
+
+// Set up event listeners
 onMounted(() => {
   document.addEventListener('click', closeMenu);
   window.addEventListener('scroll', closeMenuOnScroll, true);
   window.addEventListener('overflow-menu-open', closeWhenOtherOpens);
 });
 
+// Clean up event listeners
 onUnmounted(() => {
   document.removeEventListener('click', closeMenu);
   window.removeEventListener('scroll', closeMenuOnScroll, true);
   window.removeEventListener('overflow-menu-open', closeWhenOtherOpens);
 });
+
 </script>
