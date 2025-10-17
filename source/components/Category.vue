@@ -183,28 +183,25 @@ const draggableItems = computed({
   },
   set(newItems) {
     // When vuedraggable updates the array, emit the reorder event
-    // Check if this is a cross-category move (new item added)
+    // Check if this is a cross-category move (new item added or removed)
     const currentItemIds = new Set(sortedItems.value.map(i => i.id));
     const newItemIds = new Set(newItems.map(i => i.id));
     const addedItems = newItems.filter(item => !currentItemIds.has(item.id));
     const removedItems = sortedItems.value.filter(item => !newItemIds.has(item.id));
-    
-    if (addedItems.length > 0) {
-      // Don't handle cross-category moves here, let onItemAdd handle them
+
+    const isCrossCategoryMove = addedItems.length > 0 || removedItems.length > 0;
+
+    if (isCrossCategoryMove) {
+      // Don't handle cross-category moves here, let onItemAdd/onItemRemove handle them
       return;
     }
-    
-    if (removedItems.length > 0) {
-      // Don't handle cross-category moves here, let onItemRemove handle them
-      return;
-    }
-    
+
     // This is a same-category reorder
     const itemsWithNewOrder = newItems.map((item, index) => ({
       ...item,
       order: index
     }));
-    
+
     emit('move:item', {
       items: itemsWithNewOrder,
       categoryId: props.category.id,
@@ -332,22 +329,23 @@ function onItemAdd(evt) {
 }
 
 // Handle item moved from this category to another category
-function onItemRemove(evt) {
-  // After item removal, reorder the remaining items
-  setTimeout(() => {
-    const remainingItems = sortedItems.value.map((item, index) => ({
-      ...item,
-      order: index
-    }));
-    
-    if (remainingItems.length > 0) {
-      emit('move:item', {
-        items: remainingItems,
-        categoryId: props.category.id,
-        type: 'reorder'
-      });
-    }
-  }, 10);
+async function onItemRemove(evt) {
+  // Wait for Vue to update the DOM and computed properties after the removal
+  await nextTick();
+  
+  // Reorder the remaining items to maintain continuous order indices
+  const remainingItems = sortedItems.value.map((item, index) => ({
+    ...item,
+    order: index
+  }));
+  
+  if (remainingItems.length > 0) {
+    emit('move:item', {
+      items: remainingItems,
+      categoryId: props.category.id,
+      type: 'reorder'
+    });
+  }
 }
 
 // ----------------------

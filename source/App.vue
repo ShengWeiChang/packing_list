@@ -329,10 +329,8 @@ async function handleCategoryReorder(reorderedCategories) {
     await handleAsyncAction(updateCategory, category);
   }
   
-  // Force refresh of categories after a short delay to ensure consistency
-  setTimeout(async () => {
-    await getCategories();
-  }, 100);
+  // Refresh categories after all updates to ensure consistency
+  await getCategories();
 }
 
 // ----------------------
