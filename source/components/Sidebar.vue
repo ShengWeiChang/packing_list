@@ -123,6 +123,11 @@ Created: 2025-09-19
 </template>
 
 <script setup>
+// ----------------------
+// Props & Emits
+// ----------------------
+
+// Props
 defineProps({
   isExpanded: {
     type: Boolean,
@@ -146,5 +151,7 @@ defineProps({
   }
 });
 
+// Emits
 defineEmits(['toggle-sidebar', 'create-checklist', 'select-checklist']);
+
 </script>

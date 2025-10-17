@@ -24,5 +24,11 @@ Created: 2025-09-19
 </template>
 
 <script setup>
+// ----------------------
+// Props & Emits
+// ----------------------
+
+// Emits
 defineEmits(['click']);
+
 </script>

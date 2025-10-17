@@ -34,11 +34,26 @@ Created: 2025-09-19
 <script setup>
 import { ref } from 'vue';
 
+// ----------------------
+// Props & Emits
+// ----------------------
+
+// Props
 const props = defineProps({
-  categoryCompleted: { type: Boolean, default: false }
+  categoryCompleted: { 
+    type: Boolean, 
+    default: false 
+  }
 });
 
+// Emits
 defineEmits(['click']);
 
+// ----------------------
+// States
+// ----------------------
+
+// Hover state
 const isHovered = ref(false);
+
 </script>

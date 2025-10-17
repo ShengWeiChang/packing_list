@@ -36,6 +36,11 @@ Created: 2025-09-19
 </template>
 
 <script setup>
+// ----------------------
+// Props & Emits
+// ----------------------
+
+// Props
 const props = defineProps({
   title: {
     type: String,
@@ -43,5 +48,7 @@ const props = defineProps({
   }
 });
 
+// Emits
 defineEmits(['toggle', 'new']);
+
 </script>

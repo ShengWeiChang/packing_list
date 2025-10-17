@@ -22,7 +22,8 @@ export class Item {
     quantity = 1,
     categoryId = null,
     isPacked = false,
-    checklistId = null
+    checklistId = null,
+    order = 0
   } = {}) {
     this.id = id;
     this.name = this.validateName(name);
@@ -30,6 +31,7 @@ export class Item {
     this.categoryId = categoryId;
     this.isPacked = Boolean(isPacked);
     this.checklistId = checklistId;
+    this.order = Number(order) || 0;
   }
 
   /**
@@ -88,7 +90,8 @@ export class Item {
       quantity: this.quantity,
       categoryId: this.categoryId,
       isPacked: this.isPacked,
-      checklistId: this.checklistId
+      checklistId: this.checklistId,
+      order: this.order
     };
   }
 

@@ -93,7 +93,7 @@ export class LocalStorageService extends DataService {
     }
   }
 
-  /**
+    /**
    * Create default categories and items for a new checklist
    * @param {string} checklistId - The checklist ID
    * @returns {Object} Object containing { categories: Array, items: Array }
@@ -102,20 +102,25 @@ export class LocalStorageService extends DataService {
     // Extract unique category names from default items
     const categoryNames = [...new Set(defaultItems.map(item => item.category))];
     
-    // Create Category objects
-    const categories = categoryNames.map(name => new Category({ name, checklistId }));
+    // Create Category objects with order
+    const categories = categoryNames.map((name, index) => new Category({ 
+      name, 
+      checklistId,
+      order: index 
+    }));
     
     // Create a mapping from category name to category ID
     const categoryMap = Object.fromEntries(categories.map(cat => [cat.name, cat.id]));
     
-    // Create Item objects mapped to the correct categories
-    const items = defaultItems.map(item => new Item({
+    // Create Item objects mapped to the correct categories with order
+    const items = defaultItems.map((item, index) => new Item({
       id: generateSecureId('item-'),
       name: item.name,
       quantity: item.quantity,
       categoryId: categoryMap[item.category],
       isPacked: false,
-      checklistId: checklistId
+      checklistId: checklistId,
+      order: index
     }));
     
     return { categories, items };

@@ -97,33 +97,70 @@ Created: 2025-09-19
     </div>
 
     <!-- Categories Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-      <Category
-        v-for="category in categories"
-        :key="category.id"
-        :category="category"
-        :items="items"
-        :newly-created-item-id="newlyCreatedItemId"
-        :newly-created-category-id="newlyCreatedCategoryId"
-        @update:item="$emit('update:item', $event)"
-        @delete:item="$emit('delete:item', $event)"
-        @create:item="$emit('create:item', $event)"
-        @update:category="$emit('update:category', $event)"
-        @delete:category="$emit('delete:category', $event)"
-      />
+    <div>
+      <draggable
+        v-model="draggableCategories"
+        :group="{ 
+          name: 'categories', 
+          pull: true, 
+          put: function(to, from, dragEl, evt) {
+            // Only allow categories to be dropped in the category container
+            return from.options.group.name === 'categories';
+          }
+        }"
+        item-key="id"
+        :animation="200"
+        :ghost-class="'ghost-category'"
+        :chosen-class="'chosen-category'"
+        :drag-class="'drag-category'"
+        :class="[
+          'categories-masonry',
+          isDraggingCategory ? 'dragging' : ''
+        ]"
+        @start="onCategoryDragStart"
+        @end="onCategoryDragEnd"
+        @update="onCategoryUpdate"
+      >
+        <template #item="{ element: category }">
+          <div class="category-item">
+            <Category
+              :key="category.id"
+              :data-category-id="category.id"
+              :category="category"
+              :items="items"
+              :newly-created-item-id="newlyCreatedItemId"
+              :newly-created-category-id="newlyCreatedCategoryId"
+              @update:item="$emit('update:item', $event)"
+              @delete:item="$emit('delete:item', $event)"
+              @create:item="$emit('create:item', $event)"
+              @update:category="$emit('update:category', $event)"
+              @delete:category="$emit('delete:category', $event)"
+              @move:item="handleItemMove"
+            />
+          </div>
+        </template>
+      </draggable>
 
-      <AddCategoryButton @click="$emit('create:category')" />
+      <div class="category-item">
+        <AddCategoryButton @click="$emit('create:category')" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { nextTick, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
+import draggable from 'vuedraggable';
 import AddCategoryButton from './AddCategoryButton.vue';
 import Category from './Category.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import ProgressBar from './ProgressBar.vue';
 
+// ----------------------
+// Props & Emits
+// ----------------------
+
+// Props validation
 const props = defineProps({
   checklist: {
     type: Object,
@@ -159,6 +196,7 @@ const props = defineProps({
   }
 });
 
+// Emits
 const emit = defineEmits([
   'update:checklist',
   'delete:checklist',
@@ -167,8 +205,14 @@ const emit = defineEmits([
   'create:item',
   'update:category',
   'delete:category',
-  'create:category'
+  'create:category',
+  'reorder:categories',
+  'move:item'
 ]);
+
+// ----------------------
+// States
+// ----------------------
 
 // Editing state
 const isEditing = ref(false);
@@ -179,6 +223,39 @@ const destinationInput = ref(null);
 const startDateInput = ref(null);
 const endDateInput = ref(null);
 
+// Drag state
+const draggingCategoryId = ref(null);
+const isDraggingCategory = ref(false);
+
+// ----------------------
+// Computed
+// ----------------------
+
+// Sorted categories for this checklist (sorted by order)
+const sortedCategories = computed(() => {
+  return [...props.categories].sort((a, b) => (a.order || 0) - (b.order || 0));
+});
+
+// Draggable categories (two-way binding with vuedraggable)
+const draggableCategories = computed({
+  get() {
+    return sortedCategories.value;
+  },
+  set(newCategories) {
+    // When vuedraggable updates the array, emit the reorder event
+    const categoriesWithNewOrder = newCategories.map((category, index) => ({
+      ...category,
+      order: index
+    }));
+    
+    emit('reorder:categories', categoriesWithNewOrder);
+  }
+});
+
+// ----------------------
+// Editing functions
+// ----------------------
+
 // Handle edit blur - only save if focus is moving outside edit area
 function handleEditBlur(event) {
   // Use a small timeout to allow focus to move to the other input
@@ -186,8 +263,8 @@ function handleEditBlur(event) {
     // Check if focus is still within editing elements
     const activeElement = document.activeElement;
     const isStillEditing = activeElement === destinationInput.value ||
-                          activeElement === startDateInput.value ||
-                          activeElement === endDateInput.value;
+                           activeElement === startDateInput.value ||
+                           activeElement === endDateInput.value;
 
     if (!isStillEditing && isEditing.value) {
       saveEdit();
@@ -235,20 +312,49 @@ function cancelEdit() {
   editedEndDate.value = props.checklist.endDate;
 }
 
+// ----------------------
+// Checklist management
+// ----------------------
+
 // Handle delete action
 function handleDelete() {
   emit('delete:checklist', props.checklist.id);
 }
 
-// Watch for newly created checklists and auto-start edit
-watch(() => props.newlyCreatedChecklistId, (newId) => {
-  if (newId === props.checklist.id) {
-    nextTick(() => {
-      startEdit();
-    });
-  }
-});
+// ----------------------
+// Drag and drop handlers (vuedraggable events)
+// ----------------------
 
+// Track which category is being dragged
+function onCategoryDragStart(evt) {
+  const categoryElement = evt.item.querySelector('[data-category-id]') || evt.item;
+  if (categoryElement.dataset.categoryId) {
+    draggingCategoryId.value = categoryElement.dataset.categoryId;
+  }
+  isDraggingCategory.value = true;
+}
+
+// Clean up drag state when drag ends
+function onCategoryDragEnd(evt) {
+  draggingCategoryId.value = null;
+  isDraggingCategory.value = false;
+}
+
+// Handle category reorder (handled by draggableCategories setter instead)
+function onCategoryUpdate(evt) {
+  // This event is now handled by the draggableCategories setter
+}
+
+// Handle item movement between categories
+function handleItemMove(moveData) {
+  emit('move:item', moveData);
+}
+
+// ----------------------
+// Helpers
+// ----------------------
+
+// Format date range for display
 function formatDateRange(startDate, endDate) {
   // Parse YYYY-MM-DD strings into local Date objects to avoid timezone shifts
   function parseLocalDate(dateStr) {
@@ -284,4 +390,99 @@ function formatDateRange(startDate, endDate) {
     year: 'numeric'
   })}`;
 }
+
+// ----------------------
+// Watchers
+// ----------------------
+
+// Watch for newly created checklists and auto-start edit
+watch(() => props.newlyCreatedChecklistId, (newId) => {
+  if (newId === props.checklist.id) {
+    nextTick(() => {
+      startEdit();
+    });
+  }
+});
+
 </script>
+
+<style scoped>
+/* Category drag and drop styles */
+.ghost-category {
+  opacity: 0.3;
+  background: #f3f4f6;
+  border: 2px dashed #9ca3af;
+  border-radius: 0.75rem;
+}
+
+.chosen-category {
+  cursor: grabbing !important;
+}
+
+.drag-category {
+  opacity: 0.5;
+  transform: scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  z-index: 1000;
+}
+
+/* Masonry layout using CSS columns */
+.categories-masonry {
+  column-count: 1;
+  column-gap: 0.5rem; /* gap-2 */
+}
+
+@media (min-width: 600px) {
+  .categories-masonry {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 840px) {
+  .categories-masonry {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1280px) {
+  .categories-masonry {
+    column-count: 4;
+  }
+}
+
+/* Prevent categories from breaking across columns */
+.category-item {
+  break-inside: avoid;
+  page-break-inside: avoid; /* For older browsers */
+  margin-bottom: 0.5rem; /* gap-2 */
+  display: inline-block;
+  width: 100%;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Layout preservation during drag */
+.categories-masonry.dragging > * {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+/* Smooth transitions for masonry items */
+.categories-masonry > * {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Success animation */
+@keyframes flash-success {
+  0%, 100% { 
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  50% { 
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3), 0 2px 4px -1px rgba(16, 185, 129, 0.2);
+  }
+}
+
+.flash-success {
+  animation: flash-success 0.6s ease-in-out;
+}
+</style>
