@@ -9,7 +9,7 @@ Created: 2025-09-19
 ================================================================================
 */
 
-import { defaultItems } from '../data/defaultItems';
+import { getDefaultItems } from '../data/defaultItems';
 import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';
 import { Item } from '../models/Item';
@@ -99,6 +99,10 @@ export class LocalStorageService extends DataService {
    * @returns {Object} Object containing { categories: Array, items: Array }
    */
   _createDefaultData(checklistId) {
+    // Get user's locale preference for default items
+    const userLocale = localStorage.getItem('user-locale') || 'en';
+    const defaultItems = getDefaultItems(userLocale);
+    
     // Extract unique category names from default items
     const categoryNames = [...new Set(defaultItems.map(item => item.category))];
     

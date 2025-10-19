@@ -99,6 +99,10 @@ Created: 2025-09-19
 </template>
 
 <script setup>
+// ----------------------
+// Imports
+// ----------------------
+
 import { computed, nextTick, ref, watch } from 'vue';
 import { Item } from '../models/Item';
 import OverflowMenu from './OverflowMenu.vue';

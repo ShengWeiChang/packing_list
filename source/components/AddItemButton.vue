@@ -27,11 +27,15 @@ Created: 2025-09-19
     </span>
 
     <!-- Label aligns with item name area -->
-    <span class="flex-grow text-base text-left" :class="isHovered ? 'text-primary' : 'text-secondary'">New Item</span>
+    <span class="flex-grow text-base text-left" :class="isHovered ? 'text-primary' : 'text-secondary'">{{ $t('item.newItem') }}</span>
   </button>
 </template>
 
 <script setup>
+// ----------------------
+// Imports
+// ----------------------
+
 import { ref } from 'vue';
 
 // ----------------------

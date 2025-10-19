@@ -27,14 +27,14 @@ Created: 2025-09-19
               @keyup.escape="cancelEdit"
               ref="destinationInput"
               class="w-full text-2xl md:text-3xl font-bold text-primary bg-transparent border-b-2 border-blue-300 focus:outline-none focus:border-blue-500 min-w-0"
-              placeholder="Destination"
+              :placeholder="$t('checklist.destination')"
             />
             <h2
               v-else
               class="text-2xl md:text-3xl font-bold text-primary cursor-pointer hover:bg-gray-50 px-1 py-1 rounded truncate"
               @click="startEdit"
             >
-              {{ checklist.destination || 'Untitled Checklist' }}
+              {{ checklist.destination || $t('checklist.untitled') }}
             </h2>
           </div>
 
@@ -149,12 +149,23 @@ Created: 2025-09-19
 </template>
 
 <script setup>
+// ----------------------
+// Imports
+// ----------------------
+
 import { computed, nextTick, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 import AddCategoryButton from './AddCategoryButton.vue';
 import Category from './Category.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import ProgressBar from './ProgressBar.vue';
+
+// ----------------------
+// Internationalization (i18n)
+// ----------------------
+
+const { t } = useI18n();
 
 // ----------------------
 // Props & Emits
@@ -295,7 +306,7 @@ function saveEdit() {
   if (hasDestinationChanged || hasStartDateChanged || hasEndDateChanged) {
     const updatedChecklist = {
       ...props.checklist,
-      destination: editedDestination.value.trim() || 'Untitled Checklist',
+      destination: editedDestination.value.trim() || t('checklist.untitled'),
       startDate: editedStartDate.value,
       endDate: editedEndDate.value
     };

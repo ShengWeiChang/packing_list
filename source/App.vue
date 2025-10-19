@@ -94,18 +94,29 @@ Created: 2025-09-19
         v-else
         class="text-center text-secondary mt-20"
       >
-        Please create a new checklist first.
+        {{ $t('checklist.pleaseCreate') }}
       </div>
     </main>
   </div>
 </template>
 
 <script setup>
+// ----------------------
+// Imports
+// ----------------------
+
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ChecklistComponent from './components/Checklist.vue';
 import Sidebar from './components/Sidebar.vue';
 import Topbar from './components/Topbar.vue';
 import { usePackingLists } from './composables/usePackingLists';
+
+// ----------------------
+// Internationalization (i18n)
+// ----------------------
+
+const { t } = useI18n();
 
 // ----------------------
 // Constants
@@ -121,7 +132,7 @@ const BREAKPOINTS = {
 };
 
 // ----------------------
-// Composable
+// Composables
 // ----------------------
 
 // Initialize packing lists composable
@@ -232,7 +243,7 @@ async function handleItemCreate(categoryId) {
   const maxOrder = categoryItems.length > 0 ? Math.max(...categoryItems.map(item => item.order || 0)) : -1;
   
   const newItemData = {
-    name: 'New Item',
+    name: t('item.defaultName'),
     quantity: 1,
     categoryId: categoryId,
     isPacked: false,
@@ -297,7 +308,7 @@ async function handleCategoryCreate() {
   const maxOrder = categories.value.length > 0 ? Math.max(...categories.value.map(cat => cat.order || 0)) : -1;
   
   const newCategoryData = {
-    name: 'New Category',
+    name: t('category.defaultName'),
     order: maxOrder + 1
   };
 
@@ -340,11 +351,11 @@ async function handleCategoryReorder(reorderedCategories) {
 // Create a new checklist
 async function handleChecklistCreate() {
   const newChecklistData = {
-    name: 'My New Checklist',
+    name: t('checklist.defaultName'),
   };
   const newChecklist = await handleAsyncAction(createChecklist, newChecklistData);
   if (newChecklist) {
-    currentChecklistId.value = newChecklist.id;
+    newlyCreatedChecklistId.value = newChecklist.id;
   }
 }
 
@@ -356,18 +367,18 @@ async function handleChecklistUpdate(checklist) {
 // Delete a checklist
 async function handleChecklistDelete(checklistId) {
   if (checklists.value.length <= 1) {
-    alert('Cannot delete the last checklist');
+    alert(t('checklist.cannotDeleteLast'));
     return;
   }
 
-  const confirmed = confirm('Are you sure you want to delete this checklist?');
+  const confirmed = confirm(t('checklist.deleteConfirm'));
   if (!confirmed) return;
 
   await handleAsyncAction(deleteChecklist, checklistId);
 
-  if (currentChecklistId.value === checklistId) {
+  if (selectedChecklistId.value === checklistId) {
     // Switch to first available checklist
-    currentChecklistId.value = checklists.value[0]?.id || null;
+    selectedChecklistId.value = checklists.value[0]?.id || null;
   }
 }
 

@@ -104,6 +104,10 @@ Created: 2025-09-19
 </template>
 
 <script setup>
+// ----------------------
+// Imports
+// ----------------------
+
 import { computed, nextTick, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
 import { Category } from '../models/Category';
