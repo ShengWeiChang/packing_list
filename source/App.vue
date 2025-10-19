@@ -10,10 +10,12 @@ Created: 2025-09-19
 -->
 
 <template>
-  <div :class="[
-    'min-h-screen text-slate-800',
-    isMobileViewport ? 'flex flex-col' : 'flex'
-  ]">
+  <div
+    :class="[
+      'min-h-screen text-slate-800',
+      isMobileViewport ? 'flex flex-col' : 'flex'
+    ]"
+  >
     <!-- Overlay for narrow screens when sidebar is open -->
     <div
       v-if="(isMobileViewport || (isSmallDesktop && isSidebarOpen)) && isSidebarOpen"
@@ -65,9 +67,10 @@ Created: 2025-09-19
     <!-- Main Content -->
     <main
       :class="[
-        'p-4 md:p-6 overflow-y-auto bg-gray-50 min-w-0 transition-filter duration-200',
-        isMobileViewport ? 'flex-1' : 'flex-1',
-        { 'filter blur-sm pointer-events-none': (isSidebarOpen && (isMobileViewport || isSmallDesktop)) }
+        'p-4 md:p-6 overflow-y-auto bg-gray-50 min-w-0 transition-filter duration-200 flex-1',
+        {
+          'filter blur-sm pointer-events-none': (isSidebarOpen && (isMobileViewport || isSmallDesktop))
+        }
       ]"
     >
       <div v-if="selectedChecklist">

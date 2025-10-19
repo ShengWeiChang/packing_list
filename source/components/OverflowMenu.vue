@@ -10,14 +10,19 @@ Created: 2025-09-19
 -->
 
 <template>
-  <div class="relative" ref="root">
+  <div ref="root" class="relative">
     <button
-      type="button"
       ref="buttonRef"
-      @click.stop="toggleMenu"
+      type="button"
       :class="buttonClass"
+      @click.stop="toggleMenu"
     >
-      <svg :class="svgClass" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <svg
+        :class="svgClass"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
         <circle cx="6" cy="12" r="1.5" />
         <circle cx="12" cy="12" r="1.5" />
         <circle cx="18" cy="12" r="1.5" />
@@ -32,20 +37,41 @@ Created: 2025-09-19
       :style="dropdownStyle"
     >
       <button
-        @click="handleEdit"
         class="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-gray-100"
+        @click="handleEdit"
       >
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L15.232 5.232z"></path>
+        <svg
+          class="w-4 h-4 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L15.232 5.232z"
+          />
         </svg>
         {{ $t('common.edit') }}
       </button>
+      
       <button
-        @click="handleDelete"
         class="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+        @click="handleDelete"
       >
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+        <svg
+          class="w-4 h-4 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+          />
         </svg>
         {{ $t('common.delete') }}
       </button>
