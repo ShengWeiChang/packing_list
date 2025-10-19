@@ -146,6 +146,24 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Desktop refresh: `Sidebar` collapse state reflects `localStorage` value.
   - Masonry columns adjust at breakpoints; category cards don’t break across columns.
 
+#### Internationalization (i18n)
+- Purpose: Provide a multi-language interface so users can switch languages with immediate effect, and persist their preference.
+- Key features:
+  - Language switcher: Located in the Sidebar as a globe icon button with a dropdown menu.
+  - Supported languages: English (`en`), Traditional Chinese (`zh-TW`).
+  - Initial detection and fallback: Prefer the saved localStorage setting first; otherwise infer from the browser’s language; default fallback is English (`en`).
+  - Traditional Chinese variants mapping: Common variants (`zh`, `zh-Hant`, `zh-TW`, `zh-HK`, `zh-MO`) are normalized to `zh-TW`.
+  - Accessibility strings: Assistive texts like button `aria-label`/`title` switch with the current locale as well.
+  - String fallback: Missing keys fall back to English via `fallbackLocale: 'en'`.
+- Flow:
+  - User clicks the language button in the Sidebar and selects EN / Traditional Chinese; UI text updates immediately and the preference is stored (localStorage key: `user-locale`).
+- Validation:
+  - Interaction: After switching language from the Sidebar, buttons, titles, menus, and `aria-label/title` update immediately.
+  - Persistence: After a refresh, the previously selected language remains in effect (read from localStorage `user-locale`).
+  - Detection: With no prior preference, infer from the browser language; non-`zh` series defaults to English; `zh/zh-Hant/zh-TW/zh-HK/zh-MO` are mapped to `zh-TW`.
+  - Fallback: Temporarily remove a translation key to verify the app falls back to English (ensuring `fallbackLocale` takes effect).
+
+
 #### Drag and Drop
 - Purpose: Quickly reorder and reorganize categories/items by dragging, keeping orders consistent with minimal effort.
 - Key features:
