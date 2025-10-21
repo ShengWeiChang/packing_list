@@ -146,6 +146,24 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Desktop refresh: `Sidebar` collapse state reflects `localStorage` value.
   - Masonry columns adjust at breakpoints; category cards don’t break across columns.
 
+#### Internationalization (i18n)
+- Purpose: Provide a multi-language interface so users can switch languages with immediate effect, and persist their preference.
+- Key features:
+  - Language switcher: Located in the Sidebar as a globe icon button with a dropdown menu.
+  - Supported languages: English (`en`), Traditional Chinese (`zh-TW`).
+  - Initial detection and fallback: Prefer the saved localStorage setting first; otherwise infer from the browser’s language; default fallback is English (`en`).
+  - Traditional Chinese variants mapping: Common variants (`zh`, `zh-Hant`, `zh-TW`, `zh-HK`, `zh-MO`) are normalized to `zh-TW`.
+  - Accessibility strings: Assistive texts like button `aria-label`/`title` switch with the current locale as well.
+  - String fallback: Missing keys fall back to English via `fallbackLocale: 'en'`.
+- Flow:
+  - User clicks the language button in the Sidebar and selects EN / Traditional Chinese; UI text updates immediately and the preference is stored (localStorage key: `user-locale`).
+- Validation:
+  - Interaction: After switching language from the Sidebar, buttons, titles, menus, and `aria-label/title` update immediately.
+  - Persistence: After a refresh, the previously selected language remains in effect (read from localStorage `user-locale`).
+  - Detection: With no prior preference, infer from the browser language; non-`zh` series defaults to English; `zh/zh-Hant/zh-TW/zh-HK/zh-MO` are mapped to `zh-TW`.
+  - Fallback: Temporarily remove a translation key to verify the app falls back to English (ensuring `fallbackLocale` takes effect).
+
+
 #### Drag and Drop
 - Purpose: Quickly reorder and reorganize categories/items by dragging, keeping orders consistent with minimal effort.
 - Key features:
@@ -188,13 +206,13 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 ## 5. File Structure
 ```
 packing-list/
-├── index.html                          # Entry HTML
-├── LICENSE                             # License terms
-├── package.json                        # Dependencies and scripts
-├── postcss.config.js                   # PostCSS config
-├── tailwind.config.js                  # Tailwind CSS config
-├── vite.config.js                      # Vite build config
-└── source/                             # Application source
+├── index.html                        # Entry HTML
+├── LICENSE                           # License terms
+├── package.json                      # Dependencies and scripts
+├── postcss.config.js                 # PostCSS config
+├── tailwind.config.js                # Tailwind CSS config
+├── vite.config.js                    # Vite build config
+└── source/                           # Application source
   ├── App.vue                         # Root component
   ├── index.css                       # Global styles and Tailwind imports
   ├── main.js                         # App entry point (createApp + mount)
@@ -210,8 +228,15 @@ packing-list/
   │   └── Topbar.vue                  # Top bar for mobile
   ├── composables/                    # Vue composables (state + logic)
   │   └── usePackingLists.js          # Core state and CRUD logic
+  ├── i18n/                           # i18n initialization and locale detection/persistence
+  │   └── index.js                    # create vue-i18n, locale mapping, localStorage read/write
+  ├── locales/                        # Translation files
+  │   ├── en.json                     # English strings
+  │   └── zh-TW.json                  # Traditional Chinese strings
   ├── data/                           # Static data
-  │   └── defaultItems.js             # Default items for new checklists
+  │   ├── defaultItems.js             # Default items loader (locale-aware)
+  │   ├── defaultItems_en.js          # English default items
+  │   └── defaultItems_zh-TW.js       # Traditional Chinese default items
   ├── models/                         # Domain models
   │   ├── Category.js                 # Category model
   │   ├── Checklist.js                # Checklist model
@@ -220,8 +245,8 @@ packing-list/
   │   ├── dataService.js              # Abstract data service interface
   │   └── localStorageService.js      # LocalStorage implementation
   └── utils/                          # Utilities
-    ├── constants.js                # App constants
-    └── helpers.js                  # Helper functions (e.g., ID generation)
+      ├── constants.js                # App constants
+      └── helpers.js                  # Helper functions (e.g., ID generation)
 ```
 
 ## 6. UI/UX Design

@@ -23,13 +23,13 @@ Created: 2025-09-19
           v-if="isEditing"
           :id="`category-${category.id}-name`"
           :name="`category-${category.id}-name`"
+          ref="editInput"
           v-model="editedName"
+          class="w-full text-xl font-semibold text-slate-800 bg-transparent border-b border-blue-300 focus:outline-none focus:border-blue-500"
           @keyup.enter="saveEdit"
           @keyup.escape="cancelEdit"
           @blur="saveEdit"
-          ref="editInput"
-          class="w-full text-xl font-semibold text-slate-800 bg-transparent border-b border-blue-300 focus:outline-none focus:border-blue-500"
-        >
+        />
         <h3
           v-else
           class="text-xl font-semibold text-primary cursor-pointer hover:bg-gray-50 px-1 py-1 rounded"
@@ -44,9 +44,9 @@ Created: 2025-09-19
         :item-id="category.id"
         menu-type="category"
         alignment="left"
+        class="ml-2"
         @edit="startEdit"
         @delete="handleDelete"
-        class="ml-2"
       />
     </div>
 
@@ -60,6 +60,7 @@ Created: 2025-09-19
     <!-- Items List -->
     <div class="space-y-0.5">
       <draggable
+        item-key="id"
         v-model="draggableItems"
         :group="{ 
           name: 'items', 
@@ -69,7 +70,6 @@ Created: 2025-09-19
             return from.options.group.name === 'items';
           }
         }"
-        item-key="id"
         :animation="200"
         :ghost-class="'ghost-item'"
         :chosen-class="'chosen-item'"
@@ -95,8 +95,8 @@ Created: 2025-09-19
       </draggable>
 
       <AddItemButton
-        class="px-2 py-1 text-sm"
         :category-completed="isCompleted"
+        class="px-2 py-1 text-sm"
         @click="$emit('create:item', category.id)"
       />
     </div>
@@ -104,6 +104,10 @@ Created: 2025-09-19
 </template>
 
 <script setup>
+// ----------------------
+// Imports
+// ----------------------
+
 import { computed, nextTick, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
 import { Category } from '../models/Category';

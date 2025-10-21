@@ -1,0 +1,44 @@
+{
+  "common": {
+    "edit": "編輯",
+    "delete": "刪除",
+    "cancel": "取消",
+    "save": "儲存",
+    "confirm": "確認"
+  },
+  "sidebar": {
+    "title": "清單列表",
+    "newChecklist": "新增清單",
+    "toggle": "切換側邊欄"
+  },
+  "topbar": {
+    "toggleNav": "開啟導覽選單",
+    "newChecklist": "新增清單"
+  },
+  "checklist": {
+    "untitled": "未命名清單",
+    "destination": "目的地",
+    "deleteConfirm": "確定要刪除這個清單嗎？",
+    "cannotDeleteLast": "無法刪除最後一個清單",
+    "defaultName": "我的新清單",
+    "pleaseCreate": "請先建立一個新清單。"
+  },
+  "category": {
+    "newCategory": "新增分類",
+    "defaultName": "新分類"
+  },
+  "item": {
+    "newItem": "新增物品",
+    "defaultName": "新物品"
+  },
+  "progress": {
+    "label": "{completed} / {total}",
+    "percentage": "{percent}%"
+  },
+  "language": {
+    "select": "語言",
+    "en": "English",
+    "zhTW": "繁體中文",
+    "switchLanguage": "切換語言"
+  }
+}

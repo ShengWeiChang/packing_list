@@ -25,8 +25,21 @@ Created: 2025-09-19
 </template>
 
 <script setup>
+// ----------------------
+// Imports
+// ----------------------
+
 import { computed } from 'vue';
 import { THEME_COLORS } from '../utils/constants';
+
+// ----------------------
+// Constants
+// ----------------------
+
+// Theme colors
+const progressColor = THEME_COLORS.PRIMARY;
+const textColor = THEME_COLORS.TEXT_PRIMARY;
+const backgroundColor = THEME_COLORS.SECONDARY;
 
 // ----------------------
 // Props & Emits
@@ -58,14 +71,5 @@ const percentage = computed(() => {
 const text = computed(() => {
   return `${props.completed} / ${props.total}`;
 });
-
-// ----------------------
-// Constants
-// ----------------------
-
-// Theme colors
-const progressColor = THEME_COLORS.PRIMARY;
-const textColor = THEME_COLORS.TEXT_PRIMARY;
-const backgroundColor = THEME_COLORS.SECONDARY;
 
 </script>
