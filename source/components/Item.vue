@@ -20,10 +20,10 @@ Created: 2025-09-19
     @mouseleave="isHovered = false"
   >
     <input
-      type="checkbox"
+      v-model="isItemPacked"
       :id="`item-${item.id}-packed`"
       :name="`item-${item.id}-packed`"
-      v-model="isItemPacked"
+      type="checkbox"
       :class="[
         'flex-none flex-shrink-0 w-4 h-4 mr-2 rounded-full',
         isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600'
@@ -32,23 +32,35 @@ Created: 2025-09-19
     />
 
     <!-- Item name - editable when in edit mode -->
-    <div class="flex-grow" @blur="handleEditBlur" @focusout="handleEditBlur">
+    <div
+      class="flex-grow"
+      @blur="handleEditBlur"
+      @focusout="handleEditBlur"
+    >
       <input
         v-if="isEditing"
         :id="`item-${item.id}-name`"
         :name="`item-${item.id}-name`"
+        ref="editInput"
         v-model="editedName"
+        :class="[
+          'w-full text-base bg-transparent border-b border-blue-300 focus:outline-none focus:border-blue-500',
+          {
+            'line-through text-secondary': item.isPacked
+          }
+        ]"
         @keyup.enter="saveEdit"
         @keyup.escape="cancelEdit"
-        ref="editInput"
-        class="w-full text-base bg-transparent border-b border-blue-300 focus:outline-none focus:border-blue-500"
-        :class="{ 'line-through text-secondary': item.isPacked }"
       />
 
       <span
         v-else
-        class="text-base cursor-pointer hover:bg-gray-50 px-1 py-1 rounded"
-        :class="{ 'line-through text-secondary': item.isPacked }"
+        :class="[
+          'text-base cursor-pointer hover:bg-gray-50 px-1 py-1 rounded',
+          {
+            'line-through text-secondary': item.isPacked
+          }
+        ]"
         @click="startEdit"
       >
         {{ item.name }}
@@ -66,14 +78,14 @@ Created: 2025-09-19
         v-if="isEditing"
         :id="`item-${item.id}-quantity`"
         :name="`item-${item.id}-quantity`"
+        ref="quantityInput"
         v-model.number="editedQuantity"
         type="number"
         min="1"
+        class="w-12 px-1 py-0.5 text-xs font-semibold text-secondary bg-gray-100 border border-gray-300 rounded-full text-center focus:outline-none focus:border-gray-500"
         @keyup.enter="saveEdit"
         @keyup.escape="cancelEdit"
         @click.stop
-        ref="quantityInput"
-        class="w-12 px-1 py-0.5 text-xs font-semibold text-secondary bg-gray-100 border border-gray-300 rounded-full text-center focus:outline-none focus:border-gray-500"
       />
 
       <span
@@ -87,18 +99,22 @@ Created: 2025-09-19
     <!-- Overflow menu -->
     <OverflowMenu
       :item-id="item.id"
-      menu-type="item"
-      alignment="left"
       :force-visible="isHovered"
       :use-group-hover="false"
+      menu-type="item"
+      alignment="left"
+      class="ml-2"
       @edit="startEdit"
       @delete="handleDelete"
-      class="ml-2"
     />
   </div>
 </template>
 
 <script setup>
+// ----------------------
+// Imports
+// ----------------------
+
 import { computed, nextTick, ref, watch } from 'vue';
 import { Item } from '../models/Item';
 import OverflowMenu from './OverflowMenu.vue';

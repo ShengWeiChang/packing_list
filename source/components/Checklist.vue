@@ -17,51 +17,62 @@ Created: 2025-09-19
       <div class="flex items-center justify-between mb-4 min-h-[4rem] gap-4">
         <div class="flex items-baseline space-x-4 flex-grow min-w-0">
           <!-- Editable destination name -->
-          <div class="flex-grow min-h-[3rem] flex items-center min-w-0" @blur="handleEditBlur" @focusout="handleEditBlur">
+          <div
+            class="flex-grow min-h-[3rem] flex items-center min-w-0"
+            @blur="handleEditBlur"
+            @focusout="handleEditBlur"
+          >
             <input
               v-if="isEditing"
               :id="`checklist-${checklist.id}-destination`"
               :name="`checklist-${checklist.id}-destination`"
+              ref="destinationInput"
               v-model="editedDestination"
+              :placeholder="$t('checklist.destination')"
+              class="w-full text-2xl md:text-3xl font-bold text-primary bg-transparent border-b-2 border-blue-300 focus:outline-none focus:border-blue-500 min-w-0"
               @keyup.enter="saveEdit"
               @keyup.escape="cancelEdit"
-              ref="destinationInput"
-              class="w-full text-2xl md:text-3xl font-bold text-primary bg-transparent border-b-2 border-blue-300 focus:outline-none focus:border-blue-500 min-w-0"
-              placeholder="Destination"
             />
             <h2
               v-else
               class="text-2xl md:text-3xl font-bold text-primary cursor-pointer hover:bg-gray-50 px-1 py-1 rounded truncate"
               @click="startEdit"
             >
-              {{ checklist.destination || 'Untitled Checklist' }}
+              {{ checklist.destination || $t('checklist.untitled') }}
             </h2>
           </div>
 
           <!-- Editable dates -->
-          <div class="flex items-center space-x-2 min-h-[2.5rem] flex-shrink-0" @blur="handleEditBlur" @focusout="handleEditBlur">
-            <div v-if="isEditing" class="flex items-center space-x-1 sm:space-x-2 flex-wrap sm:flex-nowrap">
+          <div
+            class="flex items-center space-x-2 min-h-[2.5rem] flex-shrink-0"
+            @blur="handleEditBlur"
+            @focusout="handleEditBlur"
+          >
+            <div
+              v-if="isEditing"
+              class="flex items-center space-x-1 sm:space-x-2 flex-wrap sm:flex-nowrap"
+            >
               <input
-                type="date"
                 :id="`checklist-${checklist.id}-start-date`"
                 :name="`checklist-${checklist.id}-start-date`"
+                ref="startDateInput"
                 v-model="editedStartDate"
+                type="date"
+                class="text-sm sm:text-base text-secondary bg-transparent border border-gray-300 rounded px-1 sm:px-2 py-1 focus:outline-none focus:border-blue-500 w-28 sm:w-auto"
                 @keyup.enter="saveEdit"
                 @keyup.escape="cancelEdit"
-                ref="startDateInput"
-                class="text-sm sm:text-base text-secondary bg-transparent border border-gray-300 rounded px-1 sm:px-2 py-1 focus:outline-none focus:border-blue-500 w-28 sm:w-auto"
               />
               <span class="text-secondary hidden sm:inline">-</span>
               <input
-                type="date"
                 :id="`checklist-${checklist.id}-end-date`"
                 :name="`checklist-${checklist.id}-end-date`"
-                v-model="editedEndDate"
-                @keyup.enter="saveEdit"
-                @keyup.escape="cancelEdit"
                 ref="endDateInput"
+                v-model="editedEndDate"
+                type="date"
                 :min="editedStartDate"
                 class="text-sm sm:text-base text-secondary bg-transparent border border-gray-300 rounded px-1 sm:px-2 py-1 focus:outline-none focus:border-blue-500 w-28 sm:w-auto"
+                @keyup.enter="saveEdit"
+                @keyup.escape="cancelEdit"
               />
             </div>
             <span
@@ -78,13 +89,13 @@ Created: 2025-09-19
         <div class="flex-shrink-0">
           <OverflowMenu
             :item-id="checklist.id"
-            menu-type="checklist"
-            alignment="left"
             :force-visible="true"
             :use-group-hover="false"
+            menu-type="checklist"
+            alignment="left"
+            class="ml-2"
             @edit="startEdit"
             @delete="handleDelete"
-            class="ml-2"
           />
         </div>
       </div>
@@ -99,6 +110,7 @@ Created: 2025-09-19
     <!-- Categories Grid -->
     <div>
       <draggable
+        item-key="id"
         v-model="draggableCategories"
         :group="{ 
           name: 'categories', 
@@ -108,7 +120,6 @@ Created: 2025-09-19
             return from.options.group.name === 'categories';
           }
         }"
-        item-key="id"
         :animation="200"
         :ghost-class="'ghost-category'"
         :chosen-class="'chosen-category'"
@@ -149,12 +160,23 @@ Created: 2025-09-19
 </template>
 
 <script setup>
+// ----------------------
+// Imports
+// ----------------------
+
 import { computed, nextTick, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 import AddCategoryButton from './AddCategoryButton.vue';
 import Category from './Category.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import ProgressBar from './ProgressBar.vue';
+
+// ----------------------
+// Internationalization (i18n)
+// ----------------------
+
+const { t } = useI18n();
 
 // ----------------------
 // Props & Emits
@@ -295,7 +317,7 @@ function saveEdit() {
   if (hasDestinationChanged || hasStartDateChanged || hasEndDateChanged) {
     const updatedChecklist = {
       ...props.checklist,
-      destination: editedDestination.value.trim() || 'Untitled Checklist',
+      destination: editedDestination.value.trim() || t('checklist.untitled'),
       startDate: editedStartDate.value,
       endDate: editedEndDate.value
     };
