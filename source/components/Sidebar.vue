@@ -136,12 +136,20 @@ Created: 2025-09-19
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
+            <!-- Outer circle -->
             <circle cx="12" cy="12" r="10" stroke-width="2" />
-            <path
-              d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
-              stroke-width="2"
-            />
+
+            <!-- Parallels (latitude-like curves): top, middle (straight), bottom -->
+            <path d="M4  6 c4  2 8  2 16 0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M2 12 h20" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M4 18 c4 -2 8 -2 16 0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+
+            <!-- Meridians (longitude-like curves): left, center (straight), right -->
+            <path d="M12 2 C 6 6  6 18 12 22" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M12 2 v20" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M12 2 C18 6 18 18 12 22" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </div>
       </button>

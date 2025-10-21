@@ -206,13 +206,13 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 ## 5. File Structure
 ```
 packing-list/
-├── index.html                          # Entry HTML
-├── LICENSE                             # License terms
-├── package.json                        # Dependencies and scripts
-├── postcss.config.js                   # PostCSS config
-├── tailwind.config.js                  # Tailwind CSS config
-├── vite.config.js                      # Vite build config
-└── source/                             # Application source
+├── index.html                        # Entry HTML
+├── LICENSE                           # License terms
+├── package.json                      # Dependencies and scripts
+├── postcss.config.js                 # PostCSS config
+├── tailwind.config.js                # Tailwind CSS config
+├── vite.config.js                    # Vite build config
+└── source/                           # Application source
   ├── App.vue                         # Root component
   ├── index.css                       # Global styles and Tailwind imports
   ├── main.js                         # App entry point (createApp + mount)
@@ -228,8 +228,15 @@ packing-list/
   │   └── Topbar.vue                  # Top bar for mobile
   ├── composables/                    # Vue composables (state + logic)
   │   └── usePackingLists.js          # Core state and CRUD logic
+  ├── i18n/                           # i18n initialization and locale detection/persistence
+  │   └── index.js                    # create vue-i18n, locale mapping, localStorage read/write
+  ├── locales/                        # Translation files
+  │   ├── en.json                     # English strings
+  │   └── zh-TW.json                  # Traditional Chinese strings
   ├── data/                           # Static data
-  │   └── defaultItems.js             # Default items for new checklists
+  │   ├── defaultItems.js             # Default items loader (locale-aware)
+  │   ├── defaultItems_en.js          # English default items
+  │   └── defaultItems_zh-TW.js       # Traditional Chinese default items
   ├── models/                         # Domain models
   │   ├── Category.js                 # Category model
   │   ├── Checklist.js                # Checklist model
@@ -238,8 +245,8 @@ packing-list/
   │   ├── dataService.js              # Abstract data service interface
   │   └── localStorageService.js      # LocalStorage implementation
   └── utils/                          # Utilities
-    ├── constants.js                # App constants
-    └── helpers.js                  # Helper functions (e.g., ID generation)
+      ├── constants.js                # App constants
+      └── helpers.js                  # Helper functions (e.g., ID generation)
 ```
 
 ## 6. UI/UX Design
