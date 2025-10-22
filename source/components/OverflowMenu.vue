@@ -99,7 +99,7 @@ const props = defineProps({
   menuType: {
     type: String,
     required: true,
-    validator: (value) => ['item', 'category'].includes(value)
+    validator: (value) => ['item', 'category', 'checklist'].includes(value)
   },
   alignment: {
     type: String,
