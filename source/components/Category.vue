@@ -76,9 +76,7 @@ Created: 2025-09-19
         :drag-class="'drag-item'"
         @start="onItemDragStart"
         @end="onItemDragEnd"
-        @add="onItemAdd"
-        @remove="onItemRemove"
-        @update="onItemUpdate"
+        @change="onItemChange"
       >
         <template #item="{ element: item }">
           <div :key="item.id" :data-item-id="item.id">
@@ -186,31 +184,14 @@ const draggableItems = computed({
     return sortedItems.value;
   },
   set(newItems) {
-    // When vuedraggable updates the array, emit the reorder event
-    // Check if this is a cross-category move (new item added or removed)
-    const currentItemIds = new Set(sortedItems.value.map(i => i.id));
-    const newItemIds = new Set(newItems.map(i => i.id));
-    const addedItems = newItems.filter(item => !currentItemIds.has(item.id));
-    const removedItems = sortedItems.value.filter(item => !newItemIds.has(item.id));
-
-    const isCrossCategoryMove = addedItems.length > 0 || removedItems.length > 0;
-
-    if (isCrossCategoryMove) {
-      // Don't handle cross-category moves here, let onItemAdd/onItemRemove handle them
-      return;
-    }
-
-    // This is a same-category reorder
-    const itemsWithNewOrder = newItems.map((item, index) => ({
-      ...item,
-      order: index
-    }));
-
-    emit('move:item', {
-      items: itemsWithNewOrder,
-      categoryId: props.category.id,
-      type: 'reorder'
-    });
+    // This setter is intentionally empty (no-op) since we handle ALL drag events via @change event
+    // - evt.added: Cross-category move (target side)
+    // - evt.removed: Cross-category move (source side)
+    // - evt.moved: Same-category reorder
+    //
+    // The setter must exist for v-model to work, but it does nothing.
+    // The actual data updates happen via emit('move:item') in @change handler,
+    // then flow back through props → sortedItems → getter.
   }
 });
 
@@ -283,69 +264,67 @@ function onItemDragEnd(evt) {
   draggingItemId.value = null;
 }
 
-// Handle same-category reorder (handled by draggableItems setter instead)
-function onItemUpdate(evt) {
-  // This event is now handled by the draggableItems setter
-}
-
-// Handle item moved from another category to this category
-function onItemAdd(evt) {
-  // Handle item moved from another category
-  const newElement = evt.item;
-  const itemId = newElement.getAttribute('data-item-id');
-  
-  if (itemId) {
-    const item = props.items.find(i => i.id === itemId);
-    if (item && item.categoryId !== props.category.id) {
-      
-      // Get current items in this category (excluding the newly added item)
-      const currentCategoryItems = sortedItems.value.filter(i => i.id !== itemId);
-      
-      // Create new item with updated category and order
-      const updatedItem = {
-        ...item,
-        categoryId: props.category.id,
-        order: evt.newIndex
+// Handle item change events from vuedraggable
+function onItemChange(evt) {
+  // Case 1: Cross-category move (target side)
+  // When an item is dragged from another category to this one
+  // Note: evt.removed is intentionally ignored.
+  // The category's order will be corrected by a data refresh from the parent component, avoiding race conditions from simultaneous updates.
+  if (evt.added) {
+    const item = evt.added.element;
+    const newIndex = evt.added.newIndex;
+    
+    // Get current items in this category (excluding the newly added item)
+    const currentCategoryItems = sortedItems.value.filter(i => i.id !== item.id);
+    
+    // Create updated item with new category and order
+    const updatedItem = {
+      ...item,
+      categoryId: props.category.id,
+      order: newIndex
+    };
+    
+    // Shift down items that come after the insertion point
+    const reorderedItems = currentCategoryItems.map((existingItem, index) => {
+      let newOrder = index;
+      if (index >= newIndex) {
+        newOrder = index + 1;
+      }
+      return {
+        ...existingItem,
+        order: newOrder
       };
-      
-      // Update order of existing items that come after the insertion point
-      const reorderedItems = currentCategoryItems.map((existingItem, index) => {
-        let newOrder = index;
-        if (index >= evt.newIndex) {
-          newOrder = index + 1; // Shift items down
-        }
-        return {
-          ...existingItem,
-          order: newOrder
-        };
-      });
-      
-      emit('move:item', {
-        item: updatedItem,
-        reorderedItems: reorderedItems,
-        newCategoryId: props.category.id,
-        oldCategoryId: item.categoryId,
-        newIndex: evt.newIndex,
-        type: 'move'
-      });
-    }
-  }
-}
-
-// Handle item moved from this category to another category
-async function onItemRemove(evt) {
-  // Wait for Vue to update the DOM and computed properties after the removal
-  await nextTick();
-  
-  // Reorder the remaining items to maintain continuous order indices
-  const remainingItems = sortedItems.value.map((item, index) => ({
-    ...item,
-    order: index
-  }));
-  
-  if (remainingItems.length > 0) {
+    });
+    
     emit('move:item', {
-      items: remainingItems,
+      item: updatedItem,
+      reorderedItems: reorderedItems,
+      newCategoryId: props.category.id,
+      oldCategoryId: item.categoryId,
+      newIndex: newIndex,
+      type: 'move'
+    });
+  }
+  
+  // Case 2: Same-category reorder
+  // When an item is moved within the same category
+  if (evt.moved) {
+    const oldIndex = evt.moved.oldIndex;
+    const newIndex = evt.moved.newIndex;
+    
+    // Build the new order by simulating the move
+    const items = [...sortedItems.value];
+    const [removed] = items.splice(oldIndex, 1);
+    items.splice(newIndex, 0, removed);
+    
+    // Renumber all items based on the new order
+    const itemsWithNewOrder = items.map((item, index) => ({
+      ...item,
+      order: index
+    }));
+    
+    emit('move:item', {
+      items: itemsWithNewOrder,
       categoryId: props.category.id,
       type: 'reorder'
     });

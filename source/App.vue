@@ -369,11 +369,6 @@ async function handleChecklistUpdate(checklist) {
 
 // Delete a checklist
 async function handleChecklistDelete(checklistId) {
-  if (checklists.value.length <= 1) {
-    alert(t('checklist.cannotDeleteLast'));
-    return;
-  }
-
   const confirmed = confirm(t('checklist.deleteConfirm'));
   if (!confirmed) return;
 
