@@ -269,7 +269,7 @@ function onItemChange(evt) {
   // Case 1: Cross-category move (target side)
   // When an item is dragged from another category to this one
   // Note: evt.removed is intentionally ignored.
-  // The category's order will be corrected by getItems() refresh, avoiding race conditions from simultaneous updates.
+  // The category's order will be corrected by a data refresh from the parent component, avoiding race conditions from simultaneous updates.
   if (evt.added) {
     const item = evt.added.element;
     const newIndex = evt.added.newIndex;
