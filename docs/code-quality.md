@@ -73,7 +73,14 @@ Validation
 
 - Violations are reported by ESLint; most are auto-fixable.
 
-## 4. Development Workflow
+## 4. Git Hooks (Husky)
+
+- Purpose: Enforce quality checks before commit.
+- How: A pre-commit hook runs lint-staged to lint/format staged files only.
+- Where: `.husky/pre-commit`, `.lintstagedrc.json`, `package.json` ("prepare": "husky").
+- Test: Stage a file and run `npx lint-staged`, or make a commit.
+
+## 5. Development Workflow
 
 - Format all files: `npm run format`
 - Lint check: `npm run lint`
@@ -81,20 +88,20 @@ Validation
 - Validate (lint + format check): `npm run validate`
 - Pre-commit: lint-staged runs automatically on staged files
 
-## 5. Editor Integration (VS Code)
+## 6. Editor Integration (VS Code)
 
 - Format on Save with Prettier as the default formatter
 - ESLint code actions on save (explicit)
 - Tailwind class regex support for better IntelliSense
 - Source: `.vscode/settings.json`
 
-## 6. Exceptions and Overrides
+## 7. Exceptions and Overrides
 
 - Prefer adjusting configuration over inline disables
 - If a one-off exception is necessary, keep scope minimal and include rationale, e.g.:
   `// eslint-disable-next-line <rule> -- reason`
 
-## 7. Maintenance
+## 8. Maintenance
 
 - Update this document’s summaries when configuration changes
 - Configuration files are the source of truth; this document emphasizes principles and usage
