@@ -1,10 +1,13 @@
 # Packing List App - Product Specification
 
 ## 1. Project Overview
+
 ### Product Description
+
 A web application that helps users manage travel packing. It supports category management, progress tracking, and a responsive user experience.
 
 ## 2. Definitions
+
 Checklist, Category, and Item are the three core data entities of the app. Below are concise definitions, common fields, and examples:
 
 - Checklist
@@ -38,7 +41,9 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Example: { id: "item-01", name: "T-shirt", quantity: 3, categoryId: "cat-travel-clothes", isPacked: false, checklistId: "c1", order: 10 }
 
 ## 3. Technology Stack
+
 ### Frontend
+
 - Framework: Vue.js 3 (Composition API)
 - Build Tool: Vite 4.4.9
 - CSS Framework: Tailwind CSS 3.4.17
@@ -46,10 +51,12 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Additional Tools: PostCSS, Autoprefixer
 
 ### Data Storage
+
 - MVP: Browser localStorage
 - Future: Cloud database (Firebase/Supabase)
 
 ### Build & Development Tools
+
 - Dev Server: Vite dev server with HMR
 - CSS Processing: PostCSS with Tailwind CSS
 - Module Bundling: Vite with ES modules
@@ -59,6 +66,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 ### Core Functionality
 
 #### Checklist Management
+
 - Purpose: Let users manage multiple packing lists and create a new list for each trip.
 - Key features:
   - Create checklist: Auto-seed default categories and items from `source/data/defaultItems.js`.
@@ -78,6 +86,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Switch: Categories/items load sorted by `order`; progress bar reflects the current checklist.
 
 #### Category Management
+
 - Purpose: Organize items within a checklist to improve browsing and management.
 - Key features:
   - Add category: Appends to the end, `order = current max order + 1`.
@@ -93,6 +102,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Progress: Completed/total syncs with item check/uncheck.
 
 #### Item Management
+
 - Purpose: Manage individual item entries in a checklist, supporting create/edit/delete, toggle packing, and drag reorder/move; updates progress in real time.
 - Key features:
   - Create item: In a specified category, `isPacked=false`, `order = max order of that category + 1`.
@@ -109,6 +119,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Cross-category move: Target `categoryId` and `order` are correct; remaining items in both categories have continuous `order`; progress updates correctly on both sides.
 
 #### Progress Tracking
+
 - Purpose: Provide immediate, visual feedback of completion at both checklist and category levels.
 - Key features:
   - Checklist progress: `total = items.length`, `completed = items.filter(isPacked).length`; shown under the checklist header (`ProgressBar.vue`).
@@ -127,6 +138,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Cross-category moves: Source/target category completion updates correctly; checklist total progress stays correct.
 
 #### Responsive Design
+
 - Purpose: Offer a smooth, usable experience across devices and viewport widths.
 - Key features:
   - Breakpoints & behavior:
@@ -147,6 +159,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Masonry columns adjust at breakpoints; category cards don’t break across columns.
 
 #### Internationalization (i18n)
+
 - Purpose: Provide a multi-language interface so users can switch languages with immediate effect, and persist their preference.
 - Key features:
   - Language switcher: Located in the Sidebar as a globe icon button with a dropdown menu.
@@ -163,8 +176,8 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Detection: With no prior preference, infer from the browser language; non-`zh` series defaults to English; `zh/zh-Hant/zh-TW/zh-HK/zh-MO` are mapped to `zh-TW`.
   - Fallback: Temporarily remove a translation key to verify the app falls back to English (ensuring `fallbackLocale` takes effect).
 
-
 #### Drag and Drop
+
 - Purpose: Quickly reorder and reorganize categories/items by dragging, keeping orders consistent with minimal effort.
 - Key features:
   - Item dragging (`Category.vue` with `vuedraggable` group: `items`):
@@ -187,23 +200,28 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - UX: Drag visuals present; animations are smooth without noticeable jitter/flicker.
 
 ### Technical Implementation
+
 #### Architecture Pattern
+
 - MVVM-like (Vue + Composition API): clear domain models, composable as ViewModel, and component-based Views
 - Composition API for logic reuse and state management
 - Service Layer for abstracted data access
 - Component-based UI modules
 
 #### Data Persistence
+
 - LocalStorageService implements client-side persistence
 - Abstract DataService interface allows future backends
 - JSON serialization with model instances (toJSON/fromJSON)
 
 #### State Management
+
 - usePackingLists composable centralizes business logic and state
 - Reactive data binding
 - Computed properties update automatically
 
 ## 5. File Structure
+
 ```
 packing-list/
 ├── index.html                        # Entry HTML
@@ -252,7 +270,9 @@ packing-list/
 ## 6. UI/UX Design
 
 ### Visual Design
+
 #### Color System
+
 - Primary text: `rgba(33, 33, 33, 1)` — dark gray
 - Secondary text: `rgba(100, 100, 100, 1)` — mid gray
 - Primary brand: `rgba(47, 107, 70, 1)` — forest green
@@ -261,42 +281,48 @@ packing-list/
 - Surface: `rgba(248, 250, 252, 1)` — light gray
 
 #### Design System
+
 - Fonts: System font stack
 - Radius: Tailwind radius scale
 - Shadows: Subtle elevation for depth
 - Spacing: Tailwind spacing scale for consistency
 
 ### Responsive Breakpoints
+
 - Mobile: `< 600px` — vertical layout, show Topbar (`md:hidden`)
 - Narrow desktop: `600px–999px` — Sidebar as overlay drawer
 - Desktop: `≥ 1000px` — Fixed Sidebar with expandable/collapsible state (remembered)
 
 ### Interaction Design
+
 #### Sidebar Behavior
+
 - Desktop: Always visible; can be collapsed to icon mode
 - Tablet: Auto-collapses; expands as an overlay
 - Mobile: Drawer-style sidebar from the left
 
 #### Content Layout
+
 - Grid: Responsive grid (1–4 columns)
 - Cards: Consistent card style system
 - Forms: Inline editing with validation
 
 ### Component Specifications
 
-| Component     | Description                         | Interactions |
-|---------------|-------------------------------------|--------------|
-| Sidebar       | Checklist navigation and management | Responsive collapse/expand; checklist selection      |
-| Topbar        | Mobile navigation bar               | Hamburger menu; quick add checklist                |
-| Checklist     | Main content area                   | Shows categories and items for the selected checklist; drag and drop for category reordering; masonry layout       |
-| Category      | Category card                       | Lists items; shows progress; edit actions; drag and drop for item reordering and movement                  |
-| Item          | Item row/card                       | Toggle packed; inline edit; delete; draggable within/between categories                   |
-| ProgressBar   | Progress visualization              | Displays completion percentage               |
-| OverflowMenu  | Overflow actions                    | Edit/delete and other actions                  |
+| Component    | Description                         | Interactions                                                                                                 |
+| ------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Sidebar      | Checklist navigation and management | Responsive collapse/expand; checklist selection                                                              |
+| Topbar       | Mobile navigation bar               | Hamburger menu; quick add checklist                                                                          |
+| Checklist    | Main content area                   | Shows categories and items for the selected checklist; drag and drop for category reordering; masonry layout |
+| Category     | Category card                       | Lists items; shows progress; edit actions; drag and drop for item reordering and movement                    |
+| Item         | Item row/card                       | Toggle packed; inline edit; delete; draggable within/between categories                                      |
+| ProgressBar  | Progress visualization              | Displays completion percentage                                                                               |
+| OverflowMenu | Overflow actions                    | Edit/delete and other actions                                                                                |
 
 ## 7. Data Models
 
 ### Checklist Model
+
 ```javascript
 {
   id: string,           // Unique identifier
@@ -307,6 +333,7 @@ packing-list/
 ```
 
 ### Category Model
+
 ```javascript
 {
   id: string,           // Unique identifier
@@ -317,6 +344,7 @@ packing-list/
 ```
 
 ### Item Model
+
 ```javascript
 {
   id: string,           // Unique identifier

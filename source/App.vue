@@ -10,16 +10,11 @@ Created: 2025-09-19
 -->
 
 <template>
-  <div
-    :class="[
-      'min-h-screen text-slate-800',
-      isMobileViewport ? 'flex flex-col' : 'flex'
-    ]"
-  >
+  <div :class="['min-h-screen text-slate-800', isMobileViewport ? 'flex flex-col' : 'flex']">
     <!-- Overlay for narrow screens when sidebar is open -->
     <div
       v-if="(isMobileViewport || (isSmallDesktop && isSidebarOpen)) && isSidebarOpen"
-      class="fixed inset-0 bg-black bg-opacity-40 z-40 backdrop-blur-sm"
+      class="fixed inset-0 z-40 bg-black bg-opacity-40 backdrop-blur-sm"
       @click="toggleSidebar"
     ></div>
 
@@ -33,7 +28,10 @@ Created: 2025-09-19
 
     <!-- Sidebar -->
     <!-- Overlay Sidebar (Mobile or Narrow + Expanded) -->
-    <teleport to="body" v-if="isOverlayVisible">
+    <teleport
+      v-if="isOverlayVisible"
+      to="body"
+    >
       <div class="fixed inset-y-0 left-0 z-50">
         <Sidebar
           :is-expanded="isSidebarOpen"
@@ -50,7 +48,10 @@ Created: 2025-09-19
     </teleport>
 
     <!-- Inline Sidebar (Desktop only, when not in overlay mode) -->
-    <div v-else-if="!isMobileViewport" class="relative z-50">
+    <div
+      v-else-if="!isMobileViewport"
+      class="relative z-50"
+    >
       <Sidebar
         :is-expanded="isSidebarOpen"
         :is-mobile="isMobileViewport"
@@ -67,10 +68,11 @@ Created: 2025-09-19
     <!-- Main Content -->
     <main
       :class="[
-        'p-4 md:p-6 overflow-y-auto bg-gray-50 min-w-0 transition-filter duration-200 flex-1',
+        'transition-filter min-w-0 flex-1 overflow-y-auto bg-gray-50 p-4 duration-200 md:p-6',
         {
-          'filter blur-sm pointer-events-none': (isSidebarOpen && (isMobileViewport || isSmallDesktop))
-        }
+          'pointer-events-none blur-sm filter':
+            isSidebarOpen && (isMobileViewport || isSmallDesktop),
+        },
       ]"
     >
       <div v-if="selectedChecklist">
@@ -95,7 +97,7 @@ Created: 2025-09-19
       </div>
       <div
         v-else
-        class="text-center text-secondary mt-20"
+        class="text-secondary mt-20 text-center"
       >
         {{ $t('checklist.pleaseCreate') }}
       </div>
@@ -110,6 +112,7 @@ Created: 2025-09-19
 
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+
 import ChecklistComponent from './components/Checklist.vue';
 import Sidebar from './components/Sidebar.vue';
 import Topbar from './components/Topbar.vue';
@@ -131,7 +134,7 @@ const SIDEBAR_COLLAPSED_KEY = 'sidebar-manually-collapsed';
 // Responsive breakpoints
 const BREAKPOINTS = {
   MOBILE: 600, // md breakpoint
-  SIDEBAR_OVERLAY: 1000 // width under which sidebar becomes overlay
+  SIDEBAR_OVERLAY: 1000, // width under which sidebar becomes overlay
 };
 
 // ----------------------
@@ -156,7 +159,7 @@ const {
   createItem,
   getItems,
   updateItem,
-  deleteItem
+  deleteItem,
 } = usePackingLists();
 
 // ----------------------
@@ -178,8 +181,9 @@ const newlyCreatedChecklistId = ref(null);
 // ----------------------
 
 // Determine if sidebar should show as overlay
-const isOverlayVisible = computed(() =>
-  (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value)) && isSidebarOpen.value
+const isOverlayVisible = computed(
+  () =>
+    (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value)) && isSidebarOpen.value
 );
 
 // ----------------------
@@ -188,12 +192,7 @@ const isOverlayVisible = computed(() =>
 
 // Generic error handler for async operations
 const handleAsyncAction = async (action, ...args) => {
-  try {
-    return await action(...args);
-  } catch (err) {
-    // Error is already handled by usePackingLists, just propagate if needed
-    throw err;
-  }
+  return await action(...args);
 };
 
 // Check if screen is mobile size and adjust UI accordingly
@@ -242,15 +241,16 @@ function toggleSidebar() {
 // Create a new item in the specified category
 async function handleItemCreate(categoryId) {
   // Find the max order in this category
-  const categoryItems = items.value.filter(item => item.categoryId === categoryId);
-  const maxOrder = categoryItems.length > 0 ? Math.max(...categoryItems.map(item => item.order || 0)) : -1;
-  
+  const categoryItems = items.value.filter((item) => item.categoryId === categoryId);
+  const maxOrder =
+    categoryItems.length > 0 ? Math.max(...categoryItems.map((item) => item.order || 0)) : -1;
+
   const newItemData = {
     name: t('item.defaultName'),
     quantity: 1,
     categoryId: categoryId,
     isPacked: false,
-    order: maxOrder + 1
+    order: maxOrder + 1,
   };
 
   const newItem = await handleAsyncAction(createItem, newItemData);
@@ -280,10 +280,10 @@ async function handleItemMove(moveData) {
     // Item moved to different category
     const updatedItem = {
       ...moveData.item,
-      categoryId: moveData.newCategoryId
+      categoryId: moveData.newCategoryId,
     };
     await handleAsyncAction(updateItem, updatedItem);
-    
+
     // Also update the reordered items in the target category
     if (moveData.reorderedItems && moveData.reorderedItems.length > 0) {
       for (const item of moveData.reorderedItems) {
@@ -296,7 +296,7 @@ async function handleItemMove(moveData) {
       await handleAsyncAction(updateItem, item);
     }
   }
-  
+
   // Refresh items list
   await getItems();
 }
@@ -308,11 +308,12 @@ async function handleItemMove(moveData) {
 // Create a new category
 async function handleCategoryCreate() {
   // Find the highest order among all categories
-  const maxOrder = categories.value.length > 0 ? Math.max(...categories.value.map(cat => cat.order || 0)) : -1;
-  
+  const maxOrder =
+    categories.value.length > 0 ? Math.max(...categories.value.map((cat) => cat.order || 0)) : -1;
+
   const newCategoryData = {
     name: t('category.defaultName'),
-    order: maxOrder + 1
+    order: maxOrder + 1,
   };
 
   const newCategory = await handleAsyncAction(createCategory, newCategoryData);
@@ -342,7 +343,7 @@ async function handleCategoryReorder(reorderedCategories) {
   for (const category of reorderedCategories) {
     await handleAsyncAction(updateCategory, category);
   }
-  
+
   // Refresh categories after all updates to ensure consistency
   await getCategories();
 }
@@ -404,14 +405,15 @@ onUnmounted(() => {
 
 // Prevent layout shift caused by scrollbar/body resizing when overlay drawer is active
 watch([isSidebarOpen, isMobileViewport, isSmallDesktop], () => {
-  const overlayActive = isSidebarOpen.value && (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value));
+  const overlayActive =
+    isSidebarOpen.value &&
+    (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value));
   if (overlayActive) {
     document.body.style.overflow = 'hidden';
   } else {
     document.body.style.overflow = '';
   }
 });
-
 </script>
 
 <style>

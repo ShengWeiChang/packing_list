@@ -8,9 +8,9 @@ Created: 2025-09-19
 ================================================================================
 */
 
-module.exports = {
+export default {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},
   },
-}
+};

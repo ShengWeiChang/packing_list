@@ -10,7 +10,10 @@ Created: 2025-09-19
 -->
 
 <template>
-  <div ref="root" class="relative">
+  <div
+    ref="root"
+    class="relative"
+  >
     <button
       ref="buttonRef"
       type="button"
@@ -23,9 +26,21 @@ Created: 2025-09-19
         viewBox="0 0 24 24"
         aria-hidden="true"
       >
-        <circle cx="6" cy="12" r="1.5" />
-        <circle cx="12" cy="12" r="1.5" />
-        <circle cx="18" cy="12" r="1.5" />
+        <circle
+          cx="6"
+          cy="12"
+          r="1.5"
+        />
+        <circle
+          cx="12"
+          cy="12"
+          r="1.5"
+        />
+        <circle
+          cx="18"
+          cy="12"
+          r="1.5"
+        />
       </svg>
     </button>
 
@@ -37,11 +52,11 @@ Created: 2025-09-19
       :style="dropdownStyle"
     >
       <button
-        class="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-gray-100"
+        class="text-primary flex w-full items-center px-3 py-2 text-sm hover:bg-gray-100"
         @click="handleEdit"
       >
         <svg
-          class="w-4 h-4 mr-2"
+          class="mr-2 h-4 w-4"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -55,13 +70,13 @@ Created: 2025-09-19
         </svg>
         {{ $t('common.edit') }}
       </button>
-      
+
       <button
-        class="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+        class="flex w-full items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50"
         @click="handleDelete"
       >
         <svg
-          class="w-4 h-4 mr-2"
+          class="mr-2 h-4 w-4"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -94,26 +109,26 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 const props = defineProps({
   itemId: {
     type: String,
-    required: true
+    required: true,
   },
   menuType: {
     type: String,
     required: true,
-    validator: (value) => ['item', 'category', 'checklist'].includes(value)
+    validator: (value) => ['item', 'category', 'checklist'].includes(value),
   },
   alignment: {
     type: String,
     default: 'left',
-    validator: (value) => ['left', 'right'].includes(value)
+    validator: (value) => ['left', 'right'].includes(value),
   },
   forceVisible: {
     type: Boolean,
-    default: false
+    default: false,
   },
   useGroupHover: {
     type: Boolean,
-    default: true
-  }
+    default: true,
+  },
 });
 
 // Emits
@@ -136,7 +151,8 @@ const root = ref(null);
 
 // Button visibility based on props and menu state
 const buttonClass = computed(() => {
-  const baseClass = 'p-1 flex items-center justify-center text-secondary rounded-md transition-opacity duration-200 hover:bg-gray-200 hover:text-primary';
+  const baseClass =
+    'p-1 flex items-center justify-center text-secondary rounded-md transition-opacity duration-200 hover:bg-gray-200 hover:text-primary';
 
   // Show the button when menu is open or forceVisible is true
   if (showMenu.value || props.forceVisible) {
@@ -153,8 +169,8 @@ const buttonClass = computed(() => {
 });
 
 // Dropdown styling
-const dropdownClass = computed(() =>
-  `mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-auto max-w-xs`
+const dropdownClass = computed(
+  () => `mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-auto max-w-xs`
 );
 
 // SVG icon size based on menu type
@@ -171,7 +187,7 @@ function positionDropdown() {
   if (!buttonRef.value || !dropdownRef.value) return;
   const btnRect = buttonRef.value.getBoundingClientRect();
   const ddRect = dropdownRef.value.getBoundingClientRect();
-  
+
   // Align dropdown right edge with the button's right edge
   let left = btnRect.right - ddRect.width;
 
@@ -187,7 +203,7 @@ function positionDropdown() {
     position: 'fixed',
     left: `${left}px`,
     top: `${top}px`,
-    zIndex: 9999
+    zIndex: 9999,
   };
 }
 
@@ -199,7 +215,7 @@ function positionDropdown() {
 function toggleMenu() {
   const willOpen = !showMenu.value;
   showMenu.value = willOpen;
-  
+
   if (willOpen) {
     // First position dropdown off-screen to measure, then position correctly
     dropdownStyle.value = { position: 'fixed', left: '-9999px', top: '-9999px', zIndex: 9999 };
@@ -213,7 +229,8 @@ function toggleMenu() {
     const payload = { id: props.itemId, type: props.menuType };
     try {
       window.dispatchEvent(new CustomEvent('overflow-menu-open', { detail: payload }));
-    } catch (e) {
+    } catch {
+      // Fallback for older browsers that don't support CustomEvent constructor
       const ev = document.createEvent('CustomEvent');
       ev.initCustomEvent('overflow-menu-open', true, true, payload);
       window.dispatchEvent(ev);
@@ -242,7 +259,7 @@ function closeMenu(event) {
   const target = event.target;
   const clickedInsideRoot = root.value && root.value.contains(target);
   const clickedInsideDropdown = dropdownRef.value && dropdownRef.value.contains(target);
-  
+
   if (!clickedInsideRoot && !clickedInsideDropdown) {
     showMenu.value = false;
   }
@@ -257,7 +274,7 @@ function closeMenuOnScroll() {
 function closeWhenOtherOpens(e) {
   const detail = e?.detail || {};
   const otherId = detail.id;
-  
+
   if (otherId && otherId !== props.itemId) {
     showMenu.value = false;
   }
@@ -280,5 +297,4 @@ onUnmounted(() => {
   window.removeEventListener('scroll', closeMenuOnScroll, true);
   window.removeEventListener('overflow-menu-open', closeWhenOtherOpens);
 });
-
 </script>

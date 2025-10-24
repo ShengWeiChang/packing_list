@@ -1,0 +1,24 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "eslint.validate": ["javascript", "vue"],
+  "tailwindCSS.experimental.classRegex": [["class:\\s*['\"`]([^'\"`]*)['\"`]", "([^'\"`]*)"]],
+  "files.exclude": {
+    "**/.eslintcache": true,
+    "**/package-lock.json": true,
+    "**/.editorconfig": true,
+    "**/postcss.config.js": true
+  }
+}

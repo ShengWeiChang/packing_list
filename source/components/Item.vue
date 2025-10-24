@@ -12,21 +12,21 @@ Created: 2025-09-19
 <template>
   <div
     :class="[
-      'flex items-center py-0.5 pl-2 pr-1 rounded-md transition-all duration-200 group cursor-grab',
+      'group flex cursor-grab items-center rounded-md py-0.5 pl-2 pr-1 transition-all duration-200',
       categoryCompleted ? 'bg-green-50 text-green-800' : 'bg-white hover:bg-gray-100',
-      isDragging ? 'opacity-50 shadow-lg scale-105 cursor-grabbing' : ''
+      isDragging ? 'scale-105 cursor-grabbing opacity-50 shadow-lg' : '',
     ]"
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
   >
     <input
-      v-model="isItemPacked"
       :id="`item-${item.id}-packed`"
+      v-model="isItemPacked"
       :name="`item-${item.id}-packed`"
       type="checkbox"
       :class="[
-        'flex-none flex-shrink-0 w-4 h-4 mr-2 rounded-full',
-        isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600'
+        'mr-2 h-4 w-4 flex-none flex-shrink-0 rounded-full',
+        isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600',
       ]"
       :style="isItemPacked ? { accentColor: 'var(--color-theme-primary)' } : {}"
     />
@@ -40,14 +40,14 @@ Created: 2025-09-19
       <input
         v-if="isEditing"
         :id="`item-${item.id}-name`"
-        :name="`item-${item.id}-name`"
         ref="editInput"
         v-model="editedName"
+        :name="`item-${item.id}-name`"
         :class="[
-          'w-full text-base bg-transparent border-b border-blue-300 focus:outline-none focus:border-blue-500',
+          'w-full border-b border-blue-300 bg-transparent text-base focus:border-blue-500 focus:outline-none',
           {
-            'line-through text-secondary': item.isPacked
-          }
+            'text-secondary line-through': item.isPacked,
+          },
         ]"
         @keyup.enter="saveEdit"
         @keyup.escape="cancelEdit"
@@ -56,10 +56,10 @@ Created: 2025-09-19
       <span
         v-else
         :class="[
-          'text-base cursor-pointer hover:bg-gray-50 px-1 py-1 rounded',
+          'cursor-pointer rounded px-1 py-1 text-base hover:bg-gray-50',
           {
-            'line-through text-secondary': item.isPacked
-          }
+            'text-secondary line-through': item.isPacked,
+          },
         ]"
         @click="startEdit"
       >
@@ -77,12 +77,12 @@ Created: 2025-09-19
       <input
         v-if="isEditing"
         :id="`item-${item.id}-quantity`"
-        :name="`item-${item.id}-quantity`"
         ref="quantityInput"
         v-model.number="editedQuantity"
+        :name="`item-${item.id}-quantity`"
         type="number"
         min="1"
-        class="w-12 px-1 py-0.5 text-xs font-semibold text-secondary bg-gray-100 border border-gray-300 rounded-full text-center focus:outline-none focus:border-gray-500"
+        class="text-secondary w-12 rounded-full border border-gray-300 bg-gray-100 px-1 py-0.5 text-center text-xs font-semibold focus:border-gray-500 focus:outline-none"
         @keyup.enter="saveEdit"
         @keyup.escape="cancelEdit"
         @click.stop
@@ -90,7 +90,7 @@ Created: 2025-09-19
 
       <span
         v-else-if="item.quantity > 1"
-        class="px-1.5 py-0.5 text-xs font-semibold text-secondary bg-gray-100 rounded-full"
+        class="text-secondary rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-semibold"
       >
         x{{ item.quantity }}
       </span>
@@ -116,6 +116,7 @@ Created: 2025-09-19
 // ----------------------
 
 import { computed, nextTick, ref, watch } from 'vue';
+
 import { Item } from '../models/Item';
 import OverflowMenu from './OverflowMenu.vue';
 
@@ -130,34 +131,33 @@ const props = defineProps({
     required: true,
     validator: (value) => {
       // Validate that the object has the required properties for an item
-      return value &&
-             typeof value.id === 'string' &&
-             typeof value.name === 'string' &&
-             typeof value.quantity === 'number' &&
-             typeof value.categoryId === 'string' &&
-             typeof value.isPacked === 'boolean' &&
-             typeof value.checklistId === 'string';
-    }
+      return (
+        value &&
+        typeof value.id === 'string' &&
+        typeof value.name === 'string' &&
+        typeof value.quantity === 'number' &&
+        typeof value.categoryId === 'string' &&
+        typeof value.isPacked === 'boolean' &&
+        typeof value.checklistId === 'string'
+      );
+    },
   },
   newlyCreatedItemId: {
     type: String,
-    default: null
+    default: null,
   },
   categoryCompleted: {
     type: Boolean,
-    default: false
+    default: false,
   },
   isDragging: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
 // Emits
-const emit = defineEmits([
-  'update:item',
-  'delete:item'
-]);
+const emit = defineEmits(['update:item', 'delete:item']);
 
 // ----------------------
 // States
@@ -190,10 +190,10 @@ const isItemPacked = computed({
       categoryId: props.item.categoryId,
       isPacked: newValue,
       checklistId: props.item.checklistId,
-      order: props.item.order // Preserve order to prevent reordering
+      order: props.item.order, // Preserve order to prevent reordering
     });
     emit('update:item', updatedItem);
-  }
+  },
 });
 
 // ----------------------
@@ -201,12 +201,13 @@ const isItemPacked = computed({
 // ----------------------
 
 // Handle edit blur - only save if focus is moving outside edit area
-function handleEditBlur(event) {
+function handleEditBlur(_event) {
   // Use a small timeout to allow focus to move to the other input
   setTimeout(() => {
     // Check if focus is still within editing elements
     const activeElement = document.activeElement;
-    const isStillEditing = activeElement === editInput.value || activeElement === quantityInput.value;
+    const isStillEditing =
+      activeElement === editInput.value || activeElement === quantityInput.value;
 
     if (!isStillEditing && isEditing.value) {
       saveEdit();
@@ -236,7 +237,7 @@ function saveEdit() {
     const updatedItem = new Item({
       ...props.item,
       name: editedName.value.trim() || props.item.name,
-      quantity: Math.max(1, editedQuantity.value) // Ensure quantity is at least 1
+      quantity: Math.max(1, editedQuantity.value), // Ensure quantity is at least 1
     });
     emit('update:item', updatedItem);
   }
@@ -264,12 +265,14 @@ function handleDelete() {
 // ----------------------
 
 // Watch for newly created items and auto-start edit
-watch(() => props.newlyCreatedItemId, (newId) => {
-  if (newId === props.item.id) {
-    nextTick(() => {
-      startEdit();
-    });
+watch(
+  () => props.newlyCreatedItemId,
+  (newId) => {
+    if (newId === props.item.id) {
+      nextTick(() => {
+        startEdit();
+      });
+    }
   }
-});
-
+);
 </script>

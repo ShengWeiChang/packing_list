@@ -44,7 +44,6 @@ export class Checklist {
     return destination;
   }
 
-
   /**
    * Creates a Checklist instance from JSON data
    * @param {Object} json - The JSON data to create the checklist from

@@ -12,30 +12,30 @@ Created: 2025-09-19
 <template>
   <div>
     <!-- Checklist Header -->
-    <div class="p-4 mb-2">
+    <div class="mb-2 p-4">
       <!-- Header content -->
-      <div class="flex items-center justify-between mb-4 min-h-[4rem] gap-4">
-        <div class="flex items-baseline space-x-4 flex-grow min-w-0">
+      <div class="mb-4 flex min-h-[4rem] items-center justify-between gap-4">
+        <div class="flex min-w-0 flex-grow items-baseline space-x-4">
           <!-- Editable destination name -->
           <div
-            class="flex-grow min-h-[3rem] flex items-center min-w-0"
+            class="flex min-h-[3rem] min-w-0 flex-grow items-center"
             @blur="handleEditBlur"
             @focusout="handleEditBlur"
           >
             <input
               v-if="isEditing"
               :id="`checklist-${checklist.id}-destination`"
-              :name="`checklist-${checklist.id}-destination`"
               ref="destinationInput"
               v-model="editedDestination"
+              :name="`checklist-${checklist.id}-destination`"
               :placeholder="$t('checklist.destination')"
-              class="w-full text-2xl md:text-3xl font-bold text-primary bg-transparent border-b-2 border-blue-300 focus:outline-none focus:border-blue-500 min-w-0"
+              class="text-primary w-full min-w-0 border-b-2 border-blue-300 bg-transparent text-2xl font-bold focus:border-blue-500 focus:outline-none md:text-3xl"
               @keyup.enter="saveEdit"
               @keyup.escape="cancelEdit"
             />
             <h2
               v-else
-              class="text-2xl md:text-3xl font-bold text-primary cursor-pointer hover:bg-gray-50 px-1 py-1 rounded truncate"
+              class="text-primary cursor-pointer truncate rounded px-1 py-1 text-2xl font-bold hover:bg-gray-50 md:text-3xl"
               @click="startEdit"
             >
               {{ checklist.destination || $t('checklist.untitled') }}
@@ -44,40 +44,40 @@ Created: 2025-09-19
 
           <!-- Editable dates -->
           <div
-            class="flex items-center space-x-2 min-h-[2.5rem] flex-shrink-0"
+            class="flex min-h-[2.5rem] flex-shrink-0 items-center space-x-2"
             @blur="handleEditBlur"
             @focusout="handleEditBlur"
           >
             <div
               v-if="isEditing"
-              class="flex items-center space-x-1 sm:space-x-2 flex-wrap sm:flex-nowrap"
+              class="flex flex-wrap items-center space-x-1 sm:flex-nowrap sm:space-x-2"
             >
               <input
                 :id="`checklist-${checklist.id}-start-date`"
-                :name="`checklist-${checklist.id}-start-date`"
                 ref="startDateInput"
                 v-model="editedStartDate"
+                :name="`checklist-${checklist.id}-start-date`"
                 type="date"
-                class="text-sm sm:text-base text-secondary bg-transparent border border-gray-300 rounded px-1 sm:px-2 py-1 focus:outline-none focus:border-blue-500 w-28 sm:w-auto"
+                class="text-secondary w-28 rounded border border-gray-300 bg-transparent px-1 py-1 text-sm focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2 sm:text-base"
                 @keyup.enter="saveEdit"
                 @keyup.escape="cancelEdit"
               />
               <span class="text-secondary hidden sm:inline">-</span>
               <input
                 :id="`checklist-${checklist.id}-end-date`"
-                :name="`checklist-${checklist.id}-end-date`"
                 ref="endDateInput"
                 v-model="editedEndDate"
+                :name="`checklist-${checklist.id}-end-date`"
                 type="date"
                 :min="editedStartDate"
-                class="text-sm sm:text-base text-secondary bg-transparent border border-gray-300 rounded px-1 sm:px-2 py-1 focus:outline-none focus:border-blue-500 w-28 sm:w-auto"
+                class="text-secondary w-28 rounded border border-gray-300 bg-transparent px-1 py-1 text-sm focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2 sm:text-base"
                 @keyup.enter="saveEdit"
                 @keyup.escape="cancelEdit"
               />
             </div>
             <span
               v-else
-              class="text-base text-secondary cursor-pointer hover:bg-gray-50 px-2 py-1 rounded"
+              class="text-secondary cursor-pointer rounded px-2 py-1 text-base hover:bg-gray-50"
               @click="startEdit"
             >
               {{ formatDateRange(checklist.startDate, checklist.endDate) }}
@@ -103,31 +103,28 @@ Created: 2025-09-19
       <!-- Progress bar -->
       <ProgressBar
         :total="items.length"
-        :completed="items.filter(item => item.isPacked).length"
+        :completed="items.filter((item) => item.isPacked).length"
       />
     </div>
 
     <!-- Categories Grid -->
     <div>
       <draggable
-        item-key="id"
         v-model="draggableCategories"
-        :group="{ 
-          name: 'categories', 
-          pull: true, 
-          put: function(to, from, dragEl, evt) {
+        item-key="id"
+        :group="{
+          name: 'categories',
+          pull: true,
+          put: function (to, from, dragEl, evt) {
             // Only allow categories to be dropped in the category container
             return from.options.group.name === 'categories';
-          }
+          },
         }"
         :animation="200"
         :ghost-class="'ghost-category'"
         :chosen-class="'chosen-category'"
         :drag-class="'drag-category'"
-        :class="[
-          'categories-masonry',
-          isDraggingCategory ? 'dragging' : ''
-        ]"
+        :class="['categories-masonry', isDraggingCategory ? 'dragging' : '']"
         @start="onCategoryDragStart"
         @end="onCategoryDragEnd"
         @update="onCategoryUpdate"
@@ -167,6 +164,7 @@ Created: 2025-09-19
 import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
+
 import AddCategoryButton from './AddCategoryButton.vue';
 import Category from './Category.vue';
 import OverflowMenu from './OverflowMenu.vue';
@@ -189,33 +187,35 @@ const props = defineProps({
     required: true,
     validator: (value) => {
       // Validate that the object has the required properties for a checklist
-      return value &&
-             typeof value.id === 'string' &&
-             typeof value.destination === 'string' &&
-             typeof value.startDate === 'string' &&
-             typeof value.endDate === 'string';
-    }
+      return (
+        value &&
+        typeof value.id === 'string' &&
+        typeof value.destination === 'string' &&
+        typeof value.startDate === 'string' &&
+        typeof value.endDate === 'string'
+      );
+    },
   },
   categories: {
     type: Array,
-    required: true
+    required: true,
   },
   items: {
     type: Array,
-    required: true
+    required: true,
   },
   newlyCreatedItemId: {
     type: String,
-    default: null
+    default: null,
   },
   newlyCreatedCategoryId: {
     type: String,
-    default: null
+    default: null,
   },
   newlyCreatedChecklistId: {
     type: String,
-    default: null
-  }
+    default: null,
+  },
 });
 
 // Emits
@@ -229,7 +229,7 @@ const emit = defineEmits([
   'delete:category',
   'create:category',
   'reorder:categories',
-  'move:item'
+  'move:item',
 ]);
 
 // ----------------------
@@ -267,11 +267,11 @@ const draggableCategories = computed({
     // When vuedraggable updates the array, emit the reorder event
     const categoriesWithNewOrder = newCategories.map((category, index) => ({
       ...category,
-      order: index
+      order: index,
     }));
-    
+
     emit('reorder:categories', categoriesWithNewOrder);
-  }
+  },
 });
 
 // ----------------------
@@ -279,14 +279,15 @@ const draggableCategories = computed({
 // ----------------------
 
 // Handle edit blur - only save if focus is moving outside edit area
-function handleEditBlur(event) {
+function handleEditBlur(_event) {
   // Use a small timeout to allow focus to move to the other input
   setTimeout(() => {
     // Check if focus is still within editing elements
     const activeElement = document.activeElement;
-    const isStillEditing = activeElement === destinationInput.value ||
-                           activeElement === startDateInput.value ||
-                           activeElement === endDateInput.value;
+    const isStillEditing =
+      activeElement === destinationInput.value ||
+      activeElement === startDateInput.value ||
+      activeElement === endDateInput.value;
 
     if (!isStillEditing && isEditing.value) {
       saveEdit();
@@ -319,7 +320,7 @@ function saveEdit() {
       ...props.checklist,
       destination: editedDestination.value.trim() || t('checklist.untitled'),
       startDate: editedStartDate.value,
-      endDate: editedEndDate.value
+      endDate: editedEndDate.value,
     };
     emit('update:checklist', updatedChecklist);
   }
@@ -357,13 +358,13 @@ function onCategoryDragStart(evt) {
 }
 
 // Clean up drag state when drag ends
-function onCategoryDragEnd(evt) {
+function onCategoryDragEnd(_evt) {
   draggingCategoryId.value = null;
   isDraggingCategory.value = false;
 }
 
 // Handle category reorder (handled by draggableCategories setter instead)
-function onCategoryUpdate(evt) {
+function onCategoryUpdate(_evt) {
   // This event is now handled by the draggableCategories setter
 }
 
@@ -398,18 +399,18 @@ function formatDateRange(startDate, endDate) {
     return start.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   }
 
   // Different dates
   return `${start.toLocaleDateString('en-US', {
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   })} - ${end.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-    year: 'numeric'
+    year: 'numeric',
   })}`;
 }
 
@@ -418,14 +419,16 @@ function formatDateRange(startDate, endDate) {
 // ----------------------
 
 // Watch for newly created checklists and auto-start edit
-watch(() => props.newlyCreatedChecklistId, (newId) => {
-  if (newId === props.checklist.id) {
-    nextTick(() => {
-      startEdit();
-    });
+watch(
+  () => props.newlyCreatedChecklistId,
+  (newId) => {
+    if (newId === props.checklist.id) {
+      nextTick(() => {
+        startEdit();
+      });
+    }
   }
-});
-
+);
 </script>
 
 <style scoped>
@@ -444,7 +447,9 @@ watch(() => props.newlyCreatedChecklistId, (newId) => {
 .drag-category {
   opacity: 0.5;
   transform: scale(1.02);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   z-index: 1000;
 }
 
@@ -484,8 +489,9 @@ watch(() => props.newlyCreatedChecklistId, (newId) => {
 
 /* Layout preservation during drag */
 .categories-masonry.dragging > * {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity;
 }
 
@@ -496,11 +502,16 @@ watch(() => props.newlyCreatedChecklistId, (newId) => {
 
 /* Success animation */
 @keyframes flash-success {
-  0%, 100% { 
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  0%,
+  100% {
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
-  50% { 
-    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3), 0 2px 4px -1px rgba(16, 185, 129, 0.2);
+  50% {
+    box-shadow:
+      0 4px 6px -1px rgba(16, 185, 129, 0.3),
+      0 2px 4px -1px rgba(16, 185, 129, 0.2);
   }
 }
 

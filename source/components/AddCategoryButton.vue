@@ -11,12 +11,12 @@ Created: 2025-09-19
 
 <template>
   <div
-    class="p-4 bg-white rounded-xl shadow-md transition-shadow duration-200 hover:shadow-lg cursor-pointer flex items-center justify-center min-h-[200px] border-2 border-dashed border-gray-300 hover:border-gray-400"
+    class="flex min-h-[200px] cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-4 shadow-md transition-shadow duration-200 hover:border-gray-400 hover:shadow-lg"
     @click="$emit('click')"
   >
     <div class="text-center">
       <svg
-        class="w-8 h-8 text-secondary mx-auto mb-2"
+        class="text-secondary mx-auto mb-2 h-8 w-8"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -28,7 +28,7 @@ Created: 2025-09-19
           d="M12 6v6m0 0v6m0-6h6m-6 0H6"
         />
       </svg>
-      <span class="ml-2 text-base text-secondary group-hover:text-primary">
+      <span class="text-secondary group-hover:text-primary ml-2 text-base">
         {{ $t('category.newCategory') }}
       </span>
     </div>
@@ -42,5 +42,4 @@ Created: 2025-09-19
 
 // Emits
 defineEmits(['click']);
-
 </script>

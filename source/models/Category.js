@@ -20,7 +20,7 @@ export class Category {
     id = generateSecureId('category-'),
     name = '',
     checklistId = null,
-    order = 0
+    order = 0,
   } = {}) {
     this.id = id;
     this.name = this.validateName(name);
@@ -62,7 +62,7 @@ export class Category {
       id: this.id,
       name: this.name,
       checklistId: this.checklistId,
-      order: this.order
+      order: this.order,
     };
   }
 }

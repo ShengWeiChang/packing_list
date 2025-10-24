@@ -12,27 +12,27 @@ Created: 2025-09-19
 <template>
   <div
     :class="[
-      'p-3 rounded-xl shadow-md transition-all duration-200 group',
-      isCompleted ? 'bg-green-50 hover:shadow-lg' : 'bg-white hover:shadow-lg'
+      'group rounded-xl p-3 shadow-md transition-all duration-200',
+      isCompleted ? 'bg-green-50 hover:shadow-lg' : 'bg-white hover:shadow-lg',
     ]"
   >
     <!-- Category Header -->
-    <div class="flex items-center justify-between mb-3 relative">
+    <div class="relative mb-3 flex items-center justify-between">
       <div class="flex-grow">
         <input
           v-if="isEditing"
           :id="`category-${category.id}-name`"
-          :name="`category-${category.id}-name`"
           ref="editInput"
           v-model="editedName"
-          class="w-full text-xl font-semibold text-slate-800 bg-transparent border-b border-blue-300 focus:outline-none focus:border-blue-500"
+          :name="`category-${category.id}-name`"
+          class="w-full border-b border-blue-300 bg-transparent text-xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none"
           @keyup.enter="saveEdit"
           @keyup.escape="cancelEdit"
           @blur="saveEdit"
         />
         <h3
           v-else
-          class="text-xl font-semibold text-primary cursor-pointer hover:bg-gray-50 px-1 py-1 rounded"
+          class="text-primary cursor-pointer rounded px-1 py-1 text-xl font-semibold hover:bg-gray-50"
           @click="startEdit"
         >
           {{ category.name }}
@@ -53,22 +53,22 @@ Created: 2025-09-19
     <!-- Category Progress Bar -->
     <ProgressBar
       :total="sortedItems.length"
-      :completed="sortedItems.filter(item => item.isPacked).length"
+      :completed="sortedItems.filter((item) => item.isPacked).length"
       class="mb-3"
     />
 
     <!-- Items List -->
     <div class="space-y-0.5">
       <draggable
-        item-key="id"
         v-model="draggableItems"
-        :group="{ 
-          name: 'items', 
-          pull: true, 
-          put: function(to, from, dragEl, evt) {
+        item-key="id"
+        :group="{
+          name: 'items',
+          pull: true,
+          put: function (to, from, dragEl, evt) {
             // Only allow items to be dropped in item containers, not categories
             return from.options.group.name === 'items';
-          }
+          },
         }"
         :animation="200"
         :ghost-class="'ghost-item'"
@@ -79,7 +79,10 @@ Created: 2025-09-19
         @change="onItemChange"
       >
         <template #item="{ element: item }">
-          <div :key="item.id" :data-item-id="item.id">
+          <div
+            :key="item.id"
+            :data-item-id="item.id"
+          >
             <Item
               :item="item"
               :newly-created-item-id="newlyCreatedItemId"
@@ -108,6 +111,7 @@ Created: 2025-09-19
 
 import { computed, nextTick, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
+
 import { Category } from '../models/Category';
 import AddItemButton from './AddItemButton.vue';
 import Item from './Item.vue';
@@ -125,24 +129,26 @@ const props = defineProps({
     required: true,
     validator: (value) => {
       // Validate that the object has the required properties for a category
-      return value &&
-             typeof value.id === 'string' &&
-             typeof value.name === 'string' &&
-             typeof value.checklistId === 'string';
-    }
+      return (
+        value &&
+        typeof value.id === 'string' &&
+        typeof value.name === 'string' &&
+        typeof value.checklistId === 'string'
+      );
+    },
   },
   items: {
     type: Array,
-    required: true
+    required: true,
   },
   newlyCreatedItemId: {
     type: String,
-    default: null
+    default: null,
   },
   newlyCreatedCategoryId: {
     type: String,
-    default: null
-  }
+    default: null,
+  },
 });
 
 // Emits
@@ -152,7 +158,7 @@ const emit = defineEmits([
   'create:item',
   'update:category',
   'delete:category',
-  'move:item'
+  'move:item',
 ]);
 
 // ----------------------
@@ -173,7 +179,7 @@ const draggingItemId = ref(null);
 
 // Sorted items for this category (filtered from all items, then sorted by order)
 const sortedItems = computed(() => {
-  const filteredItems = props.items.filter(item => item.categoryId === props.category.id);
+  const filteredItems = props.items.filter((item) => item.categoryId === props.category.id);
   // Sort by order field to maintain correct sequence
   return filteredItems.sort((a, b) => (a.order || 0) - (b.order || 0));
 });
@@ -183,7 +189,7 @@ const draggableItems = computed({
   get() {
     return sortedItems.value;
   },
-  set(newItems) {
+  set(_newItems) {
     // This setter is intentionally empty (no-op) since we handle ALL drag events via @change event
     // - evt.added: Cross-category move (target side)
     // - evt.removed: Cross-category move (source side)
@@ -192,14 +198,14 @@ const draggableItems = computed({
     // The setter must exist for v-model to work, but it does nothing.
     // The actual data updates happen via emit('move:item') in @change handler,
     // then flow back through props → sortedItems → getter.
-  }
+  },
 });
 
 // Completing state
 const isCompleted = computed(() => {
   const items = sortedItems.value;
   if (!items.length) return false;
-  return items.every(i => i.isPacked);
+  return items.every((i) => i.isPacked);
 });
 
 // ----------------------
@@ -225,7 +231,7 @@ function saveEdit() {
   if (hasNameChanged) {
     const updatedCategory = new Category({
       ...props.category,
-      name: editedName.value.trim()
+      name: editedName.value.trim(),
     });
     emit('update:category', updatedCategory);
   }
@@ -260,7 +266,7 @@ function onItemDragStart(evt) {
 }
 
 // Clean up drag state when drag ends
-function onItemDragEnd(evt) {
+function onItemDragEnd(_evt) {
   draggingItemId.value = null;
 }
 
@@ -273,17 +279,17 @@ function onItemChange(evt) {
   if (evt.added) {
     const item = evt.added.element;
     const newIndex = evt.added.newIndex;
-    
+
     // Get current items in this category (excluding the newly added item)
-    const currentCategoryItems = sortedItems.value.filter(i => i.id !== item.id);
-    
+    const currentCategoryItems = sortedItems.value.filter((i) => i.id !== item.id);
+
     // Create updated item with new category and order
     const updatedItem = {
       ...item,
       categoryId: props.category.id,
-      order: newIndex
+      order: newIndex,
     };
-    
+
     // Shift down items that come after the insertion point
     const reorderedItems = currentCategoryItems.map((existingItem, index) => {
       let newOrder = index;
@@ -292,41 +298,41 @@ function onItemChange(evt) {
       }
       return {
         ...existingItem,
-        order: newOrder
+        order: newOrder,
       };
     });
-    
+
     emit('move:item', {
       item: updatedItem,
       reorderedItems: reorderedItems,
       newCategoryId: props.category.id,
       oldCategoryId: item.categoryId,
       newIndex: newIndex,
-      type: 'move'
+      type: 'move',
     });
   }
-  
+
   // Case 2: Same-category reorder
   // When an item is moved within the same category
   if (evt.moved) {
     const oldIndex = evt.moved.oldIndex;
     const newIndex = evt.moved.newIndex;
-    
+
     // Build the new order by simulating the move
     const items = [...sortedItems.value];
     const [removed] = items.splice(oldIndex, 1);
     items.splice(newIndex, 0, removed);
-    
+
     // Renumber all items based on the new order
     const itemsWithNewOrder = items.map((item, index) => ({
       ...item,
-      order: index
+      order: index,
     }));
-    
+
     emit('move:item', {
       items: itemsWithNewOrder,
       categoryId: props.category.id,
-      type: 'reorder'
+      type: 'reorder',
     });
   }
 }
@@ -336,14 +342,16 @@ function onItemChange(evt) {
 // ----------------------
 
 // Watch for newly created category and auto-start edit
-watch(() => props.newlyCreatedCategoryId, (newId) => {
-  if (newId === props.category.id) {
-    nextTick(() => {
-      startEdit();
-    });
+watch(
+  () => props.newlyCreatedCategoryId,
+  (newId) => {
+    if (newId === props.category.id) {
+      nextTick(() => {
+        startEdit();
+      });
+    }
   }
-});
-
+);
 </script>
 
 <style scoped>
@@ -361,7 +369,9 @@ watch(() => props.newlyCreatedCategoryId, (newId) => {
 .drag-item {
   opacity: 0.5;
   transform: scale(1.05);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 /* Drag handle */
@@ -390,8 +400,13 @@ watch(() => props.newlyCreatedCategoryId, (newId) => {
 
 /* Success flash animation */
 @keyframes flash-success {
-  0%, 100% { border-color: transparent; }
-  50% { border-color: #10b981; }
+  0%,
+  100% {
+    border-color: transparent;
+  }
+  50% {
+    border-color: #10b981;
+  }
 }
 
 .flash-success {

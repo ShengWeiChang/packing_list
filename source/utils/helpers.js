@@ -18,7 +18,7 @@ export function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   });
 }
 
@@ -32,7 +32,7 @@ export function generateSecureId(prefix = '') {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     try {
       return `${prefix}${crypto.randomUUID()}`;
-    } catch (e) {
+    } catch {
       // fall through to fallback
     }
   }

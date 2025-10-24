@@ -23,7 +23,7 @@ export class Item {
     categoryId = null,
     isPacked = false,
     checklistId = null,
-    order = 0
+    order = 0,
   } = {}) {
     this.id = id;
     this.name = this.validateName(name);
@@ -60,7 +60,9 @@ export class Item {
   validateQuantity(quantity) {
     const num = Number(quantity);
     if (!Number.isInteger(num) || num < VALIDATION.MIN_QUANTITY || num > VALIDATION.MAX_QUANTITY) {
-      throw new Error(`Quantity must be an integer between ${VALIDATION.MIN_QUANTITY} and ${VALIDATION.MAX_QUANTITY}`);
+      throw new Error(
+        `Quantity must be an integer between ${VALIDATION.MIN_QUANTITY} and ${VALIDATION.MAX_QUANTITY}`
+      );
     }
     return num;
   }
@@ -74,7 +76,7 @@ export class Item {
     // Ensure isPacked is properly converted to boolean
     const itemData = {
       ...json,
-      isPacked: Boolean(json.isPacked)
+      isPacked: Boolean(json.isPacked),
     };
     return new Item(itemData);
   }
@@ -91,7 +93,7 @@ export class Item {
       categoryId: this.categoryId,
       isPacked: this.isPacked,
       checklistId: this.checklistId,
-      order: this.order
+      order: this.order,
     };
   }
 

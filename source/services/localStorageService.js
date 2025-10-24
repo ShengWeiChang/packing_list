@@ -60,7 +60,7 @@ export class LocalStorageService extends DataService {
       // when a checklist is created (see createChecklist).
       checklists: [],
       categories: [],
-      items: []
+      items: [],
     };
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(initialData));
   }
@@ -93,7 +93,7 @@ export class LocalStorageService extends DataService {
     }
   }
 
-    /**
+  /**
    * Create default categories and items for a new checklist
    * @param {string} checklistId - The checklist ID
    * @returns {Object} Object containing { categories: Array, items: Array }
@@ -102,31 +102,37 @@ export class LocalStorageService extends DataService {
     // Get user's locale preference for default items
     const userLocale = localStorage.getItem('user-locale') || 'en';
     const defaultItems = getDefaultItems(userLocale);
-    
+
     // Extract unique category names from default items
-    const categoryNames = [...new Set(defaultItems.map(item => item.category))];
-    
+    const categoryNames = [...new Set(defaultItems.map((item) => item.category))];
+
     // Create Category objects with order
-    const categories = categoryNames.map((name, index) => new Category({ 
-      name, 
-      checklistId,
-      order: index 
-    }));
-    
+    const categories = categoryNames.map(
+      (name, index) =>
+        new Category({
+          name,
+          checklistId,
+          order: index,
+        })
+    );
+
     // Create a mapping from category name to category ID
-    const categoryMap = Object.fromEntries(categories.map(cat => [cat.name, cat.id]));
-    
+    const categoryMap = Object.fromEntries(categories.map((cat) => [cat.name, cat.id]));
+
     // Create Item objects mapped to the correct categories with order
-    const items = defaultItems.map((item, index) => new Item({
-      id: generateSecureId('item-'),
-      name: item.name,
-      quantity: item.quantity,
-      categoryId: categoryMap[item.category],
-      isPacked: false,
-      checklistId: checklistId,
-      order: index
-    }));
-    
+    const items = defaultItems.map(
+      (item, index) =>
+        new Item({
+          id: generateSecureId('item-'),
+          name: item.name,
+          quantity: item.quantity,
+          categoryId: categoryMap[item.category],
+          isPacked: false,
+          checklistId: checklistId,
+          order: index,
+        })
+    );
+
     return { categories, items };
   }
 
@@ -151,7 +157,7 @@ export class LocalStorageService extends DataService {
       const validatedData = {
         checklists: Array.isArray(parsed.checklists) ? parsed.checklists : [],
         categories: Array.isArray(parsed.categories) ? parsed.categories : [],
-        items: Array.isArray(parsed.items) ? parsed.items : []
+        items: Array.isArray(parsed.items) ? parsed.items : [],
       };
 
       this._cache = validatedData;
@@ -183,10 +189,10 @@ export class LocalStorageService extends DataService {
 
     // Generate default categories and items for this checklist
     const { categories: newCategories, items: newItems } = this._createDefaultData(newChecklist.id);
-    
+
     // Add categories and items to storage
-    data.categories = [...(data.categories || []), ...newCategories.map(c => c.toJSON())];
-    data.items = [...(data.items || []), ...newItems.map(i => i.toJSON())];
+    data.categories = [...(data.categories || []), ...newCategories.map((c) => c.toJSON())];
+    data.items = [...(data.items || []), ...newItems.map((i) => i.toJSON())];
 
     data.checklists = checklists;
     this._saveData(data);
@@ -199,7 +205,7 @@ export class LocalStorageService extends DataService {
    */
   async getChecklists() {
     const data = await this.getData();
-    return (data.checklists || []).map(cl => Checklist.fromJSON(cl).toJSON());
+    return (data.checklists || []).map((cl) => Checklist.fromJSON(cl).toJSON());
   }
 
   /**
@@ -209,7 +215,7 @@ export class LocalStorageService extends DataService {
    */
   async getChecklistById(id) {
     const data = await this.getData();
-    const checklistData = (data.checklists || []).find(cl => cl.id === id);
+    const checklistData = (data.checklists || []).find((cl) => cl.id === id);
     return checklistData ? Checklist.fromJSON(checklistData).toJSON() : null;
   }
 
@@ -221,7 +227,7 @@ export class LocalStorageService extends DataService {
   async updateChecklist(checklist) {
     const data = await this.getData();
     const checklists = data.checklists || [];
-    const index = checklists.findIndex(cl => cl.id === checklist.id);
+    const index = checklists.findIndex((cl) => cl.id === checklist.id);
 
     if (index === -1) {
       throw new Error(`Checklist with id ${checklist.id} not found`);
@@ -242,10 +248,10 @@ export class LocalStorageService extends DataService {
    */
   async deleteChecklist(id) {
     const data = await this.getData();
-    data.checklists = (data.checklists || []).filter(cl => cl.id !== id);
+    data.checklists = (data.checklists || []).filter((cl) => cl.id !== id);
     // Also remove categories and items associated with the checklist
-    data.categories = (data.categories || []).filter(cat => cat.checklistId !== id);
-    data.items = (data.items || []).filter(item => item.checklistId !== id);
+    data.categories = (data.categories || []).filter((cat) => cat.checklistId !== id);
+    data.items = (data.items || []).filter((item) => item.checklistId !== id);
     this._saveData(data);
   }
 
@@ -280,9 +286,9 @@ export class LocalStorageService extends DataService {
   async getCategories(checklistId) {
     const data = await this.getData();
     return (data.categories || [])
-      .map(cat => Category.fromJSON(cat))
-      .filter(cat => (checklistId ? cat.checklistId === checklistId : true))
-      .map(cat => cat.toJSON());
+      .map((cat) => Category.fromJSON(cat))
+      .filter((cat) => (checklistId ? cat.checklistId === checklistId : true))
+      .map((cat) => cat.toJSON());
   }
 
   /**
@@ -292,7 +298,7 @@ export class LocalStorageService extends DataService {
    */
   async getCategoryById(categoryId) {
     const data = await this.getData();
-    const catData = (data.categories || []).find(c => c.id === categoryId);
+    const catData = (data.categories || []).find((c) => c.id === categoryId);
     return catData ? Category.fromJSON(catData).toJSON() : null;
   }
 
@@ -304,7 +310,7 @@ export class LocalStorageService extends DataService {
   async updateCategory(category) {
     const data = await this.getData();
     const categories = data.categories || [];
-    const index = categories.findIndex(cat => cat.id === category.id);
+    const index = categories.findIndex((cat) => cat.id === category.id);
 
     if (index === -1) {
       throw new Error(`Category with id ${category.id} not found`);
@@ -324,9 +330,9 @@ export class LocalStorageService extends DataService {
    */
   async deleteCategory(categoryId) {
     const data = await this.getData();
-    data.categories = (data.categories || []).filter(cat => cat.id !== categoryId);
+    data.categories = (data.categories || []).filter((cat) => cat.id !== categoryId);
     // Also delete all items in this category across all checklists
-    data.items = (data.items || []).filter(item => item.categoryId !== categoryId);
+    data.items = (data.items || []).filter((item) => item.categoryId !== categoryId);
     this._saveData(data);
   }
 
@@ -361,8 +367,8 @@ export class LocalStorageService extends DataService {
   async getItems(checklistId) {
     const data = await this.getData();
     return (data.items || [])
-      .filter(item => item.checklistId === checklistId)
-      .map(item => Item.fromJSON(item).toJSON());
+      .filter((item) => item.checklistId === checklistId)
+      .map((item) => Item.fromJSON(item).toJSON());
   }
 
   /**
@@ -373,7 +379,9 @@ export class LocalStorageService extends DataService {
    */
   async getItemById(checklistId, itemId) {
     const data = await this.getData();
-    const itemData = (data.items || []).find(i => i.checklistId === checklistId && i.id === itemId);
+    const itemData = (data.items || []).find(
+      (i) => i.checklistId === checklistId && i.id === itemId
+    );
     return itemData ? Item.fromJSON(itemData).toJSON() : null;
   }
 
@@ -386,7 +394,7 @@ export class LocalStorageService extends DataService {
   async updateItem(checklistId, item) {
     const data = await this.getData();
     const items = data.items || [];
-    const index = items.findIndex(i => i.id === item.id && i.checklistId === checklistId);
+    const index = items.findIndex((i) => i.id === item.id && i.checklistId === checklistId);
 
     if (index === -1) {
       throw new Error(`Item with id ${item.id} not found in checklist ${checklistId}`);
@@ -409,7 +417,7 @@ export class LocalStorageService extends DataService {
   async deleteItem(checklistId, itemId) {
     const data = await this.getData();
     data.items = (data.items || []).filter(
-      item => !(item.checklistId === checklistId && item.id === itemId)
+      (item) => !(item.checklistId === checklistId && item.id === itemId)
     );
     this._saveData(data);
   }
@@ -419,7 +427,8 @@ export class LocalStorageService extends DataService {
    */
   dispose() {
     // Clear storage event listener if it exists
-    const isBrowser = typeof window !== 'undefined' && typeof window.addEventListener === 'function';
+    const isBrowser =
+      typeof window !== 'undefined' && typeof window.addEventListener === 'function';
     if (isBrowser) {
       window.removeEventListener('storage', this._storageListener);
       this._storageListener = null;
@@ -429,5 +438,4 @@ export class LocalStorageService extends DataService {
     this._cache = null;
     this._initialized = false;
   }
-
 }

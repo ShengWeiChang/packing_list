@@ -10,6 +10,7 @@ Created: 2025-09-19
 */
 
 import { computed, readonly, ref, watch } from 'vue';
+
 import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';
 import { Item } from '../models/Item';
@@ -27,10 +28,10 @@ export function usePackingLists() {
 
   // Computed properties
   const selectedChecklist = computed(() =>
-    checklists.value.find(cl => cl.id === selectedChecklistId.value)
+    checklists.value.find((cl) => cl.id === selectedChecklistId.value)
   );
   const totalItems = computed(() => items.value.length);
-  const packedItems = computed(() => items.value.filter(item => item.isPacked).length);
+  const packedItems = computed(() => items.value.filter((item) => item.isPacked).length);
   const progress = computed(() => {
     if (totalItems.value === 0) return 0;
     return Math.round((packedItems.value / totalItems.value) * 100);
@@ -66,9 +67,9 @@ export function usePackingLists() {
       const raw = await dataService.getData();
 
       // Populate checklists, categories and items from the raw data
-      const preChecklists = (raw.checklists || []).map(cl => Checklist.fromJSON(cl));
-      const preCategories = (raw.categories || []).map(cat => Category.fromJSON(cat));
-      const preItems = (raw.items || []).map(it => Item.fromJSON(it));
+      const preChecklists = (raw.checklists || []).map((cl) => Checklist.fromJSON(cl));
+      const preCategories = (raw.categories || []).map((cat) => Category.fromJSON(cat));
+      const preItems = (raw.items || []).map((it) => Item.fromJSON(it));
 
       // Load checklists
       checklists.value = preChecklists;
@@ -79,8 +80,8 @@ export function usePackingLists() {
 
       // Load categories and items for the currently selected checklist
       if (selectedChecklistId.value) {
-        categories.value = preCategories.filter(c => c.checklistId === selectedChecklistId.value);
-        items.value = preItems.filter(i => i.checklistId === selectedChecklistId.value);
+        categories.value = preCategories.filter((c) => c.checklistId === selectedChecklistId.value);
+        items.value = preItems.filter((i) => i.checklistId === selectedChecklistId.value);
       } else {
         categories.value = [];
         items.value = [];
@@ -113,10 +114,7 @@ export function usePackingLists() {
   }
 
   async function getChecklists() {
-    const result = await loadData(
-      () => dataService.getChecklists(),
-      'Error getting checklists'
-    );
+    const result = await loadData(() => dataService.getChecklists(), 'Error getting checklists');
     checklists.value = result || [];
     if (checklists.value.length > 0 && !selectedChecklistId.value) {
       selectedChecklistId.value = checklists.value[0].id;
@@ -137,10 +135,7 @@ export function usePackingLists() {
   }
 
   async function deleteChecklist(id) {
-    await loadData(
-      () => dataService.deleteChecklist(id),
-      'Error deleting checklist'
-    );
+    await loadData(() => dataService.deleteChecklist(id), 'Error deleting checklist');
     await getChecklists();
     if (selectedChecklistId.value === id) {
       selectedChecklistId.value = checklists.value[0]?.id || null;
@@ -190,10 +185,7 @@ export function usePackingLists() {
   }
 
   async function deleteCategory(categoryId) {
-    await loadData(
-      () => dataService.deleteCategory(categoryId),
-      'Error deleting category'
-    );
+    await loadData(() => dataService.deleteCategory(categoryId), 'Error deleting category');
     await Promise.all([getCategories(), getItems()]);
   }
 
@@ -225,11 +217,11 @@ export function usePackingLists() {
     );
     items.value = (result || []).sort((a, b) => {
       // First sort by category order, then by item order within category
-      const catA = categories.value.find(c => c.id === a.categoryId);
-      const catB = categories.value.find(c => c.id === b.categoryId);
+      const catA = categories.value.find((c) => c.id === a.categoryId);
+      const catB = categories.value.find((c) => c.id === b.categoryId);
       const catOrderA = catA ? catA.order || 0 : 0;
       const catOrderB = catB ? catB.order || 0 : 0;
-      
+
       if (catOrderA !== catOrderB) {
         return catOrderA - catOrderB;
       }
@@ -315,6 +307,6 @@ export function usePackingLists() {
     deleteItem,
 
     // Item utilities
-    toggleItemPacked
+    toggleItemPacked,
   };
 }

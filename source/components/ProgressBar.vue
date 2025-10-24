@@ -11,15 +11,28 @@ Created: 2025-09-19
 
 <template>
   <div class="w-full">
-    <div class="w-full h-2 mb-2 rounded-full overflow-hidden" :style="{ background: backgroundColor }">
+    <div
+      class="mb-2 h-2 w-full overflow-hidden rounded-full"
+      :style="{ background: backgroundColor }"
+    >
       <div
         class="h-full rounded-full transition-all duration-300 ease-in-out"
         :style="{ width: `${percentage}%`, background: progressColor }"
       ></div>
     </div>
-    <div class="flex justify-between items-center">
-      <p class="text-sm font-medium" :style="{ color: textColor }">{{ text }}</p>
-      <p class="text-sm font-medium" :style="{ color: textColor }">{{ percentage }}%</p>
+    <div class="flex items-center justify-between">
+      <p
+        class="text-sm font-medium"
+        :style="{ color: textColor }"
+      >
+        {{ text }}
+      </p>
+      <p
+        class="text-sm font-medium"
+        :style="{ color: textColor }"
+      >
+        {{ percentage }}%
+      </p>
     </div>
   </div>
 </template>
@@ -30,6 +43,7 @@ Created: 2025-09-19
 // ----------------------
 
 import { computed } from 'vue';
+
 import { THEME_COLORS } from '../utils/constants';
 
 // ----------------------
@@ -49,12 +63,12 @@ const backgroundColor = THEME_COLORS.SECONDARY;
 const props = defineProps({
   total: {
     type: Number,
-    required: true
+    required: true,
   },
   completed: {
     type: Number,
-    required: true
-  }
+    required: true,
+  },
 });
 
 // ----------------------
@@ -71,5 +85,4 @@ const percentage = computed(() => {
 const text = computed(() => {
   return `${props.completed} / ${props.total}`;
 });
-
 </script>

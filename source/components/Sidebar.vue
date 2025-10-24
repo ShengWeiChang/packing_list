@@ -12,26 +12,26 @@ Created: 2025-09-19
 <template>
   <aside
     :class="[
-      'bg-white border-r border-gray-200 p-2 flex flex-col transition-all duration-300 ease-in-out h-screen',
+      'flex h-screen flex-col border-r border-gray-200 bg-white p-2 transition-all duration-300 ease-in-out',
       // Mobile: overlay drawer when expanded, hidden when collapsed
-      isMobile ? [
-        isExpanded ? 'w-52 translate-x-0' : 'w-52 -translate-x-full'
-      ] : [
-        // Desktop: sticky positioning with width based on expanded state
-        'sticky top-0',
-        isExpanded ? 'w-52' : 'w-16'
-      ]
+      isMobile
+        ? [isExpanded ? 'w-52 translate-x-0' : 'w-52 -translate-x-full']
+        : [
+            // Desktop: sticky positioning with width based on expanded state
+            'sticky top-0',
+            isExpanded ? 'w-52' : 'w-16',
+          ],
     ]"
     aria-label="Sidebar"
   >
     <!-- Toggle Button -->
     <button
-      class="w-full rounded-lg hover:bg-gray-100 flex items-center mb-2"
+      class="mb-2 flex w-full items-center rounded-lg hover:bg-gray-100"
       @click="$emit('toggle-sidebar')"
     >
-      <div class="p-3 flex-shrink-0">
+      <div class="flex-shrink-0 p-3">
         <svg
-          class="w-6 h-6 text-secondary"
+          class="text-secondary h-6 w-6"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -48,13 +48,13 @@ Created: 2025-09-19
 
     <!-- New Checklist Button -->
     <button
-      class="w-full rounded-lg hover:bg-gray-100 flex items-center overflow-hidden whitespace-nowrap mb-4"
-      :class="[ isExpanded || isMobile ? 'pr-4' : '' ]"
+      class="mb-4 flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg hover:bg-gray-100"
+      :class="[isExpanded || isMobile ? 'pr-4' : '']"
       @click="$emit('create-checklist')"
     >
-      <div class="p-3 flex-shrink-0">
+      <div class="flex-shrink-0 p-3">
         <svg
-          class="w-6 h-6 text-secondary"
+          class="text-secondary h-6 w-6"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -68,8 +68,11 @@ Created: 2025-09-19
         </svg>
       </div>
       <span
-        class="text-secondary transition-opacity duration-300 ease-in-out ml-4"
-        :class="{ 'opacity-0': !isExpanded && !isMobile, 'opacity-100 delay-150': isExpanded || isMobile }"
+        class="text-secondary ml-4 transition-opacity duration-300 ease-in-out"
+        :class="{
+          'opacity-0': !isExpanded && !isMobile,
+          'opacity-100 delay-150': isExpanded || isMobile,
+        }"
       >
         {{ $t('sidebar.newChecklist') }}
       </span>
@@ -78,10 +81,13 @@ Created: 2025-09-19
     <!-- Checklist Items -->
     <div class="mt-2">
       <div class="flex flex-col">
-        <h1 class="text-xl font-bold mb-2 px-2 overflow-hidden whitespace-nowrap">
+        <h1 class="mb-2 overflow-hidden whitespace-nowrap px-2 text-xl font-bold">
           <span
-            class="inline-block text-primary transition-all duration-300 ease-in-out"
-            :class="{ 'opacity-0 -translate-x-4': !isExpanded && !isMobile, 'opacity-100 translate-x-0 delay-150': isExpanded || isMobile }"
+            class="text-primary inline-block transition-all duration-300 ease-in-out"
+            :class="{
+              '-translate-x-4 opacity-0': !isExpanded && !isMobile,
+              'translate-x-0 opacity-100 delay-150': isExpanded || isMobile,
+            }"
           >
             {{ $t('sidebar.title') }}
           </span>
@@ -93,23 +99,32 @@ Created: 2025-09-19
             class="whitespace-nowrap"
           >
             <div
-              class="flex items-center group rounded-lg transition-colors duration-200 px-1"
-              :class="(selectedChecklistId === checklist.id && (isExpanded || isMobile)) ? 'bg-gray-100' : 'hover:bg-gray-100'"
+              class="group flex items-center rounded-lg px-1 transition-colors duration-200"
+              :class="
+                selectedChecklistId === checklist.id && (isExpanded || isMobile)
+                  ? 'bg-gray-100'
+                  : 'hover:bg-gray-100'
+              "
             >
               <button
                 :class="[
-                  'w-full text-left py-2 px-4 transition-colors duration-300 ease-in-out',
-                  (isExpanded || isMobile) ? [
-                    selectedChecklistId === checklist.id
-                      ? 'text-primary font-medium'
-                      : 'text-secondary'
-                  ] : ''
+                  'w-full px-4 py-2 text-left transition-colors duration-300 ease-in-out',
+                  isExpanded || isMobile
+                    ? [
+                        selectedChecklistId === checklist.id
+                          ? 'text-primary font-medium'
+                          : 'text-secondary',
+                      ]
+                    : '',
                 ]"
                 @click="$emit('select-checklist', checklist.id)"
               >
                 <span
                   class="inline-block transition-all duration-300 ease-in-out"
-                  :class="{ 'opacity-0 -translate-x-4': !isExpanded && !isMobile, 'opacity-100 translate-x-0 delay-200': isExpanded || isMobile }"
+                  :class="{
+                    '-translate-x-4 opacity-0': !isExpanded && !isMobile,
+                    'translate-x-0 opacity-100 delay-200': isExpanded || isMobile,
+                  }"
                 >
                   {{ checklist.destination || $t('checklist.untitled') }}
                 </span>
@@ -119,37 +134,75 @@ Created: 2025-09-19
         </ul>
       </div>
     </div>
-    
+
     <!-- Language Setting Button -->
-    <div ref="settingsRoot" class="mt-auto pt-4 relative">
+    <div
+      ref="settingsRoot"
+      class="relative mt-auto pt-4"
+    >
       <button
         ref="languageButtonRef"
-        class="w-full rounded-lg hover:bg-gray-100 flex items-center overflow-hidden whitespace-nowrap transition-colors duration-200"
-        :class="[ isExpanded || isMobile ? 'pr-4' : '' ]"
+        class="flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg transition-colors duration-200 hover:bg-gray-100"
+        :class="[isExpanded || isMobile ? 'pr-4' : '']"
         :aria-label="$t('language.switchLanguage')"
         :title="$t('language.switchLanguage')"
         @click="toggleLanguageMenu"
       >
-        <div class="p-3 flex-shrink-0">
+        <div class="flex-shrink-0 p-3">
           <svg
-            class="w-6 h-6 text-secondary"
+            class="text-secondary h-6 w-6"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
             aria-hidden="true"
           >
             <!-- Outer circle -->
-            <circle cx="12" cy="12" r="10" stroke-width="2" />
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke-width="2"
+            />
 
             <!-- Parallels (latitude-like curves): top, middle (straight), bottom -->
-            <path d="M4  6 c4  2 8  2 16 0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M2 12 h20" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M4 18 c4 -2 8 -2 16 0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path
+              d="M4  6 c4  2 8  2 16 0"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M2 12 h20"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M4 18 c4 -2 8 -2 16 0"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
 
             <!-- Meridians (longitude-like curves): left, center (straight), right -->
-            <path d="M12 2 C 6 6  6 18 12 22" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M12 2 v20" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M12 2 C18 6 18 18 12 22" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path
+              d="M12 2 C 6 6  6 18 12 22"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M12 2 v20"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M12 2 C18 6 18 18 12 22"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         </div>
       </button>
@@ -158,21 +211,23 @@ Created: 2025-09-19
       <div
         v-if="showLanguageMenu"
         ref="languageDropdownRef"
-        class="bg-white border border-gray-200 rounded-md shadow-lg z-50 py-1 min-w-[160px]"
+        class="z-50 min-w-[160px] rounded-md border border-gray-200 bg-white py-1 shadow-lg"
         :style="languageDropdownStyle"
       >
         <button
           v-for="lang in availableLanguages"
           :key="lang.code"
-          class="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-100 transition-colors duration-150"
-          :class="currentLocale === lang.code ? 'text-primary font-medium bg-gray-50' : 'text-secondary'"
+          class="flex w-full items-center px-4 py-2 text-sm transition-colors duration-150 hover:bg-gray-100"
+          :class="
+            currentLocale === lang.code ? 'text-primary bg-gray-50 font-medium' : 'text-secondary'
+          "
           @click="selectLanguage(lang.code)"
         >
           <span class="mr-2">{{ lang.icon }}</span>
           <span>{{ lang.label }}</span>
           <svg
             v-if="currentLocale === lang.code"
-            class="w-4 h-4 ml-auto text-primary"
+            class="text-primary ml-auto h-4 w-4"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -193,7 +248,7 @@ Created: 2025-09-19
 // Imports
 // ----------------------
 
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 // ----------------------
@@ -206,7 +261,7 @@ const { locale } = useI18n();
 // TODO: Expand this array when adding more language support
 const availableLanguages = [
   { code: 'en', label: 'English', icon: '🇺🇸' },
-  { code: 'zh-TW', label: '繁體中文', icon: '🇹🇼' }
+  { code: 'zh-TW', label: '繁體中文', icon: '🇹🇼' },
 ];
 
 // ----------------------
@@ -217,24 +272,24 @@ const availableLanguages = [
 defineProps({
   isExpanded: {
     type: Boolean,
-    required: true
+    required: true,
   },
   isMobile: {
     type: Boolean,
-    default: false
+    default: false,
   },
   isNarrow: {
     type: Boolean,
-    default: false
+    default: false,
   },
   checklists: {
     type: Array,
-    required: true
+    required: true,
   },
   selectedChecklistId: {
     type: String,
-    default: null
-  }
+    default: null,
+  },
 });
 
 // Emits
@@ -261,7 +316,7 @@ const currentLocale = computed({
   set: (val) => {
     locale.value = val;
     localStorage.setItem('user-locale', val);
-  }
+  },
 });
 
 // Current language label no longer shown on the button; dropdown indicates selection
@@ -274,10 +329,15 @@ const currentLocale = computed({
 function toggleLanguageMenu() {
   const willOpen = !showLanguageMenu.value;
   showLanguageMenu.value = willOpen;
-  
+
   if (willOpen) {
     // Position dropdown off-screen first to measure
-    languageDropdownStyle.value = { position: 'fixed', left: '-9999px', top: '-9999px', zIndex: 9999 };
+    languageDropdownStyle.value = {
+      position: 'fixed',
+      left: '-9999px',
+      top: '-9999px',
+      zIndex: 9999,
+    };
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -292,7 +352,7 @@ function positionLanguageDropdown() {
   if (!languageButtonRef.value || !languageDropdownRef.value) return;
   const btnRect = languageButtonRef.value.getBoundingClientRect();
   const ddRect = languageDropdownRef.value.getBoundingClientRect();
-  
+
   // Position above the button, aligned to the left
   let left = btnRect.left;
   const top = btnRect.top - ddRect.height - 8; // 8px gap
@@ -307,7 +367,7 @@ function positionLanguageDropdown() {
     position: 'fixed',
     left: `${left}px`,
     top: `${top}px`,
-    zIndex: 9999
+    zIndex: 9999,
   };
 }
 
@@ -321,8 +381,9 @@ function selectLanguage(langCode) {
 function closeLanguageMenu(event) {
   const target = event.target;
   const clickedInsideRoot = settingsRoot.value && settingsRoot.value.contains(target);
-  const clickedInsideDropdown = languageDropdownRef.value && languageDropdownRef.value.contains(target);
-  
+  const clickedInsideDropdown =
+    languageDropdownRef.value && languageDropdownRef.value.contains(target);
+
   if (!clickedInsideRoot && !clickedInsideDropdown) {
     showLanguageMenu.value = false;
   }
@@ -348,5 +409,4 @@ onUnmounted(() => {
   document.removeEventListener('click', closeLanguageMenu);
   window.removeEventListener('scroll', closeLanguageMenuOnScroll, true);
 });
-
 </script>
