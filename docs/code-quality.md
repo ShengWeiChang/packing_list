@@ -37,7 +37,8 @@ Authoritative configuration files:
 
 Validation
 
-- Run `npm run format` to apply and verify formatting.
+- Apply formatting: `npm run format`
+- Check only (no write): `npm run format:check`
 
 ### 3.2 ESLint (Vue)
 
@@ -49,7 +50,8 @@ Validation
 
 Validation
 
-- Run `npm run lint` (check) or `npm run lint:fix` (auto-fix) to ensure compliance.
+- Check: `npm run lint`
+- Auto-fix: `npm run lint:fix`
 
 ### 3.3 Imports/Exports Ordering
 
@@ -62,16 +64,59 @@ Sorted by simple-import-sort default groups:
 
 Validation
 
-- Import order is auto-fixable via ESLint with `npm run lint:fix`.
+- Auto-fix import order: `npm run lint:fix`
 
 ### 3.4 Vue Template Attributes Order
 
-- High-level principle: definition > list rendering > conditionals > bindings > events > content
-- See `eslint.config.js` for the exact sequence used by the rule.
+We follow eslint-plugin-vue's default order (vue/attributes-order):
+
+1. DEFINITION — component definition: `is`, `v-is`
+2. LIST_RENDERING — list loops: `v-for`
+3. CONDITIONALS — conditionals: `v-if`, `v-else-if`, `v-else`, `v-show`, `v-cloak`
+4. RENDER_MODIFIERS — render-time hints: `v-once`, `v-pre`
+5. GLOBAL — global identifiers: `id`
+6. UNIQUE — unique per element: `ref`, `key`
+7. SLOT — slots: `v-slot`, `slot`
+8. TWO_WAY_BINDING — two-way bindings: `v-model`
+9. OTHER_DIRECTIVES — all other directives: custom `v-*`
+10. OTHER_ATTR — normal attributes in this order:
+
+- ATTR_DYNAMIC: `:prop="foo"`, `v-bind:prop="foo"`
+- ATTR_STATIC: `prop="foo"`, `custom-prop="foo"`
+- ATTR_SHORTHAND_BOOL: boolean presence-only attrs (e.g., `disabled`)
+
+11. EVENTS — events: `@click="onClick"`, `v-on="events"`
+12. CONTENT — content directives: `v-text`, `v-html`
+
+Notes
+
+- The rule sorts attributes within these groups; many fixes are auto-applicable.
+- Keep 1 attribute per line (Prettier) for large elements to improve diffs.
 
 Validation
 
-- Violations are reported by ESLint; most are auto-fixable.
+- Auto-fix most ordering issues: `npm run lint:fix`
+
+### 3.5 Vue Script Section Order (guideline)
+
+Recommended top-to-bottom organization inside `<script setup>` or component scripts:
+
+1. Imports (vue, libs, local) — grouped and sorted; styles/side-effects last
+2. Internationalization (i18n) — `useI18n()` setup
+3. Constants — non-reactive constants, config
+4. Props & Emits — `defineProps`, `defineEmits`
+5. Composables — calls like `useXxx()`
+6. State — `ref`, `reactive`
+7. Computed — `computed`
+8. Functions — event handlers, helpers
+9. Lifecycle — `onMounted`, `onUnmounted`, etc.
+10. Watchers — `watch`, `watchEffect`
+
+This mirrors how readers scan: inputs → setup → state/derivations → behaviors → lifecycle → reactive watchers.
+
+Validation
+
+- Guideline only (not enforced by ESLint). Import sorting is enforced; section order relies on team practice/code review.
 
 ## 4. Git Hooks (Husky)
 
