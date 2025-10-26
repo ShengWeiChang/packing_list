@@ -157,9 +157,9 @@ Created: 2025-09-19
 </template>
 
 <script setup>
-// ----------------------
+// ------------------------------------------------------------------------------
 // Imports
-// ----------------------
+// ------------------------------------------------------------------------------
 
 import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -170,15 +170,15 @@ import Category from './Category.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import ProgressBar from './ProgressBar.vue';
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Internationalization (i18n)
-// ----------------------
+// ------------------------------------------------------------------------------
 
 const { t } = useI18n();
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Props & Emits
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Props validation
 const props = defineProps({
@@ -232,9 +232,9 @@ const emit = defineEmits([
   'move:item',
 ]);
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // States
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Editing state
 const isEditing = ref(false);
@@ -249,9 +249,9 @@ const endDateInput = ref(null);
 const draggingCategoryId = ref(null);
 const isDraggingCategory = ref(false);
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Computed
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Sorted categories for this checklist (sorted by order)
 const sortedCategories = computed(() => {
@@ -274,11 +274,15 @@ const draggableCategories = computed({
   },
 });
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Editing functions
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Handle edit blur - only save if focus is moving outside edit area
+/**
+ *
+ * @param _event
+ */
 function handleEditBlur(_event) {
   // Use a small timeout to allow focus to move to the other input
   setTimeout(() => {
@@ -296,6 +300,9 @@ function handleEditBlur(_event) {
 }
 
 // Start editing mode
+/**
+ *
+ */
 async function startEdit() {
   isEditing.value = true;
   editedDestination.value = props.checklist.destination;
@@ -310,6 +317,9 @@ async function startEdit() {
 }
 
 // Save edited checklist
+/**
+ *
+ */
 function saveEdit() {
   const hasDestinationChanged = editedDestination.value.trim() !== props.checklist.destination;
   const hasStartDateChanged = editedStartDate.value !== props.checklist.startDate;
@@ -328,6 +338,9 @@ function saveEdit() {
 }
 
 // Cancel editing
+/**
+ *
+ */
 function cancelEdit() {
   isEditing.value = false;
   editedDestination.value = props.checklist.destination;
@@ -335,20 +348,27 @@ function cancelEdit() {
   editedEndDate.value = props.checklist.endDate;
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Checklist management
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Handle delete action
+/**
+ *
+ */
 function handleDelete() {
   emit('delete:checklist', props.checklist.id);
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Drag and drop handlers (vuedraggable events)
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Track which category is being dragged
+/**
+ *
+ * @param evt
+ */
 function onCategoryDragStart(evt) {
   const categoryElement = evt.item.querySelector('[data-category-id]') || evt.item;
   if (categoryElement.dataset.categoryId) {
@@ -358,28 +378,49 @@ function onCategoryDragStart(evt) {
 }
 
 // Clean up drag state when drag ends
+/**
+ *
+ * @param _evt
+ */
 function onCategoryDragEnd(_evt) {
   draggingCategoryId.value = null;
   isDraggingCategory.value = false;
 }
 
 // Handle category reorder (handled by draggableCategories setter instead)
+/**
+ *
+ * @param _evt
+ */
 function onCategoryUpdate(_evt) {
   // This event is now handled by the draggableCategories setter
 }
 
 // Handle item movement between categories
+/**
+ *
+ * @param moveData
+ */
 function handleItemMove(moveData) {
   emit('move:item', moveData);
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Helpers
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Format date range for display
+/**
+ *
+ * @param startDate
+ * @param endDate
+ */
 function formatDateRange(startDate, endDate) {
   // Parse YYYY-MM-DD strings into local Date objects to avoid timezone shifts
+  /**
+   *
+   * @param dateStr
+   */
   function parseLocalDate(dateStr) {
     if (!dateStr) return null;
     const parts = String(dateStr).split('-');
@@ -414,9 +455,9 @@ function formatDateRange(startDate, endDate) {
   })}`;
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Watchers
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Watch for newly created checklists and auto-start edit
 watch(

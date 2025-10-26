@@ -105,9 +105,9 @@ Created: 2025-09-19
 </template>
 
 <script setup>
-// ----------------------
+// ------------------------------------------------------------------------------
 // Imports
-// ----------------------
+// ------------------------------------------------------------------------------
 
 import { computed, nextTick, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
@@ -118,9 +118,9 @@ import Item from './Item.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import ProgressBar from './ProgressBar.vue';
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Props & Emits
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Props
 const props = defineProps({
@@ -161,9 +161,9 @@ const emit = defineEmits([
   'move:item',
 ]);
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // States
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Editing state
 const isEditing = ref(false);
@@ -173,9 +173,9 @@ const editInput = ref(null);
 // Drag state
 const draggingItemId = ref(null);
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Computed
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Sorted items for this category (filtered from all items, then sorted by order)
 const sortedItems = computed(() => {
@@ -208,11 +208,14 @@ const isCompleted = computed(() => {
   return items.every((i) => i.isPacked);
 });
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Editing functions
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Start editing mode
+/**
+ *
+ */
 async function startEdit() {
   isEditing.value = true;
   editedName.value = props.category.name;
@@ -225,6 +228,9 @@ async function startEdit() {
 }
 
 // Save edited category
+/**
+ *
+ */
 function saveEdit() {
   const hasNameChanged = editedName.value.trim() && editedName.value !== props.category.name;
 
@@ -239,25 +245,35 @@ function saveEdit() {
 }
 
 // Cancel editing
+/**
+ *
+ */
 function cancelEdit() {
   isEditing.value = false;
   editedName.value = props.category.name;
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Category management
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Handle delete action
+/**
+ *
+ */
 function handleDelete() {
   emit('delete:category', props.category.id);
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Drag and drop handlers (vuedraggable events)
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Track which item is being dragged
+/**
+ *
+ * @param evt
+ */
 function onItemDragStart(evt) {
   const item = evt.item.querySelector('[data-item-id]');
   if (item) {
@@ -266,11 +282,19 @@ function onItemDragStart(evt) {
 }
 
 // Clean up drag state when drag ends
+/**
+ *
+ * @param _evt
+ */
 function onItemDragEnd(_evt) {
   draggingItemId.value = null;
 }
 
 // Handle item change events from vuedraggable
+/**
+ *
+ * @param evt
+ */
 function onItemChange(evt) {
   // Case 1: Cross-category move (target side)
   // When an item is dragged from another category to this one
@@ -337,9 +361,9 @@ function onItemChange(evt) {
   }
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Watchers
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Watch for newly created category and auto-start edit
 watch(

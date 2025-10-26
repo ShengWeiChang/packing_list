@@ -244,16 +244,16 @@ Created: 2025-09-19
 </template>
 
 <script setup>
-// ----------------------
+// ------------------------------------------------------------------------------
 // Imports
-// ----------------------
+// ------------------------------------------------------------------------------
 
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Internationalization (i18n)
-// ----------------------
+// ------------------------------------------------------------------------------
 
 const { locale } = useI18n();
 
@@ -264,9 +264,9 @@ const availableLanguages = [
   { code: 'zh-TW', label: '繁體中文', icon: '🇹🇼' },
 ];
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Props & Emits
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Props
 defineProps({
@@ -295,9 +295,9 @@ defineProps({
 // Emits
 defineEmits(['toggle-sidebar', 'create-checklist', 'select-checklist']);
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // States
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Language menu state
 const showLanguageMenu = ref(false);
@@ -306,9 +306,9 @@ const languageDropdownRef = ref(null);
 const languageButtonRef = ref(null);
 const settingsRoot = ref(null);
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Computed
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Current locale (two-way binding)
 const currentLocale = computed({
@@ -321,11 +321,14 @@ const currentLocale = computed({
 
 // Current language label no longer shown on the button; dropdown indicates selection
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Language menu functions
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Toggle language dropdown menu
+/**
+ *
+ */
 function toggleLanguageMenu() {
   const willOpen = !showLanguageMenu.value;
   showLanguageMenu.value = willOpen;
@@ -348,6 +351,9 @@ function toggleLanguageMenu() {
 }
 
 // Position language dropdown relative to button
+/**
+ *
+ */
 function positionLanguageDropdown() {
   if (!languageButtonRef.value || !languageDropdownRef.value) return;
   const btnRect = languageButtonRef.value.getBoundingClientRect();
@@ -372,12 +378,20 @@ function positionLanguageDropdown() {
 }
 
 // Select language and close menu
+/**
+ *
+ * @param langCode
+ */
 function selectLanguage(langCode) {
   currentLocale.value = langCode;
   showLanguageMenu.value = false;
 }
 
 // Close menu when clicking outside
+/**
+ *
+ * @param event
+ */
 function closeLanguageMenu(event) {
   const target = event.target;
   const clickedInsideRoot = settingsRoot.value && settingsRoot.value.contains(target);
@@ -390,13 +404,16 @@ function closeLanguageMenu(event) {
 }
 
 // Close menu on scroll
+/**
+ *
+ */
 function closeLanguageMenuOnScroll() {
   showLanguageMenu.value = false;
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Lifecycle Hooks
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Set up event listeners for language menu
 onMounted(() => {

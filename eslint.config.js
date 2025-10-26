@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import jsdoc from 'eslint-plugin-jsdoc';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import pluginVue from 'eslint-plugin-vue';
 
@@ -38,11 +39,33 @@ export default [
     },
     plugins: {
       'simple-import-sort': simpleImportSort,
+      jsdoc,
     },
     rules: {
       // Import/Export sorting
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
+
+      // JSDoc rules
+      'jsdoc/require-jsdoc': [
+        'warn',
+        {
+          require: {
+            FunctionDeclaration: true,
+            MethodDefinition: true,
+            ClassDeclaration: true,
+            ArrowFunctionExpression: false,
+            FunctionExpression: false,
+          },
+        },
+      ],
+      'jsdoc/require-param': 'warn',
+      'jsdoc/require-param-description': 'warn',
+      'jsdoc/require-returns': 'warn',
+      'jsdoc/require-returns-description': 'warn',
+      'jsdoc/check-param-names': 'error',
+      'jsdoc/check-tag-names': 'error',
+      'jsdoc/check-types': 'warn',
 
       // Vue specific rules
       'vue/multi-word-component-names': 'warn',

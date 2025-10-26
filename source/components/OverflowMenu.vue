@@ -95,15 +95,15 @@ Created: 2025-09-19
 </template>
 
 <script setup>
-// ----------------------
+// ------------------------------------------------------------------------------
 // Imports
-// ----------------------
+// ------------------------------------------------------------------------------
 
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Props & Emits
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Props
 const props = defineProps({
@@ -134,9 +134,9 @@ const props = defineProps({
 // Emits
 const emit = defineEmits(['edit', 'delete']);
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // States
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Menu state
 const showMenu = ref(false);
@@ -145,9 +145,9 @@ const dropdownRef = ref(null);
 const buttonRef = ref(null);
 const root = ref(null);
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Computed
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Button visibility based on props and menu state
 const buttonClass = computed(() => {
@@ -178,11 +178,14 @@ const svgClass = computed(() => {
   return props.menuType === 'item' ? 'w-5 h-5' : 'w-6 h-6';
 });
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Menu positioning
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Position dropdown relative to button
+/**
+ *
+ */
 function positionDropdown() {
   if (!buttonRef.value || !dropdownRef.value) return;
   const btnRect = buttonRef.value.getBoundingClientRect();
@@ -207,11 +210,14 @@ function positionDropdown() {
   };
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Menu actions
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Toggle dropdown menu
+/**
+ *
+ */
 function toggleMenu() {
   const willOpen = !showMenu.value;
   showMenu.value = willOpen;
@@ -239,22 +245,32 @@ function toggleMenu() {
 }
 
 // Handle edit action
+/**
+ *
+ */
 function handleEdit() {
   showMenu.value = false;
   emit('edit');
 }
 
 // Handle delete action
+/**
+ *
+ */
 function handleDelete() {
   showMenu.value = false;
   emit('delete');
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Event handlers
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Close menu when clicking outside
+/**
+ *
+ * @param event
+ */
 function closeMenu(event) {
   const target = event.target;
   const clickedInsideRoot = root.value && root.value.contains(target);
@@ -266,11 +282,18 @@ function closeMenu(event) {
 }
 
 // Close menu when scrolling
+/**
+ *
+ */
 function closeMenuOnScroll() {
   showMenu.value = false;
 }
 
 // Close when another menu opens
+/**
+ *
+ * @param e
+ */
 function closeWhenOtherOpens(e) {
   const detail = e?.detail || {};
   const otherId = detail.id;
@@ -280,9 +303,9 @@ function closeWhenOtherOpens(e) {
   }
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Lifecycle Hooks
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Set up event listeners
 onMounted(() => {

@@ -111,18 +111,18 @@ Created: 2025-09-19
 </template>
 
 <script setup>
-// ----------------------
+// ------------------------------------------------------------------------------
 // Imports
-// ----------------------
+// ------------------------------------------------------------------------------
 
 import { computed, nextTick, ref, watch } from 'vue';
 
 import { Item } from '../models/Item';
 import OverflowMenu from './OverflowMenu.vue';
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Props & Emits
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Props
 const props = defineProps({
@@ -159,9 +159,9 @@ const props = defineProps({
 // Emits
 const emit = defineEmits(['update:item', 'delete:item']);
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // States
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Editing state
 const isEditing = ref(false);
@@ -171,9 +171,9 @@ const editedQuantity = ref(1);
 const editInput = ref(null);
 const quantityInput = ref(null);
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Computed
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Packing state
 const isItemPacked = computed({
@@ -196,11 +196,15 @@ const isItemPacked = computed({
   },
 });
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Editing functions
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Handle edit blur - only save if focus is moving outside edit area
+/**
+ *
+ * @param _event
+ */
 function handleEditBlur(_event) {
   // Use a small timeout to allow focus to move to the other input
   setTimeout(() => {
@@ -216,6 +220,9 @@ function handleEditBlur(_event) {
 }
 
 // Start editing mode
+/**
+ *
+ */
 async function startEdit() {
   isEditing.value = true;
   editedName.value = props.item.name;
@@ -229,6 +236,9 @@ async function startEdit() {
 }
 
 // Save edited item
+/**
+ *
+ */
 function saveEdit() {
   const hasNameChanged = editedName.value.trim() && editedName.value !== props.item.name;
   const hasQuantityChanged = editedQuantity.value !== props.item.quantity;
@@ -245,24 +255,30 @@ function saveEdit() {
 }
 
 // Cancel editing
+/**
+ *
+ */
 function cancelEdit() {
   isEditing.value = false;
   editedName.value = props.item.name;
   editedQuantity.value = props.item.quantity;
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Item management
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Handle delete action
+/**
+ *
+ */
 function handleDelete() {
   emit('delete:item', props.item.id);
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Watchers
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Watch for newly created items and auto-start edit
 watch(

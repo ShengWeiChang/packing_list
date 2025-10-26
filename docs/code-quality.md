@@ -118,6 +118,95 @@ Validation
 
 - Guideline only (not enforced by ESLint). Import sorting is enforced; section order relies on team practice/code review.
 
+### 3.6 Comment Style
+
+We use 4 categories of comments, each with specific purpose and format:
+
+**File Headers**
+
+Block comment with required metadata fields at the start of every file.
+
+For **JavaScript files** (`.js`):
+
+```javascript
+/*
+================================================================================
+File: source/path/fileName.js
+Description: Brief description of the file's purpose
+Author: Your Name
+License: MIT (SPDX: MIT)
+Created: YYYY-MM-DD
+================================================================================
+*/
+```
+
+For **Vue files** (`.vue`):
+
+```vue
+<!--
+================================================================================
+File: source/components/ComponentName.vue
+Description: Brief description of the component's purpose
+Author: Your Name
+License: MIT (SPDX: MIT)
+Created: YYYY-MM-DD
+================================================================================
+-->
+```
+
+**Section Dividers**
+
+Separate logical sections within a file (80 characters exactly):
+
+```javascript
+// --------------------------------------------------------------------------------
+// SECTION NAME
+// --------------------------------------------------------------------------------
+```
+
+Use for both major sections (CRUD OPERATIONS, LIFECYCLE HOOKS) and minor sections (Props & Emits, Computed Properties).
+
+**JSDoc Comments**
+
+Required for all exported functions, methods, and classes. Must include:
+
+- Brief description
+- `@param {Type} name - description` for each parameter
+- `@returns {Type} description` for non-void returns
+
+```javascript
+/**
+ * Calculate the total number of packed items
+ * @param {Array<Item>} items - Array of items to count
+ * @returns {number} Total count of packed items
+ */
+function countPackedItems(items) {
+  return items.filter((item) => item.packed).length;
+}
+```
+
+**Inline Comments**
+
+Use sparingly for complex logic, workarounds, or TODOs:
+
+```javascript
+// Calculate exponential moving average (α = 0.3)
+const ema = currentValue * 0.3 + previousEma * 0.7;
+
+// WORKAROUND: Safari requires explicit focus after 300ms delay
+setTimeout(() => input.focus(), 300);
+
+// TODO: Implement pagination when list exceeds 100 items
+```
+
+Avoid comments that merely restate the code.
+
+Validation
+
+- JSDoc: Enforced by ESLint (`eslint-plugin-jsdoc`)
+- Section dividers: Manually maintained at 80 characters
+- File headers and inline comments: Code review
+
 ## 4. Git Hooks (Husky)
 
 - Purpose: Enforce quality checks before commit.

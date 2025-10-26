@@ -16,6 +16,9 @@ import { Checklist } from '../models/Checklist';
 import { Item } from '../models/Item';
 import { LocalStorageService } from '../services/localStorageService';
 
+/**
+ *
+ */
 export function usePackingLists() {
   const dataService = new LocalStorageService();
 
@@ -38,6 +41,11 @@ export function usePackingLists() {
   });
 
   // Generic data loading function
+  /**
+   *
+   * @param loader
+   * @param errorMessage
+   */
   async function loadData(loader, errorMessage) {
     isLoading.value = true;
     error.value = null;
@@ -53,12 +61,19 @@ export function usePackingLists() {
   }
 
   // Toggle item packed status
+  /**
+   *
+   * @param item
+   */
   async function toggleItemPacked(item) {
     const updatedItem = new Item({ ...item, isPacked: !item.isPacked });
     await updateItem(updatedItem);
   }
 
   // Initial data loading
+  /**
+   *
+   */
   async function initialize() {
     // Load the entire storage once to avoid multiple JSON.parse calls
     try {
@@ -96,10 +111,14 @@ export function usePackingLists() {
     }
   }
 
-  // ============================================================================
+  // --------------------------------------------------------------------------------
   // CHECKLIST CRUD OPERATIONS
-  // ============================================================================
+  // --------------------------------------------------------------------------------
 
+  /**
+   *
+   * @param checklistData
+   */
   async function createChecklist(checklistData) {
     const result = await loadData(
       () => dataService.createChecklist(checklistData),
@@ -113,6 +132,9 @@ export function usePackingLists() {
     return null;
   }
 
+  /**
+   *
+   */
   async function getChecklists() {
     const result = await loadData(() => dataService.getChecklists(), 'Error getting checklists');
     checklists.value = result || [];
@@ -122,6 +144,10 @@ export function usePackingLists() {
     return checklists.value;
   }
 
+  /**
+   *
+   * @param checklistData
+   */
   async function updateChecklist(checklistData) {
     const result = await loadData(
       () => dataService.updateChecklist(checklistData),
@@ -134,6 +160,10 @@ export function usePackingLists() {
     return null;
   }
 
+  /**
+   *
+   * @param id
+   */
   async function deleteChecklist(id) {
     await loadData(() => dataService.deleteChecklist(id), 'Error deleting checklist');
     await getChecklists();
@@ -142,10 +172,14 @@ export function usePackingLists() {
     }
   }
 
-  // ============================================================================
+  // --------------------------------------------------------------------------------
   // CATEGORY CRUD OPERATIONS
-  // ============================================================================
+  // --------------------------------------------------------------------------------
 
+  /**
+   *
+   * @param categoryData
+   */
   async function createCategory(categoryData) {
     if (!selectedChecklistId.value) return null;
     const result = await loadData(
@@ -159,6 +193,9 @@ export function usePackingLists() {
     return null;
   }
 
+  /**
+   *
+   */
   async function getCategories() {
     if (!selectedChecklistId.value) {
       categories.value = [];
@@ -172,6 +209,10 @@ export function usePackingLists() {
     return categories.value;
   }
 
+  /**
+   *
+   * @param categoryData
+   */
   async function updateCategory(categoryData) {
     const result = await loadData(
       () => dataService.updateCategory(categoryData),
@@ -184,15 +225,23 @@ export function usePackingLists() {
     return null;
   }
 
+  /**
+   *
+   * @param categoryId
+   */
   async function deleteCategory(categoryId) {
     await loadData(() => dataService.deleteCategory(categoryId), 'Error deleting category');
     await Promise.all([getCategories(), getItems()]);
   }
 
-  // ============================================================================
+  // --------------------------------------------------------------------------------
   // ITEM CRUD OPERATIONS
-  // ============================================================================
+  // --------------------------------------------------------------------------------
 
+  /**
+   *
+   * @param itemData
+   */
   async function createItem(itemData) {
     if (!selectedChecklistId.value) return null;
     const result = await loadData(
@@ -206,6 +255,9 @@ export function usePackingLists() {
     return null;
   }
 
+  /**
+   *
+   */
   async function getItems() {
     if (!selectedChecklistId.value) {
       items.value = [];
@@ -230,6 +282,10 @@ export function usePackingLists() {
     return items.value;
   }
 
+  /**
+   *
+   * @param itemData
+   */
   async function updateItem(itemData) {
     if (!selectedChecklistId.value) return null;
     const result = await loadData(
@@ -243,6 +299,10 @@ export function usePackingLists() {
     return null;
   }
 
+  /**
+   *
+   * @param itemId
+   */
   async function deleteItem(itemId) {
     if (!selectedChecklistId.value) return;
     await loadData(
