@@ -16,6 +16,14 @@ import { generateSecureId } from '../utils/helpers.js';
  * Represents a category of items in a checklist
  */
 export class Category {
+  /**
+   *
+   * @param root0
+   * @param root0.id
+   * @param root0.name
+   * @param root0.checklistId
+   * @param root0.order
+   */
   constructor({
     id = generateSecureId('category-'),
     name = '',
@@ -46,7 +54,7 @@ export class Category {
 
   /**
    * Creates a Category instance from JSON data
-   * @param {Object} json - The JSON data to create the category from
+   * @param {object} json - The JSON data to create the category from
    * @returns {Category} A new Category instance
    */
   static fromJSON(json) {
@@ -55,7 +63,7 @@ export class Category {
 
   /**
    * Converts the category instance to JSON format
-   * @returns {Object} The JSON representation of the category
+   * @returns {object} The JSON representation of the category
    */
   toJSON() {
     return {

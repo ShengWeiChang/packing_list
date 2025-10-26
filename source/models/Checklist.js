@@ -16,6 +16,14 @@ import { generateSecureId } from '../utils/helpers.js';
  * Represents a packing list with basic information and metadata
  */
 export class Checklist {
+  /**
+   *
+   * @param root0
+   * @param root0.id
+   * @param root0.destination
+   * @param root0.startDate
+   * @param root0.endDate
+   */
   constructor({
     id = generateSecureId('checklist-'),
     destination = '',
@@ -46,7 +54,7 @@ export class Checklist {
 
   /**
    * Creates a Checklist instance from JSON data
-   * @param {Object} json - The JSON data to create the checklist from
+   * @param {object} json - The JSON data to create the checklist from
    * @returns {Checklist} A new Checklist instance
    */
   static fromJSON(json) {
@@ -55,7 +63,7 @@ export class Checklist {
 
   /**
    * Converts the checklist instance to JSON format
-   * @returns {Object} The JSON representation of the checklist
+   * @returns {object} The JSON representation of the checklist
    */
   toJSON() {
     return {

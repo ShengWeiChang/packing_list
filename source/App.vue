@@ -195,9 +195,8 @@ const handleAsyncAction = async (action, ...args) => {
   return await action(...args);
 };
 
-// Check if screen is mobile size and adjust UI accordingly
 /**
- *
+ * Check if screen is mobile size and adjust UI accordingly
  */
 function checkScreenSize() {
   isMobileViewport.value = window.innerWidth < BREAKPOINTS.MOBILE;
@@ -218,17 +217,15 @@ function checkScreenSize() {
 // UI Handlers
 // ------------------------------------------------------------------------------
 
-// Handle window resize events
 /**
- *
+ * Handle window resize events and update viewport state
  */
 function handleResize() {
   checkScreenSize();
 }
 
-// Toggle sidebar open/closed state
 /**
- *
+ * Toggle sidebar open/closed state
  */
 function toggleSidebar() {
   isSidebarOpen.value = !isSidebarOpen.value;
@@ -247,10 +244,9 @@ function toggleSidebar() {
 // Item Handlers
 // ------------------------------------------------------------------------------
 
-// Create a new item in the specified category
 /**
- *
- * @param categoryId
+ * Create a new item in the specified category with default values
+ * @param {string} categoryId - The ID of the category to add the item to
  */
 async function handleItemCreate(categoryId) {
   // Find the max order in this category
@@ -272,10 +268,9 @@ async function handleItemCreate(categoryId) {
   }
 }
 
-// Update an existing item
 /**
- *
- * @param item
+ * Update an existing item with new data
+ * @param {object} item - The item object with updated properties
  */
 async function handleItemUpdate(item) {
   await handleAsyncAction(updateItem, item);
@@ -286,19 +281,17 @@ async function handleItemUpdate(item) {
   }
 }
 
-// Delete an item
 /**
- *
- * @param itemId
+ * Delete an item by ID
+ * @param {string} itemId - The ID of the item to delete
  */
 async function handleItemDelete(itemId) {
   await handleAsyncAction(deleteItem, itemId);
 }
 
-// Handle item movement between categories or reordering
 /**
- *
- * @param moveData
+ * Handle item drag-and-drop movement or reordering within categories
+ * @param {object} moveData - Move data containing item, category IDs, and reordered items
  */
 async function handleItemMove(moveData) {
   if (moveData.type === 'move') {
@@ -330,9 +323,8 @@ async function handleItemMove(moveData) {
 // Category Handlers
 // ------------------------------------------------------------------------------
 
-// Create a new category
 /**
- *
+ * Create a new category with default name
  */
 async function handleCategoryCreate() {
   // Find the highest order among all categories
@@ -350,10 +342,9 @@ async function handleCategoryCreate() {
   }
 }
 
-// Update an existing category
 /**
- *
- * @param category
+ * Update an existing category with new data
+ * @param {object} category - The category object with updated properties
  */
 async function handleCategoryUpdate(category) {
   await handleAsyncAction(updateCategory, category);
@@ -364,19 +355,17 @@ async function handleCategoryUpdate(category) {
   }
 }
 
-// Delete a category
 /**
- *
- * @param categoryId
+ * Delete a category by ID
+ * @param {string} categoryId - The ID of the category to delete
  */
 async function handleCategoryDelete(categoryId) {
   await handleAsyncAction(deleteCategory, categoryId);
 }
 
-// Handle category reorder after drag-and-drop
 /**
- *
- * @param reorderedCategories
+ * Handle category drag-and-drop reordering
+ * @param {Array<object>} reorderedCategories - Array of categories with updated order properties
  */
 async function handleCategoryReorder(reorderedCategories) {
   // Update all categories with new order
@@ -392,9 +381,8 @@ async function handleCategoryReorder(reorderedCategories) {
 // Checklist Handlers
 // ------------------------------------------------------------------------------
 
-// Create a new checklist
 /**
- *
+ * Create a new checklist with default name
  */
 async function handleChecklistCreate() {
   const newChecklistData = {
@@ -406,19 +394,17 @@ async function handleChecklistCreate() {
   }
 }
 
-// Update an existing checklist
 /**
- *
- * @param checklist
+ * Update an existing checklist with new data
+ * @param {object} checklist - The checklist object with updated properties
  */
 async function handleChecklistUpdate(checklist) {
   await handleAsyncAction(updateChecklist, checklist);
 }
 
-// Delete a checklist
 /**
- *
- * @param checklistId
+ * Delete a checklist by ID after user confirmation
+ * @param {string} checklistId - The ID of the checklist to delete
  */
 async function handleChecklistDelete(checklistId) {
   const confirmed = confirm(t('checklist.deleteConfirm'));

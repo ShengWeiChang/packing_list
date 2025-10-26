@@ -68,7 +68,7 @@ export default [
       'jsdoc/check-types': 'warn',
 
       // Vue specific rules
-      'vue/multi-word-component-names': 'warn',
+      'vue/multi-word-component-names': 'off', // Allow single-word component names (Item, Category, etc.)
       'vue/no-unused-vars': 'error',
       'vue/no-unused-components': 'warn',
       'vue/no-mutating-props': 'error',

@@ -52,8 +52,8 @@ export function calculatePercentage(numerator, denominator) {
 
 /**
  * Deep clone an object
- * @param {Object} obj - Object to clone
- * @returns {Object} Cloned object
+ * @param {object} obj - Object to clone
+ * @returns {object} Cloned object
  */
 export function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));

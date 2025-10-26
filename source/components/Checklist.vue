@@ -278,10 +278,9 @@ const draggableCategories = computed({
 // Editing functions
 // ------------------------------------------------------------------------------
 
-// Handle edit blur - only save if focus is moving outside edit area
 /**
- *
- * @param _event
+ * Save edit when focus moves outside the edit area
+ * @param {Event} _event - Blur event (unused)
  */
 function handleEditBlur(_event) {
   // Use a small timeout to allow focus to move to the other input
@@ -299,9 +298,8 @@ function handleEditBlur(_event) {
   }, 10);
 }
 
-// Start editing mode
 /**
- *
+ * Enter edit mode and focus on destination input
  */
 async function startEdit() {
   isEditing.value = true;
@@ -316,9 +314,8 @@ async function startEdit() {
   }
 }
 
-// Save edited checklist
 /**
- *
+ * Save changes to checklist if any values were modified
  */
 function saveEdit() {
   const hasDestinationChanged = editedDestination.value.trim() !== props.checklist.destination;
@@ -337,9 +334,8 @@ function saveEdit() {
   isEditing.value = false;
 }
 
-// Cancel editing
 /**
- *
+ * Cancel editing and restore original values
  */
 function cancelEdit() {
   isEditing.value = false;
@@ -352,9 +348,8 @@ function cancelEdit() {
 // Checklist management
 // ------------------------------------------------------------------------------
 
-// Handle delete action
 /**
- *
+ * Emit delete event for this checklist
  */
 function handleDelete() {
   emit('delete:checklist', props.checklist.id);
@@ -364,42 +359,38 @@ function handleDelete() {
 // Drag and drop handlers (vuedraggable events)
 // ------------------------------------------------------------------------------
 
-// Track which category is being dragged
 /**
- *
- * @param evt
+ * Set dragging category ID when drag starts
+ * @param {object} event - Sortable drag event
  */
-function onCategoryDragStart(evt) {
-  const categoryElement = evt.item.querySelector('[data-category-id]') || evt.item;
+function onCategoryDragStart(event) {
+  const categoryElement = event.item.querySelector('[data-category-id]') || event.item;
   if (categoryElement.dataset.categoryId) {
     draggingCategoryId.value = categoryElement.dataset.categoryId;
   }
   isDraggingCategory.value = true;
 }
 
-// Clean up drag state when drag ends
 /**
- *
- * @param _evt
+ * Clear dragging state when drag ends
+ * @param {object} _event - Sortable drag event (unused)
  */
-function onCategoryDragEnd(_evt) {
+function onCategoryDragEnd(_event) {
   draggingCategoryId.value = null;
   isDraggingCategory.value = false;
 }
 
-// Handle category reorder (handled by draggableCategories setter instead)
 /**
- *
- * @param _evt
+ * Handle category update event (delegated to draggableCategories setter)
+ * @param {object} _event - Sortable update event (unused)
  */
-function onCategoryUpdate(_evt) {
+function onCategoryUpdate(_event) {
   // This event is now handled by the draggableCategories setter
 }
 
-// Handle item movement between categories
 /**
- *
- * @param moveData
+ * Emit item move event to parent component
+ * @param {object} moveData - Move data containing item and reorder information
  */
 function handleItemMove(moveData) {
   emit('move:item', moveData);
@@ -409,17 +400,17 @@ function handleItemMove(moveData) {
 // Helpers
 // ------------------------------------------------------------------------------
 
-// Format date range for display
 /**
- *
- * @param startDate
- * @param endDate
+ * Format date range as string for display
+ * @param {string} startDate - Start date in YYYY-MM-DD format
+ * @param {string} endDate - End date in YYYY-MM-DD format
+ * @returns {string} Formatted date range string
  */
 function formatDateRange(startDate, endDate) {
-  // Parse YYYY-MM-DD strings into local Date objects to avoid timezone shifts
   /**
-   *
-   * @param dateStr
+   * Parse YYYY-MM-DD date string to local Date object
+   * @param {string} dateStr - Date string
+   * @returns {Date|null} Parsed date or null
    */
   function parseLocalDate(dateStr) {
     if (!dateStr) return null;

@@ -200,10 +200,9 @@ const isItemPacked = computed({
 // Editing functions
 // ------------------------------------------------------------------------------
 
-// Handle edit blur - only save if focus is moving outside edit area
 /**
- *
- * @param _event
+ * Save edit when focus moves outside the edit area
+ * @param {Event} _event - Blur event (unused)
  */
 function handleEditBlur(_event) {
   // Use a small timeout to allow focus to move to the other input
@@ -219,9 +218,8 @@ function handleEditBlur(_event) {
   }, 10);
 }
 
-// Start editing mode
 /**
- *
+ * Enter edit mode and focus on item name input
  */
 async function startEdit() {
   isEditing.value = true;
@@ -235,9 +233,8 @@ async function startEdit() {
   }
 }
 
-// Save edited item
 /**
- *
+ * Save changes to item if any values were modified
  */
 function saveEdit() {
   const hasNameChanged = editedName.value.trim() && editedName.value !== props.item.name;
@@ -254,9 +251,8 @@ function saveEdit() {
   isEditing.value = false;
 }
 
-// Cancel editing
 /**
- *
+ * Cancel editing and restore original values
  */
 function cancelEdit() {
   isEditing.value = false;
@@ -268,9 +264,8 @@ function cancelEdit() {
 // Item management
 // ------------------------------------------------------------------------------
 
-// Handle delete action
 /**
- *
+ * Emit delete event for this item
  */
 function handleDelete() {
   emit('delete:item', props.item.id);

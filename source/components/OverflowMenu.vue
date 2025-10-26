@@ -182,9 +182,8 @@ const svgClass = computed(() => {
 // Menu positioning
 // ------------------------------------------------------------------------------
 
-// Position dropdown relative to button
 /**
- *
+ * Calculate and apply dropdown position to avoid viewport overflow
  */
 function positionDropdown() {
   if (!buttonRef.value || !dropdownRef.value) return;
@@ -214,9 +213,8 @@ function positionDropdown() {
 // Menu actions
 // ------------------------------------------------------------------------------
 
-// Toggle dropdown menu
 /**
- *
+ * Toggle the overflow menu visibility and dispatch custom event
  */
 function toggleMenu() {
   const willOpen = !showMenu.value;
@@ -244,18 +242,16 @@ function toggleMenu() {
   }
 }
 
-// Handle edit action
 /**
- *
+ * Emit edit event and close the menu
  */
 function handleEdit() {
   showMenu.value = false;
   emit('edit');
 }
 
-// Handle delete action
 /**
- *
+ * Emit delete event and close the menu
  */
 function handleDelete() {
   showMenu.value = false;
@@ -266,10 +262,9 @@ function handleDelete() {
 // Event handlers
 // ------------------------------------------------------------------------------
 
-// Close menu when clicking outside
 /**
- *
- * @param event
+ * Close menu when user clicks outside the dropdown
+ * @param {Event} event - The click event
  */
 function closeMenu(event) {
   const target = event.target;
@@ -281,21 +276,19 @@ function closeMenu(event) {
   }
 }
 
-// Close menu when scrolling
 /**
- *
+ * Close menu when user scrolls the page
  */
 function closeMenuOnScroll() {
   showMenu.value = false;
 }
 
-// Close when another menu opens
 /**
- *
- * @param e
+ * Close this menu when another overflow menu opens
+ * @param {CustomEvent} event - The custom event with menu details
  */
-function closeWhenOtherOpens(e) {
-  const detail = e?.detail || {};
+function closeWhenOtherOpens(event) {
+  const detail = event?.detail || {};
   const otherId = detail.id;
 
   if (otherId && otherId !== props.itemId) {

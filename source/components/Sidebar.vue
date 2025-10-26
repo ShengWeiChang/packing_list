@@ -322,12 +322,11 @@ const currentLocale = computed({
 // Current language label no longer shown on the button; dropdown indicates selection
 
 // ------------------------------------------------------------------------------
-// Language menu functions
+// Language menu handlers
 // ------------------------------------------------------------------------------
 
-// Toggle language dropdown menu
 /**
- *
+ * Toggle language dropdown menu visibility
  */
 function toggleLanguageMenu() {
   const willOpen = !showLanguageMenu.value;
@@ -350,9 +349,8 @@ function toggleLanguageMenu() {
   }
 }
 
-// Position language dropdown relative to button
 /**
- *
+ * Calculate and apply language dropdown position
  */
 function positionLanguageDropdown() {
   if (!languageButtonRef.value || !languageDropdownRef.value) return;
@@ -377,20 +375,18 @@ function positionLanguageDropdown() {
   };
 }
 
-// Select language and close menu
 /**
- *
- * @param langCode
+ * Change the application language and close the language menu
+ * @param {string} langCode - The language code to switch to (e.g., 'en', 'zh-TW')
  */
 function selectLanguage(langCode) {
   currentLocale.value = langCode;
   showLanguageMenu.value = false;
 }
 
-// Close menu when clicking outside
 /**
- *
- * @param event
+ * Close language menu when user clicks outside
+ * @param {Event} event - The click event
  */
 function closeLanguageMenu(event) {
   const target = event.target;
@@ -403,9 +399,8 @@ function closeLanguageMenu(event) {
   }
 }
 
-// Close menu on scroll
 /**
- *
+ * Close language menu when user scrolls the page
  */
 function closeLanguageMenuOnScroll() {
   showLanguageMenu.value = false;

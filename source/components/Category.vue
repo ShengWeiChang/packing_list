@@ -212,9 +212,8 @@ const isCompleted = computed(() => {
 // Editing functions
 // ------------------------------------------------------------------------------
 
-// Start editing mode
 /**
- *
+ * Enter edit mode and focus on the category name input
  */
 async function startEdit() {
   isEditing.value = true;
@@ -227,9 +226,8 @@ async function startEdit() {
   }
 }
 
-// Save edited category
 /**
- *
+ * Save the edited category name if changed
  */
 function saveEdit() {
   const hasNameChanged = editedName.value.trim() && editedName.value !== props.category.name;
@@ -244,9 +242,8 @@ function saveEdit() {
   isEditing.value = false;
 }
 
-// Cancel editing
 /**
- *
+ * Cancel editing and restore original category name
  */
 function cancelEdit() {
   isEditing.value = false;
@@ -257,9 +254,8 @@ function cancelEdit() {
 // Category management
 // ------------------------------------------------------------------------------
 
-// Handle delete action
 /**
- *
+ * Emit delete event for this category
  */
 function handleDelete() {
   emit('delete:category', props.category.id);
@@ -269,40 +265,37 @@ function handleDelete() {
 // Drag and drop handlers (vuedraggable events)
 // ------------------------------------------------------------------------------
 
-// Track which item is being dragged
 /**
- *
- * @param evt
+ * Set dragging item ID when drag starts
+ * @param {object} event - Sortable drag event
  */
-function onItemDragStart(evt) {
-  const item = evt.item.querySelector('[data-item-id]');
+function onItemDragStart(event) {
+  const item = event.item.querySelector('[data-item-id]');
   if (item) {
     draggingItemId.value = item.dataset.itemId;
   }
 }
 
-// Clean up drag state when drag ends
 /**
- *
- * @param _evt
+ * Clear dragging item ID when drag ends
+ * @param {object} _event - Sortable drag event (unused)
  */
-function onItemDragEnd(_evt) {
+function onItemDragEnd(_event) {
   draggingItemId.value = null;
 }
 
-// Handle item change events from vuedraggable
 /**
- *
- * @param evt
+ * Handle item reorder or move events from vue-draggable
+ * @param {object} event - Sortable change event with added/removed/moved properties
  */
-function onItemChange(evt) {
+function onItemChange(event) {
   // Case 1: Cross-category move (target side)
   // When an item is dragged from another category to this one
-  // Note: evt.removed is intentionally ignored.
+  // Note: event.removed is intentionally ignored.
   // The category's order will be corrected by a data refresh from the parent component, avoiding race conditions from simultaneous updates.
-  if (evt.added) {
-    const item = evt.added.element;
-    const newIndex = evt.added.newIndex;
+  if (event.added) {
+    const item = event.added.element;
+    const newIndex = event.added.newIndex;
 
     // Get current items in this category (excluding the newly added item)
     const currentCategoryItems = sortedItems.value.filter((i) => i.id !== item.id);
@@ -338,9 +331,9 @@ function onItemChange(evt) {
 
   // Case 2: Same-category reorder
   // When an item is moved within the same category
-  if (evt.moved) {
-    const oldIndex = evt.moved.oldIndex;
-    const newIndex = evt.moved.newIndex;
+  if (event.moved) {
+    const oldIndex = event.moved.oldIndex;
+    const newIndex = event.moved.newIndex;
 
     // Build the new order by simulating the move
     const items = [...sortedItems.value];

@@ -16,6 +16,17 @@ import { generateSecureId } from '../utils/helpers.js';
  * Represents an item in a checklist
  */
 export class Item {
+  /**
+   *
+   * @param root0
+   * @param root0.id
+   * @param root0.name
+   * @param root0.quantity
+   * @param root0.categoryId
+   * @param root0.isPacked
+   * @param root0.checklistId
+   * @param root0.order
+   */
   constructor({
     id = generateSecureId('item-'),
     name = '',
@@ -69,7 +80,7 @@ export class Item {
 
   /**
    * Creates an Item instance from JSON data
-   * @param {Object} json - The JSON data to create the item from
+   * @param {object} json - The JSON data to create the item from
    * @returns {Item} A new Item instance
    */
   static fromJSON(json) {
@@ -83,7 +94,7 @@ export class Item {
 
   /**
    * Converts the item instance to JSON format
-   * @returns {Object} The JSON representation of the item
+   * @returns {object} The JSON representation of the item
    */
   toJSON() {
     return {
