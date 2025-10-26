@@ -17,7 +17,7 @@ Created: 2025-09-19
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
   >
-    <!-- Icon aligned with checkbox column -->
+    <!-- Plus icon aligned with checkbox column -->
     <span
       class="mr-2 flex h-4 w-4 flex-none items-center justify-center"
       :class="isHovered ? 'text-primary' : 'text-secondary'"
@@ -37,7 +37,7 @@ Created: 2025-09-19
       </svg>
     </span>
 
-    <!-- Label aligns with item name area -->
+    <!-- Button label aligned with item name area -->
     <span
       class="flex-grow text-left text-base"
       :class="isHovered ? 'text-primary' : 'text-secondary'"

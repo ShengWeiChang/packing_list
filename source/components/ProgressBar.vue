@@ -11,6 +11,7 @@ Created: 2025-09-19
 
 <template>
   <div class="w-full">
+    <!-- Progress bar track and fill -->
     <div
       class="mb-2 h-2 w-full overflow-hidden rounded-full"
       :style="{ background: backgroundColor }"
@@ -20,6 +21,8 @@ Created: 2025-09-19
         :style="{ width: `${percentage}%`, background: progressColor }"
       ></div>
     </div>
+
+    <!-- Progress text and percentage -->
     <div class="flex items-center justify-between">
       <p
         class="text-sm font-medium"

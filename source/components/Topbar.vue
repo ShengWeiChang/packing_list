@@ -13,7 +13,7 @@ Created: 2025-09-19
   <header
     class="flex w-full items-center justify-between border-b border-gray-200 bg-white px-3 py-2 md:hidden"
   >
-    <!-- Toggle Navigation Button -->
+    <!-- Toggle sidebar navigation -->
     <button
       class="rounded-md p-2 hover:bg-gray-100"
       :aria-label="$t('topbar.toggleNav')"
@@ -34,7 +34,7 @@ Created: 2025-09-19
       </svg>
     </button>
 
-    <!-- New Checklist Button -->
+    <!-- New checklist action -->
     <button
       class="rounded-md p-2 hover:bg-gray-100"
       :aria-label="$t('topbar.newChecklist')"

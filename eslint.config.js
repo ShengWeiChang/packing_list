@@ -1,3 +1,13 @@
+/*
+================================================================================
+File: eslint.config.js
+Description: ESLint configuration - sets up rules and plugins for code quality
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-10-26
+================================================================================
+*/
+
 import js from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import jsdoc from 'eslint-plugin-jsdoc';

@@ -14,6 +14,7 @@ Created: 2025-09-19
     ref="root"
     class="relative"
   >
+    <!-- Three-dot menu button -->
     <button
       ref="buttonRef"
       type="button"
@@ -44,7 +45,7 @@ Created: 2025-09-19
       </svg>
     </button>
 
-    <!-- Dropdown menu (fixed, positioned at runtime to avoid clipping) -->
+    <!-- Dropdown menu with edit and delete actions -->
     <div
       v-if="showMenu"
       ref="dropdownRef"

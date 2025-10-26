@@ -15,6 +15,7 @@ Created: 2025-09-19
     @click="$emit('click')"
   >
     <div class="text-center">
+      <!-- Plus icon -->
       <svg
         class="text-secondary mx-auto mb-2 h-8 w-8"
         fill="none"
@@ -28,6 +29,8 @@ Created: 2025-09-19
           d="M12 6v6m0 0v6m0-6h6m-6 0H6"
         />
       </svg>
+
+      <!-- Button label -->
       <span class="text-secondary group-hover:text-primary ml-2 text-base">
         {{ $t('category.newCategory') }}
       </span>
