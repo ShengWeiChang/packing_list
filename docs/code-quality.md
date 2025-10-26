@@ -97,28 +97,53 @@ Validation
 
 - Auto-fix most ordering issues: `npm run lint:fix`
 
-### 3.5 Vue Script Section Order (guideline)
+### 3.5 Vue Script Section Order
 
-Recommended top-to-bottom organization inside `<script setup>` or component scripts:
+Top-to-bottom organization inside `<script setup>` or component scripts:
 
-1. Imports (vue, libs, local) — grouped and sorted; styles/side-effects last
+1. Imports (vue, libs, local) — Auto-sorted: vue → external packages → local modules
 2. Internationalization (i18n) — `useI18n()` setup
 3. Constants — non-reactive constants, config
 4. Props & Emits — `defineProps`, `defineEmits`
 5. Composables — calls like `useXxx()`
 6. State — `ref`, `reactive`
-7. Computed — `computed`
+7. Computed properties — `computed`
 8. Functions — event handlers, helpers
-9. Lifecycle — `onMounted`, `onUnmounted`, etc.
+9. Lifecycle hooks — `onMounted`, `onUnmounted`, etc.
 10. Watchers — `watch`, `watchEffect`
 
 This mirrors how readers scan: inputs → setup → state/derivations → behaviors → lifecycle → reactive watchers.
 
 Validation
 
-- Guideline only (not enforced by ESLint). Import sorting is enforced; section order relies on team practice/code review.
+- Guideline only (not enforced by ESLint). Import sorting is automatically handled by `simple-import-sort`; section order relies on team practice/code review.
 
-### 3.6 Comment Style
+### 3.6 JavaScript File Section Order
+
+JS files should use appropriate grouping based on file type:
+
+1. Imports (vue, libs, local) — Auto-sorted: side-effects (CSS) → vue → external packages → local modules
+2. Constants — module-level constants, config
+3. Service initialization — service instantiation (Composables only)
+4. State — `ref`, `reactive` (Composables only)
+5. Computed properties — `computed` (Composables only)
+6. Functions — all functions, methods
+7. Watchers — `watch`, `watchEffect` (Composables only)
+8. Class definition — class definition (Class files)
+
+**Composables** (e.g., `usePackingLists.js`): Use 1 → 3 → 4 → 5 → 6 → 7
+
+**Class Files** (e.g., `localStorageService.js`, Models): Use 1 → 8
+
+**Utility/Configuration Files**: Use 1 → 2 → 6
+
+Validation
+
+- Use `// ---` dividers (80 characters) to mark sections
+- Section names use title case (e.g., `Imports`, `State`, `Functions`)
+- Guideline only (not enforced by ESLint); maintained via code review
+
+### 3.7 Comment Style
 
 We use 4 categories of comments, each with specific purpose and format:
 
@@ -156,15 +181,30 @@ Created: YYYY-MM-DD
 
 **Section Dividers**
 
-Separate logical sections within a file (80 characters exactly):
+Separate logical sections within a file with a fixed total length of **80 characters** (including `//` and space):
 
 ```javascript
-// --------------------------------------------------------------------------------
-// SECTION NAME
-// --------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// Section Name
+// -----------------------------------------------------------------------------
 ```
 
-Use for both major sections (CRUD OPERATIONS, LIFECYCLE HOOKS) and minor sections (Props & Emits, Computed Properties).
+**Nested Sections**: For dividers inside functions or classes, maintain the same 80-character total length (including indentation):
+
+```javascript
+export function useExample() {
+  // ---------------------------------------------------------------------------
+  // Service initialization
+  // ---------------------------------------------------------------------------
+
+  const service = new Service();
+}
+```
+
+**Section Name Rules:**
+
+- Use title case: `Imports`, `State`, `Functions`
+- Use for both major sections (Imports, Class definition, Functions, Watchers) and class internal sections (Checklist CRUD, Item CRUD)
 
 **JSDoc Comments**
 

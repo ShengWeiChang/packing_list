@@ -9,20 +9,28 @@ Created: 2025-09-19
 ================================================================================
 */
 
+// -----------------------------------------------------------------------------
+// Imports
+// -----------------------------------------------------------------------------
+
 import { VALIDATION } from '../utils/constants.js';
 import { generateSecureId } from '../utils/helpers.js';
+
+// -----------------------------------------------------------------------------
+// Class definition
+// -----------------------------------------------------------------------------
 
 /**
  * Represents a packing list with basic information and metadata
  */
 export class Checklist {
   /**
-   *
-   * @param root0
-   * @param root0.id
-   * @param root0.destination
-   * @param root0.startDate
-   * @param root0.endDate
+   * Checklist class constructor
+   * @param {object} root0 - Checklist configuration object
+   * @param {string} root0.id - Unique identifier for the checklist
+   * @param {string} root0.destination - Destination location for the trip
+   * @param {string} root0.startDate - Trip start date in ISO format (YYYY-MM-DD)
+   * @param {string} root0.endDate - Trip end date in ISO format (YYYY-MM-DD)
    */
   constructor({
     id = generateSecureId('checklist-'),

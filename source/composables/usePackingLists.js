@@ -9,6 +9,10 @@ Created: 2025-09-19
 ================================================================================
 */
 
+// -----------------------------------------------------------------------------
+// Imports
+// -----------------------------------------------------------------------------
+
 import { computed, readonly, ref, watch } from 'vue';
 
 import { Category } from '../models/Category';
@@ -17,10 +21,19 @@ import { Item } from '../models/Item';
 import { LocalStorageService } from '../services/localStorageService';
 
 /**
- *
+ * Composable for managing packing list state and operations
+ * @returns {object} Packing list management API with state, computed properties and CRUD operations
  */
 export function usePackingLists() {
+  // ---------------------------------------------------------------------------
+  // Service initialization
+  // ---------------------------------------------------------------------------
+
   const dataService = new LocalStorageService();
+
+  // ---------------------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------------------
 
   const checklists = ref([]);
   const categories = ref([]);
@@ -29,7 +42,10 @@ export function usePackingLists() {
   const isLoading = ref(false);
   const error = ref(null);
 
+  // ---------------------------------------------------------------------------
   // Computed properties
+  // ---------------------------------------------------------------------------
+
   const selectedChecklist = computed(() =>
     checklists.value.find((cl) => cl.id === selectedChecklistId.value)
   );
@@ -40,11 +56,15 @@ export function usePackingLists() {
     return Math.round((packedItems.value / totalItems.value) * 100);
   });
 
-  // Generic data loading function
+  // ---------------------------------------------------------------------------
+  // Functions
+  // ---------------------------------------------------------------------------
+
   /**
-   *
-   * @param loader
-   * @param errorMessage
+   * Generic wrapper for async data operations with error handling and loading state
+   * @param {Function} loader - Async function to execute
+   * @param {string} errorMessage - Error message prefix for failures
+   * @returns {Promise<*>} Result from loader function or null on error
    */
   async function loadData(loader, errorMessage) {
     isLoading.value = true;
@@ -60,19 +80,19 @@ export function usePackingLists() {
     }
   }
 
-  // Toggle item packed status
   /**
-   *
-   * @param item
+   * Toggle the packed status of an item
+   * @param {object} item - Item object to toggle
+   * @returns {Promise<void>}
    */
   async function toggleItemPacked(item) {
     const updatedItem = new Item({ ...item, isPacked: !item.isPacked });
     await updateItem(updatedItem);
   }
 
-  // Initial data loading
   /**
-   *
+   * Initialize data by loading all checklists, categories and items from storage
+   * @returns {Promise<void>}
    */
   async function initialize() {
     // Load the entire storage once to avoid multiple JSON.parse calls
@@ -111,13 +131,14 @@ export function usePackingLists() {
     }
   }
 
-  // --------------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
   // CHECKLIST CRUD OPERATIONS
-  // --------------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
 
   /**
-   *
-   * @param checklistData
+   * Create a new checklist with default categories and items
+   * @param {object} checklistData - Checklist data to create
+   * @returns {Promise<object|null>} Created checklist object or null on error
    */
   async function createChecklist(checklistData) {
     const result = await loadData(
@@ -133,7 +154,8 @@ export function usePackingLists() {
   }
 
   /**
-   *
+   * Get all checklists from storage
+   * @returns {Promise<Array>} Array of checklist objects
    */
   async function getChecklists() {
     const result = await loadData(() => dataService.getChecklists(), 'Error getting checklists');
@@ -145,8 +167,9 @@ export function usePackingLists() {
   }
 
   /**
-   *
-   * @param checklistData
+   * Update an existing checklist
+   * @param {object} checklistData - Updated checklist data (must include id)
+   * @returns {Promise<object|null>} Updated checklist or null on error
    */
   async function updateChecklist(checklistData) {
     const result = await loadData(
@@ -161,8 +184,9 @@ export function usePackingLists() {
   }
 
   /**
-   *
-   * @param id
+   * Delete a checklist and update selection if needed
+   * @param {string} id - Checklist ID to delete
+   * @returns {Promise<void>}
    */
   async function deleteChecklist(id) {
     await loadData(() => dataService.deleteChecklist(id), 'Error deleting checklist');
@@ -172,13 +196,14 @@ export function usePackingLists() {
     }
   }
 
-  // --------------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
   // CATEGORY CRUD OPERATIONS
-  // --------------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
 
   /**
-   *
-   * @param categoryData
+   * Create a new category in the current checklist
+   * @param {object} categoryData - Category data to create
+   * @returns {Promise<object|null>} Created category or null on error
    */
   async function createCategory(categoryData) {
     if (!selectedChecklistId.value) return null;
@@ -194,7 +219,8 @@ export function usePackingLists() {
   }
 
   /**
-   *
+   * Get all categories for the current checklist
+   * @returns {Promise<Array>} Array of category objects sorted by order
    */
   async function getCategories() {
     if (!selectedChecklistId.value) {
@@ -210,8 +236,9 @@ export function usePackingLists() {
   }
 
   /**
-   *
-   * @param categoryData
+   * Update an existing category
+   * @param {object} categoryData - Updated category data (must include id)
+   * @returns {Promise<object|null>} Updated category or null on error
    */
   async function updateCategory(categoryData) {
     const result = await loadData(
@@ -226,21 +253,23 @@ export function usePackingLists() {
   }
 
   /**
-   *
-   * @param categoryId
+   * Delete a category and all its items
+   * @param {string} categoryId - Category ID to delete
+   * @returns {Promise<void>}
    */
   async function deleteCategory(categoryId) {
     await loadData(() => dataService.deleteCategory(categoryId), 'Error deleting category');
     await Promise.all([getCategories(), getItems()]);
   }
 
-  // --------------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
   // ITEM CRUD OPERATIONS
-  // --------------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
 
   /**
-   *
-   * @param itemData
+   * Create a new item in the current checklist
+   * @param {object} itemData - Item data to create
+   * @returns {Promise<object|null>} Created item or null on error
    */
   async function createItem(itemData) {
     if (!selectedChecklistId.value) return null;
@@ -256,7 +285,8 @@ export function usePackingLists() {
   }
 
   /**
-   *
+   * Get all items for the current checklist sorted by category and item order
+   * @returns {Promise<Array>} Array of item objects
    */
   async function getItems() {
     if (!selectedChecklistId.value) {
@@ -283,8 +313,9 @@ export function usePackingLists() {
   }
 
   /**
-   *
-   * @param itemData
+   * Update an existing item
+   * @param {object} itemData - Updated item data (must include id)
+   * @returns {Promise<object|null>} Updated item or null on error
    */
   async function updateItem(itemData) {
     if (!selectedChecklistId.value) return null;
@@ -300,8 +331,9 @@ export function usePackingLists() {
   }
 
   /**
-   *
-   * @param itemId
+   * Delete an item from the current checklist
+   * @param {string} itemId - Item ID to delete
+   * @returns {Promise<void>}
    */
   async function deleteItem(itemId) {
     if (!selectedChecklistId.value) return;
@@ -311,6 +343,10 @@ export function usePackingLists() {
     );
     await getItems();
   }
+
+  // -----------------------------------------------------------------------------
+  // Watchers
+  // -----------------------------------------------------------------------------
 
   // Watch for checklist changes to load relevant items
   watch(selectedChecklistId, (newId) => {

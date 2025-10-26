@@ -9,6 +9,10 @@ Created: 2025-09-19
 ================================================================================
 */
 
+// -----------------------------------------------------------------------------
+// Imports
+// -----------------------------------------------------------------------------
+
 import { getDefaultItems } from '../data/defaultItems';
 import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';
@@ -17,12 +21,16 @@ import { STORAGE_KEYS } from '../utils/constants.js';
 import { generateSecureId } from '../utils/helpers.js';
 import { DataService } from './dataService';
 
+// -----------------------------------------------------------------------------
+// Class definition
+// -----------------------------------------------------------------------------
+
 /**
  * LocalStorage implementation of the DataService
  */
 export class LocalStorageService extends DataService {
   /**
-   *
+   * Initialize the LocalStorage service with caching and cross-tab sync
    */
   constructor() {
     super();
@@ -68,9 +76,9 @@ export class LocalStorageService extends DataService {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(initialData));
   }
 
-  // --------------------------------------------------------------------------------
-  // PRIVATE HELPER METHODS
-  // --------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Private helper methods
+  // ---------------------------------------------------------------------------
 
   /**
    * Ensure storage is initialized before first access
@@ -139,9 +147,9 @@ export class LocalStorageService extends DataService {
     return { categories, items };
   }
 
-  // ==============================================================================
-  // PUBLIC BULK DATA ACCESS
-  // ==============================================================================
+  // ---------------------------------------------------------------------------
+  // Bulk data access
+  // ---------------------------------------------------------------------------
 
   /**
    * Get all data with automatic caching
@@ -172,9 +180,9 @@ export class LocalStorageService extends DataService {
     }
   }
 
-  // --------------------------------------------------------------------------------
-  // PUBLIC CHECKLIST CRUD
-  // --------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Checklist CRUD
+  // ---------------------------------------------------------------------------
 
   /**
    * Create a new checklist with default categories and items
@@ -258,9 +266,9 @@ export class LocalStorageService extends DataService {
     this._saveData(data);
   }
 
-  // --------------------------------------------------------------------------------
-  // PUBLIC CATEGORY CRUD
-  // --------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Category CRUD
+  // ---------------------------------------------------------------------------
 
   /**
    * Create a new category within a checklist
@@ -339,9 +347,9 @@ export class LocalStorageService extends DataService {
     this._saveData(data);
   }
 
-  // --------------------------------------------------------------------------------
-  // PUBLIC ITEM CRUD
-  // --------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Item CRUD
+  // ---------------------------------------------------------------------------
 
   /**
    * Create a new item within a checklist

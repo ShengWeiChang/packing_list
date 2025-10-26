@@ -9,20 +9,28 @@ Created: 2025-09-19
 ================================================================================
 */
 
+// -----------------------------------------------------------------------------
+// Imports
+// -----------------------------------------------------------------------------
+
 import { VALIDATION } from '../utils/constants.js';
 import { generateSecureId } from '../utils/helpers.js';
+
+// -----------------------------------------------------------------------------
+// Class definition
+// -----------------------------------------------------------------------------
 
 /**
  * Represents a category of items in a checklist
  */
 export class Category {
   /**
-   *
-   * @param root0
-   * @param root0.id
-   * @param root0.name
-   * @param root0.checklistId
-   * @param root0.order
+   * Category class constructor
+   * @param {object} root0 - Category configuration object
+   * @param {string} root0.id - Unique identifier for the category
+   * @param {string} root0.name - Name of the category
+   * @param {string} root0.checklistId - ID of the checklist this category belongs to
+   * @param {number} root0.order - Display order of the category
    */
   constructor({
     id = generateSecureId('category-'),

@@ -9,23 +9,31 @@ Created: 2025-09-19
 ================================================================================
 */
 
+// -----------------------------------------------------------------------------
+// Imports
+// -----------------------------------------------------------------------------
+
 import { VALIDATION } from '../utils/constants.js';
 import { generateSecureId } from '../utils/helpers.js';
+
+// -----------------------------------------------------------------------------
+// Class definition
+// -----------------------------------------------------------------------------
 
 /**
  * Represents an item in a checklist
  */
 export class Item {
   /**
-   *
-   * @param root0
-   * @param root0.id
-   * @param root0.name
-   * @param root0.quantity
-   * @param root0.categoryId
-   * @param root0.isPacked
-   * @param root0.checklistId
-   * @param root0.order
+   * Item class constructor
+   * @param {object} root0 - Item configuration object
+   * @param {string} root0.id - Unique identifier for the item
+   * @param {string} root0.name - Name of the item
+   * @param {number} root0.quantity - Quantity of the item (1-999)
+   * @param {string} root0.categoryId - ID of the category this item belongs to
+   * @param {boolean} root0.isPacked - Whether the item is packed
+   * @param {string} root0.checklistId - ID of the checklist this item belongs to
+   * @param {number} root0.order - Display order within category
    */
   constructor({
     id = generateSecureId('item-'),

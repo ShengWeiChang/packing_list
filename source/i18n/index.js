@@ -8,10 +8,18 @@ Created: 2025-10-18
 ================================================================================
 */
 
+// -----------------------------------------------------------------------------
+// Imports
+// -----------------------------------------------------------------------------
+
 import { createI18n } from 'vue-i18n';
 
 import en from '../locales/en.json';
 import zhTW from '../locales/zh-TW.json';
+
+// -----------------------------------------------------------------------------
+// Constants
+// -----------------------------------------------------------------------------
 
 // Local storage key for user language preference
 const LOCALE_STORAGE_KEY = 'user-locale';
@@ -24,6 +32,10 @@ const SUPPORTED_LOCALES = ['en', 'zh-TW'];
 // - Add corresponding locale JSON files in ../locales/
 // - Update mapToSupportedLocale() to handle new language mappings
 // - Create defaultItems.{locale}.js files for new languages
+
+// -----------------------------------------------------------------------------
+// Functions
+// -----------------------------------------------------------------------------
 
 /**
  * Map browser language to supported locale
