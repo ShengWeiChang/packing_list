@@ -8,11 +8,19 @@ Created: 2025-10-26
 ================================================================================
 */
 
+// ------------------------------------------------------------------------------
+// Imports
+// ------------------------------------------------------------------------------
+
 import js from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import jsdoc from 'eslint-plugin-jsdoc';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import pluginVue from 'eslint-plugin-vue';
+
+// ------------------------------------------------------------------------------
+// Configuration
+// ------------------------------------------------------------------------------
 
 export default [
   // Ignore patterns
