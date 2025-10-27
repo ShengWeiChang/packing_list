@@ -10,16 +10,11 @@ Created: 2025-09-19
 -->
 
 <template>
-  <div
-    :class="[
-      'min-h-screen text-slate-800',
-      isMobileViewport ? 'flex flex-col' : 'flex'
-    ]"
-  >
+  <div :class="['min-h-screen text-slate-800', isMobileViewport ? 'flex flex-col' : 'flex']">
     <!-- Overlay for narrow screens when sidebar is open -->
     <div
       v-if="(isMobileViewport || (isSmallDesktop && isSidebarOpen)) && isSidebarOpen"
-      class="fixed inset-0 bg-black bg-opacity-40 z-40 backdrop-blur-sm"
+      class="fixed inset-0 z-40 bg-black bg-opacity-40 backdrop-blur-sm"
       @click="toggleSidebar"
     ></div>
 
@@ -33,7 +28,10 @@ Created: 2025-09-19
 
     <!-- Sidebar -->
     <!-- Overlay Sidebar (Mobile or Narrow + Expanded) -->
-    <teleport to="body" v-if="isOverlayVisible">
+    <teleport
+      v-if="isOverlayVisible"
+      to="body"
+    >
       <div class="fixed inset-y-0 left-0 z-50">
         <Sidebar
           :is-expanded="isSidebarOpen"
@@ -50,7 +48,10 @@ Created: 2025-09-19
     </teleport>
 
     <!-- Inline Sidebar (Desktop only, when not in overlay mode) -->
-    <div v-else-if="!isMobileViewport" class="relative z-50">
+    <div
+      v-else-if="!isMobileViewport"
+      class="relative z-50"
+    >
       <Sidebar
         :is-expanded="isSidebarOpen"
         :is-mobile="isMobileViewport"
@@ -67,10 +68,11 @@ Created: 2025-09-19
     <!-- Main Content -->
     <main
       :class="[
-        'p-4 md:p-6 overflow-y-auto bg-gray-50 min-w-0 transition-filter duration-200 flex-1',
+        'transition-filter min-w-0 flex-1 overflow-y-auto bg-gray-50 p-4 duration-200 md:p-6',
         {
-          'filter blur-sm pointer-events-none': (isSidebarOpen && (isMobileViewport || isSmallDesktop))
-        }
+          'pointer-events-none blur-sm filter':
+            isSidebarOpen && (isMobileViewport || isSmallDesktop),
+        },
       ]"
     >
       <div v-if="selectedChecklist">
@@ -95,7 +97,7 @@ Created: 2025-09-19
       </div>
       <div
         v-else
-        class="text-center text-secondary mt-20"
+        class="text-secondary mt-20 text-center"
       >
         {{ $t('checklist.pleaseCreate') }}
       </div>
@@ -104,26 +106,27 @@ Created: 2025-09-19
 </template>
 
 <script setup>
-// ----------------------
+// ------------------------------------------------------------------------------
 // Imports
-// ----------------------
+// ------------------------------------------------------------------------------
 
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+
 import ChecklistComponent from './components/Checklist.vue';
 import Sidebar from './components/Sidebar.vue';
 import Topbar from './components/Topbar.vue';
 import { usePackingLists } from './composables/usePackingLists';
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Internationalization (i18n)
-// ----------------------
+// ------------------------------------------------------------------------------
 
 const { t } = useI18n();
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Constants
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Local key for remembering manual sidebar collapse on desktop
 const SIDEBAR_COLLAPSED_KEY = 'sidebar-manually-collapsed';
@@ -131,12 +134,12 @@ const SIDEBAR_COLLAPSED_KEY = 'sidebar-manually-collapsed';
 // Responsive breakpoints
 const BREAKPOINTS = {
   MOBILE: 600, // md breakpoint
-  SIDEBAR_OVERLAY: 1000 // width under which sidebar becomes overlay
+  SIDEBAR_OVERLAY: 1000, // width under which sidebar becomes overlay
 };
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Composables
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Initialize packing lists composable
 const {
@@ -156,12 +159,12 @@ const {
   createItem,
   getItems,
   updateItem,
-  deleteItem
+  deleteItem,
 } = usePackingLists();
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // States
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // UI state
 const isSidebarOpen = ref(true);
@@ -173,30 +176,28 @@ const newlyCreatedItemId = ref(null);
 const newlyCreatedCategoryId = ref(null);
 const newlyCreatedChecklistId = ref(null);
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Computed
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Determine if sidebar should show as overlay
-const isOverlayVisible = computed(() =>
-  (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value)) && isSidebarOpen.value
+const isOverlayVisible = computed(
+  () =>
+    (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value)) && isSidebarOpen.value
 );
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Helpers
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Generic error handler for async operations
 const handleAsyncAction = async (action, ...args) => {
-  try {
-    return await action(...args);
-  } catch (err) {
-    // Error is already handled by usePackingLists, just propagate if needed
-    throw err;
-  }
+  return await action(...args);
 };
 
-// Check if screen is mobile size and adjust UI accordingly
+/**
+ * Check if screen is mobile size and adjust UI accordingly
+ */
 function checkScreenSize() {
   isMobileViewport.value = window.innerWidth < BREAKPOINTS.MOBILE;
   isSmallDesktop.value = window.innerWidth < BREAKPOINTS.SIDEBAR_OVERLAY;
@@ -212,16 +213,20 @@ function checkScreenSize() {
   }
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // UI Handlers
-// ----------------------
+// ------------------------------------------------------------------------------
 
-// Handle window resize events
+/**
+ * Handle window resize events and update viewport state
+ */
 function handleResize() {
   checkScreenSize();
 }
 
-// Toggle sidebar open/closed state
+/**
+ * Toggle sidebar open/closed state
+ */
 function toggleSidebar() {
   isSidebarOpen.value = !isSidebarOpen.value;
 
@@ -235,22 +240,26 @@ function toggleSidebar() {
   }
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Item Handlers
-// ----------------------
+// ------------------------------------------------------------------------------
 
-// Create a new item in the specified category
+/**
+ * Create a new item in the specified category with default values
+ * @param {string} categoryId - The ID of the category to add the item to
+ */
 async function handleItemCreate(categoryId) {
   // Find the max order in this category
-  const categoryItems = items.value.filter(item => item.categoryId === categoryId);
-  const maxOrder = categoryItems.length > 0 ? Math.max(...categoryItems.map(item => item.order || 0)) : -1;
-  
+  const categoryItems = items.value.filter((item) => item.categoryId === categoryId);
+  const maxOrder =
+    categoryItems.length > 0 ? Math.max(...categoryItems.map((item) => item.order || 0)) : -1;
+
   const newItemData = {
     name: t('item.defaultName'),
     quantity: 1,
     categoryId: categoryId,
     isPacked: false,
-    order: maxOrder + 1
+    order: maxOrder + 1,
   };
 
   const newItem = await handleAsyncAction(createItem, newItemData);
@@ -259,7 +268,10 @@ async function handleItemCreate(categoryId) {
   }
 }
 
-// Update an existing item
+/**
+ * Update an existing item with new data
+ * @param {object} item - The item object with updated properties
+ */
 async function handleItemUpdate(item) {
   await handleAsyncAction(updateItem, item);
 
@@ -269,21 +281,27 @@ async function handleItemUpdate(item) {
   }
 }
 
-// Delete an item
+/**
+ * Delete an item by ID
+ * @param {string} itemId - The ID of the item to delete
+ */
 async function handleItemDelete(itemId) {
   await handleAsyncAction(deleteItem, itemId);
 }
 
-// Handle item movement between categories or reordering
+/**
+ * Handle item drag-and-drop movement or reordering within categories
+ * @param {object} moveData - Move data containing item, category IDs, and reordered items
+ */
 async function handleItemMove(moveData) {
   if (moveData.type === 'move') {
     // Item moved to different category
     const updatedItem = {
       ...moveData.item,
-      categoryId: moveData.newCategoryId
+      categoryId: moveData.newCategoryId,
     };
     await handleAsyncAction(updateItem, updatedItem);
-    
+
     // Also update the reordered items in the target category
     if (moveData.reorderedItems && moveData.reorderedItems.length > 0) {
       for (const item of moveData.reorderedItems) {
@@ -296,23 +314,26 @@ async function handleItemMove(moveData) {
       await handleAsyncAction(updateItem, item);
     }
   }
-  
+
   // Refresh items list
   await getItems();
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Category Handlers
-// ----------------------
+// ------------------------------------------------------------------------------
 
-// Create a new category
+/**
+ * Create a new category with default name
+ */
 async function handleCategoryCreate() {
   // Find the highest order among all categories
-  const maxOrder = categories.value.length > 0 ? Math.max(...categories.value.map(cat => cat.order || 0)) : -1;
-  
+  const maxOrder =
+    categories.value.length > 0 ? Math.max(...categories.value.map((cat) => cat.order || 0)) : -1;
+
   const newCategoryData = {
     name: t('category.defaultName'),
-    order: maxOrder + 1
+    order: maxOrder + 1,
   };
 
   const newCategory = await handleAsyncAction(createCategory, newCategoryData);
@@ -321,7 +342,10 @@ async function handleCategoryCreate() {
   }
 }
 
-// Update an existing category
+/**
+ * Update an existing category with new data
+ * @param {object} category - The category object with updated properties
+ */
 async function handleCategoryUpdate(category) {
   await handleAsyncAction(updateCategory, category);
 
@@ -331,27 +355,35 @@ async function handleCategoryUpdate(category) {
   }
 }
 
-// Delete a category
+/**
+ * Delete a category by ID
+ * @param {string} categoryId - The ID of the category to delete
+ */
 async function handleCategoryDelete(categoryId) {
   await handleAsyncAction(deleteCategory, categoryId);
 }
 
-// Handle category reorder after drag-and-drop
+/**
+ * Handle category drag-and-drop reordering
+ * @param {Array<object>} reorderedCategories - Array of categories with updated order properties
+ */
 async function handleCategoryReorder(reorderedCategories) {
   // Update all categories with new order
   for (const category of reorderedCategories) {
     await handleAsyncAction(updateCategory, category);
   }
-  
+
   // Refresh categories after all updates to ensure consistency
   await getCategories();
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Checklist Handlers
-// ----------------------
+// ------------------------------------------------------------------------------
 
-// Create a new checklist
+/**
+ * Create a new checklist with default name
+ */
 async function handleChecklistCreate() {
   const newChecklistData = {
     name: t('checklist.defaultName'),
@@ -362,12 +394,18 @@ async function handleChecklistCreate() {
   }
 }
 
-// Update an existing checklist
+/**
+ * Update an existing checklist with new data
+ * @param {object} checklist - The checklist object with updated properties
+ */
 async function handleChecklistUpdate(checklist) {
   await handleAsyncAction(updateChecklist, checklist);
 }
 
-// Delete a checklist
+/**
+ * Delete a checklist by ID after user confirmation
+ * @param {string} checklistId - The ID of the checklist to delete
+ */
 async function handleChecklistDelete(checklistId) {
   const confirmed = confirm(t('checklist.deleteConfirm'));
   if (!confirmed) return;
@@ -380,9 +418,9 @@ async function handleChecklistDelete(checklistId) {
   }
 }
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Lifecycle Hooks
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Initialize app and set up responsive behavior
 onMounted(async () => {
@@ -398,20 +436,21 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Watchers
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Prevent layout shift caused by scrollbar/body resizing when overlay drawer is active
 watch([isSidebarOpen, isMobileViewport, isSmallDesktop], () => {
-  const overlayActive = isSidebarOpen.value && (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value));
+  const overlayActive =
+    isSidebarOpen.value &&
+    (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value));
   if (overlayActive) {
     document.body.style.overflow = 'hidden';
   } else {
     document.body.style.overflow = '';
   }
 });
-
 </script>
 
 <style>

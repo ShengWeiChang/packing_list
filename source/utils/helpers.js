@@ -9,6 +9,10 @@ Created: 2025-09-19
 ================================================================================
 */
 
+// -----------------------------------------------------------------------------
+// Functions
+// -----------------------------------------------------------------------------
+
 /**
  * Format a date string to localized date format
  * @param {string} dateString - ISO date string
@@ -18,7 +22,7 @@ export function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   });
 }
 
@@ -32,7 +36,7 @@ export function generateSecureId(prefix = '') {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     try {
       return `${prefix}${crypto.randomUUID()}`;
-    } catch (e) {
+    } catch {
       // fall through to fallback
     }
   }
@@ -52,8 +56,8 @@ export function calculatePercentage(numerator, denominator) {
 
 /**
  * Deep clone an object
- * @param {Object} obj - Object to clone
- * @returns {Object} Cloned object
+ * @param {object} obj - Object to clone
+ * @returns {object} Cloned object
  */
 export function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));

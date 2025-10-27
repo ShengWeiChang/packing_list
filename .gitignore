@@ -19,9 +19,24 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Editor directories
-.vscode/
-.idea/
+# Editor directories and files
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ESLint cache
+.eslintcache
+
+# Personal documentation
+docs/learning-path.md
+docs/**-zh.md
 
 # OS generated files
 .DS_Store
@@ -34,3 +49,6 @@ coverage/
 .cache/
 *.swp
 *~
+
+# ESLint cache
+.eslintcache

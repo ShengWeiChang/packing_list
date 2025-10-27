@@ -9,18 +9,34 @@ Created: 2025-09-19
 ================================================================================
 */
 
+// -----------------------------------------------------------------------------
+// Imports
+// -----------------------------------------------------------------------------
+
 import { VALIDATION } from '../utils/constants.js';
 import { generateSecureId } from '../utils/helpers.js';
+
+// -----------------------------------------------------------------------------
+// Class definition
+// -----------------------------------------------------------------------------
 
 /**
  * Represents a category of items in a checklist
  */
 export class Category {
+  /**
+   * Category class constructor
+   * @param {object} root0 - Category configuration object
+   * @param {string} root0.id - Unique identifier for the category
+   * @param {string} root0.name - Name of the category
+   * @param {string} root0.checklistId - ID of the checklist this category belongs to
+   * @param {number} root0.order - Display order of the category
+   */
   constructor({
     id = generateSecureId('category-'),
     name = '',
     checklistId = null,
-    order = 0
+    order = 0,
   } = {}) {
     this.id = id;
     this.name = this.validateName(name);
@@ -46,7 +62,7 @@ export class Category {
 
   /**
    * Creates a Category instance from JSON data
-   * @param {Object} json - The JSON data to create the category from
+   * @param {object} json - The JSON data to create the category from
    * @returns {Category} A new Category instance
    */
   static fromJSON(json) {
@@ -55,14 +71,14 @@ export class Category {
 
   /**
    * Converts the category instance to JSON format
-   * @returns {Object} The JSON representation of the category
+   * @returns {object} The JSON representation of the category
    */
   toJSON() {
     return {
       id: this.id,
       name: this.name,
       checklistId: this.checklistId,
-      order: this.order
+      order: this.order,
     };
   }
 }

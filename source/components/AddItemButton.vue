@@ -11,19 +11,19 @@ Created: 2025-09-19
 
 <template>
   <button
-    class="flex items-center w-full py-0.5 px-2 rounded-md transition-colors duration-200 text-sm justify-start"
-    :class="[ categoryCompleted ? 'bg-green-50' : 'bg-white hover:bg-gray-100' ]"
+    class="flex w-full items-center justify-start rounded-md px-2 py-0.5 text-sm transition-colors duration-200"
+    :class="[categoryCompleted ? 'bg-green-50' : 'bg-white hover:bg-gray-100']"
     @click="$emit('click')"
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
   >
-    <!-- Icon aligned with checkbox column -->
+    <!-- Plus icon aligned with checkbox column -->
     <span
-      class="flex-none w-4 h-4 mr-2 flex items-center justify-center"
+      class="mr-2 flex h-4 w-4 flex-none items-center justify-center"
       :class="isHovered ? 'text-primary' : 'text-secondary'"
     >
       <svg
-        class="w-4 h-4"
+        class="h-4 w-4"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -37,9 +37,9 @@ Created: 2025-09-19
       </svg>
     </span>
 
-    <!-- Label aligns with item name area -->
+    <!-- Button label aligned with item name area -->
     <span
-      class="flex-grow text-base text-left"
+      class="flex-grow text-left text-base"
       :class="isHovered ? 'text-primary' : 'text-secondary'"
     >
       {{ $t('item.newItem') }}
@@ -48,32 +48,31 @@ Created: 2025-09-19
 </template>
 
 <script setup>
-// ----------------------
+// ------------------------------------------------------------------------------
 // Imports
-// ----------------------
+// ------------------------------------------------------------------------------
 
 import { ref } from 'vue';
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // Props & Emits
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Props
-const props = defineProps({
-  categoryCompleted: { 
-    type: Boolean, 
-    default: false 
-  }
+defineProps({
+  categoryCompleted: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Emits
 defineEmits(['click']);
 
-// ----------------------
+// ------------------------------------------------------------------------------
 // States
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Hover state
 const isHovered = ref(false);
-
 </script>

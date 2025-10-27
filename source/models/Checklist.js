@@ -9,13 +9,29 @@ Created: 2025-09-19
 ================================================================================
 */
 
+// -----------------------------------------------------------------------------
+// Imports
+// -----------------------------------------------------------------------------
+
 import { VALIDATION } from '../utils/constants.js';
 import { generateSecureId } from '../utils/helpers.js';
+
+// -----------------------------------------------------------------------------
+// Class definition
+// -----------------------------------------------------------------------------
 
 /**
  * Represents a packing list with basic information and metadata
  */
 export class Checklist {
+  /**
+   * Checklist class constructor
+   * @param {object} root0 - Checklist configuration object
+   * @param {string} root0.id - Unique identifier for the checklist
+   * @param {string} root0.destination - Destination location for the trip
+   * @param {string} root0.startDate - Trip start date in ISO format (YYYY-MM-DD)
+   * @param {string} root0.endDate - Trip end date in ISO format (YYYY-MM-DD)
+   */
   constructor({
     id = generateSecureId('checklist-'),
     destination = '',
@@ -44,10 +60,9 @@ export class Checklist {
     return destination;
   }
 
-
   /**
    * Creates a Checklist instance from JSON data
-   * @param {Object} json - The JSON data to create the checklist from
+   * @param {object} json - The JSON data to create the checklist from
    * @returns {Checklist} A new Checklist instance
    */
   static fromJSON(json) {
@@ -56,7 +71,7 @@ export class Checklist {
 
   /**
    * Converts the checklist instance to JSON format
-   * @returns {Object} The JSON representation of the checklist
+   * @returns {object} The JSON representation of the checklist
    */
   toJSON() {
     return {

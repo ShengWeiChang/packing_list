@@ -8,9 +8,18 @@ Created: 2025-10-18
 ================================================================================
 */
 
+// -----------------------------------------------------------------------------
+// Imports
+// -----------------------------------------------------------------------------
+
 import { createI18n } from 'vue-i18n';
+
 import en from '../locales/en.json';
 import zhTW from '../locales/zh-TW.json';
+
+// -----------------------------------------------------------------------------
+// Constants
+// -----------------------------------------------------------------------------
 
 // Local storage key for user language preference
 const LOCALE_STORAGE_KEY = 'user-locale';
@@ -24,6 +33,10 @@ const SUPPORTED_LOCALES = ['en', 'zh-TW'];
 // - Update mapToSupportedLocale() to handle new language mappings
 // - Create defaultItems.{locale}.js files for new languages
 
+// -----------------------------------------------------------------------------
+// Functions
+// -----------------------------------------------------------------------------
+
 /**
  * Map browser language to supported locale
  * @param {string} lang - Browser language code
@@ -31,9 +44,9 @@ const SUPPORTED_LOCALES = ['en', 'zh-TW'];
  */
 function mapToSupportedLocale(lang) {
   if (!lang) return 'en';
-  
+
   const lower = String(lang).toLowerCase();
-  
+
   // Match all Traditional Chinese variants to zh-TW
   // Covers: zh, zh-TW, zh-Hant, zh-HK, zh-MO
   if (
@@ -46,7 +59,7 @@ function mapToSupportedLocale(lang) {
   ) {
     return 'zh-TW';
   }
-  
+
   // Default to English for all other cases
   return 'en';
 }
@@ -66,10 +79,11 @@ function getPreferredLocale() {
   }
 
   // 2. Detect browser language (prefer navigator.languages array)
-  const browserLangs = Array.isArray(navigator.languages) && navigator.languages.length
-    ? navigator.languages
-    : [navigator.language || navigator.userLanguage];
-  
+  const browserLangs =
+    Array.isArray(navigator.languages) && navigator.languages.length
+      ? navigator.languages
+      : [navigator.language || navigator.userLanguage];
+
   // Try each browser language candidate
   for (const lang of browserLangs) {
     const mapped = mapToSupportedLocale(lang);
@@ -91,11 +105,11 @@ const i18n = createI18n({
   locale: initialLocale,
   fallbackLocale: 'en',
   messages: {
-    'en': en,
-    'zh-TW': zhTW
+    en: en,
+    'zh-TW': zhTW,
     // TODO: Add messages for additional locales here
     // Example: 'zh-CN': zhCN, 'ja': ja, 'ko': ko
-  }
+  },
 });
 
 // Persist initial detection to localStorage if not already saved
@@ -112,7 +126,7 @@ export function setLocale(newLocale) {
     console.warn(`Unsupported locale: ${newLocale}`);
     return;
   }
-  
+
   if (i18n.global.locale) {
     i18n.global.locale.value = newLocale;
     localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);

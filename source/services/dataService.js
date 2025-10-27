@@ -14,28 +14,28 @@ Created: 2025-09-19
  * for managing packing list data following CRUD patterns
  */
 export class DataService {
-  // ========================================
-  // BULK DATA ACCESS
-  // ========================================
+  // ---------------------------------------------------------------------------
+  // Bulk data access
+  // ---------------------------------------------------------------------------
 
   /**
    * Get all data (checklists, categories, items) for efficient bulk loading
-   * @returns {Promise<Object>} Object containing { checklists: Array, categories: Array, items: Array }
+   * @returns {Promise<object>} Object containing { checklists: Array, categories: Array, items: Array }
    */
   async getData() {
     throw new Error('Not implemented');
   }
 
-  // ========================================
-  // CHECKLIST CRUD
-  // ========================================
+  // ---------------------------------------------------------------------------
+  // Checklist CRUD
+  // ---------------------------------------------------------------------------
 
   /**
    * Create a new checklist
-   * @param {Object} checklist - Checklist to create
-   * @returns {Promise<Object>} Created checklist
+   * @param {object} _checklist - Checklist data to create
+   * @returns {Promise<object>} Created checklist
    */
-  async createChecklist(checklist) {
+  async createChecklist(_checklist) {
     throw new Error('Not implemented');
   }
 
@@ -49,131 +49,131 @@ export class DataService {
 
   /**
    * Get a specific checklist by ID
-   * @param {string} id - Checklist ID
-   * @returns {Promise<Object|null>} Checklist object or null if not found
+   * @param {string} _id - Checklist ID
+   * @returns {Promise<object | null>} Checklist object or null if not found
    */
-  async getChecklistById(id) {
+  async getChecklistById(_id) {
     throw new Error('Not implemented');
   }
 
   /**
    * Update an existing checklist
-   * @param {Object} checklist - Checklist to update (must include id)
-   * @returns {Promise<Object>} Updated checklist
+   * @param {object} _checklist - Updated checklist data (must include id)
+   * @returns {Promise<object>} Updated checklist
    */
-  async updateChecklist(checklist) {
+  async updateChecklist(_checklist) {
     throw new Error('Not implemented');
   }
 
   /**
    * Delete a checklist
-   * @param {string} id - Checklist ID to delete
+   * @param {string} _id - Checklist ID to delete
    * @returns {Promise<void>}
    */
-  async deleteChecklist(id) {
+  async deleteChecklist(_id) {
     throw new Error('Not implemented');
   }
 
-  // ========================================
-  // CATEGORY CRUD
-  // ========================================
+  // ---------------------------------------------------------------------------
+  // Category CRUD
+  // ---------------------------------------------------------------------------
 
   /**
    * Create a new category within a checklist
-   * @param {string} checklistId - Checklist ID
-   * @param {Object} category - Category to create
-   * @returns {Promise<Object>} Created category
+   * @param {string} _checklistId - Checklist ID
+   * @param {object} _category - Category to create
+   * @returns {Promise<object>} Created category
    */
-  async createCategory(checklistId, category) {
+  async createCategory(_checklistId, _category) {
     throw new Error('Not implemented');
   }
 
   /**
    * Get all categories (optionally filtered by checklist)
-   * @param {string} [checklistId] - Optional checklist ID to filter by
-   * @returns {Promise<Array>} Array of categories
+   * @param {string} [_checklistId] - Optional checklist ID to filter by
+   * @returns {Promise<Array>} Array of Category objects
    */
-  async getCategories(checklistId) {
+  async getCategories(_checklistId) {
     throw new Error('Not implemented');
   }
 
   /**
    * Get a specific category by ID
-   * @param {string} categoryId - Category ID
-   * @returns {Promise<Object|null>} Category object or null if not found
+   * @param {string} _categoryId - Category ID
+   * @returns {Promise<object | null>} Category object or null if not found
    */
-  async getCategoryById(categoryId) {
+  async getCategoryById(_categoryId) {
     throw new Error('Not implemented');
   }
 
   /**
    * Update an existing category
-   * @param {Object} category - Category to update (must include id)
-   * @returns {Promise<Object>} Updated category
+   * @param {object} _category - Updated category data (must include id)
+   * @returns {Promise<object>} Updated category
    */
-  async updateCategory(category) {
+  async updateCategory(_category) {
     throw new Error('Not implemented');
   }
 
   /**
    * Delete a category
-   * @param {string} categoryId - Category ID to delete
+   * @param {string} _categoryId - Category ID to delete
    * @returns {Promise<void>}
    */
-  async deleteCategory(categoryId) {
+  async deleteCategory(_categoryId) {
     throw new Error('Not implemented');
   }
 
-  // ========================================
-  // ITEM CRUD
-  // ========================================
+  // ---------------------------------------------------------------------------
+  // Item CRUD
+  // ---------------------------------------------------------------------------
 
   /**
    * Create a new item within a checklist
-   * @param {string} checklistId - Checklist ID
-   * @param {Object} item - Item to create
-   * @returns {Promise<Object>} Created item
+   * @param {string} _checklistId - Checklist ID
+   * @param {object} _item - Item to create
+   * @returns {Promise<object>} Created Item object
    */
-  async createItem(checklistId, item) {
+  async createItem(_checklistId, _item) {
     throw new Error('Not implemented');
   }
 
   /**
    * Get all items for a specific checklist
-   * @param {string} checklistId - Checklist ID
-   * @returns {Promise<Array>} Array of items
+   * @param {string} _checklistId - Checklist ID
+   * @returns {Promise<Array>} Array of Item objects
    */
-  async getItems(checklistId) {
+  async getItems(_checklistId) {
     throw new Error('Not implemented');
   }
 
   /**
    * Get a specific item by ID within a checklist
-   * @param {string} checklistId - Checklist ID
-   * @param {string} itemId - Item ID
-   * @returns {Promise<Object|null>} Item object or null if not found
+   * @param {string} _checklistId - Checklist ID
+   * @param {string} _itemId - Item ID
+   * @returns {Promise<object | null>} Item object or null if not found
    */
-  async getItemById(checklistId, itemId) {
+  async getItemById(_checklistId, _itemId) {
     throw new Error('Not implemented');
   }
 
   /**
    * Update an existing item within a checklist
-   * @param {string} checklistId - Checklist ID
-   * @param {Object} item - Item to update (must include id)
-   * @returns {Promise<Object>} Updated item
+   * @param {string} _checklistId - Checklist ID
+   * @param {object} _item - Item to update (must include id)
+   * @returns {Promise<object>} Updated Item object
    */
-  async updateItem(checklistId, item) {
+  async updateItem(_checklistId, _item) {
     throw new Error('Not implemented');
   }
 
   /**
    * Delete an item
-   * @param {string} checklistId - Checklist ID
-   * @param {string} itemId - Item ID to delete
+   * @param {string} _checklistId - Checklist ID
+   * @param {string} _itemId - Item ID to delete
    * @returns {Promise<void>}
    */
-  async deleteItem(checklistId, itemId) {
+  async deleteItem(_checklistId, _itemId) {
     throw new Error('Not implemented');
   }
 }

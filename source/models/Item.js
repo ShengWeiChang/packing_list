@@ -9,13 +9,32 @@ Created: 2025-09-19
 ================================================================================
 */
 
+// -----------------------------------------------------------------------------
+// Imports
+// -----------------------------------------------------------------------------
+
 import { VALIDATION } from '../utils/constants.js';
 import { generateSecureId } from '../utils/helpers.js';
+
+// -----------------------------------------------------------------------------
+// Class definition
+// -----------------------------------------------------------------------------
 
 /**
  * Represents an item in a checklist
  */
 export class Item {
+  /**
+   * Item class constructor
+   * @param {object} root0 - Item configuration object
+   * @param {string} root0.id - Unique identifier for the item
+   * @param {string} root0.name - Name of the item
+   * @param {number} root0.quantity - Quantity of the item (1-999)
+   * @param {string} root0.categoryId - ID of the category this item belongs to
+   * @param {boolean} root0.isPacked - Whether the item is packed
+   * @param {string} root0.checklistId - ID of the checklist this item belongs to
+   * @param {number} root0.order - Display order within category
+   */
   constructor({
     id = generateSecureId('item-'),
     name = '',
@@ -23,7 +42,7 @@ export class Item {
     categoryId = null,
     isPacked = false,
     checklistId = null,
-    order = 0
+    order = 0,
   } = {}) {
     this.id = id;
     this.name = this.validateName(name);
@@ -60,28 +79,30 @@ export class Item {
   validateQuantity(quantity) {
     const num = Number(quantity);
     if (!Number.isInteger(num) || num < VALIDATION.MIN_QUANTITY || num > VALIDATION.MAX_QUANTITY) {
-      throw new Error(`Quantity must be an integer between ${VALIDATION.MIN_QUANTITY} and ${VALIDATION.MAX_QUANTITY}`);
+      throw new Error(
+        `Quantity must be an integer between ${VALIDATION.MIN_QUANTITY} and ${VALIDATION.MAX_QUANTITY}`
+      );
     }
     return num;
   }
 
   /**
    * Creates an Item instance from JSON data
-   * @param {Object} json - The JSON data to create the item from
+   * @param {object} json - The JSON data to create the item from
    * @returns {Item} A new Item instance
    */
   static fromJSON(json) {
     // Ensure isPacked is properly converted to boolean
     const itemData = {
       ...json,
-      isPacked: Boolean(json.isPacked)
+      isPacked: Boolean(json.isPacked),
     };
     return new Item(itemData);
   }
 
   /**
    * Converts the item instance to JSON format
-   * @returns {Object} The JSON representation of the item
+   * @returns {object} The JSON representation of the item
    */
   toJSON() {
     return {
@@ -91,7 +112,7 @@ export class Item {
       categoryId: this.categoryId,
       isPacked: this.isPacked,
       checklistId: this.checklistId,
-      order: this.order
+      order: this.order,
     };
   }
 

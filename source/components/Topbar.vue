@@ -10,15 +10,17 @@ Created: 2025-09-19
 -->
 
 <template>
-  <header class="w-full bg-white border-b border-gray-200 px-3 py-2 flex items-center justify-between md:hidden">
-    <!-- Toggle Navigation Button -->
+  <header
+    class="flex w-full items-center justify-between border-b border-gray-200 bg-white px-3 py-2 md:hidden"
+  >
+    <!-- Toggle sidebar navigation -->
     <button
-      class="p-2 rounded-md hover:bg-gray-100"
+      class="rounded-md p-2 hover:bg-gray-100"
       :aria-label="$t('topbar.toggleNav')"
       @click="$emit('toggle')"
     >
       <svg
-        class="w-6 h-6 text-secondary"
+        class="text-secondary h-6 w-6"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -32,14 +34,14 @@ Created: 2025-09-19
       </svg>
     </button>
 
-    <!-- New Checklist Button -->
+    <!-- New checklist action -->
     <button
-      class="p-2 rounded-md hover:bg-gray-100"
+      class="rounded-md p-2 hover:bg-gray-100"
       :aria-label="$t('topbar.newChecklist')"
       @click="$emit('new')"
     >
       <svg
-        class="w-6 h-6 text-secondary"
+        class="text-secondary h-6 w-6"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -56,19 +58,18 @@ Created: 2025-09-19
 </template>
 
 <script setup>
-// ----------------------
+// ------------------------------------------------------------------------------
 // Props & Emits
-// ----------------------
+// ------------------------------------------------------------------------------
 
 // Props
-const props = defineProps({
+defineProps({
   title: {
     type: String,
-    default: 'Packing List'
-  }
+    default: 'Packing List',
+  },
 });
 
 // Emits
 defineEmits(['toggle', 'new']);
-
 </script>
