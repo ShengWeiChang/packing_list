@@ -25,7 +25,7 @@ Created: 2025-09-19
       :name="`item-${item.id}-packed`"
       type="checkbox"
       :class="[
-        'mr-2 h-4 w-4 flex-none flex-shrink-0 rounded-full',
+        'mr-1.5 h-4 w-4 flex-none flex-shrink-0 rounded-full sm:mr-2',
         isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600',
       ]"
       :style="isItemPacked ? { accentColor: 'var(--color-theme-primary)' } : {}"
@@ -68,10 +68,45 @@ Created: 2025-09-19
       </span>
     </div>
 
+    <!-- To Buy icon button - always visible; toggling will clear packed state to keep states mutually exclusive -->
+    <button
+      type="button"
+      :class="[
+        'ml-1.5 flex h-6 w-6 flex-none items-center justify-center rounded-full transition-colors duration-200 sm:ml-2',
+        item.isToBuy
+          ? 'bg-orange-500 text-white hover:bg-orange-600'
+          : 'bg-gray-200 text-gray-400 hover:bg-gray-300',
+        item.isToBuy || isHovered || isEditing ? 'visible' : 'invisible',
+      ]"
+      :title="item.isToBuy ? $t('item.markedAsToBuy') : $t('item.markAsToBuy')"
+      :aria-label="item.isToBuy ? $t('item.markedAsToBuy') : $t('item.markAsToBuy')"
+      @click.stop="toggleToBuy"
+      @mousedown.prevent
+    >
+      <svg
+        class="h-3.5 w-3.5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+
     <!-- Quantity control - Amazon-style stepper -->
     <div
-      v-if="isEditing || item.quantity > 1 || (item.quantity === 1 && isHovered)"
-      class="relative ml-2"
+      class="relative ml-1 sm:ml-1.5"
+      :class="
+        isEditing || item.quantity > 1 || (item.quantity === 1 && isHovered)
+          ? 'visible'
+          : 'invisible'
+      "
       @mouseenter="isQuantityHovered = true"
       @mouseleave="isQuantityHovered = false"
     >
@@ -153,37 +188,6 @@ Created: 2025-09-19
       </div>
     </div>
 
-    <!-- To Buy icon button - moved after quantity -->
-    <button
-      type="button"
-      :class="[
-        'ml-2 flex h-6 w-6 flex-none items-center justify-center rounded-full transition-all duration-200',
-        item.isToBuy
-          ? 'bg-orange-500 text-white hover:bg-orange-600'
-          : 'bg-gray-200 text-gray-400 hover:bg-gray-300',
-        item.isToBuy || isHovered || isEditing ? 'visible' : 'invisible',
-      ]"
-      :title="item.isToBuy ? $t('item.markedAsToBuy') : $t('item.markAsToBuy')"
-      :aria-label="item.isToBuy ? $t('item.markedAsToBuy') : $t('item.markAsToBuy')"
-      @click.stop="toggleToBuy"
-      @mousedown.prevent
-    >
-      <svg
-        class="h-3.5 w-3.5"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </button>
-
     <!-- Overflow menu -->
     <OverflowMenu
       :item-id="item.id"
@@ -192,7 +196,7 @@ Created: 2025-09-19
       :is-editing="isEditing"
       menu-type="item"
       alignment="left"
-      class="ml-2"
+      class="ml-0"
       @edit="startEdit"
       @delete="handleDelete"
       @confirm-edit="saveEdit"
@@ -275,6 +279,7 @@ const isItemPacked = computed({
       quantity: props.item.quantity,
       categoryId: props.item.categoryId,
       isPacked: newValue,
+      isToBuy: newValue ? false : props.item.isToBuy, // Auto-clear isToBuy when packed
       checklistId: props.item.checklistId,
       order: props.item.order,
     });
@@ -290,9 +295,12 @@ const isItemPacked = computed({
  * Toggle the to-buy state of the item
  */
 function toggleToBuy() {
+  const newToBuy = !props.item.isToBuy;
   const updatedItem = new Item({
     ...props.item,
-    isToBuy: !props.item.isToBuy,
+    isToBuy: newToBuy,
+    // If user marks as to-buy, automatically clear packed state to avoid contradiction
+    isPacked: newToBuy ? false : props.item.isPacked,
   });
   emit('update:item', updatedItem);
 }

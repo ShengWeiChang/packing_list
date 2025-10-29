@@ -488,22 +488,26 @@ watch(
 /* Masonry layout using CSS columns */
 .categories-masonry {
   column-count: 1;
-  column-gap: 0.5rem; /* gap-2 */
+  column-gap: 0.75rem; /* gap-3 for better spacing */
 }
 
-@media (min-width: 600px) {
+/* Breakpoints calculated to ensure minimum 280px per column */
+/* 2 columns: 280*2 + 12 = 572px minimum, using 768px for comfort */
+@media (min-width: 768px) {
   .categories-masonry {
     column-count: 2;
   }
 }
 
-@media (min-width: 840px) {
+/* 3 columns: 280*3 + 24 = 864px minimum, using 1180px for comfort */
+@media (min-width: 1180px) {
   .categories-masonry {
     column-count: 3;
   }
 }
 
-@media (min-width: 1280px) {
+/* 4 columns: 280*4 + 36 = 1156px minimum, using 1536px for comfort */
+@media (min-width: 1536px) {
   .categories-masonry {
     column-count: 4;
   }
@@ -513,7 +517,7 @@ watch(
 .category-item {
   break-inside: avoid;
   page-break-inside: avoid; /* For older browsers */
-  margin-bottom: 0.5rem; /* gap-2 */
+  margin-bottom: 0.75rem; /* gap-3 */
   display: inline-block;
   width: 100%;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
