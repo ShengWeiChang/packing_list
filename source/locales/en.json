@@ -29,7 +29,11 @@
   },
   "item": {
     "newItem": "New Item",
-    "defaultName": "New Item"
+    "defaultName": "New Item",
+    "markAsToBuy": "Mark as to buy",
+    "markedAsToBuy": "Marked as to buy",
+    "increaseQuantity": "Increase quantity",
+    "decreaseQuantity": "Decrease quantity"
   },
   "progress": {
     "label": "{completed} / {total}",

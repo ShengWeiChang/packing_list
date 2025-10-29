@@ -44,11 +44,12 @@ Created: 2025-09-19
         v-model="editedName"
         :name="`item-${item.id}-name`"
         :class="[
-          'w-full border-b border-blue-300 bg-transparent text-base focus:border-blue-500 focus:outline-none',
+          'w-full border-b border-blue-300 bg-transparent px-1 py-1 text-base leading-none focus:border-blue-500 focus:outline-none',
           {
             'text-secondary line-through': item.isPacked,
           },
         ]"
+        style="border-radius: 0"
         @keyup.enter="saveEdit"
         @keyup.escape="cancelEdit"
       />
@@ -67,45 +68,134 @@ Created: 2025-09-19
       </span>
     </div>
 
-    <!-- Quantity - editable when in edit mode, hidden when quantity is 1 -->
+    <!-- Quantity control - Amazon-style stepper -->
     <div
-      v-if="isEditing || item.quantity > 1"
-      class="ml-2"
-      @blur="handleEditBlur"
-      @focusout="handleEditBlur"
+      v-if="isEditing || item.quantity > 1 || (item.quantity === 1 && isHovered)"
+      class="relative ml-2"
+      @mouseenter="isQuantityHovered = true"
+      @mouseleave="isQuantityHovered = false"
     >
-      <input
-        v-if="isEditing"
-        :id="`item-${item.id}-quantity`"
-        ref="quantityInput"
-        v-model.number="editedQuantity"
-        :name="`item-${item.id}-quantity`"
-        type="number"
-        min="1"
-        class="text-secondary w-12 rounded-full border border-gray-300 bg-gray-100 px-1 py-0.5 text-center text-xs font-semibold focus:border-gray-500 focus:outline-none"
-        @keyup.enter="saveEdit"
-        @keyup.escape="cancelEdit"
-        @click.stop
-      />
+      <!-- Quantity stepper: [-] [x5] [+] -->
+      <div class="flex items-center gap-0">
+        <!-- Decrement button / Delete button (when quantity = 1) -->
+        <button
+          type="button"
+          class="text-secondary flex h-6 w-6 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200"
+          :class="isHovered || isEditing ? 'visible' : 'invisible'"
+          :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
+          @click.stop="item.quantity === 1 ? handleDelete() : decrementQuantity()"
+          @mousedown.prevent
+        >
+          <!-- Trash icon when quantity is 1 -->
+          <svg
+            v-if="item.quantity === 1"
+            class="h-3.5 w-3.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
 
-      <span
-        v-else-if="item.quantity > 1"
-        class="text-secondary rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-semibold"
-      >
-        x{{ item.quantity }}
-      </span>
+          <!-- Minus icon when quantity > 1 -->
+          <svg
+            v-else
+            class="h-3.5 w-3.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M20 12H4"
+            />
+          </svg>
+        </button>
+
+        <!-- Quantity display -->
+        <div
+          class="text-secondary flex h-6 w-8 items-center justify-center rounded-md bg-gray-100 px-1 text-xs font-semibold transition-colors hover:bg-gray-200"
+        >
+          <span class="mr-0.5">x</span>
+          <span>{{ item.quantity }}</span>
+        </div>
+
+        <!-- Increment button -->
+        <button
+          type="button"
+          class="text-secondary flex h-6 w-6 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200"
+          :class="isHovered || isEditing ? 'visible' : 'invisible'"
+          :title="$t('item.increaseQuantity')"
+          @click.stop="incrementQuantity"
+          @mousedown.prevent
+        >
+          <svg
+            class="h-3.5 w-3.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
+
+    <!-- To Buy icon button - moved after quantity -->
+    <button
+      type="button"
+      :class="[
+        'ml-2 flex h-6 w-6 flex-none items-center justify-center rounded-full transition-all duration-200',
+        item.isToBuy
+          ? 'bg-orange-500 text-white hover:bg-orange-600'
+          : 'bg-gray-200 text-gray-400 hover:bg-gray-300',
+        item.isToBuy || isHovered || isEditing ? 'visible' : 'invisible',
+      ]"
+      :title="item.isToBuy ? $t('item.markedAsToBuy') : $t('item.markAsToBuy')"
+      :aria-label="item.isToBuy ? $t('item.markedAsToBuy') : $t('item.markAsToBuy')"
+      @click.stop="toggleToBuy"
+      @mousedown.prevent
+    >
+      <svg
+        class="h-3.5 w-3.5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
 
     <!-- Overflow menu -->
     <OverflowMenu
       :item-id="item.id"
       :force-visible="isHovered"
       :use-group-hover="false"
+      :is-editing="isEditing"
       menu-type="item"
       alignment="left"
       class="ml-2"
       @edit="startEdit"
       @delete="handleDelete"
+      @confirm-edit="saveEdit"
     />
   </div>
 </template>
@@ -138,6 +228,7 @@ const props = defineProps({
         typeof value.quantity === 'number' &&
         typeof value.categoryId === 'string' &&
         typeof value.isPacked === 'boolean' &&
+        typeof value.isToBuy === 'boolean' &&
         typeof value.checklistId === 'string'
       );
     },
@@ -163,26 +254,21 @@ const emit = defineEmits(['update:item', 'delete:item']);
 // States
 // ------------------------------------------------------------------------------
 
-// Editing state
 const isEditing = ref(false);
 const isHovered = ref(false);
+const isQuantityHovered = ref(false);
 const editedName = ref('');
-const editedQuantity = ref(1);
 const editInput = ref(null);
-const quantityInput = ref(null);
 
 // ------------------------------------------------------------------------------
 // Computed
 // ------------------------------------------------------------------------------
 
-// Packing state
 const isItemPacked = computed({
   get: () => {
     return props.item.isPacked;
   },
   set: (newValue) => {
-    // update emitted to parent
-
     const updatedItem = new Item({
       id: props.item.id,
       name: props.item.name,
@@ -190,27 +276,61 @@ const isItemPacked = computed({
       categoryId: props.item.categoryId,
       isPacked: newValue,
       checklistId: props.item.checklistId,
-      order: props.item.order, // Preserve order to prevent reordering
+      order: props.item.order,
     });
     emit('update:item', updatedItem);
   },
 });
 
 // ------------------------------------------------------------------------------
-// Editing functions
+// Functions
 // ------------------------------------------------------------------------------
+
+/**
+ * Toggle the to-buy state of the item
+ */
+function toggleToBuy() {
+  const updatedItem = new Item({
+    ...props.item,
+    isToBuy: !props.item.isToBuy,
+  });
+  emit('update:item', updatedItem);
+}
+
+/**
+ * Increment item quantity
+ */
+function incrementQuantity() {
+  const updatedItem = new Item({
+    ...props.item,
+    quantity: props.item.quantity + 1,
+  });
+  emit('update:item', updatedItem);
+}
+
+/**
+ * Decrement item quantity (minimum 1)
+ */
+function decrementQuantity() {
+  if (props.item.quantity <= 1) return;
+
+  const updatedItem = new Item({
+    ...props.item,
+    quantity: props.item.quantity - 1,
+  });
+  emit('update:item', updatedItem);
+}
 
 /**
  * Save edit when focus moves outside the edit area
  * @param {Event} _event - Blur event (unused)
  */
 function handleEditBlur(_event) {
-  // Use a small timeout to allow focus to move to the other input
+  // Use a small timeout to allow focus to move to another element
   setTimeout(() => {
-    // Check if focus is still within editing elements
+    // Check if focus is still within the name input
     const activeElement = document.activeElement;
-    const isStillEditing =
-      activeElement === editInput.value || activeElement === quantityInput.value;
+    const isStillEditing = activeElement === editInput.value;
 
     if (!isStillEditing && isEditing.value) {
       saveEdit();
@@ -224,7 +344,6 @@ function handleEditBlur(_event) {
 async function startEdit() {
   isEditing.value = true;
   editedName.value = props.item.name;
-  editedQuantity.value = props.item.quantity;
 
   await nextTick();
   if (editInput.value) {
@@ -234,17 +353,15 @@ async function startEdit() {
 }
 
 /**
- * Save changes to item if any values were modified
+ * Save changes to item if name was modified
  */
 function saveEdit() {
   const hasNameChanged = editedName.value.trim() && editedName.value !== props.item.name;
-  const hasQuantityChanged = editedQuantity.value !== props.item.quantity;
 
-  if (hasNameChanged || hasQuantityChanged) {
+  if (hasNameChanged) {
     const updatedItem = new Item({
       ...props.item,
       name: editedName.value.trim() || props.item.name,
-      quantity: Math.max(1, editedQuantity.value), // Ensure quantity is at least 1
     });
     emit('update:item', updatedItem);
   }
@@ -257,12 +374,7 @@ function saveEdit() {
 function cancelEdit() {
   isEditing.value = false;
   editedName.value = props.item.name;
-  editedQuantity.value = props.item.quantity;
 }
-
-// ------------------------------------------------------------------------------
-// Item management
-// ------------------------------------------------------------------------------
 
 /**
  * Emit delete event for this item

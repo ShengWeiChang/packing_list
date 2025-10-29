@@ -14,14 +14,33 @@ Created: 2025-09-19
     ref="root"
     class="relative"
   >
-    <!-- Three-dot menu button -->
+    <!-- Three-dot menu button or checkmark button when editing -->
     <button
       ref="buttonRef"
       type="button"
       :class="buttonClass"
-      @click.stop="toggleMenu"
+      @click.stop="props.isEditing ? handleConfirmEdit() : toggleMenu()"
     >
+      <!-- Checkmark icon when editing -->
       <svg
+        v-if="props.isEditing"
+        :class="svgClass"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+
+      <!-- Three-dot menu icon when not editing -->
+      <svg
+        v-else
         :class="svgClass"
         fill="currentColor"
         viewBox="0 0 24 24"
@@ -130,10 +149,14 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  isEditing: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Emits
-const emit = defineEmits(['edit', 'delete']);
+const emit = defineEmits(['edit', 'delete', 'confirm-edit']);
 
 // ------------------------------------------------------------------------------
 // States
@@ -153,20 +176,28 @@ const root = ref(null);
 // Button visibility based on props and menu state
 const buttonClass = computed(() => {
   const baseClass =
-    'p-1 flex items-center justify-center text-secondary rounded-md transition-opacity duration-200 hover:bg-gray-200 hover:text-primary';
+    'p-1 flex items-center justify-center rounded-md transition-all duration-200 hover:bg-gray-200';
+
+  // Green checkmark style when editing
+  if (props.isEditing) {
+    return `${baseClass} opacity-100 text-green-600 hover:text-green-700 hover:bg-green-50`;
+  }
+
+  // Gray three-dot style when not editing
+  const normalClass = `${baseClass} text-secondary hover:text-primary`;
 
   // Show the button when menu is open or forceVisible is true
   if (showMenu.value || props.forceVisible) {
-    return `${baseClass} opacity-100`;
+    return `${normalClass} opacity-100`;
   }
 
   // If using group-hover behavior (default), show on ancestor hover
   if (props.useGroupHover) {
-    return `${baseClass} opacity-0 group-hover:opacity-100`;
+    return `${normalClass} opacity-0 group-hover:opacity-100`;
   }
 
   // Otherwise keep hidden unless forced or open
-  return `${baseClass} opacity-0`;
+  return `${normalClass} opacity-0`;
 });
 
 // Dropdown styling
@@ -257,6 +288,13 @@ function handleEdit() {
 function handleDelete() {
   showMenu.value = false;
   emit('delete');
+}
+
+/**
+ * Emit confirm-edit event when checkmark is clicked
+ */
+function handleConfirmEdit() {
+  emit('confirm-edit');
 }
 
 // ------------------------------------------------------------------------------
