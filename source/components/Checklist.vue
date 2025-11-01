@@ -29,7 +29,7 @@ Created: 2025-09-19
               v-model="editedDestination"
               :name="`checklist-${checklist.id}-destination`"
               :placeholder="$t('checklist.destination')"
-              class="text-primary w-full min-w-0 border-b-2 border-blue-300 bg-transparent text-2xl font-bold focus:border-blue-500 focus:outline-none md:text-3xl"
+              class="text-primary w-full min-w-0 border-b-2 border-blue-300 bg-transparent px-1 py-1 text-2xl font-bold focus:border-blue-500 focus:outline-none md:text-3xl"
               @keyup.enter="saveEdit"
               @keyup.escape="cancelEdit"
             />
