@@ -484,8 +484,8 @@ watch(
 /* Category drag and drop styles */
 .ghost-category {
   opacity: 0.3;
-  background: #f3f4f6;
-  border: 2px dashed #9ca3af;
+  background: var(--color-gray-gray-100);
+  border: 2px dashed var(--color-gray-gray-400);
   border-radius: 0.75rem;
 }
 
@@ -497,8 +497,8 @@ watch(
   opacity: 0.5;
   transform: scale(1.02);
   box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    0 20px 25px -5px var(--color-shadow-black-10),
+    0 10px 10px -5px var(--color-shadow-black-4);
   z-index: 1000;
 }
 
@@ -558,13 +558,13 @@ watch(
   0%,
   100% {
     box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      0 4px 6px -1px var(--color-shadow-black-10),
+      0 2px 4px -1px var(--color-shadow-black-6);
   }
   50% {
     box-shadow:
-      0 4px 6px -1px rgba(16, 185, 129, 0.3),
-      0 2px 4px -1px rgba(16, 185, 129, 0.2);
+      0 4px 6px -1px var(--color-shadow-green-30),
+      0 2px 4px -1px var(--color-shadow-green-20);
   }
 }
 

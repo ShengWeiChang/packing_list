@@ -25,7 +25,7 @@ import pluginVue from 'eslint-plugin-vue';
 export default [
   // Ignore patterns
   {
-    ignores: ['dist/', 'node_modules/', '*.config.js', '!eslint.config.js'],
+    ignores: ['dist/', 'node_modules/', '*.config.js', '!eslint.config.js', 'build-*.js'],
   },
 
   // Base JS rules

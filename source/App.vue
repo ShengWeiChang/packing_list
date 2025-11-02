@@ -455,6 +455,6 @@ watch([isSidebarOpen, isMobileViewport, isSmallDesktop], () => {
 
 <style>
 .backdrop {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--color-overlay-backdrop);
 }
 </style>
