@@ -25,7 +25,7 @@ Created: 2025-09-19
           ref="editInput"
           v-model="editedName"
           :name="`category-${category.id}-name`"
-          class="w-full border-b border-blue-300 bg-transparent text-xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none"
+          class="w-full border-b border-blue-300 bg-transparent px-1 py-1 text-xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none"
           @keyup.enter="saveEdit"
           @keyup.escape="cancelEdit"
           @blur="saveEdit"

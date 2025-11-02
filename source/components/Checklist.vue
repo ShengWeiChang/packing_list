@@ -12,9 +12,9 @@ Created: 2025-09-19
 <template>
   <div>
     <!-- Checklist Header -->
-    <div class="mb-2 p-4">
+    <div class="mb-2 px-4 pb-4 pt-2">
       <!-- Header content -->
-      <div class="mb-4 flex min-h-[4rem] items-center justify-between gap-4">
+      <div class="mb-3 flex min-h-[3rem] items-center justify-between gap-4">
         <div class="flex min-w-0 flex-grow items-baseline space-x-4">
           <!-- Editable destination name -->
           <div
@@ -29,7 +29,7 @@ Created: 2025-09-19
               v-model="editedDestination"
               :name="`checklist-${checklist.id}-destination`"
               :placeholder="$t('checklist.destination')"
-              class="text-primary w-full min-w-0 border-b-2 border-blue-300 bg-transparent text-2xl font-bold focus:border-blue-500 focus:outline-none md:text-3xl"
+              class="text-primary w-full min-w-0 border-b-2 border-blue-300 bg-transparent px-1 py-1 text-2xl font-bold focus:border-blue-500 focus:outline-none md:text-3xl"
               @keyup.enter="saveEdit"
               @keyup.escape="cancelEdit"
             />
@@ -107,6 +107,17 @@ Created: 2025-09-19
       />
     </div>
 
+    <!-- Pending Items (Virtual Category for to-buy / to-do) -->
+    <div
+      v-if="pendingItemsForDisplay.length > 0"
+      class="category-item mb-3"
+    >
+      <PendingItemsCategory
+        :items="items"
+        @update:item="$emit('update:item', $event)"
+      />
+    </div>
+
     <!-- Categories Grid -->
     <div>
       <draggable
@@ -168,6 +179,7 @@ import draggable from 'vuedraggable';
 import AddCategoryButton from './AddCategoryButton.vue';
 import Category from './Category.vue';
 import OverflowMenu from './OverflowMenu.vue';
+import PendingItemsCategory from './PendingItemsCategory.vue';
 import ProgressBar from './ProgressBar.vue';
 
 // ------------------------------------------------------------------------------
@@ -252,6 +264,11 @@ const isDraggingCategory = ref(false);
 // ------------------------------------------------------------------------------
 // Computed
 // ------------------------------------------------------------------------------
+
+// Filter items that are marked as pending (to-buy / to-do)
+const pendingItemsForDisplay = computed(() => {
+  return props.items.filter((item) => item.isPending);
+});
 
 // Sorted categories for this checklist (sorted by order)
 const sortedCategories = computed(() => {
@@ -488,22 +505,26 @@ watch(
 /* Masonry layout using CSS columns */
 .categories-masonry {
   column-count: 1;
-  column-gap: 0.5rem; /* gap-2 */
+  column-gap: 0.75rem; /* gap-3 for better spacing */
 }
 
-@media (min-width: 600px) {
+/* Breakpoints calculated to ensure minimum 280px per column */
+/* 2 columns: 280*2 + 12 = 572px minimum, using 768px for comfort */
+@media (min-width: 768px) {
   .categories-masonry {
     column-count: 2;
   }
 }
 
-@media (min-width: 840px) {
+/* 3 columns: 280*3 + 24 = 864px minimum, using 1180px for comfort */
+@media (min-width: 1180px) {
   .categories-masonry {
     column-count: 3;
   }
 }
 
-@media (min-width: 1280px) {
+/* 4 columns: 280*4 + 36 = 1156px minimum, using 1536px for comfort */
+@media (min-width: 1536px) {
   .categories-masonry {
     column-count: 4;
   }
@@ -513,7 +534,7 @@ watch(
 .category-item {
   break-inside: avoid;
   page-break-inside: avoid; /* For older browsers */
-  margin-bottom: 0.5rem; /* gap-2 */
+  margin-bottom: 0.75rem; /* gap-3 */
   display: inline-block;
   width: 100%;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
