@@ -12,9 +12,9 @@ Created: 2025-09-19
 <template>
   <div>
     <!-- Checklist Header -->
-    <div class="mb-2 p-4">
+    <div class="mb-2 px-4 pb-4 pt-2">
       <!-- Header content -->
-      <div class="mb-4 flex min-h-[4rem] items-center justify-between gap-4">
+      <div class="mb-3 flex min-h-[3rem] items-center justify-between gap-4">
         <div class="flex min-w-0 flex-grow items-baseline space-x-4">
           <!-- Editable destination name -->
           <div
@@ -107,6 +107,17 @@ Created: 2025-09-19
       />
     </div>
 
+    <!-- Shopping List (Virtual Category) -->
+    <div
+      v-if="toBuyItems.length > 0"
+      class="category-item mb-3"
+    >
+      <ShoppingListCategory
+        :items="items"
+        @update:item="$emit('update:item', $event)"
+      />
+    </div>
+
     <!-- Categories Grid -->
     <div>
       <draggable
@@ -169,6 +180,7 @@ import AddCategoryButton from './AddCategoryButton.vue';
 import Category from './Category.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import ProgressBar from './ProgressBar.vue';
+import ShoppingListCategory from './ShoppingListCategory.vue';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
@@ -252,6 +264,11 @@ const isDraggingCategory = ref(false);
 // ------------------------------------------------------------------------------
 // Computed
 // ------------------------------------------------------------------------------
+
+// Filter items that are marked as "to buy" for the shopping list
+const toBuyItems = computed(() => {
+  return props.items.filter((item) => item.isToBuy);
+});
 
 // Sorted categories for this checklist (sorted by order)
 const sortedCategories = computed(() => {

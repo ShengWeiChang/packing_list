@@ -25,13 +25,16 @@
   },
   "category": {
     "newCategory": "New Category",
-    "defaultName": "New Category"
+    "defaultName": "New Category",
+    "shoppingList": "Shopping List",
+    "itemsLeft": "items to buy"
   },
   "item": {
     "newItem": "New Item",
     "defaultName": "New Item",
     "markAsToBuy": "Mark as to buy",
     "markedAsToBuy": "Marked as to buy",
+    "markAsBought": "Mark as bought",
     "increaseQuantity": "Increase quantity",
     "decreaseQuantity": "Decrease quantity"
   },

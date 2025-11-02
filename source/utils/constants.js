@@ -47,4 +47,13 @@ export const THEME_COLORS = {
   // 2 Background colors
   BACKGROUND_PRIMARY: 'rgba(255, 255, 255, 1)', // white (cards, panels, sidebar)
   BACKGROUND_SECONDARY: 'rgba(248, 250, 252, 1)', // light gray (app background, hover states)
+
+  // Shopping cart theme colors
+  SHOPPING_CART: {
+    BACKGROUND: 'rgba(255, 247, 237, 1)', // orange-50 (light orange background)
+    TEXT: 'rgba(124, 45, 18, 1)', // orange-900 (dark orange text)
+    ACCENT: 'rgba(234, 88, 12, 1)', // orange-600 (accent color)
+    BUTTON: 'rgba(249, 115, 22, 1)', // orange-500 (button background)
+    BUTTON_HOVER: 'rgba(234, 88, 12, 1)', // orange-600 (button hover)
+  },
 };
