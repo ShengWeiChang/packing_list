@@ -35,7 +35,6 @@ yarn-error.log*
 .eslintcache
 
 # Personal documentation
-docs/learning-path.md
 docs/**-zh.md
 
 # OS generated files

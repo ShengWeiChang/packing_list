@@ -25,7 +25,7 @@ Created: 2025-09-19
       :name="`item-${item.id}-packed`"
       type="checkbox"
       :class="[
-        'mr-2 h-4 w-4 flex-none flex-shrink-0 rounded-full',
+        'mr-1.5 h-4 w-4 flex-none flex-shrink-0 rounded-full sm:mr-2',
         isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600',
       ]"
       :style="isItemPacked ? { accentColor: 'var(--color-theme-primary)' } : {}"
@@ -44,11 +44,12 @@ Created: 2025-09-19
         v-model="editedName"
         :name="`item-${item.id}-name`"
         :class="[
-          'w-full border-b border-blue-300 bg-transparent text-base focus:border-blue-500 focus:outline-none',
+          'w-full border-b border-blue-300 bg-transparent px-1 py-1 text-base leading-none focus:border-blue-500 focus:outline-none',
           {
             'text-secondary line-through': item.isPacked,
           },
         ]"
+        style="border-radius: 0"
         @keyup.enter="saveEdit"
         @keyup.escape="cancelEdit"
       />
@@ -67,33 +68,125 @@ Created: 2025-09-19
       </span>
     </div>
 
-    <!-- Quantity - editable when in edit mode, hidden when quantity is 1 -->
-    <div
-      v-if="isEditing || item.quantity > 1"
-      class="ml-2"
-      @blur="handleEditBlur"
-      @focusout="handleEditBlur"
+    <!-- Pending (to-buy / to-do) icon button - always visible; toggling will clear packed state to keep states mutually exclusive -->
+    <button
+      type="button"
+      :class="[
+        'ml-1.5 flex h-6 w-6 flex-none items-center justify-center rounded-full transition-colors duration-200 sm:ml-2',
+        item.isPending
+          ? 'bg-orange-500 text-white hover:bg-orange-600'
+          : 'bg-gray-200 text-gray-400 hover:bg-gray-300',
+        item.isPending || isHovered || isEditing ? 'visible' : 'invisible',
+      ]"
+      :title="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
+      :aria-label="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
+      @click.stop="togglePending"
+      @mousedown.prevent
     >
-      <input
-        v-if="isEditing"
-        :id="`item-${item.id}-quantity`"
-        ref="quantityInput"
-        v-model.number="editedQuantity"
-        :name="`item-${item.id}-quantity`"
-        type="number"
-        min="1"
-        class="text-secondary w-12 rounded-full border border-gray-300 bg-gray-100 px-1 py-0.5 text-center text-xs font-semibold focus:border-gray-500 focus:outline-none"
-        @keyup.enter="saveEdit"
-        @keyup.escape="cancelEdit"
-        @click.stop
-      />
-
-      <span
-        v-else-if="item.quantity > 1"
-        class="text-secondary rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-semibold"
+      <!-- clipboard with checklist icon -->
+      <svg
+        class="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        x{{ item.quantity }}
-      </span>
+        <path
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+
+    <!-- Quantity control - Amazon-style stepper -->
+    <div
+      class="relative ml-1 sm:ml-1.5"
+      :class="
+        isEditing || item.quantity > 1 || (item.quantity === 1 && isHovered)
+          ? 'visible'
+          : 'invisible'
+      "
+      @mouseenter="isQuantityHovered = true"
+      @mouseleave="isQuantityHovered = false"
+    >
+      <!-- Quantity stepper: [-] [x5] [+] -->
+      <div class="flex items-center gap-0">
+        <!-- Decrement button / Delete button (when quantity = 1) -->
+        <button
+          type="button"
+          class="text-secondary flex h-6 w-6 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200"
+          :class="isHovered || isEditing ? 'visible' : 'invisible'"
+          :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
+          @click.stop="item.quantity === 1 ? handleDelete() : decrementQuantity()"
+          @mousedown.prevent
+        >
+          <!-- Trash icon when quantity is 1 -->
+          <svg
+            v-if="item.quantity === 1"
+            class="h-3.5 w-3.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+
+          <!-- Minus icon when quantity > 1 -->
+          <svg
+            v-else
+            class="h-3.5 w-3.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M20 12H4"
+            />
+          </svg>
+        </button>
+
+        <!-- Quantity display -->
+        <div
+          class="text-secondary flex h-6 w-8 items-center justify-center rounded-md bg-gray-100 px-1 text-xs font-semibold transition-colors hover:bg-gray-200"
+        >
+          <span class="mr-0.5">x</span>
+          <span>{{ item.quantity }}</span>
+        </div>
+
+        <!-- Increment button -->
+        <button
+          type="button"
+          class="text-secondary flex h-6 w-6 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200"
+          :class="isHovered || isEditing ? 'visible' : 'invisible'"
+          :title="$t('item.increaseQuantity')"
+          @click.stop="incrementQuantity"
+          @mousedown.prevent
+        >
+          <svg
+            class="h-3.5 w-3.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Overflow menu -->
@@ -101,11 +194,13 @@ Created: 2025-09-19
       :item-id="item.id"
       :force-visible="isHovered"
       :use-group-hover="false"
+      :is-editing="isEditing"
       menu-type="item"
       alignment="left"
-      class="ml-2"
+      class="ml-0"
       @edit="startEdit"
       @delete="handleDelete"
+      @confirm-edit="saveEdit"
     />
   </div>
 </template>
@@ -138,6 +233,7 @@ const props = defineProps({
         typeof value.quantity === 'number' &&
         typeof value.categoryId === 'string' &&
         typeof value.isPacked === 'boolean' &&
+        typeof value.isPending === 'boolean' &&
         typeof value.checklistId === 'string'
       );
     },
@@ -163,54 +259,87 @@ const emit = defineEmits(['update:item', 'delete:item']);
 // States
 // ------------------------------------------------------------------------------
 
-// Editing state
 const isEditing = ref(false);
 const isHovered = ref(false);
+const isQuantityHovered = ref(false);
 const editedName = ref('');
-const editedQuantity = ref(1);
 const editInput = ref(null);
-const quantityInput = ref(null);
 
 // ------------------------------------------------------------------------------
 // Computed
 // ------------------------------------------------------------------------------
 
-// Packing state
 const isItemPacked = computed({
   get: () => {
     return props.item.isPacked;
   },
   set: (newValue) => {
-    // update emitted to parent
-
     const updatedItem = new Item({
       id: props.item.id,
       name: props.item.name,
       quantity: props.item.quantity,
       categoryId: props.item.categoryId,
       isPacked: newValue,
+      isPending: newValue ? false : props.item.isPending, // Auto-clear isPending when packed
       checklistId: props.item.checklistId,
-      order: props.item.order, // Preserve order to prevent reordering
+      order: props.item.order,
     });
     emit('update:item', updatedItem);
   },
 });
 
 // ------------------------------------------------------------------------------
-// Editing functions
+// Functions
 // ------------------------------------------------------------------------------
+
+/**
+ * Toggle the pending state of the item (to-buy / to-do)
+ */
+function togglePending() {
+  const newPending = !props.item.isPending;
+  const updatedItem = new Item({
+    ...props.item,
+    isPending: newPending,
+    // If user marks as pending, automatically clear packed state to avoid contradiction
+    isPacked: newPending ? false : props.item.isPacked,
+  });
+  emit('update:item', updatedItem);
+}
+
+/**
+ * Increment item quantity
+ */
+function incrementQuantity() {
+  const updatedItem = new Item({
+    ...props.item,
+    quantity: props.item.quantity + 1,
+  });
+  emit('update:item', updatedItem);
+}
+
+/**
+ * Decrement item quantity (minimum 1)
+ */
+function decrementQuantity() {
+  if (props.item.quantity <= 1) return;
+
+  const updatedItem = new Item({
+    ...props.item,
+    quantity: props.item.quantity - 1,
+  });
+  emit('update:item', updatedItem);
+}
 
 /**
  * Save edit when focus moves outside the edit area
  * @param {Event} _event - Blur event (unused)
  */
 function handleEditBlur(_event) {
-  // Use a small timeout to allow focus to move to the other input
+  // Use a small timeout to allow focus to move to another element
   setTimeout(() => {
-    // Check if focus is still within editing elements
+    // Check if focus is still within the name input
     const activeElement = document.activeElement;
-    const isStillEditing =
-      activeElement === editInput.value || activeElement === quantityInput.value;
+    const isStillEditing = activeElement === editInput.value;
 
     if (!isStillEditing && isEditing.value) {
       saveEdit();
@@ -224,7 +353,6 @@ function handleEditBlur(_event) {
 async function startEdit() {
   isEditing.value = true;
   editedName.value = props.item.name;
-  editedQuantity.value = props.item.quantity;
 
   await nextTick();
   if (editInput.value) {
@@ -234,17 +362,15 @@ async function startEdit() {
 }
 
 /**
- * Save changes to item if any values were modified
+ * Save changes to item if name was modified
  */
 function saveEdit() {
   const hasNameChanged = editedName.value.trim() && editedName.value !== props.item.name;
-  const hasQuantityChanged = editedQuantity.value !== props.item.quantity;
 
-  if (hasNameChanged || hasQuantityChanged) {
+  if (hasNameChanged) {
     const updatedItem = new Item({
       ...props.item,
       name: editedName.value.trim() || props.item.name,
-      quantity: Math.max(1, editedQuantity.value), // Ensure quantity is at least 1
     });
     emit('update:item', updatedItem);
   }
@@ -257,12 +383,7 @@ function saveEdit() {
 function cancelEdit() {
   isEditing.value = false;
   editedName.value = props.item.name;
-  editedQuantity.value = props.item.quantity;
 }
-
-// ------------------------------------------------------------------------------
-// Item management
-// ------------------------------------------------------------------------------
 
 /**
  * Emit delete event for this item

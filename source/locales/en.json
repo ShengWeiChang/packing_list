@@ -25,11 +25,18 @@
   },
   "category": {
     "newCategory": "New Category",
-    "defaultName": "New Category"
+    "defaultName": "New Category",
+    "shoppingList": "To Buy / To Do",
+    "itemsLeft": "items left"
   },
   "item": {
     "newItem": "New Item",
-    "defaultName": "New Item"
+    "defaultName": "New Item",
+    "markAsPending": "Mark as to buy / to do",
+    "markedAsPending": "Marked as to buy / to do",
+    "markAsBought": "Mark as bought / done",
+    "increaseQuantity": "Increase quantity",
+    "decreaseQuantity": "Decrease quantity"
   },
   "progress": {
     "label": "{completed} / {total}",
