@@ -75,7 +75,8 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Edit checklist: Edit `destination`, `startDate`, `endDate` (native date inputs, ISO format).
   - Delete checklist: Cascade delete all categories and items under the checklist.
   - Switch checklist: Load that checklist’s categories and items, sorted by `order`.
-- Flow: Create checklist → add categories/items → edit info → switch checklists.
+- Flow:
+  - Create checklist → add categories/items → edit info → switch checklists.
 - Validation:
   - After create:
     - Categories count equals the number of distinct category names in default data; each `checklistId` equals the new checklist ID; `order` is continuous from 0.
@@ -94,7 +95,8 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Delete category: Cascade delete all items under it.
   - Reorder categories: Drag to update `order` (starting at 0); persists and remains after reload.
   - Progress display: Calculate completion percentage based on `isPacked` of items within the category.
-- Flow: Add → rename → delete → drag to reorder.
+- Flow:
+  - Add → rename → delete → drag to reorder.
 - Validation:
   - After add: Category `order` is last; localStorage updates; order persists after reload.
   - After delete: Its items disappear from UI and localStorage.
@@ -111,12 +113,28 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Dragging:
     - Same category: After reorder, rewrite `order` sequentially (0-based).
     - Cross category: Update target item’s `categoryId` and `order`, and adjust both source and target categories’ other items to keep `order` continuous.
-- Flow: Add → edit → check/uncheck → delete or drag to reorder/move.
+- Flow:
+  - Add → edit → check/uncheck → delete or drag to reorder/move.
 - Validation:
   - After add: Item `order` is last, `isPacked=false`; localStorage updates and persists after reload.
   - After edit/delete: UI updates and persists; deleted item removed from UI and localStorage.
   - Same-category reorder: Each item `order` is continuous from 0; persists after reload.
   - Cross-category move: Target `categoryId` and `order` are correct; remaining items in both categories have continuous `order`; progress updates correctly on both sides.
+
+#### Pending Items (To Buy / To Do)
+
+- Purpose: Provide a virtual, cross-category view for items the user marked as "pending" — this covers both "to-buy" and general "to-do" semantics.
+- Key features:
+  - Toggle pending: Each item has a boolean `isPending`. Toggling an item to pending will automatically clear `isPacked` to avoid contradictory states.
+  - Virtual category: Pending items are shown in a special virtual category (`PendingItemsCategory.vue`) displayed above regular categories when there are pending items. It uses an orange theme and a compact multi-column grid that mirrors the categories' column layout.
+  - Completion (clear pending): Items in the virtual category can be marked as completed (check action) which clears the `isPending` flag and removes them from the virtual category.
+  - Quantity display: In the virtual category the quantity label is shown inline after the item name only when `quantity > 1`.
+- Flow:
+  - Mark item as pending → item appears in Pending Items virtual category → optionally mark as completed (clears `isPending`) → item removed from virtual category.
+- Validation:
+  - Toggling pending sets `isPending` boolean and persists to storage.
+  - When an item is marked pending, `isPacked` is cleared (set to false) to avoid conflicting states.
+  - The virtual category displays all items where `isPending === true` and hides itself when there are none.
 
 #### Progress Tracking
 
@@ -352,6 +370,7 @@ packing-list/
   quantity: number,     // Quantity
   categoryId: string,   // Category ID
   isPacked: boolean,    // Packed status
+  isPending: boolean,   // Pending (to-buy / to-do) status
   checklistId: string,  // Owning checklist ID
   order: number         // Display order (default: 0)
 }
