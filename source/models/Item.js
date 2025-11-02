@@ -32,7 +32,7 @@ export class Item {
    * @param {number} root0.quantity - Quantity of the item (1-999)
    * @param {string} root0.categoryId - ID of the category this item belongs to
    * @param {boolean} root0.isPacked - Whether the item is packed
-   * @param {boolean} root0.isToBuy - Whether the item is marked as to buy
+   * @param {boolean} root0.isPending - Whether the item is marked as pending (to-buy / to-do)
    * @param {string} root0.checklistId - ID of the checklist this item belongs to
    * @param {number} root0.order - Display order within category
    */
@@ -42,7 +42,7 @@ export class Item {
     quantity = 1,
     categoryId = null,
     isPacked = false,
-    isToBuy = false,
+    isPending = false,
     checklistId = null,
     order = 0,
   } = {}) {
@@ -51,7 +51,7 @@ export class Item {
     this.quantity = this.validateQuantity(quantity);
     this.categoryId = categoryId;
     this.isPacked = Boolean(isPacked);
-    this.isToBuy = Boolean(isToBuy);
+    this.isPending = Boolean(isPending);
     this.checklistId = checklistId;
     this.order = Number(order) || 0;
   }
@@ -95,11 +95,11 @@ export class Item {
    * @returns {Item} A new Item instance
    */
   static fromJSON(json) {
-    // Ensure isPacked and isToBuy are properly converted to boolean
+    // Ensure isPacked and isPending are properly converted to boolean
     const itemData = {
       ...json,
       isPacked: Boolean(json.isPacked),
-      isToBuy: Boolean(json.isToBuy),
+      isPending: Boolean(json.isPending),
     };
     return new Item(itemData);
   }
@@ -115,7 +115,7 @@ export class Item {
       quantity: this.quantity,
       categoryId: this.categoryId,
       isPacked: this.isPacked,
-      isToBuy: this.isToBuy,
+      isPending: this.isPending,
       checklistId: this.checklistId,
       order: this.order,
     };

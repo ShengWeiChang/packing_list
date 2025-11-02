@@ -26,15 +26,15 @@
   "category": {
     "newCategory": "新增分類",
     "defaultName": "新分類",
-    "shoppingList": "購物清單",
-    "itemsLeft": "項待買"
+    "shoppingList": "待買/待辦",
+    "itemsLeft": "項待處理"
   },
   "item": {
     "newItem": "新增物品",
     "defaultName": "新物品",
-    "markAsToBuy": "標記為待買",
-    "markedAsToBuy": "已標記為待買",
-    "markAsBought": "標記已購買",
+    "markAsPending": "標記為待買/待辦",
+    "markedAsPending": "已標記為待買/待辦",
+    "markAsBought": "標記為已買/已辦",
     "increaseQuantity": "增加數量",
     "decreaseQuantity": "減少數量"
   },

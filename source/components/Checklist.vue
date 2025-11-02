@@ -107,12 +107,12 @@ Created: 2025-09-19
       />
     </div>
 
-    <!-- Shopping List (Virtual Category) -->
+    <!-- Pending Items (Virtual Category for to-buy / to-do) -->
     <div
-      v-if="toBuyItems.length > 0"
+      v-if="pendingItemsForDisplay.length > 0"
       class="category-item mb-3"
     >
-      <ShoppingListCategory
+      <PendingItemsCategory
         :items="items"
         @update:item="$emit('update:item', $event)"
       />
@@ -179,8 +179,8 @@ import draggable from 'vuedraggable';
 import AddCategoryButton from './AddCategoryButton.vue';
 import Category from './Category.vue';
 import OverflowMenu from './OverflowMenu.vue';
+import PendingItemsCategory from './PendingItemsCategory.vue';
 import ProgressBar from './ProgressBar.vue';
-import ShoppingListCategory from './ShoppingListCategory.vue';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
@@ -265,9 +265,9 @@ const isDraggingCategory = ref(false);
 // Computed
 // ------------------------------------------------------------------------------
 
-// Filter items that are marked as "to buy" for the shopping list
-const toBuyItems = computed(() => {
-  return props.items.filter((item) => item.isToBuy);
+// Filter items that are marked as pending (to-buy / to-do)
+const pendingItemsForDisplay = computed(() => {
+  return props.items.filter((item) => item.isPending);
 });
 
 // Sorted categories for this checklist (sorted by order)

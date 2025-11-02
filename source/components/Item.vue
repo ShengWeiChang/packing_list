@@ -68,23 +68,24 @@ Created: 2025-09-19
       </span>
     </div>
 
-    <!-- To Buy icon button - always visible; toggling will clear packed state to keep states mutually exclusive -->
+    <!-- Pending (to-buy / to-do) icon button - always visible; toggling will clear packed state to keep states mutually exclusive -->
     <button
       type="button"
       :class="[
         'ml-1.5 flex h-6 w-6 flex-none items-center justify-center rounded-full transition-colors duration-200 sm:ml-2',
-        item.isToBuy
+        item.isPending
           ? 'bg-orange-500 text-white hover:bg-orange-600'
           : 'bg-gray-200 text-gray-400 hover:bg-gray-300',
-        item.isToBuy || isHovered || isEditing ? 'visible' : 'invisible',
+        item.isPending || isHovered || isEditing ? 'visible' : 'invisible',
       ]"
-      :title="item.isToBuy ? $t('item.markedAsToBuy') : $t('item.markAsToBuy')"
-      :aria-label="item.isToBuy ? $t('item.markedAsToBuy') : $t('item.markAsToBuy')"
-      @click.stop="toggleToBuy"
+      :title="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
+      :aria-label="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
+      @click.stop="togglePending"
       @mousedown.prevent
     >
+      <!-- clipboard with checklist icon -->
       <svg
-        class="h-3.5 w-3.5"
+        class="h-4 w-4"
         fill="none"
         stroke="currentColor"
         stroke-width="2"
@@ -92,7 +93,7 @@ Created: 2025-09-19
         xmlns="http://www.w3.org/2000/svg"
       >
         <path
-          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
           stroke-linecap="round"
           stroke-linejoin="round"
         />
@@ -232,7 +233,7 @@ const props = defineProps({
         typeof value.quantity === 'number' &&
         typeof value.categoryId === 'string' &&
         typeof value.isPacked === 'boolean' &&
-        typeof value.isToBuy === 'boolean' &&
+        typeof value.isPending === 'boolean' &&
         typeof value.checklistId === 'string'
       );
     },
@@ -279,7 +280,7 @@ const isItemPacked = computed({
       quantity: props.item.quantity,
       categoryId: props.item.categoryId,
       isPacked: newValue,
-      isToBuy: newValue ? false : props.item.isToBuy, // Auto-clear isToBuy when packed
+      isPending: newValue ? false : props.item.isPending, // Auto-clear isPending when packed
       checklistId: props.item.checklistId,
       order: props.item.order,
     });
@@ -292,15 +293,15 @@ const isItemPacked = computed({
 // ------------------------------------------------------------------------------
 
 /**
- * Toggle the to-buy state of the item
+ * Toggle the pending state of the item (to-buy / to-do)
  */
-function toggleToBuy() {
-  const newToBuy = !props.item.isToBuy;
+function togglePending() {
+  const newPending = !props.item.isPending;
   const updatedItem = new Item({
     ...props.item,
-    isToBuy: newToBuy,
-    // If user marks as to-buy, automatically clear packed state to avoid contradiction
-    isPacked: newToBuy ? false : props.item.isPacked,
+    isPending: newPending,
+    // If user marks as pending, automatically clear packed state to avoid contradiction
+    isPacked: newPending ? false : props.item.isPacked,
   });
   emit('update:item', updatedItem);
 }
