@@ -25,7 +25,7 @@ Created: 2025-09-19
       :name="`item-${item.id}-packed`"
       type="checkbox"
       :class="[
-        'mr-1.5 h-4 w-4 flex-none flex-shrink-0 rounded-full sm:mr-2',
+        'mr-1.5 size-4 flex-none shrink-0 rounded-full sm:mr-2',
         isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600',
       ]"
       :style="isItemPacked ? { accentColor: 'var(--color-theme-primary)' } : {}"
@@ -33,7 +33,7 @@ Created: 2025-09-19
 
     <!-- Item name - editable when in edit mode -->
     <div
-      class="flex-grow"
+      class="grow"
       @blur="handleEditBlur"
       @focusout="handleEditBlur"
     >
@@ -44,7 +44,7 @@ Created: 2025-09-19
         v-model="editedName"
         :name="`item-${item.id}-name`"
         :class="[
-          'w-full border-b border-blue-300 bg-transparent px-1 py-1 text-base leading-none focus:border-blue-500 focus:outline-none',
+          'w-full border-b border-blue-300 bg-transparent p-1 text-base leading-none focus:border-blue-500 focus:outline-none',
           {
             'text-secondary line-through': item.isPacked,
           },
@@ -57,7 +57,7 @@ Created: 2025-09-19
       <span
         v-else
         :class="[
-          'cursor-pointer rounded px-1 py-1 text-base hover:bg-gray-50',
+          'cursor-pointer rounded p-1 text-base hover:bg-gray-50',
           {
             'text-secondary line-through': item.isPacked,
           },
@@ -72,7 +72,7 @@ Created: 2025-09-19
     <button
       type="button"
       :class="[
-        'ml-1.5 flex h-6 w-6 flex-none items-center justify-center rounded-full transition-colors duration-200 sm:ml-2',
+        'ml-1.5 flex size-6 flex-none items-center justify-center rounded-full transition-colors duration-200 sm:ml-2',
         item.isPending
           ? 'bg-orange-500 text-white hover:bg-orange-600'
           : 'bg-gray-200 text-gray-400 hover:bg-gray-300',
@@ -85,7 +85,7 @@ Created: 2025-09-19
     >
       <!-- clipboard with checklist icon -->
       <svg
-        class="h-4 w-4"
+        class="size-4"
         fill="none"
         stroke="currentColor"
         stroke-width="2"
@@ -116,7 +116,7 @@ Created: 2025-09-19
         <!-- Decrement button / Delete button (when quantity = 1) -->
         <button
           type="button"
-          class="text-secondary flex h-6 w-6 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200"
+          class="text-secondary flex size-6 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200"
           :class="isHovered || isEditing ? 'visible' : 'invisible'"
           :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           @click.stop="item.quantity === 1 ? handleDelete() : decrementQuantity()"
@@ -125,7 +125,7 @@ Created: 2025-09-19
           <!-- Trash icon when quantity is 1 -->
           <svg
             v-if="item.quantity === 1"
-            class="h-3.5 w-3.5"
+            class="size-3.5"
             fill="none"
             stroke="currentColor"
             stroke-width="2"
@@ -141,7 +141,7 @@ Created: 2025-09-19
           <!-- Minus icon when quantity > 1 -->
           <svg
             v-else
-            class="h-3.5 w-3.5"
+            class="size-3.5"
             fill="none"
             stroke="currentColor"
             stroke-width="2.5"
@@ -166,14 +166,14 @@ Created: 2025-09-19
         <!-- Increment button -->
         <button
           type="button"
-          class="text-secondary flex h-6 w-6 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200"
+          class="text-secondary flex size-6 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200"
           :class="isHovered || isEditing ? 'visible' : 'invisible'"
           :title="$t('item.increaseQuantity')"
           @click.stop="incrementQuantity"
           @mousedown.prevent
         >
           <svg
-            class="h-3.5 w-3.5"
+            class="size-3.5"
             fill="none"
             stroke="currentColor"
             stroke-width="2.5"

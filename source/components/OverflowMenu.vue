@@ -76,7 +76,7 @@ Created: 2025-09-19
         @click="handleEdit"
       >
         <svg
-          class="mr-2 h-4 w-4"
+          class="mr-2 size-4"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -96,7 +96,7 @@ Created: 2025-09-19
         @click="handleDelete"
       >
         <svg
-          class="mr-2 h-4 w-4"
+          class="mr-2 size-4"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

@@ -14,7 +14,7 @@ Created: 2025-09-19
     <!-- Overlay for narrow screens when sidebar is open -->
     <div
       v-if="(isMobileViewport || (isSmallDesktop && isSidebarOpen)) && isSidebarOpen"
-      class="fixed inset-0 z-40 bg-black bg-opacity-40 backdrop-blur-sm"
+      class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
       @click="toggleSidebar"
     ></div>
 
@@ -68,10 +68,9 @@ Created: 2025-09-19
     <!-- Main Content -->
     <main
       :class="[
-        'transition-filter min-w-0 flex-1 overflow-y-auto bg-gray-50 p-4 duration-200 md:p-6',
+        'min-w-0 flex-1 overflow-y-auto bg-gray-50 p-4 duration-200 md:p-6',
         {
-          'pointer-events-none blur-sm filter':
-            isSidebarOpen && (isMobileViewport || isSmallDesktop),
+          'pointer-events-none blur-sm': isSidebarOpen && (isMobileViewport || isSmallDesktop),
         },
       ]"
     >

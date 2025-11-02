@@ -18,21 +18,21 @@ Created: 2025-09-19
   >
     <!-- Category Header -->
     <div class="relative mb-3 flex items-center justify-between">
-      <div class="flex-grow">
+      <div class="grow">
         <input
           v-if="isEditing"
           :id="`category-${category.id}-name`"
           ref="editInput"
           v-model="editedName"
           :name="`category-${category.id}-name`"
-          class="w-full border-b border-blue-300 bg-transparent px-1 py-1 text-xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none"
+          class="w-full border-b border-blue-300 bg-transparent p-1 text-xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none"
           @keyup.enter="saveEdit"
           @keyup.escape="cancelEdit"
           @blur="saveEdit"
         />
         <h3
           v-else
-          class="text-primary cursor-pointer rounded px-1 py-1 text-xl font-semibold hover:bg-gray-50"
+          class="text-primary cursor-pointer rounded p-1 text-xl font-semibold hover:bg-gray-50"
           @click="startEdit"
         >
           {{ category.name }}
