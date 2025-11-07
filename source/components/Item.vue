@@ -28,7 +28,7 @@ Created: 2025-09-19
         'mr-1.5 size-4 flex-none shrink-0 rounded-full sm:mr-2',
         isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600',
       ]"
-      :style="isItemPacked ? { accentColor: 'var(--color-theme-primary)' } : {}"
+      :style="isItemPacked ? { accentColor: 'var(--color-primary)' } : {}"
     />
 
     <!-- Item name - editable when in edit mode -->

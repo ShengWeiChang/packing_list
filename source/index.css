@@ -81,19 +81,3 @@ body {
 .text-secondary {
   color: var(--color-text-secondary) !important;
 }
-
-.text-theme-primary {
-  color: var(--color-theme-primary) !important;
-}
-
-.text-theme-secondary {
-  color: var(--color-theme-secondary) !important;
-}
-
-.bg-theme-primary {
-  background-color: var(--color-background-primary) !important;
-}
-
-.bg-theme-secondary {
-  background-color: var(--color-background-secondary) !important;
-}

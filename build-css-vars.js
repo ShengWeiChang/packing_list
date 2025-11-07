@@ -207,14 +207,14 @@ const startIndex = cssContent.indexOf(startMarker);
 const endIndex = cssContent.indexOf(endMarker);
 
 if (startIndex === -1) {
-  console.error('   Could not find start marker in index.css');
-  console.error('   Expected: "/* Theme Colors - Auto-generated from constants.js */"');
+  console.error('Could not find start marker in index.css');
+  console.error('Expected: "/* Theme Colors - Auto-generated from constants.js */"');
   process.exit(1);
 }
 
 if (endIndex === -1) {
-  console.error('。 Could not find end marker in index.css');
-  console.error('   Expected: "/* Additional utility colors (manually maintained) */"');
+  console.error('Could not find end marker in index.css');
+  console.error('Expected: "/* Additional utility colors (manually maintained) */"');
   process.exit(1);
 }
 
@@ -227,6 +227,6 @@ cssContent = beforeSection + cssVarsString + '\n' + afterSection;
 // Write updated CSS
 writeFileSync(cssPath, cssContent, 'utf-8');
 
-console.log('  CSS variables generated successfully!');
-console.log(`   Generated ${Object.keys(cssVars).length} CSS variables`);
-console.log('   Output: source/index.css');
+console.log('CSS variables generated successfully!');
+console.log('Generated ' + Object.keys(cssVars).length + ' CSS variables');
+console.log('Output: source/index.css');
