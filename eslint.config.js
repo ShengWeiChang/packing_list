@@ -99,10 +99,23 @@ export default [
       'vue/no-use-v-if-with-v-for': 'error',
 
       // Tailwind CSS rules
-      'tailwind/no-custom-classname': 'off', // Allow custom classes (CSS Modules, etc.)
-      'tailwind/no-contradicting-classname': 'error', // Prevent contradicting classes like 'flex flex-col'
-      'tailwind/enforces-negative-arbitrary-values': 'error', // Prevent negative arbitrary values like '-mt-[10px]'
-      'tailwind/enforces-shorthand': 'warn', // Suggest shorthand but don't enforce (too strict)
+      'tailwindcss/no-custom-classname': [
+        'warn',
+        {
+          whitelist: [
+            'category-item',
+            'categories-masonry',
+            'dragging',
+            'pending-items-grid',
+            'ghost-.*',
+            'chosen-.*',
+            'drag-.*',
+          ],
+        },
+      ], // Whitelist scoped custom classes used in masonry layout and drag-drop
+      'tailwindcss/no-contradicting-classname': 'error', // Prevent contradicting classes
+      'tailwindcss/enforces-negative-arbitrary-values': 'error',
+      'tailwindcss/enforces-shorthand': 'warn',
 
       // Vue template attributes order (based on official recommendation)
       'vue/attributes-order': [

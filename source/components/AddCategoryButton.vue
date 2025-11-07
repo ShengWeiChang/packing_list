@@ -31,7 +31,7 @@ Created: 2025-09-19
       </svg>
 
       <!-- Button label -->
-      <span class="text-secondary group-hover:text-primary ml-2 text-base">
+      <span class="text-secondary group-hover:text-primary text-base">
         {{ $t('category.newCategory') }}
       </span>
     </div>
