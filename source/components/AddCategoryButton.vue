@@ -11,13 +11,13 @@ Created: 2025-09-19
 
 <template>
   <div
-    class="flex min-h-[200px] cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-4 shadow-md transition-shadow duration-200 hover:border-gray-400 hover:shadow-lg"
+    class="flex min-h-32 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-4 shadow-md transition-shadow duration-200 hover:border-gray-400 hover:shadow-lg"
     @click="$emit('click')"
   >
     <div class="text-center">
       <!-- Plus icon -->
       <svg
-        class="text-secondary mx-auto mb-2 h-8 w-8"
+        class="text-secondary mx-auto mb-2 size-8"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"

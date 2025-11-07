@@ -2,7 +2,8 @@
 ================================================================================
 File: source/index.css
 Description: Global CSS styles with Tailwind directives and custom CSS
-             variables for theming.
+             variables for theming. CSS variables are auto-generated from
+             source/utils/constants.js - do not edit this section manually!
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
 Created: 2025-09-19
@@ -14,13 +15,57 @@ Created: 2025-09-19
 @tailwind utilities;
 
 :root {
-  /* 6-Color Theme System - CSS Variables with Fallbacks */
-  --color-text-primary: #212121; /* dark gray */
-  --color-text-secondary: #646464; /* lighter gray */
-  --color-theme-primary: #2f6b46; /* deep forest green */
-  --color-theme-secondary: #d3e3db; /* gray-green */
-  --color-background-primary: #ffffff; /* white */
-  --color-background-secondary: #f8fafc; /* light gray */
+  /* Theme Colors - Auto-generated from constants.js */
+  /* DO NOT EDIT THIS SECTION MANUALLY */
+  /* Run: npm run build:css-vars to regenerate */
+
+  /* Text Colors */
+  --color-text-primary: #212121;
+  --color-text-secondary: #646464;
+
+  /* Theme Colors */
+  --color-primary: #2f6b46;
+  --color-secondary: #d3e3db;
+  --color-gray-gray-50: #f9fafb;
+  --color-gray-gray-100: #f3f4f6;
+  --color-gray-gray-200: #e5e7eb;
+  --color-gray-gray-300: #d1d5db;
+  --color-gray-gray-400: #9ca3af;
+  --color-gray-gray-600: #4b5563;
+  --color-green-green-50: #f0fdf4;
+  --color-green-green-100: #dcfce7;
+  --color-green-green-200: #bbf7d0;
+  --color-green-green-300: #86efac;
+  --color-green-green-500: #22c55e;
+  --color-green-green-600: #10b981;
+  --color-green-green-800: #057e47;
+  --color-orange-orange-50: #fff7ed;
+  --color-orange-orange-500: #f97316;
+  --color-orange-orange-600: #ea580c;
+  --color-orange-orange-900: #7c2d12;
+  --color-blue-blue-50: #eff6ff;
+  --color-blue-blue-300: #93c5fd;
+  --color-blue-blue-500: #3b82f6;
+  --color-shadow-black-10: rgba(0, 0, 0, 0.1);
+  --color-shadow-black-5: rgba(0, 0, 0, 0.05);
+  --color-shadow-black-4: rgba(0, 0, 0, 0.04);
+  --color-shadow-black-6: rgba(0, 0, 0, 0.06);
+  --color-shadow-green-30: rgba(16, 185, 129, 0.3);
+  --color-shadow-green-20: rgba(16, 185, 129, 0.2);
+  --color-overlay-backdrop: rgba(0, 0, 0, 0.5);
+
+  /* Background Colors */
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f8fafc;
+
+  /* Pending Items Colors */
+  --color-pending-items-background: #fff7ed;
+  --color-pending-items-text: #7c2d12;
+  --color-pending-items-accent: #ea580c;
+  --color-pending-items-button: #f97316;
+  --color-pending-items-button-hover: #ea580c;
+
+  /* Additional utility colors (manually maintained) */
 }
 
 body {
@@ -32,19 +77,7 @@ body {
 .text-primary {
   color: var(--color-text-primary) !important;
 }
+
 .text-secondary {
   color: var(--color-text-secondary) !important;
-}
-.text-theme-primary {
-  color: var(--color-theme-primary) !important;
-}
-.text-theme-secondary {
-  color: var(--color-theme-secondary) !important;
-}
-
-.bg-theme-primary {
-  background-color: var(--color-background-primary) !important;
-}
-.bg-theme-secondary {
-  background-color: var(--color-background-secondary) !important;
 }

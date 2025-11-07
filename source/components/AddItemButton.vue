@@ -19,11 +19,11 @@ Created: 2025-09-19
   >
     <!-- Plus icon aligned with checkbox column -->
     <span
-      class="mr-2 flex h-4 w-4 flex-none items-center justify-center"
+      class="mr-2 flex size-4 flex-none items-center justify-center"
       :class="isHovered ? 'text-primary' : 'text-secondary'"
     >
       <svg
-        class="h-4 w-4"
+        class="size-4"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -39,7 +39,7 @@ Created: 2025-09-19
 
     <!-- Button label aligned with item name area -->
     <span
-      class="flex-grow text-left text-base"
+      class="grow text-left text-base"
       :class="isHovered ? 'text-primary' : 'text-secondary'"
     >
       {{ $t('item.newItem') }}

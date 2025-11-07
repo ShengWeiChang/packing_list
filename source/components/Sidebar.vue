@@ -29,9 +29,9 @@ Created: 2025-09-19
       class="mb-2 flex w-full items-center rounded-lg hover:bg-gray-100"
       @click="$emit('toggle-sidebar')"
     >
-      <div class="flex-shrink-0 p-3">
+      <div class="shrink-0 p-3">
         <svg
-          class="text-secondary h-6 w-6"
+          class="text-secondary size-6"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -52,9 +52,9 @@ Created: 2025-09-19
       :class="[isExpanded || isMobile ? 'pr-4' : '']"
       @click="$emit('create-checklist')"
     >
-      <div class="flex-shrink-0 p-3">
+      <div class="shrink-0 p-3">
         <svg
-          class="text-secondary h-6 w-6"
+          class="text-secondary size-6"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -148,9 +148,9 @@ Created: 2025-09-19
         :title="$t('language.switchLanguage')"
         @click="toggleLanguageMenu"
       >
-        <div class="flex-shrink-0 p-3">
+        <div class="shrink-0 p-3">
           <svg
-            class="text-secondary h-6 w-6"
+            class="text-secondary size-6"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -211,7 +211,7 @@ Created: 2025-09-19
       <div
         v-if="showLanguageMenu"
         ref="languageDropdownRef"
-        class="z-50 min-w-[160px] rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+        class="z-50 min-w-40 rounded-md border border-gray-200 bg-white py-1 shadow-lg"
         :style="languageDropdownStyle"
       >
         <button
@@ -227,7 +227,7 @@ Created: 2025-09-19
           <span>{{ lang.label }}</span>
           <svg
             v-if="currentLocale === lang.code"
-            class="text-primary ml-auto h-4 w-4"
+            class="text-primary ml-auto size-4"
             fill="currentColor"
             viewBox="0 0 20 20"
           >

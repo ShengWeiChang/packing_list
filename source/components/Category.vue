@@ -18,21 +18,21 @@ Created: 2025-09-19
   >
     <!-- Category Header -->
     <div class="relative mb-3 flex items-center justify-between">
-      <div class="flex-grow">
+      <div class="grow">
         <input
           v-if="isEditing"
           :id="`category-${category.id}-name`"
           ref="editInput"
           v-model="editedName"
           :name="`category-${category.id}-name`"
-          class="w-full border-b border-blue-300 bg-transparent px-1 py-1 text-xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none"
+          class="w-full border-b border-blue-300 bg-transparent p-1 text-xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none"
           @keyup.enter="saveEdit"
           @keyup.escape="cancelEdit"
           @blur="saveEdit"
         />
         <h3
           v-else
-          class="text-primary cursor-pointer rounded px-1 py-1 text-xl font-semibold hover:bg-gray-50"
+          class="text-primary cursor-pointer rounded p-1 text-xl font-semibold hover:bg-gray-50"
           @click="startEdit"
         >
           {{ category.name }}
@@ -375,8 +375,8 @@ watch(
 /* Drag and drop styles */
 .ghost-item {
   opacity: 0.3;
-  background: #f3f4f6;
-  border: 2px dashed #9ca3af;
+  background: var(--color-gray-gray-100);
+  border: 2px dashed var(--color-gray-gray-400);
 }
 
 .chosen-item {
@@ -387,8 +387,8 @@ watch(
   opacity: 0.5;
   transform: scale(1.05);
   box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    0 10px 15px -3px var(--color-shadow-black-10),
+    0 4px 6px -2px var(--color-shadow-black-5);
 }
 
 /* Drag handle */
@@ -402,7 +402,7 @@ watch(
 
 /* Drop zone visual feedback */
 .bg-blue-50 {
-  background-color: rgb(239 246 255);
+  background-color: var(--color-blue-blue-50);
 }
 
 .border-dashed {
@@ -422,7 +422,7 @@ watch(
     border-color: transparent;
   }
   50% {
-    border-color: #10b981;
+    border-color: var(--color-green-green-600);
   }
 }
 

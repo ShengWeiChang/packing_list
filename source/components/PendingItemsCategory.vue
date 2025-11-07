@@ -18,9 +18,9 @@ Created: 2025-11-01
   >
     <!-- Header -->
     <div class="relative mb-3 flex items-center justify-between">
-      <div class="flex-grow">
+      <div class="grow">
         <h3
-          class="text-primary cursor-pointer rounded px-1 py-1 text-xl font-semibold"
+          class="text-primary cursor-pointer rounded p-1 text-xl font-semibold"
           :style="{ color: THEME_COLORS.PENDING_ITEMS.TEXT }"
         >
           {{ $t('category.shoppingList') }}
@@ -41,12 +41,12 @@ Created: 2025-11-01
       <div
         v-for="item in pendingItems"
         :key="item.id"
-        class="group flex items-center rounded-md py-0.5 pl-1 pr-1 transition-all duration-200"
+        class="group flex items-center rounded-md px-1 py-0.5 transition-all duration-200"
       >
         <!-- Completion button (left side) - mark as completed -->
         <button
           type="button"
-          class="mr-1.5 flex h-5 w-5 flex-none flex-shrink-0 items-center justify-center rounded-full text-white transition-all hover:scale-110 sm:mr-2"
+          class="mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center rounded-full text-white transition-all hover:scale-110 sm:mr-2"
           :style="{
             backgroundColor: THEME_COLORS.PENDING_ITEMS.BUTTON,
           }"
@@ -60,7 +60,7 @@ Created: 2025-11-01
         >
           <!-- Checkmark icon -->
           <svg
-            class="h-4 w-4"
+            class="size-4"
             fill="none"
             stroke="currentColor"
             stroke-width="2.5"
@@ -75,7 +75,7 @@ Created: 2025-11-01
         </button>
 
         <!-- Item name and optional quantity -->
-        <div class="flex flex-grow items-center gap-1">
+        <div class="flex grow items-center gap-1">
           <span
             class="truncate text-base"
             :style="{ color: THEME_COLORS.TEXT_PRIMARY }"
@@ -86,7 +86,7 @@ Created: 2025-11-01
           <!-- Quantity display (only show if quantity > 1) -->
           <div
             v-if="item.quantity > 1"
-            class="text-secondary flex h-6 w-8 flex-shrink-0 items-center justify-center rounded-md bg-gray-100 px-1 text-xs font-semibold"
+            class="text-secondary flex h-6 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 px-1 text-xs font-semibold"
           >
             <span class="mr-0.5">x</span>
             <span>{{ item.quantity }}</span>

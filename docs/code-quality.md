@@ -12,7 +12,7 @@ Applies to this project’s stack: Vue 3 + Vite + Tailwind, ES Modules.
 
 ## 2. Toolchain
 
-- ESLint (Flat Config) with eslint-plugin-vue
+- ESLint (Flat Config) with eslint-plugin-vue, eslint-plugin-tailwindcss
 - Prettier with prettier-plugin-tailwindcss
 - simple-import-sort (imports/exports ordering)
 - husky + lint-staged (pre-commit automation)
@@ -40,7 +40,21 @@ Validation
 - Apply formatting: `npm run format`
 - Check only (no write): `npm run format:check`
 
-### 3.2 ESLint (Vue)
+### 3.2 Tailwind CSS Conventions
+
+- Design system priority: Standard Tailwind classes → Custom config extensions → Arbitrary values (last resort)
+- Spacing scale: Use 4px increments; extend `tailwind.config.js` for non-standard values
+- Class organization: Group related classes (layout → spacing → colors → states); Prettier auto-sorts
+- CSS Modules: Use for complex layouts (masonry, animations); kebab-case naming; prefer CSS variables
+
+Validation
+
+- ESLint rules enforce no contradicting classes and proper shorthand usage
+- Custom classes must be defined in `tailwind.config.js`
+- Arbitrary values trigger warnings for review
+- CSS Modules classes trigger ESLint warnings (expected behavior)
+
+### 3.3 ESLint (Vue)
 
 - Base: plugin-vue recommended rules
 - Component attributes order: enforced for consistency
@@ -53,7 +67,7 @@ Validation
 - Check: `npm run lint`
 - Auto-fix: `npm run lint:fix`
 
-### 3.3 Imports/Exports Ordering
+### 3.4 Imports/Exports Ordering
 
 Sorted by simple-import-sort default groups:
 
@@ -66,7 +80,7 @@ Validation
 
 - Auto-fix import order: `npm run lint:fix`
 
-### 3.4 Vue Template Attributes Order
+### 3.5 Vue Template Attributes Order
 
 We follow eslint-plugin-vue's default order (vue/attributes-order):
 
@@ -97,7 +111,7 @@ Validation
 
 - Auto-fix most ordering issues: `npm run lint:fix`
 
-### 3.5 Vue Script Section Order
+### 3.6 Vue Script Section Order
 
 Top-to-bottom organization inside `<script setup>` or component scripts:
 
@@ -118,7 +132,7 @@ Validation
 
 - Guideline only (not enforced by ESLint). Import sorting is automatically handled by `simple-import-sort`; section order relies on team practice/code review.
 
-### 3.6 JavaScript File Section Order
+### 3.7 JavaScript File Section Order
 
 JS files should use appropriate grouping based on file type:
 
@@ -143,7 +157,7 @@ Validation
 - Section names use title case (e.g., `Imports`, `State`, `Functions`)
 - Guideline only (not enforced by ESLint); maintained via code review
 
-### 3.7 Comment Style
+### 3.8 Comment Style
 
 We use 4 categories of comments, each with specific purpose and format:
 

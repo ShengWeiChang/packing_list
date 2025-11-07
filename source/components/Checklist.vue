@@ -14,11 +14,11 @@ Created: 2025-09-19
     <!-- Checklist Header -->
     <div class="mb-2 px-4 pb-4 pt-2">
       <!-- Header content -->
-      <div class="mb-3 flex min-h-[3rem] items-center justify-between gap-4">
-        <div class="flex min-w-0 flex-grow items-baseline space-x-4">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <div class="flex min-w-0 grow items-center gap-4">
           <!-- Editable destination name -->
           <div
-            class="flex min-h-[3rem] min-w-0 flex-grow items-center"
+            class="flex min-w-0 grow"
             @blur="handleEditBlur"
             @focusout="handleEditBlur"
           >
@@ -29,13 +29,13 @@ Created: 2025-09-19
               v-model="editedDestination"
               :name="`checklist-${checklist.id}-destination`"
               :placeholder="$t('checklist.destination')"
-              class="text-primary w-full min-w-0 border-b-2 border-blue-300 bg-transparent px-1 py-1 text-2xl font-bold focus:border-blue-500 focus:outline-none md:text-3xl"
+              class="text-primary w-full border-b-2 border-blue-300 bg-transparent p-1 text-3xl font-bold focus:border-blue-500 focus:outline-none"
               @keyup.enter="saveEdit"
               @keyup.escape="cancelEdit"
             />
             <h2
               v-else
-              class="text-primary cursor-pointer truncate rounded px-1 py-1 text-2xl font-bold hover:bg-gray-50 md:text-3xl"
+              class="text-primary cursor-pointer truncate rounded p-1 text-3xl font-bold hover:bg-gray-50"
               @click="startEdit"
             >
               {{ checklist.destination || $t('checklist.untitled') }}
@@ -44,13 +44,13 @@ Created: 2025-09-19
 
           <!-- Editable dates -->
           <div
-            class="flex min-h-[2.5rem] flex-shrink-0 items-center space-x-2"
+            class="flex min-h-12 shrink-0 items-center gap-2"
             @blur="handleEditBlur"
             @focusout="handleEditBlur"
           >
             <div
               v-if="isEditing"
-              class="flex flex-wrap items-center space-x-1 sm:flex-nowrap sm:space-x-2"
+              class="flex flex-wrap items-center gap-1 md:flex-nowrap md:gap-2"
             >
               <input
                 :id="`checklist-${checklist.id}-start-date`"
@@ -58,11 +58,11 @@ Created: 2025-09-19
                 v-model="editedStartDate"
                 :name="`checklist-${checklist.id}-start-date`"
                 type="date"
-                class="text-secondary w-28 rounded border border-gray-300 bg-transparent px-1 py-1 text-sm focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2 sm:text-base"
+                class="text-secondary w-28 rounded border border-gray-300 bg-transparent p-1 text-base focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
                 @keyup.enter="saveEdit"
                 @keyup.escape="cancelEdit"
               />
-              <span class="text-secondary hidden sm:inline">-</span>
+              <span class="text-secondary hidden md:inline">-</span>
               <input
                 :id="`checklist-${checklist.id}-end-date`"
                 ref="endDateInput"
@@ -70,14 +70,14 @@ Created: 2025-09-19
                 :name="`checklist-${checklist.id}-end-date`"
                 type="date"
                 :min="editedStartDate"
-                class="text-secondary w-28 rounded border border-gray-300 bg-transparent px-1 py-1 text-sm focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2 sm:text-base"
+                class="text-secondary w-28 rounded border border-gray-300 bg-transparent p-1 text-base focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
                 @keyup.enter="saveEdit"
                 @keyup.escape="cancelEdit"
               />
             </div>
             <span
               v-else
-              class="text-secondary cursor-pointer rounded px-2 py-1 text-base hover:bg-gray-50"
+              class="text-secondary cursor-pointer whitespace-nowrap rounded px-2 py-1 text-base hover:bg-gray-50"
               @click="startEdit"
             >
               {{ formatDateRange(checklist.startDate, checklist.endDate) }}
@@ -86,7 +86,7 @@ Created: 2025-09-19
         </div>
 
         <!-- Overflow menu -->
-        <div class="flex-shrink-0">
+        <div class="shrink-0">
           <OverflowMenu
             :item-id="checklist.id"
             :force-visible="true"
@@ -484,8 +484,8 @@ watch(
 /* Category drag and drop styles */
 .ghost-category {
   opacity: 0.3;
-  background: #f3f4f6;
-  border: 2px dashed #9ca3af;
+  background: var(--color-gray-gray-100);
+  border: 2px dashed var(--color-gray-gray-400);
   border-radius: 0.75rem;
 }
 
@@ -497,8 +497,8 @@ watch(
   opacity: 0.5;
   transform: scale(1.02);
   box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    0 20px 25px -5px var(--color-shadow-black-10),
+    0 10px 10px -5px var(--color-shadow-black-4);
   z-index: 1000;
 }
 
@@ -558,13 +558,13 @@ watch(
   0%,
   100% {
     box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      0 4px 6px -1px var(--color-shadow-black-10),
+      0 2px 4px -1px var(--color-shadow-black-6);
   }
   50% {
     box-shadow:
-      0 4px 6px -1px rgba(16, 185, 129, 0.3),
-      0 2px 4px -1px rgba(16, 185, 129, 0.2);
+      0 4px 6px -1px var(--color-shadow-green-30),
+      0 2px 4px -1px var(--color-shadow-green-20);
   }
 }
 

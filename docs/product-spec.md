@@ -244,46 +244,56 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 packing-list/
 ├── index.html                        # Entry HTML
 ├── LICENSE                           # License terms
-├── package.json                      # Dependencies and scripts
+├── package.json                      # Dependencies and npm scripts (see `build:css-vars`)
+├── package-lock.json                 # Lockfile
+├── build-css-vars.js                 # CLI script: generates CSS custom properties from source/utils/constants.js
 ├── postcss.config.js                 # PostCSS config
 ├── tailwind.config.js                # Tailwind CSS config
 ├── vite.config.js                    # Vite build config
+├── docs/                             # Project documentation
+│   ├── product-spec.md               # Product specification
+│   └── code-quality.md               # Coding & linting guidelines
 └── source/                           # Application source
-  ├── App.vue                         # Root component
-  ├── index.css                       # Global styles and Tailwind imports
-  ├── main.js                         # App entry point (createApp + mount)
-  ├── components/                     # UI components
-  │   ├── AddCategoryButton.vue       # Add category button
-  │   ├── AddItemButton.vue           # Add item button
-  │   ├── Category.vue                # Category card
-  │   ├── Checklist.vue               # Main checklist view
-  │   ├── Item.vue                    # Item row/card
-  │   ├── OverflowMenu.vue            # Overflow actions menu
-  │   ├── ProgressBar.vue             # Progress bar component
-  │   ├── Sidebar.vue                 # Sidebar navigation
-  │   └── Topbar.vue                  # Top bar for mobile
-  ├── composables/                    # Vue composables (state + logic)
-  │   └── usePackingLists.js          # Core state and CRUD logic
-  ├── i18n/                           # i18n initialization and locale detection/persistence
-  │   └── index.js                    # create vue-i18n, locale mapping, localStorage read/write
-  ├── locales/                        # Translation files
-  │   ├── en.json                     # English strings
-  │   └── zh-TW.json                  # Traditional Chinese strings
-  ├── data/                           # Static data
-  │   ├── defaultItems.js             # Default items loader (locale-aware)
-  │   ├── defaultItems_en.js          # English default items
-  │   └── defaultItems_zh-TW.js       # Traditional Chinese default items
-  ├── models/                         # Domain models
-  │   ├── Category.js                 # Category model
-  │   ├── Checklist.js                # Checklist model
-  │   └── Item.js                     # Item model
-  ├── services/                       # Data access layer
-  │   ├── dataService.js              # Abstract data service interface
-  │   └── localStorageService.js      # LocalStorage implementation
-  └── utils/                          # Utilities
-      ├── constants.js                # App constants
-      └── helpers.js                  # Helper functions (e.g., ID generation)
+    ├── App.vue                       # Root component
+    ├── index.css                     # Global styles; contains auto-generated :root variables
+    ├── main.js                       # App entry point (createApp + mount)
+    ├── components/                   # UI components
+    │   ├── AddCategoryButton.vue     # Add category button
+    │   ├── AddItemButton.vue         # Add item button
+    │   ├── Category.vue              # Category card
+    │   ├── Checklist.vue             # Main checklist view
+    │   ├── Item.vue                  # Item row/card
+    │   ├── OverflowMenu.vue          # Overflow actions menu
+    │   ├── ProgressBar.vue           # Progress bar component
+    │   ├── Sidebar.vue               # Sidebar navigation
+    │   └── Topbar.vue                # Top bar for mobile
+    ├── composables/                  # Vue composables (state + logic)
+    │   └── usePackingLists.js        # Core state and CRUD logic
+    ├── i18n/                         # i18n initialization and locale detection/persistence
+    │   └── index.js                  # create vue-i18n, locale mapping, localStorage read/write
+    ├── locales/                      # Translation files
+    │   ├── en.json                   # English strings
+    │   └── zh-TW.json                # Traditional Chinese strings
+    ├── data/                         # Static data
+    │   ├── defaultItems.js           # Default items loader (locale-aware)
+    │   ├── defaultItems_en.js        # English default items
+    │   └── defaultItems_zh-TW.js     # Traditional Chinese default items
+    ├── models/                       # Domain models
+    │   ├── Category.js               # Category model
+    │   ├── Checklist.js              # Checklist model
+    │   └── Item.js                   # Item model
+    ├── services/                     # Data access layer
+    │   ├── dataService.js            # Abstract data service interface
+    │   └── localStorageService.js    # LocalStorage implementation
+    └── utils/                        # Utilities
+        ├── constants.js              # App constants (color definitions in THEME_COLORS)
+        └── helpers.js                # Helper functions (e.g., ID generation)
 ```
+
+Notes:
+
+- Colors defined in `source/utils/constants.js` (`THEME_COLORS`) are auto-generated to CSS variables in `source/index.css` by running `npm run build:css-vars`.
+- Workflow: edit `constants.js` → run `npm run build:css-vars` → commit updated `index.css`.
 
 ## 6. UI/UX Design
 
@@ -291,12 +301,13 @@ packing-list/
 
 #### Color System
 
-- Primary text: `rgba(33, 33, 33, 1)` — dark gray
-- Secondary text: `rgba(100, 100, 100, 1)` — mid gray
-- Primary brand: `rgba(47, 107, 70, 1)` — forest green
-- Accent: `rgba(211, 227, 219, 1)` — light green-gray
-- Background: `rgba(255, 255, 255, 1)` — white
-- Surface: `rgba(248, 250, 252, 1)` — light gray
+- Primary text: `#212121` — dark gray
+- Secondary text: `#646464` — mid gray
+- Primary brand: `#2f6b46` — forest green
+- Accent: `#d3e3db` — light green-gray
+- Background: `#ffffff` — white
+- Surface: `#f8fafc` — light gray
+- Pending Items: `#fff7ed` background, `#7c2d12` text, `#f97316` accent — orange theme
 
 #### Design System
 
@@ -315,27 +326,27 @@ packing-list/
 
 #### Sidebar Behavior
 
-- Desktop: Always visible; can be collapsed to icon mode
-- Tablet: Auto-collapses; expands as an overlay
-- Mobile: Drawer-style sidebar from the left
+- Mobile & narrow desktop: Sidebar becomes an overlay drawer (teleported to `body`) with a dimmed backdrop; clicking the backdrop closes it.
+- Desktop: Inline sticky sidebar that can collapse to an icon-only mode; manual collapse/expand is persisted in localStorage.
 
 #### Content Layout
 
-- Grid: Responsive grid (1–4 columns)
-- Cards: Consistent card style system
-- Forms: Inline editing with validation
+- Categories are laid out using a responsive masonry implemented with CSS columns (1–4 columns depending on viewport).
+- Cards: consistent card style system; use `break-inside: avoid` to prevent card splitting across columns.
+- Forms: Inline editing with validation.
 
 ### Component Specifications
 
-| Component    | Description                         | Interactions                                                                                                 |
-| ------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Sidebar      | Checklist navigation and management | Responsive collapse/expand; checklist selection                                                              |
-| Topbar       | Mobile navigation bar               | Hamburger menu; quick add checklist                                                                          |
-| Checklist    | Main content area                   | Shows categories and items for the selected checklist; drag and drop for category reordering; masonry layout |
-| Category     | Category card                       | Lists items; shows progress; edit actions; drag and drop for item reordering and movement                    |
-| Item         | Item row/card                       | Toggle packed; inline edit; delete; draggable within/between categories                                      |
-| ProgressBar  | Progress visualization              | Displays completion percentage                                                                               |
-| OverflowMenu | Overflow actions                    | Edit/delete and other actions                                                                                |
+| Component            | Description                         | Interactions                                                                                                 |
+| -------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Sidebar              | Checklist navigation and management | Responsive collapse/expand; checklist selection                                                              |
+| Topbar               | Mobile navigation bar               | Hamburger menu; quick add checklist                                                                          |
+| Checklist            | Main content area                   | Shows categories and items for the selected checklist; drag and drop for category reordering; masonry layout |
+| PendingItemsCategory | Virtual category for pending items  | Orange theme; multi-column grid; displays items marked as pending (to-buy/to-do)                             |
+| Category             | Category card                       | Lists items; shows progress; edit actions; drag and drop for item reordering and movement                    |
+| Item                 | Item row/card                       | Toggle packed/pending; inline edit; delete; draggable within/between categories                              |
+| ProgressBar          | Progress visualization              | Displays completion percentage                                                                               |
+| OverflowMenu         | Overflow actions                    | Edit/delete and other actions                                                                                |
 
 ## 7. Data Models
 
