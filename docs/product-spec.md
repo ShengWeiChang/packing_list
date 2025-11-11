@@ -55,6 +55,14 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - MVP: Browser localStorage
 - Future: Cloud database (Firebase/Supabase)
 
+### Deployment
+
+- Platform: Vercel (recommended for Vite projects)
+- Configuration: `vercel.json` for SPA routing and caching
+- Build Command: `npm run build`
+- Output Directory: `dist/`
+- Auto-deployment: Triggered on git push to main branch
+
 ### Build & Development Tools
 
 - Dev Server: Vite dev server with HMR
@@ -246,10 +254,13 @@ packing-list/
 ├── LICENSE                           # License terms
 ├── package.json                      # Dependencies and npm scripts (see `build:css-vars`)
 ├── package-lock.json                 # Lockfile
+├── vercel.json                       # Vercel deployment configuration (SPA routing, caching)
 ├── build-css-vars.js                 # CLI script: generates CSS custom properties from source/utils/constants.js
 ├── postcss.config.js                 # PostCSS config
 ├── tailwind.config.js                # Tailwind CSS config
 ├── vite.config.js                    # Vite build config
+├── public/                           # Static assets
+│   └── favicon.svg                   # Site favicon (primary green with white checkmark)
 ├── docs/                             # Project documentation
 │   ├── product-spec.md               # Product specification
 │   └── code-quality.md               # Coding & linting guidelines
