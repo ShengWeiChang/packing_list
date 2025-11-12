@@ -12,8 +12,8 @@ Created: 2025-09-19
 <template>
   <div
     :class="[
-      'group rounded-xl p-3 shadow-md transition-all duration-200',
-      isCompleted ? 'bg-green-50 hover:shadow-lg' : 'bg-white hover:shadow-lg',
+      'group rounded-xl p-3 shadow-md transition-all duration-200 hover:shadow-lg',
+      isCompleted ? 'bg-green-50' : 'bg-white',
     ]"
   >
     <!-- Category Header -->
@@ -97,7 +97,6 @@ Created: 2025-09-19
 
       <AddItemButton
         :category-completed="isCompleted"
-        class="px-2 py-1 text-sm"
         @click="$emit('create:item', category.id)"
       />
     </div>
@@ -407,12 +406,6 @@ watch(
 
 .border-dashed {
   border-style: dashed;
-}
-
-/* Smooth transitions */
-.transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Success flash animation */

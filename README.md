@@ -22,7 +22,12 @@ npm run dev
 - `npm run dev` — Start the Vite development server (with HMR)
 - `npm run build` — Build production assets into `dist/`
 - `npm run serve` — Preview the production build locally
-- `npm run format` — Run Prettier to format the `source/` directory
+- `npm run build:css-vars` — Generate CSS variables from `source/utils/constants.js`
+- `npm run lint` — Run ESLint to check code quality
+- `npm run lint:fix` — Auto-fix ESLint issues
+- `npm run format` — Run Prettier to format all files
+- `npm run format:check` — Check if files are properly formatted
+- `npm run validate` — Run both linting and format checking
 
 ## Project Structure
 
@@ -39,6 +44,14 @@ npm run dev
 - Code formatting: Prettier is configured via `.prettierrc`. Use `npm run format` or enable `formatOnSave` in your editor.
 - Naming conventions: Vue components use PascalCase; composables use `use*` prefix.
 - Data persistence: application data is stored in `localStorage`. To clear data in the browser, open DevTools → Application → Local Storage and remove the key used by the app.
+- Theme colors: All colors are defined in `source/utils/constants.js`. After editing, run `npm run build:css-vars` to regenerate CSS variables in `source/index.css`.
+
+## Build Locally
+
+```bash
+npm run build    # Build to dist/
+npm run serve    # Preview production build at http://localhost:4173
+```
 
 ## Troubleshooting
 

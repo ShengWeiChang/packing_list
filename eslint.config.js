@@ -16,7 +16,7 @@ import js from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import jsdoc from 'eslint-plugin-jsdoc';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
-import tailwind from 'eslint-plugin-tailwindcss';
+import tailwindcss from 'eslint-plugin-tailwindcss';
 import pluginVue from 'eslint-plugin-vue';
 
 // ------------------------------------------------------------------------------
@@ -36,7 +36,7 @@ export default [
   ...pluginVue.configs['flat/recommended'],
 
   // Tailwind CSS rules
-  ...tailwind.configs['flat/recommended'],
+  ...tailwindcss.configs['flat/recommended'],
 
   // Custom rules and plugins
   {
@@ -62,7 +62,6 @@ export default [
     plugins: {
       'simple-import-sort': simpleImportSort,
       jsdoc,
-      tailwind,
     },
     rules: {
       // Import/Export sorting
@@ -99,10 +98,25 @@ export default [
       'vue/no-use-v-if-with-v-for': 'error',
 
       // Tailwind CSS rules
-      'tailwind/no-custom-classname': 'off', // Allow custom classes (CSS Modules, etc.)
-      'tailwind/no-contradicting-classname': 'error', // Prevent contradicting classes like 'flex flex-col'
-      'tailwind/enforces-negative-arbitrary-values': 'error', // Prevent negative arbitrary values like '-mt-[10px]'
-      'tailwind/enforces-shorthand': 'warn', // Suggest shorthand but don't enforce (too strict)
+      'tailwindcss/no-custom-classname': [
+        'warn',
+        {
+          whitelist: [
+            // CSS Modules / Scoped styles (defined in <style scoped>)
+            'category-item',
+            'categories-masonry',
+            'dragging',
+            'pending-items-grid',
+            // vuedraggable dynamic classes (ghost-*, chosen-*, drag-*)
+            'ghost-.*',
+            'chosen-.*',
+            'drag-.*',
+          ],
+        },
+      ],
+      'tailwindcss/no-contradicting-classname': 'error',
+      'tailwindcss/enforces-negative-arbitrary-values': 'error',
+      'tailwindcss/enforces-shorthand': 'warn',
 
       // Vue template attributes order (based on official recommendation)
       'vue/attributes-order': [

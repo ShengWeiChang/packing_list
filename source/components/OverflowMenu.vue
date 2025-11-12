@@ -207,7 +207,7 @@ const dropdownClass = computed(
 
 // SVG icon size based on menu type
 const svgClass = computed(() => {
-  return props.menuType === 'item' ? 'w-5 h-5' : 'w-6 h-6';
+  return props.menuType === 'item' ? 'size-5' : 'size-6';
 });
 
 // ------------------------------------------------------------------------------
