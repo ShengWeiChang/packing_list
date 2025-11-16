@@ -106,6 +106,14 @@ export function usePackingLists() {
       const preCategories = (raw.categories || []).map((cat) => Category.fromJSON(cat));
       const preItems = (raw.items || []).map((it) => Item.fromJSON(it));
 
+      // Ensure all checklists have order values and sort them
+      preChecklists.forEach((checklist, index) => {
+        if (typeof checklist.order === 'undefined') {
+          checklist.order = index;
+        }
+      });
+      preChecklists.sort((a, b) => (a.order || 0) - (b.order || 0));
+
       // Load checklists
       checklists.value = preChecklists;
       // If no selected checklist yet, pick the first
@@ -155,11 +163,11 @@ export function usePackingLists() {
 
   /**
    * Get all checklists from storage
-   * @returns {Promise<Array>} Array of checklist objects
+   * @returns {Promise<Array>} Array of checklist objects sorted by order
    */
   async function getChecklists() {
     const result = await loadData(() => dataService.getChecklists(), 'Error getting checklists');
-    checklists.value = result || [];
+    checklists.value = (result || []).sort((a, b) => (a.order || 0) - (b.order || 0));
     if (checklists.value.length > 0 && !selectedChecklistId.value) {
       selectedChecklistId.value = checklists.value[0].id;
     }

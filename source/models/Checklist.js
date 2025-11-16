@@ -31,17 +31,20 @@ export class Checklist {
    * @param {string} root0.destination - Destination location for the trip
    * @param {string} root0.startDate - Trip start date in ISO format (YYYY-MM-DD)
    * @param {string} root0.endDate - Trip end date in ISO format (YYYY-MM-DD)
+   * @param {number} root0.order - Display order for the checklist (default: 0)
    */
   constructor({
     id = generateSecureId('checklist-'),
     destination = '',
     startDate = new Date().toISOString().slice(0, 10),
     endDate = new Date().toISOString().slice(0, 10),
+    order = 0,
   } = {}) {
     this.id = id;
     this.destination = this.validateDestination(destination);
     this.startDate = startDate;
     this.endDate = endDate;
+    this.order = order;
   }
 
   /**
@@ -79,6 +82,7 @@ export class Checklist {
       destination: this.destination,
       startDate: this.startDate,
       endDate: this.endDate,
+      order: this.order,
     };
   }
 }

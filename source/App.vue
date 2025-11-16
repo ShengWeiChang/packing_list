@@ -44,6 +44,7 @@ Created: 2025-09-19
           @select-checklist="selectedChecklistId = $event"
           @edit-checklist="handleChecklistEdit"
           @delete-checklist="handleChecklistDelete"
+          @move:checklists="handleChecklistMove"
         />
       </div>
     </teleport>
@@ -64,6 +65,7 @@ Created: 2025-09-19
         @select-checklist="selectedChecklistId = $event"
         @edit-checklist="handleChecklistEdit"
         @delete-checklist="handleChecklistDelete"
+        @move:checklists="handleChecklistMove"
       />
     </div>
 
@@ -325,7 +327,7 @@ async function handleItemMove(moveData) {
 // ------------------------------------------------------------------------------
 
 /**
- * Create a new category with default name
+ * Create a new category with default values
  */
 async function handleCategoryCreate() {
   // Find the highest order among all categories
@@ -383,11 +385,16 @@ async function handleCategoryReorder(reorderedCategories) {
 // ------------------------------------------------------------------------------
 
 /**
- * Create a new checklist with default name
+ * Create a new checklist with default values
  */
 async function handleChecklistCreate() {
+  // Find the highest order among all checklists
+  const maxOrder =
+    checklists.value.length > 0 ? Math.max(...checklists.value.map((cl) => cl.order || 0)) : -1;
+
   const newChecklistData = {
     name: t('checklist.defaultName'),
+    order: maxOrder + 1,
   };
   const newChecklist = await handleAsyncAction(createChecklist, newChecklistData);
   if (newChecklist) {
@@ -427,6 +434,17 @@ async function handleChecklistDelete(checklistId) {
   if (selectedChecklistId.value === checklistId) {
     // Switch to first available checklist
     selectedChecklistId.value = checklists.value[0]?.id || null;
+  }
+}
+
+/**
+ * Handle checklist drag-and-drop movement or reordering
+ * @param {Array} reorderedChecklists - Array of checklists with updated order
+ */
+async function handleChecklistMove(reorderedChecklists) {
+  // Update all checklists with new order
+  for (const checklist of reorderedChecklists) {
+    await handleAsyncAction(updateChecklist, checklist);
   }
 }
 
