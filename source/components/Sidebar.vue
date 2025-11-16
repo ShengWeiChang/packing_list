@@ -108,7 +108,7 @@ Created: 2025-09-19
             >
               <button
                 :class="[
-                  'w-full px-4 py-2 text-left transition-colors duration-300 ease-in-out',
+                  'grow px-4 py-2 text-left transition-colors duration-300 ease-in-out',
                   isExpanded || isMobile
                     ? [
                         selectedChecklistId === checklist.id
@@ -129,6 +129,21 @@ Created: 2025-09-19
                   {{ checklist.destination || $t('checklist.untitled') }}
                 </span>
               </button>
+
+              <!-- Overflow Menu for Checklist -->
+              <div
+                v-if="isExpanded || isMobile"
+                class="shrink-0 pr-1"
+              >
+                <OverflowMenu
+                  :item-id="checklist.id"
+                  menu-type="checklist"
+                  alignment="left"
+                  :use-group-hover="true"
+                  @edit="$emit('edit-checklist', checklist.id)"
+                  @delete="$emit('delete-checklist', checklist.id)"
+                />
+              </div>
             </div>
           </li>
         </ul>
@@ -251,6 +266,8 @@ Created: 2025-09-19
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import OverflowMenu from './OverflowMenu.vue';
+
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
 // ------------------------------------------------------------------------------
@@ -293,7 +310,13 @@ defineProps({
 });
 
 // Emits
-defineEmits(['toggle-sidebar', 'create-checklist', 'select-checklist']);
+defineEmits([
+  'toggle-sidebar',
+  'create-checklist',
+  'select-checklist',
+  'edit-checklist',
+  'delete-checklist',
+]);
 
 // ------------------------------------------------------------------------------
 // States

@@ -42,6 +42,7 @@ Created: 2025-09-19
           @toggle-sidebar="toggleSidebar"
           @create-checklist="handleChecklistCreate"
           @select-checklist="selectedChecklistId = $event"
+          @edit-checklist="handleChecklistEdit"
           @delete-checklist="handleChecklistDelete"
         />
       </div>
@@ -61,6 +62,7 @@ Created: 2025-09-19
         @toggle-sidebar="toggleSidebar"
         @create-checklist="handleChecklistCreate"
         @select-checklist="selectedChecklistId = $event"
+        @edit-checklist="handleChecklistEdit"
         @delete-checklist="handleChecklistDelete"
       />
     </div>
@@ -399,6 +401,17 @@ async function handleChecklistCreate() {
  */
 async function handleChecklistUpdate(checklist) {
   await handleAsyncAction(updateChecklist, checklist);
+}
+
+/**
+ * Handle checklist edit from sidebar - select the checklist and mark for edit
+ * @param {string} checklistId - The ID of the checklist to edit
+ */
+function handleChecklistEdit(checklistId) {
+  // Select the checklist first
+  selectedChecklistId.value = checklistId;
+  // Mark it for editing
+  newlyCreatedChecklistId.value = checklistId;
 }
 
 /**

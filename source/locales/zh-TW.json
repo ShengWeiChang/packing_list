@@ -21,7 +21,7 @@
     "deleteConfirm": "確定要刪除這個清單嗎？",
     "cannotDeleteLast": "無法刪除最後一個清單",
     "defaultName": "我的新清單",
-    "pleaseCreate": "請先建立一個新清單。"
+    "pleaseCreate": "請先建立一個新清單"
   },
   "category": {
     "newCategory": "新增分類",
