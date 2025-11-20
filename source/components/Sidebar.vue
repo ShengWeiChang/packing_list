@@ -115,7 +115,7 @@ Created: 2025-09-19
               class="whitespace-nowrap"
             >
               <div
-                class="group flex items-center rounded-lg px-1 transition-colors duration-200"
+                class="group relative flex items-center rounded-lg px-1 transition-colors duration-200"
                 :class="[
                   selectedChecklistId === checklist.id && (isExpanded || isMobile)
                     ? 'bg-gray-100'
@@ -125,7 +125,7 @@ Created: 2025-09-19
               >
                 <button
                   :class="[
-                    'grow px-4 py-2 text-left transition-colors duration-300 ease-in-out',
+                    'min-w-0 grow px-4 py-2 pr-8 text-left transition-colors duration-300 ease-in-out',
                     isExpanded || isMobile
                       ? [
                           selectedChecklistId === checklist.id
@@ -137,7 +137,7 @@ Created: 2025-09-19
                   @click="$emit('select-checklist', checklist.id)"
                 >
                   <span
-                    class="inline-block transition-all duration-300 ease-in-out"
+                    class="block truncate transition-all duration-300 ease-in-out"
                     :class="{
                       '-translate-x-4 opacity-0': !isExpanded && !isMobile,
                       'translate-x-0 opacity-100 delay-200': isExpanded || isMobile,
@@ -150,7 +150,7 @@ Created: 2025-09-19
                 <!-- Overflow Menu for Checklist -->
                 <div
                   v-if="isExpanded || isMobile"
-                  class="shrink-0 pr-1"
+                  class="absolute right-1 shrink-0"
                 >
                   <OverflowMenu
                     :item-id="checklist.id"

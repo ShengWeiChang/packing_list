@@ -22,7 +22,7 @@
     "name": "Checklist Name",
     "deleteConfirm": "Are you sure you want to delete this checklist?",
     "cannotDeleteLast": "Cannot delete the last checklist",
-    "defaultName": "My New Checklist",
+    "defaultName": "New Checklist",
     "pleaseCreate": "Please create a new checklist first"
   },
   "category": {
