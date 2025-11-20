@@ -117,14 +117,13 @@ Created: 2025-09-19
               <div
                 class="group relative flex items-center rounded-lg px-1 transition-colors duration-200"
                 :class="[
-                  selectedChecklistId === checklist.id && (isExpanded || isMobile)
-                    ? 'bg-gray-100'
-                    : 'hover:bg-gray-100',
+                  selectedChecklistId === checklist.id ? 'bg-gray-100' : 'hover:bg-gray-100',
                 ]"
               >
                 <button
                   :class="[
-                    'min-w-0 grow px-4 py-2 pr-8 text-left transition-colors duration-300 ease-in-out',
+                    'min-w-0 grow py-2 text-left transition-colors duration-300 ease-in-out',
+                    isExpanded || isMobile ? 'px-4 pr-8' : 'flex items-center justify-center px-3',
                     isExpanded || isMobile
                       ? [
                           selectedChecklistId === checklist.id
@@ -133,18 +132,27 @@ Created: 2025-09-19
                           // Apply cursor styles only when dragging is enabled
                           draggingChecklistId === checklist.id ? 'cursor-grabbing' : 'cursor-grab',
                         ]
-                      : '',
+                      : [
+                          selectedChecklistId === checklist.id
+                            ? 'text-primary font-medium'
+                            : 'text-secondary',
+                        ],
                   ]"
                   @click="$emit('select-checklist', checklist.id)"
                 >
+                  <!-- Expanded: show full name -->
                   <span
+                    v-if="isExpanded || isMobile"
                     class="block truncate transition-all duration-300 ease-in-out"
-                    :class="{
-                      '-translate-x-4 opacity-0': !isExpanded && !isMobile,
-                      'translate-x-0 opacity-100 delay-200': isExpanded || isMobile,
-                    }"
                   >
                     {{ checklist.name || $t('checklist.untitled') }}
+                  </span>
+                  <!-- Collapsed: show first character -->
+                  <span
+                    v-else
+                    class="block"
+                  >
+                    {{ (checklist.name || $t('checklist.untitled')).charAt(0).toUpperCase() }}
                   </span>
                 </button>
 
