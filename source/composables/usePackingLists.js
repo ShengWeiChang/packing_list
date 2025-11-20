@@ -107,12 +107,19 @@ export function usePackingLists() {
       const preItems = (raw.items || []).map((it) => Item.fromJSON(it));
 
       // Ensure all checklists have order values and sort them
+      const checklistsToUpdate = [];
       preChecklists.forEach((checklist, index) => {
         if (typeof checklist.order === 'undefined') {
           checklist.order = index;
+          checklistsToUpdate.push(checklist);
         }
       });
       preChecklists.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+      // Persist missing order values to localStorage for old checklists
+      if (checklistsToUpdate.length > 0) {
+        await Promise.all(checklistsToUpdate.map((cl) => dataService.updateChecklist(cl.toJSON())));
+      }
 
       // Load checklists
       checklists.value = preChecklists;
