@@ -159,6 +159,7 @@ const {
   initialize,
   createChecklist,
   updateChecklist,
+  updateMultipleChecklists,
   deleteChecklist,
   duplicateChecklist,
   createCategory,
@@ -480,10 +481,8 @@ async function handleChecklistDelete(checklistId) {
  * @param {Array} reorderedChecklists - Array of checklists with updated order
  */
 async function handleChecklistMove(reorderedChecklists) {
-  // Update all checklists in parallel for better performance
-  await Promise.all(
-    reorderedChecklists.map((checklist) => handleAsyncAction(updateChecklist, checklist))
-  );
+  // Update all checklists in a single transaction to avoid race conditions
+  await handleAsyncAction(updateMultipleChecklists, reorderedChecklists);
 }
 
 // ------------------------------------------------------------------------------

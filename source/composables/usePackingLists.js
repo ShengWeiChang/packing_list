@@ -199,6 +199,24 @@ export function usePackingLists() {
   }
 
   /**
+   * Update multiple checklists in a single transaction
+   * This prevents race conditions when updating multiple checklists in parallel
+   * @param {Array<object>} checklistsData - Array of checklist data to update
+   * @returns {Promise<Array<object>|null>} Array of updated checklists or null on error
+   */
+  async function updateMultipleChecklists(checklistsData) {
+    const result = await loadData(
+      () => dataService.updateMultipleChecklists(checklistsData),
+      'Error updating checklists'
+    );
+    if (result) {
+      await getChecklists();
+      return result;
+    }
+    return null;
+  }
+
+  /**
    * Delete a checklist and update selection if needed
    * @param {string} checklistId - Checklist ID to delete
    * @returns {Promise<void>}
@@ -455,6 +473,7 @@ export function usePackingLists() {
     createChecklist,
     getChecklists,
     updateChecklist,
+    updateMultipleChecklists,
     deleteChecklist,
     duplicateChecklist,
 

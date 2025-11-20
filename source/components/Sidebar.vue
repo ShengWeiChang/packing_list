@@ -95,6 +95,7 @@ Created: 2025-09-19
         <draggable
           v-model="draggableChecklists"
           item-key="id"
+          tag="ul"
           :group="{
             name: 'checklists',
             pull: false,

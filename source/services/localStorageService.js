@@ -19,7 +19,7 @@ import zhTW from '../locales/zh-TW.json';
 import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';
 import { Item } from '../models/Item';
-import { STORAGE_KEYS } from '../utils/constants.js';
+import { STORAGE_KEYS, VALIDATION } from '../utils/constants.js';
 import { generateSecureId } from '../utils/helpers.js';
 import { DataService } from './dataService';
 
@@ -269,6 +269,33 @@ export class LocalStorageService extends DataService {
   }
 
   /**
+   * Update multiple checklists in a single transaction
+   * This prevents race conditions when updating multiple checklists in parallel
+   * @param {Array<object>} checklists - Array of checklist objects to update
+   * @returns {Promise<Array<object>>} Array of updated checklists
+   */
+  async updateMultipleChecklists(checklists) {
+    const data = await this.getData();
+    const checklistsArray = data.checklists || [];
+
+    // Update each checklist in the array
+    checklists.forEach((updatedChecklist) => {
+      const index = checklistsArray.findIndex((cl) => cl.id === updatedChecklist.id);
+      if (index !== -1) {
+        // Create a proper Checklist instance to ensure consistent structure
+        const checklist = new Checklist(updatedChecklist);
+        checklistsArray[index] = checklist.toJSON();
+      }
+    });
+
+    data.checklists = checklistsArray;
+    this._saveData(data);
+
+    // Return the updated checklists
+    return checklists.map((cl) => Checklist.fromJSON(cl).toJSON());
+  }
+
+  /**
    * Duplicate an existing checklist with all its categories and items
    * @param {string} id - Checklist ID to duplicate
    * @returns {Promise<object>} Duplicated checklist
@@ -284,10 +311,17 @@ export class LocalStorageService extends DataService {
     // Get the copy suffix from i18n
     const copySuffix = this._getCopySuffix();
 
+    // Truncate name if necessary to fit within max length constraint
+    const maxLength = VALIDATION.NAME_MAX_LENGTH;
+    const truncatedName =
+      originalChecklist.name.length + copySuffix.length > maxLength
+        ? originalChecklist.name.slice(0, maxLength - copySuffix.length)
+        : originalChecklist.name;
+
     // Create new checklist with original name + copy suffix and NEW ID
     // Insert right after the original checklist
     const newChecklist = new Checklist({
-      name: `${originalChecklist.name}${copySuffix}`,
+      name: `${truncatedName}${copySuffix}`,
       startDate: originalChecklist.startDate,
       endDate: originalChecklist.endDate,
       order: originalChecklist.order + 1,
@@ -438,10 +472,17 @@ export class LocalStorageService extends DataService {
     // Get the copy suffix from i18n
     const copySuffix = this._getCopySuffix();
 
+    // Truncate name if necessary to fit within max length constraint
+    const maxLength = VALIDATION.NAME_MAX_LENGTH;
+    const truncatedName =
+      originalCategory.name.length + copySuffix.length > maxLength
+        ? originalCategory.name.slice(0, maxLength - copySuffix.length)
+        : originalCategory.name;
+
     // Create new category with original name + copy suffix and NEW ID
     // Insert right after the original category
     const newCategory = new Category({
-      name: `${originalCategory.name}${copySuffix}`,
+      name: `${truncatedName}${copySuffix}`,
       checklistId: originalCategory.checklistId,
       order: originalCategory.order + 1,
     });
@@ -582,10 +623,17 @@ export class LocalStorageService extends DataService {
     // Get the copy suffix from i18n
     const copySuffix = this._getCopySuffix();
 
+    // Truncate name if necessary to fit within max length constraint
+    const maxLength = VALIDATION.NAME_MAX_LENGTH;
+    const truncatedName =
+      originalItem.name.length + copySuffix.length > maxLength
+        ? originalItem.name.slice(0, maxLength - copySuffix.length)
+        : originalItem.name;
+
     // Create new item with original name + copy suffix and NEW ID
     // Insert right after the original item
     const newItem = new Item({
-      name: `${originalItem.name}${copySuffix}`,
+      name: `${truncatedName}${copySuffix}`,
       quantity: originalItem.quantity,
       checklistId: checklistId,
       categoryId: originalItem.categoryId,
@@ -613,17 +661,18 @@ export class LocalStorageService extends DataService {
   }
 
   /**
-   * Get the copy suffix from i18n based on user's locale
+   * Get the copy suffix from i18n based on locale
+   * @param {string} [locale] - Optional locale code (e.g., 'en', 'zh-TW'). If not provided, reads from localStorage
    * @returns {string} The localized copy suffix
    * @private
    */
-  _getCopySuffix() {
-    const locale = localStorage.getItem('user-locale') || 'en';
+  _getCopySuffix(locale) {
+    const userLocale = locale || localStorage.getItem('user-locale') || 'en';
     const messages = {
       en,
       'zh-TW': zhTW,
     };
-    return messages[locale]?.common?.copySuffix || ' (Copy)';
+    return messages[userLocale]?.common?.copySuffix || ' (Copy)';
   }
 
   /**

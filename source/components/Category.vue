@@ -32,7 +32,8 @@ Created: 2025-09-19
         />
         <h3
           v-else
-          class="text-primary cursor-pointer rounded p-1 text-xl font-semibold hover:bg-gray-50"
+          class="text-primary cursor-pointer rounded p-1 text-xl font-semibold leading-snug hover:bg-gray-50"
+          style="word-break: break-word; overflow-wrap: break-word"
           @click="startEdit"
         >
           {{ category.name }}

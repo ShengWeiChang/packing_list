@@ -57,11 +57,12 @@ Created: 2025-09-19
       <span
         v-else
         :class="[
-          'cursor-pointer rounded p-1 text-base hover:bg-gray-50',
+          'block cursor-pointer rounded p-1 text-base leading-snug hover:bg-gray-50',
           {
             'text-secondary line-through': item.isPacked,
           },
         ]"
+        style="word-break: break-word; overflow-wrap: break-word"
         @click="startEdit"
       >
         {{ item.name }}
