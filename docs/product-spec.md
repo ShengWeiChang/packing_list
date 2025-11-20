@@ -375,7 +375,7 @@ Notes:
 ```javascript
 {
   id: string,           // Unique identifier
-  name: string,         // Checklist name
+  name: string,         // Checklist name (can be empty - UI provides default)
   startDate: string,    // Start date (ISO)
   endDate: string,      // End date (ISO)
   order: number         // Display order (default: 0)

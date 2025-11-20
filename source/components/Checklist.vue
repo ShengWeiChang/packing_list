@@ -207,7 +207,8 @@ const props = defineProps({
         typeof value.id === 'string' &&
         typeof value.name === 'string' &&
         typeof value.startDate === 'string' &&
-        typeof value.endDate === 'string'
+        typeof value.endDate === 'string' &&
+        typeof value.order === 'number'
       );
     },
   },

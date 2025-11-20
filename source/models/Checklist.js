@@ -56,11 +56,16 @@ export class Checklist {
     if (typeof name !== 'string') {
       throw new Error('Name must be a string');
     }
-    // Allow empty name for initial creation, but enforce max length
-    if (name.length > VALIDATION.NAME_MAX_LENGTH) {
+
+    // Trim whitespace
+    const trimmedName = name.trim();
+
+    // Enforce max length (allow empty string - UI/Service layer handles defaults)
+    if (trimmedName.length > VALIDATION.NAME_MAX_LENGTH) {
       throw new Error(`Name must be less than ${VALIDATION.NAME_MAX_LENGTH} characters`);
     }
-    return name;
+
+    return trimmedName;
   }
 
   /**

@@ -453,6 +453,8 @@ async function handleChecklistCopy(checklistId) {
   const result = await handleAsyncAction(duplicateChecklist, checklistId);
   if (result) {
     // Select the new checklist
+    // Note: duplicateChecklist internally calls getChecklists() via await,
+    // ensuring all data is loaded before this assignment executes
     selectedChecklistId.value = result.id;
   }
 }
@@ -478,10 +480,10 @@ async function handleChecklistDelete(checklistId) {
  * @param {Array} reorderedChecklists - Array of checklists with updated order
  */
 async function handleChecklistMove(reorderedChecklists) {
-  // Update all checklists with new order
-  for (const checklist of reorderedChecklists) {
-    await handleAsyncAction(updateChecklist, checklist);
-  }
+  // Update all checklists in parallel for better performance
+  await Promise.all(
+    reorderedChecklists.map((checklist) => handleAsyncAction(updateChecklist, checklist))
+  );
 }
 
 // ------------------------------------------------------------------------------

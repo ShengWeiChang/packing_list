@@ -120,7 +120,6 @@ Created: 2025-09-19
                   selectedChecklistId === checklist.id && (isExpanded || isMobile)
                     ? 'bg-gray-100'
                     : 'hover:bg-gray-100',
-                  draggingChecklistId === checklist.id ? 'cursor-grabbing' : 'cursor-grab',
                 ]"
               >
                 <button
@@ -131,6 +130,8 @@ Created: 2025-09-19
                           selectedChecklistId === checklist.id
                             ? 'text-primary font-medium'
                             : 'text-secondary',
+                          // Apply cursor styles only when dragging is enabled
+                          draggingChecklistId === checklist.id ? 'cursor-grabbing' : 'cursor-grab',
                         ]
                       : '',
                   ]"
@@ -484,9 +485,9 @@ function closeLanguageMenuOnScroll() {
  * @param {object} event - Sortable drag event
  */
 function onChecklistDragStart(event) {
-  const checklistElement = event.item.querySelector('[data-checklist-id]') || event.item;
-  if (checklistElement.dataset.checklistId) {
-    draggingChecklistId.value = checklistElement.dataset.checklistId;
+  // The data-checklist-id attribute is on the <li> element (event.item itself)
+  if (event.item.dataset.checklistId) {
+    draggingChecklistId.value = event.item.dataset.checklistId;
   }
 }
 

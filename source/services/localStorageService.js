@@ -301,6 +301,9 @@ export class LocalStorageService extends DataService {
       return cl;
     });
 
+    // Find the insertion index (right after the original checklist)
+    const insertionIndex = data.checklists.findIndex((cl) => cl.id === id) + 1;
+
     // Get all categories and items for the original checklist
     const originalCategories = (data.categories || []).filter((cat) => cat.checklistId === id);
     const originalItems = (data.items || []).filter((item) => item.checklistId === id);
@@ -329,8 +332,8 @@ export class LocalStorageService extends DataService {
       });
     });
 
-    // Add to storage
-    data.checklists = [...data.checklists, newChecklist.toJSON()];
+    // Insert new checklist at the correct position (right after the original)
+    data.checklists.splice(insertionIndex, 0, newChecklist.toJSON());
     data.categories = [...(data.categories || []), ...newCategories.map((c) => c.toJSON())];
     data.items = [...(data.items || []), ...newItems.map((i) => i.toJSON())];
 
