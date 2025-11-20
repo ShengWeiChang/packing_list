@@ -14,6 +14,8 @@ Created: 2025-09-19
 // -----------------------------------------------------------------------------
 
 import { getDefaultItems } from '../data/defaultItems';
+import en from '../locales/en.json';
+import zhTW from '../locales/zh-TW.json';
 import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';
 import { Item } from '../models/Item';
@@ -266,6 +268,76 @@ export class LocalStorageService extends DataService {
     this._saveData(data);
   }
 
+  /**
+   * Duplicate an existing checklist with all its categories and items
+   * @param {string} id - Checklist ID to duplicate
+   * @returns {Promise<object>} Duplicated checklist
+   */
+  async duplicateChecklist(id) {
+    const data = await this.getData();
+    const originalChecklist = (data.checklists || []).find((cl) => cl.id === id);
+
+    if (!originalChecklist) {
+      throw new Error(`Checklist with id ${id} not found`);
+    }
+
+    // Get the copy suffix from i18n
+    const copySuffix = this._getCopySuffix();
+
+    // Create new checklist with original name + copy suffix and NEW ID
+    // Insert right after the original checklist
+    const newChecklist = new Checklist({
+      name: `${originalChecklist.name}${copySuffix}`,
+      startDate: originalChecklist.startDate,
+      endDate: originalChecklist.endDate,
+      order: originalChecklist.order + 1,
+    });
+
+    // Reorder all checklists that come after the original
+    data.checklists = (data.checklists || []).map((cl) => {
+      if (cl.order > originalChecklist.order) {
+        return { ...cl, order: cl.order + 1 };
+      }
+      return cl;
+    });
+
+    // Get all categories and items for the original checklist
+    const originalCategories = (data.categories || []).filter((cat) => cat.checklistId === id);
+    const originalItems = (data.items || []).filter((item) => item.checklistId === id);
+
+    // Create mapping of old category IDs to new ones
+    const categoryIdMap = {};
+    const newCategories = originalCategories.map((cat) => {
+      const newCategory = new Category({
+        name: cat.name,
+        checklistId: newChecklist.id,
+        order: cat.order,
+      });
+      categoryIdMap[cat.id] = newCategory.id;
+      return newCategory;
+    });
+
+    // Duplicate items and map them to new category IDs
+    const newItems = originalItems.map((item) => {
+      return new Item({
+        name: item.name,
+        quantity: item.quantity,
+        checklistId: newChecklist.id,
+        categoryId: categoryIdMap[item.categoryId] || item.categoryId,
+        order: item.order,
+        isPacked: false, // Reset packed status for new checklist
+      });
+    });
+
+    // Add to storage
+    data.checklists = [...data.checklists, newChecklist.toJSON()];
+    data.categories = [...(data.categories || []), ...newCategories.map((c) => c.toJSON())];
+    data.items = [...(data.items || []), ...newItems.map((i) => i.toJSON())];
+
+    this._saveData(data);
+    return newChecklist.toJSON();
+  }
+
   // ---------------------------------------------------------------------------
   // Category CRUD
   // ---------------------------------------------------------------------------
@@ -345,6 +417,61 @@ export class LocalStorageService extends DataService {
     // Also delete all items in this category across all checklists
     data.items = (data.items || []).filter((item) => item.categoryId !== categoryId);
     this._saveData(data);
+  }
+
+  /**
+   * Duplicate an existing category with all its items
+   * @param {string} categoryId - Category ID to duplicate
+   * @returns {Promise<object>} Duplicated category
+   */
+  async duplicateCategory(categoryId) {
+    const data = await this.getData();
+    const originalCategory = (data.categories || []).find((cat) => cat.id === categoryId);
+
+    if (!originalCategory) {
+      throw new Error(`Category with id ${categoryId} not found`);
+    }
+
+    // Get the copy suffix from i18n
+    const copySuffix = this._getCopySuffix();
+
+    // Create new category with original name + copy suffix and NEW ID
+    // Insert right after the original category
+    const newCategory = new Category({
+      name: `${originalCategory.name}${copySuffix}`,
+      checklistId: originalCategory.checklistId,
+      order: originalCategory.order + 1,
+    });
+
+    // Reorder all categories in the same checklist that come after the original
+    data.categories = (data.categories || []).map((cat) => {
+      if (cat.checklistId === originalCategory.checklistId && cat.order > originalCategory.order) {
+        return { ...cat, order: cat.order + 1 };
+      }
+      return cat;
+    });
+
+    // Get all items for the original category
+    const originalItems = (data.items || []).filter((item) => item.categoryId === categoryId);
+
+    // Duplicate items and assign to new category with NEW IDs
+    const newItems = originalItems.map((item) => {
+      return new Item({
+        name: item.name,
+        quantity: item.quantity,
+        checklistId: item.checklistId,
+        categoryId: newCategory.id,
+        order: item.order,
+        isPacked: false, // Reset packed status for new items
+      });
+    });
+
+    // Add to storage
+    data.categories = [...data.categories, newCategory.toJSON()];
+    data.items = [...(data.items || []), ...newItems.map((i) => i.toJSON())];
+
+    this._saveData(data);
+    return newCategory.toJSON();
   }
 
   // ---------------------------------------------------------------------------
@@ -431,6 +558,69 @@ export class LocalStorageService extends DataService {
       (item) => !(item.checklistId === checklistId && item.id === itemId)
     );
     this._saveData(data);
+  }
+
+  /**
+   * Duplicate an existing item within the same category
+   * @param {string} checklistId - Checklist ID
+   * @param {string} itemId - Item ID to duplicate
+   * @returns {Promise<object>} Duplicated item
+   */
+  async duplicateItem(checklistId, itemId) {
+    const data = await this.getData();
+    const originalItem = (data.items || []).find(
+      (item) => item.checklistId === checklistId && item.id === itemId
+    );
+
+    if (!originalItem) {
+      throw new Error(`Item with id ${itemId} not found in checklist ${checklistId}`);
+    }
+
+    // Get the copy suffix from i18n
+    const copySuffix = this._getCopySuffix();
+
+    // Create new item with original name + copy suffix and NEW ID
+    // Insert right after the original item
+    const newItem = new Item({
+      name: `${originalItem.name}${copySuffix}`,
+      quantity: originalItem.quantity,
+      checklistId: checklistId,
+      categoryId: originalItem.categoryId,
+      order: originalItem.order + 1,
+      isPacked: false, // Reset packed status for new item
+    });
+
+    // Reorder all items in the same category that come after the original
+    data.items = (data.items || []).map((item) => {
+      if (
+        item.checklistId === checklistId &&
+        item.categoryId === originalItem.categoryId &&
+        item.order > originalItem.order
+      ) {
+        return { ...item, order: item.order + 1 };
+      }
+      return item;
+    });
+
+    // Add to storage
+    data.items = [...data.items, newItem.toJSON()];
+
+    this._saveData(data);
+    return newItem.toJSON();
+  }
+
+  /**
+   * Get the copy suffix from i18n based on user's locale
+   * @returns {string} The localized copy suffix
+   * @private
+   */
+  _getCopySuffix() {
+    const locale = localStorage.getItem('user-locale') || 'en';
+    const messages = {
+      en,
+      'zh-TW': zhTW,
+    };
+    return messages[locale]?.common?.copySuffix || ' (Copy)';
   }
 
   /**

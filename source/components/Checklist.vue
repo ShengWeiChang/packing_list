@@ -2,7 +2,7 @@
 ================================================================================
 File: source/components/Checklist.vue
 Description: Checklist component - displays a checklist with categories and items
-             for a specific travel destination.
+             for a specific trip.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
 Created: 2025-09-19
@@ -16,7 +16,7 @@ Created: 2025-09-19
       <!-- Header content -->
       <div class="mb-3 flex items-center justify-between gap-4">
         <div class="flex min-w-0 grow items-center gap-4">
-          <!-- Editable destination name -->
+          <!-- Editable checklist name -->
           <div
             class="flex min-w-0 grow"
             @blur="handleEditBlur"
@@ -24,11 +24,11 @@ Created: 2025-09-19
           >
             <input
               v-if="isEditing"
-              :id="`checklist-${checklist.id}-destination`"
-              ref="destinationInput"
-              v-model="editedDestination"
-              :name="`checklist-${checklist.id}-destination`"
-              :placeholder="$t('checklist.destination')"
+              :id="`checklist-${checklist.id}-name`"
+              ref="nameInput"
+              v-model="editedName"
+              :name="`checklist-${checklist.id}-name`"
+              :placeholder="$t('checklist.name')"
               class="text-primary w-full border-b-2 border-blue-300 bg-transparent p-1 text-3xl font-bold focus:border-blue-500 focus:outline-none"
               @keyup.enter="saveEdit"
               @keyup.escape="cancelEdit"
@@ -38,7 +38,7 @@ Created: 2025-09-19
               class="text-primary cursor-pointer truncate rounded p-1 text-3xl font-bold hover:bg-gray-50"
               @click="startEdit"
             >
-              {{ checklist.destination || $t('checklist.untitled') }}
+              {{ checklist.name || $t('checklist.untitled') }}
             </h2>
           </div>
 
@@ -95,6 +95,7 @@ Created: 2025-09-19
             alignment="left"
             class="ml-2"
             @edit="startEdit"
+            @copy="$emit('copy:checklist', checklist.id)"
             @delete="handleDelete"
           />
         </div>
@@ -150,9 +151,11 @@ Created: 2025-09-19
               :newly-created-item-id="newlyCreatedItemId"
               :newly-created-category-id="newlyCreatedCategoryId"
               @update:item="$emit('update:item', $event)"
+              @copy:item="$emit('copy:item', $event)"
               @delete:item="$emit('delete:item', $event)"
               @create:item="$emit('create:item', $event)"
               @update:category="$emit('update:category', $event)"
+              @copy:category="$emit('copy:category', $event)"
               @delete:category="$emit('delete:category', $event)"
               @move:item="handleItemMove"
             />
@@ -202,7 +205,7 @@ const props = defineProps({
       return (
         value &&
         typeof value.id === 'string' &&
-        typeof value.destination === 'string' &&
+        typeof value.name === 'string' &&
         typeof value.startDate === 'string' &&
         typeof value.endDate === 'string'
       );
@@ -233,11 +236,14 @@ const props = defineProps({
 // Emits
 const emit = defineEmits([
   'update:checklist',
+  'copy:checklist',
   'delete:checklist',
   'update:item',
+  'copy:item',
   'delete:item',
   'create:item',
   'update:category',
+  'copy:category',
   'delete:category',
   'create:category',
   'reorder:categories',
@@ -250,10 +256,10 @@ const emit = defineEmits([
 
 // Editing state
 const isEditing = ref(false);
-const editedDestination = ref('');
+const editedName = ref('');
 const editedStartDate = ref('');
 const editedEndDate = ref('');
-const destinationInput = ref(null);
+const nameInput = ref(null);
 const startDateInput = ref(null);
 const endDateInput = ref(null);
 
@@ -305,7 +311,7 @@ function handleEditBlur(_event) {
     // Check if focus is still within editing elements
     const activeElement = document.activeElement;
     const isStillEditing =
-      activeElement === destinationInput.value ||
+      activeElement === nameInput.value ||
       activeElement === startDateInput.value ||
       activeElement === endDateInput.value;
 
@@ -316,18 +322,18 @@ function handleEditBlur(_event) {
 }
 
 /**
- * Enter edit mode and focus on destination input
+ * Enter edit mode and focus on name input
  */
 async function startEdit() {
   isEditing.value = true;
-  editedDestination.value = props.checklist.destination;
+  editedName.value = props.checklist.name;
   editedStartDate.value = props.checklist.startDate;
   editedEndDate.value = props.checklist.endDate;
 
   await nextTick();
-  if (destinationInput.value) {
-    destinationInput.value.focus();
-    destinationInput.value.select();
+  if (nameInput.value) {
+    nameInput.value.focus();
+    nameInput.value.select();
   }
 }
 
@@ -335,14 +341,14 @@ async function startEdit() {
  * Save changes to checklist if any values were modified
  */
 function saveEdit() {
-  const hasDestinationChanged = editedDestination.value.trim() !== props.checklist.destination;
+  const hasNameChanged = editedName.value.trim() !== props.checklist.name;
   const hasStartDateChanged = editedStartDate.value !== props.checklist.startDate;
   const hasEndDateChanged = editedEndDate.value !== props.checklist.endDate;
 
-  if (hasDestinationChanged || hasStartDateChanged || hasEndDateChanged) {
+  if (hasNameChanged || hasStartDateChanged || hasEndDateChanged) {
     const updatedChecklist = {
       ...props.checklist,
-      destination: editedDestination.value.trim() || t('checklist.untitled'),
+      name: editedName.value.trim() || t('checklist.untitled'),
       startDate: editedStartDate.value,
       endDate: editedEndDate.value,
     };
@@ -356,7 +362,7 @@ function saveEdit() {
  */
 function cancelEdit() {
   isEditing.value = false;
-  editedDestination.value = props.checklist.destination;
+  editedName.value = props.checklist.name;
   editedStartDate.value = props.checklist.startDate;
   editedEndDate.value = props.checklist.endDate;
 }

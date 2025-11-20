@@ -21,7 +21,7 @@ Created: 2025-09-19
     <!-- Mobile Topbar -->
     <Topbar
       v-if="isMobileViewport"
-      :title="selectedChecklist ? selectedChecklist.destination : 'Packing List'"
+      :title="selectedChecklist ? selectedChecklist.name : 'Packing List'"
       @toggle="toggleSidebar"
       @new="handleChecklistCreate"
     />
@@ -43,6 +43,7 @@ Created: 2025-09-19
           @create-checklist="handleChecklistCreate"
           @select-checklist="selectedChecklistId = $event"
           @edit-checklist="handleChecklistEdit"
+          @copy-checklist="handleChecklistCopy"
           @delete-checklist="handleChecklistDelete"
           @move:checklists="handleChecklistMove"
         />
@@ -64,6 +65,7 @@ Created: 2025-09-19
         @create-checklist="handleChecklistCreate"
         @select-checklist="selectedChecklistId = $event"
         @edit-checklist="handleChecklistEdit"
+        @copy-checklist="handleChecklistCopy"
         @delete-checklist="handleChecklistDelete"
         @move:checklists="handleChecklistMove"
       />
@@ -87,12 +89,15 @@ Created: 2025-09-19
           :newly-created-category-id="newlyCreatedCategoryId"
           :newly-created-checklist-id="newlyCreatedChecklistId"
           @update:checklist="handleChecklistUpdate"
+          @copy:checklist="handleChecklistCopy"
           @delete:checklist="handleChecklistDelete"
           @create:item="handleItemCreate"
           @update:item="handleItemUpdate"
+          @copy:item="handleItemCopy"
           @delete:item="handleItemDelete"
           @create:category="handleCategoryCreate"
           @update:category="handleCategoryUpdate"
+          @copy:category="handleCategoryCopy"
           @delete:category="handleCategoryDelete"
           @reorder:categories="handleCategoryReorder"
           @move:item="handleItemMove"
@@ -155,14 +160,17 @@ const {
   createChecklist,
   updateChecklist,
   deleteChecklist,
+  duplicateChecklist,
   createCategory,
   getCategories,
   updateCategory,
   deleteCategory,
+  duplicateCategory,
   createItem,
   getItems,
   updateItem,
   deleteItem,
+  duplicateItem,
 } = usePackingLists();
 
 // ------------------------------------------------------------------------------
@@ -285,6 +293,14 @@ async function handleItemUpdate(item) {
 }
 
 /**
+ * Handle item copy
+ * @param {string} itemId - The ID of the item to copy
+ */
+async function handleItemCopy(itemId) {
+  await handleAsyncAction(duplicateItem, itemId);
+}
+
+/**
  * Delete an item by ID
  * @param {string} itemId - The ID of the item to delete
  */
@@ -359,6 +375,14 @@ async function handleCategoryUpdate(category) {
 }
 
 /**
+ * Handle category copy
+ * @param {string} categoryId - The ID of the category to copy
+ */
+async function handleCategoryCopy(categoryId) {
+  await handleAsyncAction(duplicateCategory, categoryId);
+}
+
+/**
  * Delete a category by ID
  * @param {string} categoryId - The ID of the category to delete
  */
@@ -419,6 +443,18 @@ function handleChecklistEdit(checklistId) {
   selectedChecklistId.value = checklistId;
   // Mark it for editing
   newlyCreatedChecklistId.value = checklistId;
+}
+
+/**
+ * Handle checklist copy from sidebar
+ * @param {string} checklistId - The ID of the checklist to copy
+ */
+async function handleChecklistCopy(checklistId) {
+  const result = await handleAsyncAction(duplicateChecklist, checklistId);
+  if (result) {
+    // Select the new checklist
+    selectedChecklistId.value = result.id;
+  }
 }
 
 /**

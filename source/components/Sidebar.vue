@@ -143,7 +143,7 @@ Created: 2025-09-19
                       'translate-x-0 opacity-100 delay-200': isExpanded || isMobile,
                     }"
                   >
-                    {{ checklist.destination || $t('checklist.untitled') }}
+                    {{ checklist.name || $t('checklist.untitled') }}
                   </span>
                 </button>
 
@@ -158,6 +158,7 @@ Created: 2025-09-19
                     alignment="left"
                     :use-group-hover="true"
                     @edit="$emit('edit-checklist', checklist.id)"
+                    @copy="$emit('copy-checklist', checklist.id)"
                     @delete="$emit('delete-checklist', checklist.id)"
                   />
                 </div>
@@ -334,6 +335,7 @@ const emit = defineEmits([
   'create-checklist',
   'select-checklist',
   'edit-checklist',
+  'copy-checklist',
   'delete-checklist',
   'move:checklists',
 ]);

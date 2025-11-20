@@ -199,6 +199,7 @@ Created: 2025-09-19
       alignment="left"
       class="ml-0"
       @edit="startEdit"
+      @copy="$emit('copy:item', item.id)"
       @delete="handleDelete"
       @confirm-edit="saveEdit"
     />
@@ -253,7 +254,7 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits(['update:item', 'delete:item']);
+const emit = defineEmits(['update:item', 'copy:item', 'delete:item']);
 
 // ------------------------------------------------------------------------------
 // States

@@ -14,10 +14,11 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Description: A packing list container for a trip that includes trip info and its associated categories and items.
   - Properties:
     - id: string (unique identifier)
-    - destination: string (destination)
+    - name: string (checklist name)
     - startDate: string (start date, ISO format)
     - endDate: string (end date, ISO format)
-  - Example: { id: "c1", destination: "Tokyo", startDate: "2025-12-01", endDate: "2025-12-07" }
+    - order: number (display/sort priority, default: 0)
+  - Example: { id: "c1", name: "Tokyo Trip", startDate: "2025-12-01", endDate: "2025-12-07", order: 0 }
 
 - Category
   - Description: A grouping/label for items within a checklist (e.g., clothing, toiletries).
@@ -80,18 +81,22 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Create checklist: Auto-seed default categories and items from `source/data/defaultItems.js`.
     - Categories: Built from default data by removing duplicate category names; assign `order` based on creation sequence (starting at 0).
     - Items: Created one by one with the correct `categoryId`, `isPacked=false`, and sequential `order` (starting at 0).
-  - Edit checklist: Edit `destination`, `startDate`, `endDate` (native date inputs, ISO format).
+  - Edit checklist: Edit `name`, `startDate`, `endDate` (native date inputs, ISO format).
+  - Copy checklist: Duplicate an existing checklist with all its categories and items.
   - Delete checklist: Cascade delete all categories and items under the checklist.
-  - Switch checklist: Load that checklist’s categories and items, sorted by `order`.
+  - Reorder checklists: Drag to update `order` (starting at 0); persists and remains after reload.
+  - Switch checklist: Load that checklist's categories and items, sorted by `order`.
 - Flow:
-  - Create checklist → add categories/items → edit info → switch checklists.
+  - Create checklist → add categories/items → edit info → copy/delete → reorder → switch checklists.
 - Validation:
   - After create:
     - Categories count equals the number of distinct category names in default data; each `checklistId` equals the new checklist ID; `order` is continuous from 0.
     - Items count equals default total; each has `isPacked=false`, correct `categoryId`, and `order` continuous from 0.
     - localStorage (key: `packingListApp`) contains the new data; persists after reload.
   - Edit: UI updates immediately and persists; dates are `YYYY-MM-DD`.
+  - Copy: Duplicated checklist appears right after the original with " (Copy)" suffix; all categories and items are duplicated with new IDs.
   - Delete: Checklist, categories, and items are all removed from localStorage; UI switches to another list or empty state.
+  - Reorder: Drag checklists in sidebar to reorder; `order` values update continuously from 0; persists after reload.
   - Switch: Categories/items load sorted by `order`; progress bar reflects the current checklist.
 
 #### Category Management
@@ -204,25 +209,29 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 
 #### Drag and Drop
 
-- Purpose: Quickly reorder and reorganize categories/items by dragging, keeping orders consistent with minimal effort.
+- Purpose: Quickly reorder and reorganize checklists/categories/items by dragging, keeping orders consistent with minimal effort.
 - Key features:
+  - Checklist dragging (`Sidebar.vue` with `vuedraggable` group: `checklists`):
+    - Reorder checklists in the sidebar; after drop, set checklists' `order = 0..n`.
+    - Drop restriction: Only allow drops within the checklists container.
+  - Category dragging (`Checklist.vue` with `vuedraggable` group: `categories`):
+    - Reorder categories within a checklist; after drop, set categories’ `order = 0..n`.
+    - Drop restriction: Only allow drops within the categories container.
   - Item dragging (`Category.vue` with `vuedraggable` group: `items`):
     - Same-category reorder: On drop, rewrite all items’ `order = 0..n` in that category; `isPacked` unchanged.
     - Cross-category move: Update the moved item’s `categoryId` and `order = evt.newIndex`; shift subsequent items in the target category (`order + 1` after the insertion point) and renumber the source category (`order = 0..n`).
     - Drop restriction: Only allow drops within item containers (`group.put` check).
-  - Category dragging (`Checklist.vue` with `vuedraggable` group: `categories`):
-    - Reorder categories within a checklist; after drop, set categories’ `order = 0..n`.
-    - Drop restriction: Only allow drops within the categories container.
   - Visuals & motion:
     - `ghost/chosen/drag` classes for translucent, grab, and scale effects, ~200ms animations; keep masonry layout stable while dragging.
   - Persistence:
-    - Drag events are handled by parent logic to call `updateItem`/`updateCategory` and then `getItems`/`getCategories` to ensure consistency; orders persist across reloads.
+    - Drag events are handled by parent logic to call `updateChecklist`/`updateCategory`/`updateItem` and then reload data to ensure consistency; orders persist across reloads.
 - Flow:
-  - Press and hold on an item or category → drag to the target position/category → drop → reorder/save.
+  - Press and hold on a checklist, item, or category → drag to the target position/category → drop → reorder/save.
 - Validation:
+  - Checklists: All `checklists.order` are continuous from 0; persists after reload.
+  - Categories: All `categories.order` are continuous from 0; persists after reload.
   - Same-category: `items.order` is continuous from 0; persists after reload.
   - Cross-category: Target item’s `categoryId`/`order` correct; other items in both categories have continuous `order`; both categories’ and overall progress update immediately.
-  - Categories: All `categories.order` are continuous from 0; persists after reload.
   - UX: Drag visuals present; animations are smooth without noticeable jitter/flicker.
 
 ### Technical Implementation
@@ -350,14 +359,14 @@ Notes:
 
 | Component            | Description                         | Interactions                                                                                                 |
 | -------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Sidebar              | Checklist navigation and management | Responsive collapse/expand; checklist selection                                                              |
+| Sidebar              | Checklist navigation and management | Responsive collapse/expand; checklist selection; drag and drop for checklist reordering; edit/copy/delete    |
 | Topbar               | Mobile navigation bar               | Hamburger menu; quick add checklist                                                                          |
 | Checklist            | Main content area                   | Shows categories and items for the selected checklist; drag and drop for category reordering; masonry layout |
 | PendingItemsCategory | Virtual category for pending items  | Orange theme; multi-column grid; displays items marked as pending (to-buy/to-do)                             |
 | Category             | Category card                       | Lists items; shows progress; edit actions; drag and drop for item reordering and movement                    |
 | Item                 | Item row/card                       | Toggle packed/pending; inline edit; delete; draggable within/between categories                              |
 | ProgressBar          | Progress visualization              | Displays completion percentage                                                                               |
-| OverflowMenu         | Overflow actions                    | Edit/delete and other actions                                                                                |
+| OverflowMenu         | Overflow actions                    | Edit/copy/delete and other actions                                                                           |
 
 ## 7. Data Models
 
@@ -366,9 +375,10 @@ Notes:
 ```javascript
 {
   id: string,           // Unique identifier
-  destination: string,  // Destination
+  name: string,         // Checklist name
   startDate: string,    // Start date (ISO)
-  endDate: string       // End date (ISO)
+  endDate: string,      // End date (ISO)
+  order: number         // Display order (default: 0)
 }
 ```
 

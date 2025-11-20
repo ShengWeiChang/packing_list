@@ -28,39 +28,39 @@ export class Checklist {
    * Checklist class constructor
    * @param {object} root0 - Checklist configuration object
    * @param {string} root0.id - Unique identifier for the checklist
-   * @param {string} root0.destination - Destination location for the trip
+   * @param {string} root0.name - Name of the checklist
    * @param {string} root0.startDate - Trip start date in ISO format (YYYY-MM-DD)
    * @param {string} root0.endDate - Trip end date in ISO format (YYYY-MM-DD)
    * @param {number} root0.order - Display order for the checklist (default: 0)
    */
   constructor({
     id = generateSecureId('checklist-'),
-    destination = '',
+    name = '',
     startDate = new Date().toISOString().slice(0, 10),
     endDate = new Date().toISOString().slice(0, 10),
     order = 0,
   } = {}) {
     this.id = id;
-    this.destination = this.validateDestination(destination);
+    this.name = this.validateName(name);
     this.startDate = startDate;
     this.endDate = endDate;
     this.order = order;
   }
 
   /**
-   * Validate checklist destination
-   * @param {string} destination - The destination to validate
-   * @returns {string} Validated destination
+   * Validate checklist name
+   * @param {string} name - The name to validate
+   * @returns {string} Validated name
    */
-  validateDestination(destination) {
-    if (typeof destination !== 'string') {
-      throw new Error('Destination must be a string');
+  validateName(name) {
+    if (typeof name !== 'string') {
+      throw new Error('Name must be a string');
     }
-    // Allow empty destination for initial creation, but enforce max length
-    if (destination.length > VALIDATION.NAME_MAX_LENGTH) {
-      throw new Error(`Destination must be less than ${VALIDATION.NAME_MAX_LENGTH} characters`);
+    // Allow empty name for initial creation, but enforce max length
+    if (name.length > VALIDATION.NAME_MAX_LENGTH) {
+      throw new Error(`Name must be less than ${VALIDATION.NAME_MAX_LENGTH} characters`);
     }
-    return destination;
+    return name;
   }
 
   /**
@@ -79,7 +79,7 @@ export class Checklist {
   toJSON() {
     return {
       id: this.id,
-      destination: this.destination,
+      name: this.name,
       startDate: this.startDate,
       endDate: this.endDate,
       order: this.order,
