@@ -92,46 +92,90 @@ Created: 2025-09-19
             {{ $t('sidebar.title') }}
           </span>
         </h1>
-        <ul class="space-y-1">
-          <li
-            v-for="checklist in checklists"
-            :key="checklist.id"
-            class="whitespace-nowrap"
-          >
-            <div
-              class="group flex items-center rounded-lg px-1 transition-colors duration-200"
-              :class="
-                selectedChecklistId === checklist.id && (isExpanded || isMobile)
-                  ? 'bg-gray-100'
-                  : 'hover:bg-gray-100'
-              "
+        <draggable
+          v-model="draggableChecklists"
+          item-key="id"
+          tag="ul"
+          :group="{
+            name: 'checklists',
+            pull: false,
+            put: false,
+          }"
+          :animation="200"
+          :ghost-class="'ghost-checklist'"
+          :chosen-class="'chosen-checklist'"
+          :drag-class="'drag-checklist'"
+          :disabled="!isExpanded && !isMobile"
+          @start="onChecklistDragStart"
+          @end="onChecklistDragEnd"
+        >
+          <template #item="{ element: checklist }">
+            <li
+              :key="checklist.id"
+              :data-checklist-id="checklist.id"
+              class="whitespace-nowrap"
             >
-              <button
+              <div
+                class="group relative flex items-center rounded-lg px-1 transition-colors duration-200"
                 :class="[
-                  'w-full px-4 py-2 text-left transition-colors duration-300 ease-in-out',
-                  isExpanded || isMobile
-                    ? [
-                        selectedChecklistId === checklist.id
-                          ? 'text-primary font-medium'
-                          : 'text-secondary',
-                      ]
-                    : '',
+                  selectedChecklistId === checklist.id ? 'bg-gray-100' : 'hover:bg-gray-100',
                 ]"
-                @click="$emit('select-checklist', checklist.id)"
               >
-                <span
-                  class="inline-block transition-all duration-300 ease-in-out"
-                  :class="{
-                    '-translate-x-4 opacity-0': !isExpanded && !isMobile,
-                    'translate-x-0 opacity-100 delay-200': isExpanded || isMobile,
-                  }"
+                <button
+                  :class="[
+                    'min-w-0 grow py-2 text-left transition-colors duration-300 ease-in-out',
+                    isExpanded || isMobile ? 'px-4 pr-8' : 'flex items-center justify-center px-3',
+                    isExpanded || isMobile
+                      ? [
+                          selectedChecklistId === checklist.id
+                            ? 'text-primary font-medium'
+                            : 'text-secondary',
+                          // Apply cursor styles only when dragging is enabled
+                          draggingChecklistId === checklist.id ? 'cursor-grabbing' : 'cursor-grab',
+                        ]
+                      : [
+                          selectedChecklistId === checklist.id
+                            ? 'text-primary font-medium'
+                            : 'text-secondary',
+                        ],
+                  ]"
+                  @click="$emit('select-checklist', checklist.id)"
                 >
-                  {{ checklist.destination || $t('checklist.untitled') }}
-                </span>
-              </button>
-            </div>
-          </li>
-        </ul>
+                  <!-- Expanded: show full name -->
+                  <span
+                    v-if="isExpanded || isMobile"
+                    class="block truncate transition-all duration-300 ease-in-out"
+                  >
+                    {{ checklist.name || $t('checklist.untitled') }}
+                  </span>
+                  <!-- Collapsed: show first character -->
+                  <span
+                    v-else
+                    class="block"
+                  >
+                    {{ (checklist.name || $t('checklist.untitled')).charAt(0).toUpperCase() }}
+                  </span>
+                </button>
+
+                <!-- Overflow Menu for Checklist -->
+                <div
+                  v-if="isExpanded || isMobile"
+                  class="absolute right-1 shrink-0"
+                >
+                  <OverflowMenu
+                    :item-id="checklist.id"
+                    menu-type="checklist"
+                    alignment="left"
+                    :use-group-hover="true"
+                    @edit="$emit('edit-checklist', checklist.id)"
+                    @copy="$emit('copy-checklist', checklist.id)"
+                    @delete="$emit('delete-checklist', checklist.id)"
+                  />
+                </div>
+              </div>
+            </li>
+          </template>
+        </draggable>
       </div>
     </div>
 
@@ -250,6 +294,9 @@ Created: 2025-09-19
 
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import draggable from 'vuedraggable';
+
+import OverflowMenu from './OverflowMenu.vue';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
@@ -269,7 +316,7 @@ const availableLanguages = [
 // ------------------------------------------------------------------------------
 
 // Props
-defineProps({
+const props = defineProps({
   isExpanded: {
     type: Boolean,
     required: true,
@@ -293,7 +340,15 @@ defineProps({
 });
 
 // Emits
-defineEmits(['toggle-sidebar', 'create-checklist', 'select-checklist']);
+const emit = defineEmits([
+  'toggle-sidebar',
+  'create-checklist',
+  'select-checklist',
+  'edit-checklist',
+  'copy-checklist',
+  'delete-checklist',
+  'move:checklists',
+]);
 
 // ------------------------------------------------------------------------------
 // States
@@ -306,6 +361,9 @@ const languageDropdownRef = ref(null);
 const languageButtonRef = ref(null);
 const settingsRoot = ref(null);
 
+// Drag state
+const draggingChecklistId = ref(null);
+
 // ------------------------------------------------------------------------------
 // Computed
 // ------------------------------------------------------------------------------
@@ -316,6 +374,27 @@ const currentLocale = computed({
   set: (val) => {
     locale.value = val;
     localStorage.setItem('user-locale', val);
+  },
+});
+
+// Sorted checklists for display (sorted by order)
+const sortedChecklists = computed(() => {
+  return [...props.checklists].sort((a, b) => (a.order || 0) - (b.order || 0));
+});
+
+// Draggable checklists (two-way binding with vuedraggable)
+const draggableChecklists = computed({
+  get() {
+    return sortedChecklists.value;
+  },
+  set(newChecklists) {
+    // When vuedraggable updates the array, emit the reorder event
+    const checklistsWithNewOrder = newChecklists.map((checklist, index) => ({
+      ...checklist,
+      order: index,
+    }));
+
+    emit('move:checklists', checklistsWithNewOrder);
   },
 });
 
@@ -407,6 +486,29 @@ function closeLanguageMenuOnScroll() {
 }
 
 // ------------------------------------------------------------------------------
+// Drag and drop handlers (vuedraggable events)
+// ------------------------------------------------------------------------------
+
+/**
+ * Set dragging checklist ID when drag starts
+ * @param {object} event - Sortable drag event
+ */
+function onChecklistDragStart(event) {
+  // The data-checklist-id attribute is on the <li> element (event.item itself)
+  if (event.item.dataset.checklistId) {
+    draggingChecklistId.value = event.item.dataset.checklistId;
+  }
+}
+
+/**
+ * Clear dragging state when drag ends
+ * @param {object} _event - Sortable drag event (unused)
+ */
+function onChecklistDragEnd(_event) {
+  draggingChecklistId.value = null;
+}
+
+// ------------------------------------------------------------------------------
 // Lifecycle Hooks
 // ------------------------------------------------------------------------------
 
@@ -422,3 +524,25 @@ onUnmounted(() => {
   window.removeEventListener('scroll', closeLanguageMenuOnScroll, true);
 });
 </script>
+
+<style scoped>
+/* Checklist drag and drop styles */
+.ghost-checklist {
+  opacity: 0.3;
+  background: var(--color-gray-gray-100);
+  border: 2px dashed var(--color-gray-gray-400);
+  border-radius: 0.5rem;
+}
+
+.chosen-checklist {
+  cursor: grabbing !important;
+}
+
+.drag-checklist {
+  opacity: 0.5;
+  transform: scale(1.02);
+  box-shadow:
+    0 10px 15px -3px var(--color-shadow-black-10),
+    0 4px 6px -2px var(--color-shadow-black-5);
+}
+</style>

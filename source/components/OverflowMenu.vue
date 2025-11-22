@@ -92,6 +92,26 @@ Created: 2025-09-19
       </button>
 
       <button
+        class="text-primary flex w-full items-center px-3 py-2 text-sm hover:bg-gray-100"
+        @click="handleCopy"
+      >
+        <svg
+          class="mr-2 size-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+          />
+        </svg>
+        {{ $t('common.copy') }}
+      </button>
+
+      <button
         class="flex w-full items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50"
         @click="handleDelete"
       >
@@ -156,7 +176,7 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits(['edit', 'delete', 'confirm-edit']);
+const emit = defineEmits(['edit', 'copy', 'delete', 'confirm-edit']);
 
 // ------------------------------------------------------------------------------
 // States
@@ -280,6 +300,14 @@ function toggleMenu() {
 function handleEdit() {
   showMenu.value = false;
   emit('edit');
+}
+
+/**
+ * Emit copy event and close the menu
+ */
+function handleCopy() {
+  showMenu.value = false;
+  emit('copy');
 }
 
 /**

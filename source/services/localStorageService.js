@@ -14,10 +14,12 @@ Created: 2025-09-19
 // -----------------------------------------------------------------------------
 
 import { getDefaultItems } from '../data/defaultItems';
+import en from '../locales/en.json';
+import zhTW from '../locales/zh-TW.json';
 import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';
 import { Item } from '../models/Item';
-import { STORAGE_KEYS } from '../utils/constants.js';
+import { STORAGE_KEYS, VALIDATION } from '../utils/constants.js';
 import { generateSecureId } from '../utils/helpers.js';
 import { DataService } from './dataService';
 
@@ -266,6 +268,113 @@ export class LocalStorageService extends DataService {
     this._saveData(data);
   }
 
+  /**
+   * Update multiple checklists in a single transaction
+   * This prevents race conditions when updating multiple checklists in parallel
+   * @param {Array<object>} checklists - Array of checklist objects to update
+   * @returns {Promise<Array<object>>} Array of updated checklists
+   */
+  async updateMultipleChecklists(checklists) {
+    const data = await this.getData();
+    const checklistsArray = data.checklists || [];
+
+    // Update each checklist in the array
+    checklists.forEach((updatedChecklist) => {
+      const index = checklistsArray.findIndex((cl) => cl.id === updatedChecklist.id);
+      if (index !== -1) {
+        // Create a proper Checklist instance to ensure consistent structure
+        const checklist = new Checklist(updatedChecklist);
+        checklistsArray[index] = checklist.toJSON();
+      }
+    });
+
+    data.checklists = checklistsArray;
+    this._saveData(data);
+
+    // Return the updated checklists
+    return checklists.map((cl) => Checklist.fromJSON(cl).toJSON());
+  }
+
+  /**
+   * Duplicate an existing checklist with all its categories and items
+   * @param {string} id - Checklist ID to duplicate
+   * @returns {Promise<object>} Duplicated checklist
+   */
+  async duplicateChecklist(id) {
+    const data = await this.getData();
+    const originalChecklist = (data.checklists || []).find((cl) => cl.id === id);
+
+    if (!originalChecklist) {
+      throw new Error(`Checklist with id ${id} not found`);
+    }
+
+    // Get the copy suffix from i18n
+    const copySuffix = this._getCopySuffix();
+
+    // Truncate name if necessary to fit within max length constraint
+    const maxLength = VALIDATION.NAME_MAX_LENGTH;
+    const truncatedName =
+      originalChecklist.name.length + copySuffix.length > maxLength
+        ? originalChecklist.name.slice(0, maxLength - copySuffix.length)
+        : originalChecklist.name;
+
+    // Create new checklist with original name + copy suffix and NEW ID
+    // Insert right after the original checklist
+    const newChecklist = new Checklist({
+      name: `${truncatedName}${copySuffix}`,
+      startDate: originalChecklist.startDate,
+      endDate: originalChecklist.endDate,
+      order: originalChecklist.order + 1,
+    });
+
+    // Reorder all checklists that come after the original
+    data.checklists = (data.checklists || []).map((cl) => {
+      if (cl.order > originalChecklist.order) {
+        return { ...cl, order: cl.order + 1 };
+      }
+      return cl;
+    });
+
+    // Find the insertion index (right after the original checklist)
+    const insertionIndex = data.checklists.findIndex((cl) => cl.id === id) + 1;
+
+    // Get all categories and items for the original checklist
+    const originalCategories = (data.categories || []).filter((cat) => cat.checklistId === id);
+    const originalItems = (data.items || []).filter((item) => item.checklistId === id);
+
+    // Create mapping of old category IDs to new ones
+    const categoryIdMap = {};
+    const newCategories = originalCategories.map((cat) => {
+      const newCategory = new Category({
+        name: cat.name,
+        checklistId: newChecklist.id,
+        order: cat.order,
+      });
+      categoryIdMap[cat.id] = newCategory.id;
+      return newCategory;
+    });
+
+    // Duplicate items and map them to new category IDs
+    const newItems = originalItems.map((item) => {
+      return new Item({
+        name: item.name,
+        quantity: item.quantity,
+        checklistId: newChecklist.id,
+        categoryId: categoryIdMap[item.categoryId] || item.categoryId,
+        order: item.order,
+        isPacked: false, // Reset packed status for new checklist
+      });
+    });
+
+    // Insert new checklist at the correct position (right after the original)
+    data.checklists.splice(insertionIndex, 0, newChecklist.toJSON());
+    data.categories = [...(data.categories || []), ...newCategories.map((c) => c.toJSON())];
+    data.items = [...(data.items || []), ...newItems.map((i) => i.toJSON())];
+
+    this._saveData(data);
+    return newChecklist.toJSON();
+  }
+
   // ---------------------------------------------------------------------------
   // Category CRUD
   // ---------------------------------------------------------------------------
@@ -345,6 +454,68 @@ export class LocalStorageService extends DataService {
     // Also delete all items in this category across all checklists
     data.items = (data.items || []).filter((item) => item.categoryId !== categoryId);
     this._saveData(data);
+  }
+
+  /**
+   * Duplicate an existing category with all its items
+   * @param {string} categoryId - Category ID to duplicate
+   * @returns {Promise<object>} Duplicated category
+   */
+  async duplicateCategory(categoryId) {
+    const data = await this.getData();
+    const originalCategory = (data.categories || []).find((cat) => cat.id === categoryId);
+
+    if (!originalCategory) {
+      throw new Error(`Category with id ${categoryId} not found`);
+    }
+
+    // Get the copy suffix from i18n
+    const copySuffix = this._getCopySuffix();
+
+    // Truncate name if necessary to fit within max length constraint
+    const maxLength = VALIDATION.NAME_MAX_LENGTH;
+    const truncatedName =
+      originalCategory.name.length + copySuffix.length > maxLength
+        ? originalCategory.name.slice(0, maxLength - copySuffix.length)
+        : originalCategory.name;
+
+    // Create new category with original name + copy suffix and NEW ID
+    // Insert right after the original category
+    const newCategory = new Category({
+      name: `${truncatedName}${copySuffix}`,
+      checklistId: originalCategory.checklistId,
+      order: originalCategory.order + 1,
+    });
+
+    // Reorder all categories in the same checklist that come after the original
+    data.categories = (data.categories || []).map((cat) => {
+      if (cat.checklistId === originalCategory.checklistId && cat.order > originalCategory.order) {
+        return { ...cat, order: cat.order + 1 };
+      }
+      return cat;
+    });
+
+    // Get all items for the original category
+    const originalItems = (data.items || []).filter((item) => item.categoryId === categoryId);
+
+    // Duplicate items and assign to new category with NEW IDs
+    const newItems = originalItems.map((item) => {
+      return new Item({
+        name: item.name,
+        quantity: item.quantity,
+        checklistId: item.checklistId,
+        categoryId: newCategory.id,
+        order: item.order,
+        isPacked: false, // Reset packed status for new items
+      });
+    });
+
+    // Add to storage
+    data.categories = [...data.categories, newCategory.toJSON()];
+    data.items = [...(data.items || []), ...newItems.map((i) => i.toJSON())];
+
+    this._saveData(data);
+    return newCategory.toJSON();
   }
 
   // ---------------------------------------------------------------------------
@@ -431,6 +602,77 @@ export class LocalStorageService extends DataService {
       (item) => !(item.checklistId === checklistId && item.id === itemId)
     );
     this._saveData(data);
+  }
+
+  /**
+   * Duplicate an existing item within the same category
+   * @param {string} checklistId - Checklist ID
+   * @param {string} itemId - Item ID to duplicate
+   * @returns {Promise<object>} Duplicated item
+   */
+  async duplicateItem(checklistId, itemId) {
+    const data = await this.getData();
+    const originalItem = (data.items || []).find(
+      (item) => item.checklistId === checklistId && item.id === itemId
+    );
+
+    if (!originalItem) {
+      throw new Error(`Item with id ${itemId} not found in checklist ${checklistId}`);
+    }
+
+    // Get the copy suffix from i18n
+    const copySuffix = this._getCopySuffix();
+
+    // Truncate name if necessary to fit within max length constraint
+    const maxLength = VALIDATION.NAME_MAX_LENGTH;
+    const truncatedName =
+      originalItem.name.length + copySuffix.length > maxLength
+        ? originalItem.name.slice(0, maxLength - copySuffix.length)
+        : originalItem.name;
+
+    // Create new item with original name + copy suffix and NEW ID
+    // Insert right after the original item
+    const newItem = new Item({
+      name: `${truncatedName}${copySuffix}`,
+      quantity: originalItem.quantity,
+      checklistId: checklistId,
+      categoryId: originalItem.categoryId,
+      order: originalItem.order + 1,
+      isPacked: false, // Reset packed status for new item
+    });
+
+    // Reorder all items in the same category that come after the original
+    data.items = (data.items || []).map((item) => {
+      if (
+        item.checklistId === checklistId &&
+        item.categoryId === originalItem.categoryId &&
+        item.order > originalItem.order
+      ) {
+        return { ...item, order: item.order + 1 };
+      }
+      return item;
+    });
+
+    // Add to storage
+    data.items = [...data.items, newItem.toJSON()];
+
+    this._saveData(data);
+    return newItem.toJSON();
+  }
+
+  /**
+   * Get the copy suffix from i18n based on locale
+   * @param {string} [locale] - Optional locale code (e.g., 'en', 'zh-TW'). If not provided, reads from localStorage
+   * @returns {string} The localized copy suffix
+   * @private
+   */
+  _getCopySuffix(locale) {
+    const userLocale = locale || localStorage.getItem('user-locale') || 'en';
+    const messages = {
+      en,
+      'zh-TW': zhTW,
+    };
+    return messages[userLocale]?.common?.copySuffix || ' (Copy)';
   }
 
   /**

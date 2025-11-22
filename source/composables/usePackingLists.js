@@ -106,6 +106,21 @@ export function usePackingLists() {
       const preCategories = (raw.categories || []).map((cat) => Category.fromJSON(cat));
       const preItems = (raw.items || []).map((it) => Item.fromJSON(it));
 
+      // Ensure all checklists have order values and sort them
+      const checklistsToUpdate = [];
+      preChecklists.forEach((checklist, index) => {
+        if (typeof checklist.order === 'undefined') {
+          checklist.order = index;
+          checklistsToUpdate.push(checklist);
+        }
+      });
+      preChecklists.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+      // Persist missing order values to localStorage for old checklists
+      if (checklistsToUpdate.length > 0) {
+        await Promise.all(checklistsToUpdate.map((cl) => dataService.updateChecklist(cl.toJSON())));
+      }
+
       // Load checklists
       checklists.value = preChecklists;
       // If no selected checklist yet, pick the first
@@ -155,11 +170,11 @@ export function usePackingLists() {
 
   /**
    * Get all checklists from storage
-   * @returns {Promise<Array>} Array of checklist objects
+   * @returns {Promise<Array>} Array of checklist objects sorted by order
    */
   async function getChecklists() {
     const result = await loadData(() => dataService.getChecklists(), 'Error getting checklists');
-    checklists.value = result || [];
+    checklists.value = (result || []).sort((a, b) => (a.order || 0) - (b.order || 0));
     if (checklists.value.length > 0 && !selectedChecklistId.value) {
       selectedChecklistId.value = checklists.value[0].id;
     }
@@ -184,16 +199,51 @@ export function usePackingLists() {
   }
 
   /**
+   * Update multiple checklists in a single transaction
+   * This prevents race conditions when updating multiple checklists in parallel
+   * @param {Array<object>} checklistsData - Array of checklist data to update
+   * @returns {Promise<Array<object>|null>} Array of updated checklists or null on error
+   */
+  async function updateMultipleChecklists(checklistsData) {
+    const result = await loadData(
+      () => dataService.updateMultipleChecklists(checklistsData),
+      'Error updating checklists'
+    );
+    if (result) {
+      await getChecklists();
+      return result;
+    }
+    return null;
+  }
+
+  /**
    * Delete a checklist and update selection if needed
-   * @param {string} id - Checklist ID to delete
+   * @param {string} checklistId - Checklist ID to delete
    * @returns {Promise<void>}
    */
-  async function deleteChecklist(id) {
-    await loadData(() => dataService.deleteChecklist(id), 'Error deleting checklist');
+  async function deleteChecklist(checklistId) {
+    await loadData(() => dataService.deleteChecklist(checklistId), 'Error deleting checklist');
     await getChecklists();
-    if (selectedChecklistId.value === id) {
+    if (selectedChecklistId.value === checklistId) {
       selectedChecklistId.value = checklists.value[0]?.id || null;
     }
+  }
+
+  /**
+   * Duplicate an existing checklist with all its categories and items
+   * @param {string} checklistId - Checklist ID to duplicate
+   * @returns {Promise<object|null>} Duplicated checklist or null on error
+   */
+  async function duplicateChecklist(checklistId) {
+    const result = await loadData(
+      () => dataService.duplicateChecklist(checklistId),
+      'Error duplicating checklist'
+    );
+    if (result) {
+      await getChecklists();
+      return result;
+    }
+    return null;
   }
 
   // -----------------------------------------------------------------------------
@@ -260,6 +310,23 @@ export function usePackingLists() {
   async function deleteCategory(categoryId) {
     await loadData(() => dataService.deleteCategory(categoryId), 'Error deleting category');
     await Promise.all([getCategories(), getItems()]);
+  }
+
+  /**
+   * Duplicate an existing category with all its items
+   * @param {string} categoryId - Category ID to duplicate
+   * @returns {Promise<object|null>} Duplicated category or null on error
+   */
+  async function duplicateCategory(categoryId) {
+    const result = await loadData(
+      () => dataService.duplicateCategory(categoryId),
+      'Error duplicating category'
+    );
+    if (result) {
+      await Promise.all([getCategories(), getItems()]);
+      return result;
+    }
+    return null;
   }
 
   // -----------------------------------------------------------------------------
@@ -344,6 +411,24 @@ export function usePackingLists() {
     await getItems();
   }
 
+  /**
+   * Duplicate an existing item within the same category
+   * @param {string} itemId - Item ID to duplicate
+   * @returns {Promise<object|null>} Duplicated item or null on error
+   */
+  async function duplicateItem(itemId) {
+    if (!selectedChecklistId.value) return null;
+    const result = await loadData(
+      () => dataService.duplicateItem(selectedChecklistId.value, itemId),
+      'Error duplicating item'
+    );
+    if (result) {
+      await getItems();
+      return result;
+    }
+    return null;
+  }
+
   // -----------------------------------------------------------------------------
   // Watchers
   // -----------------------------------------------------------------------------
@@ -388,19 +473,23 @@ export function usePackingLists() {
     createChecklist,
     getChecklists,
     updateChecklist,
+    updateMultipleChecklists,
     deleteChecklist,
+    duplicateChecklist,
 
     // CRUD Operations - Categories
     createCategory,
     getCategories,
     updateCategory,
     deleteCategory,
+    duplicateCategory,
 
     // CRUD Operations - Items
     createItem,
     getItems,
     updateItem,
     deleteItem,
+    duplicateItem,
 
     // Item utilities
     toggleItemPacked,

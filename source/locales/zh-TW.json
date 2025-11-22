@@ -1,10 +1,12 @@
 {
   "common": {
     "edit": "編輯",
+    "copy": "複製",
     "delete": "刪除",
     "cancel": "取消",
     "save": "儲存",
-    "confirm": "確認"
+    "confirm": "確認",
+    "copySuffix": " (複製)"
   },
   "sidebar": {
     "title": "清單列表",
@@ -17,11 +19,11 @@
   },
   "checklist": {
     "untitled": "未命名清單",
-    "destination": "目的地",
+    "name": "清單名稱",
     "deleteConfirm": "確定要刪除這個清單嗎？",
     "cannotDeleteLast": "無法刪除最後一個清單",
-    "defaultName": "我的新清單",
-    "pleaseCreate": "請先建立一個新清單。"
+    "defaultName": "新清單",
+    "pleaseCreate": "請先建立一個新清單"
   },
   "category": {
     "newCategory": "新增分類",
