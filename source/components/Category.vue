@@ -28,7 +28,7 @@ Created: 2025-09-19
           class="w-full border-b border-blue-300 bg-transparent p-1 text-xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none"
           @keydown.enter="handleEnterKey"
           @keyup.escape="cancelEdit"
-          @blur="saveEdit"
+          @blur="handleBlur"
           @compositionstart="handleCompositionStart"
           @compositionend="handleCompositionEnd"
         />
@@ -238,15 +238,24 @@ function handleCompositionEnd() {
  * @param {KeyboardEvent} event - The keyboard event
  */
 function handleEnterKey(event) {
-  // If currently composing (e.g., selecting Chinese characters), prevent default and return
+  event.preventDefault();
+  // If currently composing (e.g., selecting Chinese characters), return early
   if (isComposing.value) {
-    event.preventDefault();
     return;
   }
-  // Prevent default to avoid form submission or other default behaviors
-  event.preventDefault();
   // Otherwise, save the edit
   saveEdit();
+}
+
+/**
+ * Handle blur event - save edit if not in IME composition
+ * Although modern browsers fire compositionend before blur,
+ * this check provides defensive programming against edge cases
+ */
+function handleBlur() {
+  if (!isComposing.value) {
+    saveEdit();
+  }
 }
 
 /**

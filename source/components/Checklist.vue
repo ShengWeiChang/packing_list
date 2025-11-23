@@ -324,19 +324,18 @@ function handleCompositionEnd() {
  * @param {KeyboardEvent} event - The keyboard event
  */
 function handleEnterKey(event) {
-  // If currently composing (e.g., selecting Chinese characters), prevent default and return
+  event.preventDefault();
+  // If currently composing (e.g., selecting Chinese characters), return early
   if (isComposing.value) {
-    event.preventDefault();
     return;
   }
-  // Prevent default to avoid form submission or other default behaviors
-  event.preventDefault();
   // Otherwise, save the edit
   saveEdit();
 }
 
 /**
  * Save edit when focus moves outside the edit area
+ * Includes IME composition check for defensive programming
  * @param {Event} _event - Blur event (unused)
  */
 function handleEditBlur(_event) {
@@ -349,7 +348,8 @@ function handleEditBlur(_event) {
       activeElement === startDateInput.value ||
       activeElement === endDateInput.value;
 
-    if (!isStillEditing && isEditing.value) {
+    // Only save if not editing and not in IME composition
+    if (!isStillEditing && isEditing.value && !isComposing.value) {
       saveEdit();
     }
   }, 10);
