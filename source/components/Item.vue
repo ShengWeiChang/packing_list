@@ -50,8 +50,10 @@ Created: 2025-09-19
           },
         ]"
         style="border-radius: 0"
-        @keyup.enter="saveEdit"
+        @keydown.enter="handleEnterKey"
         @keyup.escape="cancelEdit"
+        @compositionstart="handleCompositionStart"
+        @compositionend="handleCompositionEnd"
       />
 
       <span
@@ -266,6 +268,7 @@ const isHovered = ref(false);
 const isQuantityHovered = ref(false);
 const editedName = ref('');
 const editInput = ref(null);
+const isComposing = ref(false);
 
 // ------------------------------------------------------------------------------
 // Computed
@@ -293,6 +296,36 @@ const isItemPacked = computed({
 // ------------------------------------------------------------------------------
 // Functions
 // ------------------------------------------------------------------------------
+
+/**
+ * Handle composition start (IME input begins)
+ */
+function handleCompositionStart() {
+  isComposing.value = true;
+}
+
+/**
+ * Handle composition end (IME input completes)
+ */
+function handleCompositionEnd() {
+  isComposing.value = false;
+}
+
+/**
+ * Handle Enter key press - only save if not in IME composition
+ * @param {KeyboardEvent} event - The keyboard event
+ */
+function handleEnterKey(event) {
+  // If currently composing (e.g., selecting Chinese characters), prevent default and return
+  if (isComposing.value) {
+    event.preventDefault();
+    return;
+  }
+  // Prevent default to avoid form submission or other default behaviors
+  event.preventDefault();
+  // Otherwise, save the edit
+  saveEdit();
+}
 
 /**
  * Toggle the pending state of the item (to-buy / to-do)

@@ -26,9 +26,11 @@ Created: 2025-09-19
           v-model="editedName"
           :name="`category-${category.id}-name`"
           class="w-full border-b border-blue-300 bg-transparent p-1 text-xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none"
-          @keyup.enter="saveEdit"
+          @keydown.enter="handleEnterKey"
           @keyup.escape="cancelEdit"
           @blur="saveEdit"
+          @compositionstart="handleCompositionStart"
+          @compositionend="handleCompositionEnd"
         />
         <h3
           v-else
@@ -173,6 +175,7 @@ const emit = defineEmits([
 const isEditing = ref(false);
 const editedName = ref('');
 const editInput = ref(null);
+const isComposing = ref(false);
 
 // Drag state
 const draggingItemId = ref(null);
@@ -215,6 +218,36 @@ const isCompleted = computed(() => {
 // ------------------------------------------------------------------------------
 // Editing functions
 // ------------------------------------------------------------------------------
+
+/**
+ * Handle composition start (IME input begins)
+ */
+function handleCompositionStart() {
+  isComposing.value = true;
+}
+
+/**
+ * Handle composition end (IME input completes)
+ */
+function handleCompositionEnd() {
+  isComposing.value = false;
+}
+
+/**
+ * Handle Enter key press - only save if not in IME composition
+ * @param {KeyboardEvent} event - The keyboard event
+ */
+function handleEnterKey(event) {
+  // If currently composing (e.g., selecting Chinese characters), prevent default and return
+  if (isComposing.value) {
+    event.preventDefault();
+    return;
+  }
+  // Prevent default to avoid form submission or other default behaviors
+  event.preventDefault();
+  // Otherwise, save the edit
+  saveEdit();
+}
 
 /**
  * Enter edit mode and focus on the category name input
