@@ -30,8 +30,10 @@ Created: 2025-09-19
               :name="`checklist-${checklist.id}-name`"
               :placeholder="$t('checklist.name')"
               class="text-primary w-full border-b-2 border-blue-300 bg-transparent p-1 text-3xl font-bold focus:border-blue-500 focus:outline-none"
-              @keyup.enter="saveEdit"
+              @keydown.enter="handleEnterKey"
               @keyup.escape="cancelEdit"
+              @compositionstart="handleCompositionStart"
+              @compositionend="handleCompositionEnd"
             />
             <h2
               v-else
@@ -59,7 +61,7 @@ Created: 2025-09-19
                 :name="`checklist-${checklist.id}-start-date`"
                 type="date"
                 class="text-secondary w-28 rounded border border-gray-300 bg-transparent p-1 text-base focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
-                @keyup.enter="saveEdit"
+                @keydown.enter="handleEnterKey"
                 @keyup.escape="cancelEdit"
               />
               <span class="text-secondary hidden md:inline">-</span>
@@ -71,7 +73,7 @@ Created: 2025-09-19
                 type="date"
                 :min="editedStartDate"
                 class="text-secondary w-28 rounded border border-gray-300 bg-transparent p-1 text-base focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
-                @keyup.enter="saveEdit"
+                @keydown.enter="handleEnterKey"
                 @keyup.escape="cancelEdit"
               />
             </div>
@@ -263,6 +265,7 @@ const editedEndDate = ref('');
 const nameInput = ref(null);
 const startDateInput = ref(null);
 const endDateInput = ref(null);
+const isComposing = ref(false);
 
 // Drag state
 const draggingCategoryId = ref(null);
@@ -303,7 +306,36 @@ const draggableCategories = computed({
 // ------------------------------------------------------------------------------
 
 /**
+ * Handle composition start (IME input begins)
+ */
+function handleCompositionStart() {
+  isComposing.value = true;
+}
+
+/**
+ * Handle composition end (IME input completes)
+ */
+function handleCompositionEnd() {
+  isComposing.value = false;
+}
+
+/**
+ * Handle Enter key press - only save if not in IME composition
+ * @param {KeyboardEvent} event - The keyboard event
+ */
+function handleEnterKey(event) {
+  event.preventDefault();
+  // If currently composing (e.g., selecting Chinese characters), return early
+  if (isComposing.value) {
+    return;
+  }
+  // Otherwise, save the edit
+  saveEdit();
+}
+
+/**
  * Save edit when focus moves outside the edit area
+ * Includes IME composition check for defensive programming
  * @param {Event} _event - Blur event (unused)
  */
 function handleEditBlur(_event) {
@@ -316,7 +348,8 @@ function handleEditBlur(_event) {
       activeElement === startDateInput.value ||
       activeElement === endDateInput.value;
 
-    if (!isStillEditing && isEditing.value) {
+    // Only save if not editing and not in IME composition
+    if (!isStillEditing && isEditing.value && !isComposing.value) {
       saveEdit();
     }
   }, 10);

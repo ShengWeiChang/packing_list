@@ -50,8 +50,10 @@ Created: 2025-09-19
           },
         ]"
         style="border-radius: 0"
-        @keyup.enter="saveEdit"
+        @keydown.enter="handleEnterKey"
         @keyup.escape="cancelEdit"
+        @compositionstart="handleCompositionStart"
+        @compositionend="handleCompositionEnd"
       />
 
       <span
@@ -266,6 +268,7 @@ const isHovered = ref(false);
 const isQuantityHovered = ref(false);
 const editedName = ref('');
 const editInput = ref(null);
+const isComposing = ref(false);
 
 // ------------------------------------------------------------------------------
 // Computed
@@ -293,6 +296,34 @@ const isItemPacked = computed({
 // ------------------------------------------------------------------------------
 // Functions
 // ------------------------------------------------------------------------------
+
+/**
+ * Handle composition start (IME input begins)
+ */
+function handleCompositionStart() {
+  isComposing.value = true;
+}
+
+/**
+ * Handle composition end (IME input completes)
+ */
+function handleCompositionEnd() {
+  isComposing.value = false;
+}
+
+/**
+ * Handle Enter key press - only save if not in IME composition
+ * @param {KeyboardEvent} event - The keyboard event
+ */
+function handleEnterKey(event) {
+  event.preventDefault();
+  // If currently composing (e.g., selecting Chinese characters), return early
+  if (isComposing.value) {
+    return;
+  }
+  // Otherwise, save the edit
+  saveEdit();
+}
 
 /**
  * Toggle the pending state of the item (to-buy / to-do)
@@ -334,6 +365,7 @@ function decrementQuantity() {
 
 /**
  * Save edit when focus moves outside the edit area
+ * Includes IME composition check for defensive programming
  * @param {Event} _event - Blur event (unused)
  */
 function handleEditBlur(_event) {
@@ -343,7 +375,8 @@ function handleEditBlur(_event) {
     const activeElement = document.activeElement;
     const isStillEditing = activeElement === editInput.value;
 
-    if (!isStillEditing && isEditing.value) {
+    // Only save if not editing and not in IME composition
+    if (!isStillEditing && isEditing.value && !isComposing.value) {
       saveEdit();
     }
   }, 10);
