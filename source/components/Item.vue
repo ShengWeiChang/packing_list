@@ -19,9 +19,7 @@ Created: 2025-09-19
     @mouseenter="handleMouseEnter"
     @mouseleave="isHovered = false"
   >
-    <div
-      class="flex min-h-[44px] min-w-[44px] items-center justify-center sm:mr-2 md:mr-2 md:min-h-0 md:min-w-0"
-    >
+    <div class="flex size-11 items-center justify-center sm:mr-2 md:mr-2 md:size-auto">
       <input
         :id="`item-${item.id}-packed`"
         v-model="isItemPacked"
