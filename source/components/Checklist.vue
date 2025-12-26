@@ -12,7 +12,7 @@ Created: 2025-09-19
 <template>
   <div>
     <!-- Checklist Header -->
-    <div class="mb-2 px-2 pb-4 pt-2 md:px-2">
+    <div class="mb-2 px-2 pb-4 pt-2">
       <!-- Header content -->
       <div class="mb-3 flex items-start justify-between gap-4 md:items-center">
         <div class="flex min-w-0 grow flex-col gap-2 md:flex-row md:items-center md:gap-4">
@@ -105,7 +105,7 @@ Created: 2025-09-19
 
       <!-- Progress bar -->
       <ProgressBar
-        class="px-1 md:px-1"
+        class="px-1"
         :total="items.length"
         :completed="items.filter((item) => item.isPacked).length"
       />

@@ -11,7 +11,7 @@ Created: 2025-09-19
 
 <template>
   <button
-    class="flex w-full items-center justify-start rounded-md py-0.5 pl-0 pr-1 transition-colors duration-200 md:pl-2"
+    class="flex w-full items-center justify-start rounded-md px-1 py-0.5 transition-colors duration-200 md:pl-2"
     :class="[categoryCompleted ? 'bg-green-50' : 'bg-white hover:bg-gray-100']"
     @click="$emit('click')"
     @mouseenter="isHovered = true"
@@ -19,7 +19,7 @@ Created: 2025-09-19
   >
     <!-- Plus icon aligned with checkbox column -->
     <span
-      class="mr-1 flex size-11 flex-none items-center justify-center sm:mr-2 md:mr-2 md:size-auto"
+      class="mr-1 flex size-11 flex-none items-center justify-center md:mr-2 md:size-auto"
       :class="isHovered ? 'text-primary' : 'text-secondary'"
     >
       <svg

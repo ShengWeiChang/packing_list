@@ -12,14 +12,14 @@ Created: 2025-09-19
 <template>
   <div
     :class="[
-      'group flex cursor-grab items-center rounded-md py-0.5 pl-0 pr-1 transition-all duration-200 md:pl-2',
+      'group flex cursor-grab items-center rounded-md px-1 py-0.5 transition-all duration-200 md:pl-2',
       categoryCompleted ? 'bg-green-50 text-green-800' : 'bg-white hover:bg-gray-100',
       isDragging ? 'scale-105 cursor-grabbing opacity-50 shadow-lg' : '',
     ]"
     @mouseenter="handleMouseEnter"
     @mouseleave="isHovered = false"
   >
-    <div class="flex size-11 items-center justify-center sm:mr-2 md:mr-2 md:size-auto">
+    <div class="mr-1 flex size-11 flex-none items-center justify-center md:mr-2 md:size-auto">
       <input
         :id="`item-${item.id}-packed`"
         v-model="isItemPacked"
@@ -81,7 +81,7 @@ Created: 2025-09-19
         item.isPending
           ? 'bg-orange-500 text-white hover:bg-orange-600'
           : 'bg-gray-200 text-gray-400 hover:bg-gray-300',
-        item.isPending || isHovered || isEditing ? 'visible' : 'hidden md:invisible md:flex',
+        pendingButtonVisibilityClass,
       ]"
       :title="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
       :aria-label="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
@@ -122,7 +122,7 @@ Created: 2025-09-19
         <button
           type="button"
           class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
-          :class="isHovered || isEditing ? 'visible' : 'hidden md:invisible md:flex'"
+          :class="buttonVisibilityClass"
           :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           @click.stop="item.quantity === 1 ? handleDelete() : decrementQuantity()"
           @mousedown.prevent
@@ -173,7 +173,7 @@ Created: 2025-09-19
         <button
           type="button"
           class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
-          :class="isHovered || isEditing ? 'visible' : 'hidden md:invisible md:flex'"
+          :class="buttonVisibilityClass"
           :title="$t('item.increaseQuantity')"
           @click.stop="incrementQuantity"
           @mousedown.prevent
@@ -287,6 +287,24 @@ const handleMouseEnter = () => {
 // ------------------------------------------------------------------------------
 // Computed
 // ------------------------------------------------------------------------------
+
+/**
+ * Button visibility classes for mobile/desktop
+ * Mobile: hidden when not hovered/editing (completely removed from layout)
+ * Desktop: invisible when not hovered/editing (preserves layout space)
+ */
+const buttonVisibilityClass = computed(() => {
+  const shouldShow = isHovered.value || isEditing.value;
+  return shouldShow ? 'visible' : 'hidden md:invisible md:flex';
+});
+
+/**
+ * Pending button visibility (includes isPending state)
+ */
+const pendingButtonVisibilityClass = computed(() => {
+  const shouldShow = props.item.isPending || isHovered.value || isEditing.value;
+  return shouldShow ? 'visible' : 'hidden md:invisible md:flex';
+});
 
 const isItemPacked = computed({
   get: () => {

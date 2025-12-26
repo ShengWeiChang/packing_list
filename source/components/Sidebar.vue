@@ -264,7 +264,7 @@ Created: 2025-09-19
         <button
           v-for="lang in availableLanguages"
           :key="lang.code"
-          class="flex w-full items-center px-4 py-2 text-sm transition-colors duration-150 hover:bg-gray-100"
+          class="flex w-full items-center px-4 py-2 text-base transition-colors duration-150 hover:bg-gray-100 md:text-sm"
           :class="
             currentLocale === lang.code ? 'text-primary bg-gray-50 font-medium' : 'text-secondary'
           "
