@@ -12,10 +12,10 @@ Created: 2025-09-19
 <template>
   <div>
     <!-- Checklist Header -->
-    <div class="mb-2 px-4 pb-4 pt-2">
+    <div class="mb-2 px-2 pb-4 pt-2 md:px-2">
       <!-- Header content -->
-      <div class="mb-3 flex items-center justify-between gap-4">
-        <div class="flex min-w-0 grow items-center gap-4">
+      <div class="mb-3 flex items-start justify-between gap-4 md:items-center">
+        <div class="flex min-w-0 grow flex-col gap-2 md:flex-row md:items-center md:gap-4">
           <!-- Editable checklist name -->
           <div
             class="flex min-w-0 grow"
@@ -37,7 +37,7 @@ Created: 2025-09-19
             />
             <h2
               v-else
-              class="text-primary cursor-pointer truncate rounded p-1 text-3xl font-bold hover:bg-gray-50"
+              class="text-primary cursor-pointer break-words rounded p-1 text-3xl font-bold hover:bg-gray-50"
               @click="startEdit"
             >
               {{ checklist.name || $t('checklist.untitled') }}
@@ -79,7 +79,7 @@ Created: 2025-09-19
             </div>
             <span
               v-else
-              class="text-secondary cursor-pointer whitespace-nowrap rounded px-2 py-1 text-base hover:bg-gray-50"
+              class="text-secondary cursor-pointer whitespace-nowrap rounded py-1 pl-1 pr-2 text-lg hover:bg-gray-50 md:px-2 md:text-base"
               @click="startEdit"
             >
               {{ formatDateRange(checklist.startDate, checklist.endDate) }}
@@ -105,6 +105,7 @@ Created: 2025-09-19
 
       <!-- Progress bar -->
       <ProgressBar
+        class="px-1 md:px-1"
         :total="items.length"
         :completed="items.filter((item) => item.isPacked).length"
       />
@@ -126,6 +127,8 @@ Created: 2025-09-19
       <draggable
         v-model="draggableCategories"
         item-key="id"
+        :delay="200"
+        :delay-on-touch-only="true"
         :group="{
           name: 'categories',
           pull: true,
@@ -368,6 +371,10 @@ async function startEdit() {
   if (nameInput.value) {
     nameInput.value.focus();
     nameInput.value.select();
+    // Scroll the input into view to prevent keyboard from covering it on mobile
+    setTimeout(() => {
+      nameInput.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
   }
 }
 

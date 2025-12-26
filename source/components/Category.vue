@@ -25,7 +25,7 @@ Created: 2025-09-19
           ref="editInput"
           v-model="editedName"
           :name="`category-${category.id}-name`"
-          class="w-full border-b border-blue-300 bg-transparent p-1 text-xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none"
+          class="w-full border-b border-blue-300 bg-transparent p-1 text-2xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none md:text-xl"
           @keydown.enter="handleEnterKey"
           @keyup.escape="cancelEdit"
           @blur="handleBlur"
@@ -34,7 +34,7 @@ Created: 2025-09-19
         />
         <h3
           v-else
-          class="text-primary cursor-pointer rounded p-1 text-xl font-semibold leading-snug hover:bg-gray-50"
+          class="text-primary cursor-pointer rounded p-1 text-2xl font-semibold leading-snug hover:bg-gray-50 md:text-xl"
           style="word-break: break-word; overflow-wrap: break-word"
           @click="startEdit"
         >
@@ -58,7 +58,7 @@ Created: 2025-09-19
     <ProgressBar
       :total="sortedItems.length"
       :completed="sortedItems.filter((item) => item.isPacked).length"
-      class="mb-3"
+      class="mb-3 px-1"
     />
 
     <!-- Items List -->
@@ -66,6 +66,8 @@ Created: 2025-09-19
       <draggable
         v-model="draggableItems"
         item-key="id"
+        :delay="200"
+        :delay-on-touch-only="true"
         :group="{
           name: 'items',
           pull: true,
@@ -269,6 +271,10 @@ async function startEdit() {
   if (editInput.value) {
     editInput.value.focus();
     editInput.value.select();
+    // Scroll the input into view to prevent keyboard from covering it on mobile
+    setTimeout(() => {
+      editInput.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
   }
 }
 
