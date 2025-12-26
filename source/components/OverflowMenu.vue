@@ -217,7 +217,8 @@ const buttonClass = computed(() => {
   }
 
   // Otherwise keep hidden unless forced or open
-  return `${normalClass} opacity-0`;
+  // Mobile: always visible, Desktop: only when forced
+  return `${normalClass} opacity-100 md:opacity-0`;
 });
 
 // Dropdown styling

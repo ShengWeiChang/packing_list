@@ -199,6 +199,7 @@ Created: 2025-09-19
     <OverflowMenu
       :item-id="item.id"
       :force-visible="isHovered"
+      :use-group-hover="false"
       :is-editing="isEditing"
       menu-type="item"
       alignment="left"
