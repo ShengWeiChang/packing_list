@@ -170,12 +170,21 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 
 #### Responsive Design
 
-- Purpose: Offer a smooth, usable experience across devices and viewport widths.
+- Purpose: Provide a natural and smooth navigation and operation experience across different devices and window widths, specifically optimized for mobile touch interactions.
 - Key features:
   - Breakpoints & behavior:
     - Mobile (<600px): Show `Topbar` (`md:hidden`), `Sidebar` as an overlay drawer (teleport to `body` with dimmed backdrop; click backdrop to close); main content blurs and pointer events are disabled.
     - Narrow desktop (<1000px): `Sidebar` also uses overlay drawer mode.
     - Desktop (≥1000px): `Sidebar` is sticky (fixed within layout) and can expand (`w-52`) or collapse (`w-16`); manual collapse state is remembered in `localStorage('sidebar-manually-collapsed')`.
+  - Mobile Optimization:
+    - Interaction Optimization:
+      - Long Press Drag: To prevent accidental touches, dragging on mobile requires a 200ms long press (configured in `vuedraggable`).
+      - Touch Targets: Buttons and interactive elements have a minimum size of 44x44px, complying with accessibility standards.
+      - Keyboard Avoidance: Automatically scrolls to view when editing inputs (`scrollIntoView`) to prevent occlusion by the virtual keyboard.
+      - Hover Handling: Uses `matchMedia('(hover: hover)')` to distinguish between touch and mouse devices, hiding hover styles on mobile.
+    - Visual Optimization:
+      - Interface Simplification: Mobile version hides some edit buttons, switching to "click text to edit" mode; Overflow Menu (`...`) is always visible.
+      - Sidebar Adjustments: Mobile Sidebar width increased to `w-72`, with larger fonts and spacing to improve readability and clickability.
   - Content layout:
     - Categories masonry: CSS columns via `categories-masonry`, with `column-count` adapting to 1 (<600), 2 (≥600), 3 (≥840), 4 (≥1280).
     - No card breaks: Category wrappers use `break-inside: avoid` with smooth transitions to reduce jitter.
@@ -183,8 +192,14 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - When the drawer is open, set `document.body.style.overflow='hidden'` to prevent background scroll; transitions around 200–300ms.
 - Flow:
   - Layout switches automatically based on viewport; mobile toggles `Sidebar` via hamburger; desktop can manually collapse/expand and the state is remembered.
+  - On mobile, long press items to drag and sort; click text to edit.
 - Validation:
   - Switching sizes between <600, 600–999, and ≥1000 verifies `Topbar`, `Sidebar` drawer/fixed modes, and main-content blur behavior.
+  - Mobile Verification:
+    - Dragging triggers only on long press, not short press.
+    - Input editing is not occluded by the keyboard.
+    - Menu buttons are always visible and easy to click.
+    - Sidebar width is sufficient and fonts are clear.
   - Drawer open: main content is blurred and non-interactive; clicking backdrop closes the drawer; body scroll restores after close.
   - Desktop refresh: `Sidebar` collapse state reflects `localStorage` value.
   - Masonry columns adjust at breakpoints; category cards don’t break across columns.

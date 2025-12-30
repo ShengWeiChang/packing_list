@@ -12,10 +12,11 @@ Created: 2025-09-19
 <template>
   <aside
     :class="[
-      'flex h-screen flex-col border-r border-gray-200 bg-white p-2 transition-all duration-300 ease-in-out',
+      'flex flex-col border-r border-gray-200 bg-white p-2 transition-all duration-300 ease-in-out',
+      isMobile ? 'h-full' : 'h-screen',
       // Mobile: overlay drawer when expanded, hidden when collapsed
       isMobile
-        ? [isExpanded ? 'w-52 translate-x-0' : 'w-52 -translate-x-full']
+        ? [isExpanded ? 'w-72 translate-x-0' : 'w-72 -translate-x-full']
         : [
             // Desktop: sticky positioning with width based on expanded state
             'sticky top-0',
@@ -68,7 +69,7 @@ Created: 2025-09-19
         </svg>
       </div>
       <span
-        class="text-secondary ml-4 transition-opacity duration-300 ease-in-out"
+        class="text-secondary ml-4 text-lg transition-opacity duration-300 ease-in-out md:text-base"
         :class="{
           'opacity-0': !isExpanded && !isMobile,
           'opacity-100 delay-150': isExpanded || isMobile,
@@ -79,9 +80,9 @@ Created: 2025-09-19
     </button>
 
     <!-- Checklist Items -->
-    <div class="mt-2">
+    <div class="mt-2 min-h-0 flex-1 overflow-y-auto">
       <div class="flex flex-col">
-        <h1 class="mb-2 overflow-hidden whitespace-nowrap px-2 text-xl font-bold">
+        <h1 class="mb-2 overflow-hidden whitespace-nowrap px-2 text-2xl font-bold md:text-xl">
           <span
             class="text-primary inline-block transition-all duration-300 ease-in-out"
             :class="{
@@ -96,6 +97,8 @@ Created: 2025-09-19
           v-model="draggableChecklists"
           item-key="id"
           tag="ul"
+          :delay="200"
+          :delay-on-touch-only="true"
           :group="{
             name: 'checklists',
             pull: false,
@@ -123,7 +126,7 @@ Created: 2025-09-19
               >
                 <button
                   :class="[
-                    'min-w-0 grow py-2 text-left transition-colors duration-300 ease-in-out',
+                    'min-w-0 grow py-3 text-left transition-colors duration-300 ease-in-out md:py-2',
                     isExpanded || isMobile ? 'px-4 pr-8' : 'flex items-center justify-center px-3',
                     isExpanded || isMobile
                       ? [
@@ -144,7 +147,7 @@ Created: 2025-09-19
                   <!-- Expanded: show full name -->
                   <span
                     v-if="isExpanded || isMobile"
-                    class="block truncate transition-all duration-300 ease-in-out"
+                    class="block truncate text-lg transition-all duration-300 ease-in-out md:text-base"
                   >
                     {{ checklist.name || $t('checklist.untitled') }}
                   </span>
@@ -261,7 +264,7 @@ Created: 2025-09-19
         <button
           v-for="lang in availableLanguages"
           :key="lang.code"
-          class="flex w-full items-center px-4 py-2 text-sm transition-colors duration-150 hover:bg-gray-100"
+          class="flex w-full items-center px-4 py-2 text-base transition-colors duration-150 hover:bg-gray-100 md:text-sm"
           :class="
             currentLocale === lang.code ? 'text-primary bg-gray-50 font-medium' : 'text-secondary'
           "

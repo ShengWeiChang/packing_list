@@ -72,7 +72,7 @@ Created: 2025-09-19
       :style="dropdownStyle"
     >
       <button
-        class="text-primary flex w-full items-center px-3 py-2 text-sm hover:bg-gray-100"
+        class="text-primary flex w-full items-center px-3 py-2 text-base hover:bg-gray-100 md:text-sm"
         @click="handleEdit"
       >
         <svg
@@ -92,7 +92,7 @@ Created: 2025-09-19
       </button>
 
       <button
-        class="text-primary flex w-full items-center px-3 py-2 text-sm hover:bg-gray-100"
+        class="text-primary flex w-full items-center px-3 py-2 text-base hover:bg-gray-100 md:text-sm"
         @click="handleCopy"
       >
         <svg
@@ -112,7 +112,7 @@ Created: 2025-09-19
       </button>
 
       <button
-        class="flex w-full items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+        class="flex w-full items-center px-3 py-2 text-base text-red-600 hover:bg-red-50 md:text-sm"
         @click="handleDelete"
       >
         <svg
@@ -196,7 +196,7 @@ const root = ref(null);
 // Button visibility based on props and menu state
 const buttonClass = computed(() => {
   const baseClass =
-    'p-1 flex items-center justify-center rounded-md transition-all duration-200 hover:bg-gray-200';
+    'p-3 md:p-1 flex items-center justify-center rounded-md transition-all duration-200 hover:bg-gray-200';
 
   // Green checkmark style when editing
   if (props.isEditing) {
@@ -213,11 +213,12 @@ const buttonClass = computed(() => {
 
   // If using group-hover behavior (default), show on ancestor hover
   if (props.useGroupHover) {
-    return `${normalClass} opacity-0 group-hover:opacity-100`;
+    return `${normalClass} md:opacity-0 md:group-hover:opacity-100`;
   }
 
   // Otherwise keep hidden unless forced or open
-  return `${normalClass} opacity-0`;
+  // Mobile: always visible, Desktop: only when forced
+  return `${normalClass} opacity-100 md:opacity-0`;
 });
 
 // Dropdown styling

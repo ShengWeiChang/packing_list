@@ -12,24 +12,26 @@ Created: 2025-09-19
 <template>
   <div
     :class="[
-      'group flex cursor-grab items-center rounded-md py-0.5 pl-2 pr-1 transition-all duration-200',
+      'group flex cursor-grab items-center rounded-md px-1 py-0.5 transition-all duration-200 md:pl-2',
       categoryCompleted ? 'bg-green-50 text-green-800' : 'bg-white hover:bg-gray-100',
       isDragging ? 'scale-105 cursor-grabbing opacity-50 shadow-lg' : '',
     ]"
-    @mouseenter="isHovered = true"
+    @mouseenter="handleMouseEnter"
     @mouseleave="isHovered = false"
   >
-    <input
-      :id="`item-${item.id}-packed`"
-      v-model="isItemPacked"
-      :name="`item-${item.id}-packed`"
-      type="checkbox"
-      :class="[
-        'mr-1.5 size-4 flex-none shrink-0 rounded-full sm:mr-2',
-        isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600',
-      ]"
-      :style="isItemPacked ? { accentColor: 'var(--color-primary)' } : {}"
-    />
+    <div class="mr-1 flex size-11 flex-none items-center justify-center md:mr-2 md:size-auto">
+      <input
+        :id="`item-${item.id}-packed`"
+        v-model="isItemPacked"
+        :name="`item-${item.id}-packed`"
+        type="checkbox"
+        :class="[
+          'size-5 flex-none shrink-0 rounded-full md:size-4',
+          isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600',
+        ]"
+        :style="isItemPacked ? { accentColor: 'var(--color-primary)' } : {}"
+      />
+    </div>
 
     <!-- Item name - editable when in edit mode -->
     <div
@@ -44,7 +46,7 @@ Created: 2025-09-19
         v-model="editedName"
         :name="`item-${item.id}-name`"
         :class="[
-          'w-full border-b border-blue-300 bg-transparent p-1 text-base leading-none focus:border-blue-500 focus:outline-none',
+          'w-full border-b border-blue-300 bg-transparent p-1 text-lg leading-none focus:border-blue-500 focus:outline-none md:text-base',
           {
             'text-secondary line-through': item.isPacked,
           },
@@ -59,7 +61,7 @@ Created: 2025-09-19
       <span
         v-else
         :class="[
-          'block cursor-pointer rounded p-1 text-base leading-snug hover:bg-gray-50',
+          'block cursor-pointer rounded p-1 text-lg leading-snug hover:bg-gray-50 md:text-base',
           {
             'text-secondary line-through': item.isPacked,
           },
@@ -75,11 +77,11 @@ Created: 2025-09-19
     <button
       type="button"
       :class="[
-        'ml-1.5 flex size-6 flex-none items-center justify-center rounded-full transition-colors duration-200 sm:ml-2',
+        'ml-1.5 flex size-10 flex-none items-center justify-center rounded-full transition-colors duration-200 sm:ml-2 md:size-6',
         item.isPending
           ? 'bg-orange-500 text-white hover:bg-orange-600'
           : 'bg-gray-200 text-gray-400 hover:bg-gray-300',
-        item.isPending || isHovered || isEditing ? 'visible' : 'invisible',
+        pendingButtonVisibilityClass,
       ]"
       :title="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
       :aria-label="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
@@ -119,8 +121,8 @@ Created: 2025-09-19
         <!-- Decrement button / Delete button (when quantity = 1) -->
         <button
           type="button"
-          class="text-secondary flex size-6 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200"
-          :class="isHovered || isEditing ? 'visible' : 'invisible'"
+          class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
+          :class="buttonVisibilityClass"
           :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           @click.stop="item.quantity === 1 ? handleDelete() : decrementQuantity()"
           @mousedown.prevent
@@ -160,7 +162,8 @@ Created: 2025-09-19
 
         <!-- Quantity display -->
         <div
-          class="text-secondary flex h-6 w-8 items-center justify-center rounded-md bg-gray-100 px-1 text-xs font-semibold transition-colors hover:bg-gray-200"
+          class="text-secondary flex h-10 w-8 items-center justify-center rounded-md bg-gray-100 px-1 text-xs font-semibold transition-colors hover:bg-gray-200 md:h-6"
+          :class="{ 'bg-transparent': !isHovered && !isEditing && item.quantity > 1 }"
         >
           <span class="mr-0.5">x</span>
           <span>{{ item.quantity }}</span>
@@ -169,8 +172,8 @@ Created: 2025-09-19
         <!-- Increment button -->
         <button
           type="button"
-          class="text-secondary flex size-6 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200"
-          :class="isHovered || isEditing ? 'visible' : 'invisible'"
+          class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
+          :class="buttonVisibilityClass"
           :title="$t('item.increaseQuantity')"
           @click.stop="incrementQuantity"
           @mousedown.prevent
@@ -271,8 +274,38 @@ const editInput = ref(null);
 const isComposing = ref(false);
 
 // ------------------------------------------------------------------------------
+// Methods
+// ------------------------------------------------------------------------------
+
+// Handle mouse enter - prevent hover state on touch devices to avoid accidental button clicks
+const handleMouseEnter = () => {
+  // Only enable hover state if the device supports hover (i.e., has a mouse/pointer)
+  if (window.matchMedia('(hover: hover)').matches) {
+    isHovered.value = true;
+  }
+};
+
+// ------------------------------------------------------------------------------
 // Computed
 // ------------------------------------------------------------------------------
+
+/**
+ * Button visibility classes for mobile/desktop
+ * Mobile: hidden when not hovered/editing (completely removed from layout)
+ * Desktop: invisible when not hovered/editing (preserves layout space)
+ */
+const buttonVisibilityClass = computed(() => {
+  const shouldShow = isHovered.value || isEditing.value;
+  return shouldShow ? 'visible' : 'hidden md:invisible md:flex';
+});
+
+/**
+ * Pending button visibility (includes isPending state)
+ */
+const pendingButtonVisibilityClass = computed(() => {
+  const shouldShow = props.item.isPending || isHovered.value || isEditing.value;
+  return shouldShow ? 'visible' : 'hidden md:invisible md:flex';
+});
 
 const isItemPacked = computed({
   get: () => {
@@ -393,6 +426,10 @@ async function startEdit() {
   if (editInput.value) {
     editInput.value.focus();
     editInput.value.select();
+    // Scroll the input into view to prevent keyboard from covering it on mobile
+    setTimeout(() => {
+      editInput.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
   }
 }
 
