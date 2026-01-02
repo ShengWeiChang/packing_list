@@ -13,6 +13,7 @@ Created: 2025-09-19
   <div
     ref="root"
     class="relative"
+    @focusout="handleFocusOut"
   >
     <!-- Three-dot menu button or checkmark button when editing -->
     <button
@@ -216,12 +217,13 @@ const buttonClass = computed(() => {
 
   // If using group-hover behavior (default), show on ancestor hover
   if (props.useGroupHover) {
-    return `${normalClass} md:opacity-0 md:group-hover:opacity-100`;
+    return `${normalClass} md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 md:focus:opacity-100`;
   }
 
   // Otherwise keep hidden unless forced or open
   // Mobile: always visible, Desktop: only when forced
-  return `${normalClass} opacity-100 md:opacity-0`;
+  // Also ensure visible when focused (keyboard navigation)
+  return `${normalClass} opacity-100 md:opacity-0 focus:opacity-100 md:focus:opacity-100`;
 });
 
 // Dropdown styling
@@ -330,6 +332,23 @@ function handleConfirmEdit() {
 }
 
 // ---------- Event Handlers ----------
+
+/**
+ * Close menu when focus leaves the component
+ * @param {FocusEvent} event - The focus event
+ */
+function handleFocusOut(event) {
+  // Check if the new focus target is still within this component
+  // event.relatedTarget is the element receiving focus
+  const newFocus = event.relatedTarget;
+  const isFocusInside =
+    (root.value && root.value.contains(newFocus)) ||
+    (dropdownRef.value && dropdownRef.value.contains(newFocus));
+
+  if (!isFocusInside) {
+    showMenu.value = false;
+  }
+}
 
 /**
  * Close menu when user clicks outside the dropdown

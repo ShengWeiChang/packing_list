@@ -40,7 +40,10 @@ Created: 2025-09-19
               v-else
               class="text-primary cursor-pointer break-words rounded p-1 text-3xl font-bold hover:bg-gray-50"
               role="button"
+              tabindex="0"
               @click="startEdit"
+              @keydown.enter.prevent="startEdit"
+              @keydown.space.prevent="startEdit"
             >
               {{ checklist.name || $t('checklist.untitled') }}
             </h2>
@@ -85,7 +88,10 @@ Created: 2025-09-19
               v-else
               class="text-secondary cursor-pointer whitespace-nowrap rounded py-1 pl-1 pr-2 text-lg hover:bg-gray-50 md:px-2 md:text-base"
               role="button"
+              tabindex="0"
               @click="startEdit"
+              @keydown.enter.prevent="startEdit"
+              @keydown.space.prevent="startEdit"
             >
               {{ formatDateRange(checklist.startDate, checklist.endDate) }}
             </span>

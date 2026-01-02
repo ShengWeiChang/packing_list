@@ -70,7 +70,10 @@ Created: 2025-09-19
         ]"
         style="word-break: break-word; overflow-wrap: break-word"
         role="button"
+        tabindex="0"
         @click="startEdit"
+        @keydown.enter.prevent="startEdit"
+        @keydown.space.prevent="startEdit"
       >
         {{ item.name }}
       </span>
@@ -85,6 +88,7 @@ Created: 2025-09-19
           ? 'bg-orange-500 text-white hover:bg-orange-600'
           : 'bg-gray-200 text-gray-400 hover:bg-gray-300',
         pendingButtonVisibilityClass,
+        'focus:visible focus:opacity-100', // Ensure visible on focus
       ]"
       :title="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
       :aria-label="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
@@ -111,11 +115,12 @@ Created: 2025-09-19
     <!-- Quantity control - Amazon-style stepper -->
     <div
       class="relative ml-1 sm:ml-1.5"
-      :class="
+      :class="[
         isEditing || item.quantity > 1 || (item.quantity === 1 && isHovered)
-          ? 'visible'
-          : 'invisible'
-      "
+          ? 'pointer-events-auto opacity-100'
+          : 'pointer-events-none opacity-0',
+        'focus-within:pointer-events-auto focus-within:opacity-100', // Ensure visible when children have focus
+      ]"
       @mouseenter="isQuantityHovered = true"
       @mouseleave="isQuantityHovered = false"
     >
@@ -125,7 +130,7 @@ Created: 2025-09-19
         <button
           type="button"
           class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
-          :class="buttonVisibilityClass"
+          :class="[buttonVisibilityClass, 'focus:visible focus:opacity-100']"
           :aria-label="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           @click.stop="item.quantity === 1 ? handleDelete() : decrementQuantity()"
@@ -177,7 +182,7 @@ Created: 2025-09-19
         <button
           type="button"
           class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
-          :class="buttonVisibilityClass"
+          :class="[buttonVisibilityClass, 'focus:visible focus:opacity-100']"
           :aria-label="$t('item.increaseQuantity')"
           :title="$t('item.increaseQuantity')"
           @click.stop="incrementQuantity"
@@ -289,7 +294,7 @@ const isComposing = ref(false);
  */
 const buttonVisibilityClass = computed(() => {
   const shouldShow = isHovered.value || isEditing.value;
-  return shouldShow ? 'visible' : 'hidden md:invisible md:flex';
+  return shouldShow ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none';
 });
 
 /**
@@ -297,7 +302,7 @@ const buttonVisibilityClass = computed(() => {
  */
 const pendingButtonVisibilityClass = computed(() => {
   const shouldShow = props.item.isPending || isHovered.value || isEditing.value;
-  return shouldShow ? 'visible' : 'hidden md:invisible md:flex';
+  return shouldShow ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none';
 });
 
 const isItemPacked = computed({

@@ -11,7 +11,7 @@ Created: 2025-09-19
 
 <template>
   <button
-    class="flex w-full items-center justify-start rounded-md px-1 py-0.5 transition-colors duration-200 md:pl-2"
+    class="flex w-full items-center justify-start rounded-md px-1 py-0.5 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 md:pl-2"
     :class="[categoryCompleted ? 'bg-green-50' : 'bg-white hover:bg-gray-100']"
     @click="$emit('click')"
     @mouseenter="isHovered = true"

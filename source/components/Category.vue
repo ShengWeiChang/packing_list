@@ -38,7 +38,10 @@ Created: 2025-09-19
           class="text-primary cursor-pointer rounded p-1 text-2xl font-semibold leading-snug hover:bg-gray-50 md:text-xl"
           style="word-break: break-word; overflow-wrap: break-word"
           role="button"
+          tabindex="0"
           @click="startEdit"
+          @keydown.enter.prevent="startEdit"
+          @keydown.space.prevent="startEdit"
         >
           {{ category.name }}
         </h3>
@@ -49,7 +52,7 @@ Created: 2025-09-19
         <!-- Collapse/Expand Button -->
         <button
           type="button"
-          class="ml-2 flex size-8 items-center justify-center rounded-full text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600 md:invisible md:size-6 md:group-hover:visible"
+          class="ml-2 flex size-8 items-center justify-center rounded-full text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600 focus:visible focus:opacity-100 md:invisible md:size-6 md:group-hover:visible"
           :title="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-label="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-expanded="!isCollapsed"

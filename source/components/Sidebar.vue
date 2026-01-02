@@ -188,6 +188,7 @@ Created: 2025-09-19
     <div
       ref="settingsRoot"
       class="relative mt-auto pt-4"
+      @focusout="handleLanguageFocusOut"
     >
       <button
         ref="languageButtonRef"
@@ -481,6 +482,22 @@ function closeLanguageMenu(event) {
     languageDropdownRef.value && languageDropdownRef.value.contains(target);
 
   if (!clickedInsideRoot && !clickedInsideDropdown) {
+    showLanguageMenu.value = false;
+  }
+}
+
+/**
+ * Handle focus out event to close menu when tabbing away
+ * @param {FocusEvent} event - The focus event
+ */
+function handleLanguageFocusOut(event) {
+  // Check if the new focus target is still within the settings component or dropdown
+  const newFocus = event.relatedTarget;
+  const isFocusInRoot = settingsRoot.value && settingsRoot.value.contains(newFocus);
+  const isFocusInDropdown =
+    languageDropdownRef.value && languageDropdownRef.value.contains(newFocus);
+
+  if (!isFocusInRoot && !isFocusInDropdown) {
     showLanguageMenu.value = false;
   }
 }
