@@ -29,7 +29,9 @@
     "newCategory": "New Category",
     "defaultName": "New Category",
     "shoppingList": "To Buy / To Do",
-    "itemsLeft": "items left"
+    "itemsLeft": "items left",
+    "expand": "Expand",
+    "collapse": "Collapse"
   },
   "item": {
     "newItem": "New Item",

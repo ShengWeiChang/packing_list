@@ -43,15 +43,58 @@ Created: 2025-09-19
       </div>
 
       <!-- Overflow menu -->
-      <OverflowMenu
-        :item-id="category.id"
-        menu-type="category"
-        alignment="left"
-        class="ml-2"
-        @edit="startEdit"
-        @copy="$emit('copy:category', category.id)"
-        @delete="handleDelete"
-      />
+      <div class="flex items-center">
+        <!-- Collapse/Expand Button -->
+        <button
+          type="button"
+          class="ml-2 flex size-8 items-center justify-center rounded-full text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600 md:invisible md:size-6 md:group-hover:visible"
+          :title="isCollapsed ? $t('category.expand') : $t('category.collapse')"
+          @click.stop="toggleCollapse"
+        >
+          <!-- Down arrow (Expand) -->
+          <svg
+            v-if="isCollapsed"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="size-5 md:size-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+            />
+          </svg>
+          <!-- Up arrow (Collapse) -->
+          <svg
+            v-else
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="size-5 md:size-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4.5 15.75l7.5-7.5 7.5 7.5"
+            />
+          </svg>
+        </button>
+
+        <OverflowMenu
+          :item-id="category.id"
+          menu-type="category"
+          alignment="left"
+          class="ml-2"
+          @edit="startEdit"
+          @copy="$emit('copy:category', category.id)"
+          @delete="handleDelete"
+        />
+      </div>
     </div>
 
     <!-- Category Progress Bar -->
@@ -62,50 +105,57 @@ Created: 2025-09-19
     />
 
     <!-- Items List -->
-    <div class="space-y-0.5">
-      <draggable
-        v-model="draggableItems"
-        item-key="id"
-        :delay="200"
-        :delay-on-touch-only="true"
-        :group="{
-          name: 'items',
-          pull: true,
-          put: function (to, from, dragEl, evt) {
-            // Only allow items to be dropped in item containers, not categories
-            return from.options.group.name === 'items';
-          },
-        }"
-        :animation="200"
-        :ghost-class="'ghost-item'"
-        :chosen-class="'chosen-item'"
-        :drag-class="'drag-item'"
-        @start="onItemDragStart"
-        @end="onItemDragEnd"
-        @change="onItemChange"
-      >
-        <template #item="{ element: item }">
-          <div
-            :key="item.id"
-            :data-item-id="item.id"
+    <div
+      class="grid transition-[grid-template-rows] duration-300 ease-in-out"
+      :class="isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
+    >
+      <div class="min-h-0 overflow-hidden">
+        <div class="space-y-0.5 pt-1">
+          <draggable
+            v-model="draggableItems"
+            item-key="id"
+            :delay="200"
+            :delay-on-touch-only="true"
+            :group="{
+              name: 'items',
+              pull: true,
+              put: function (to, from, dragEl, evt) {
+                // Only allow items to be dropped in item containers, not categories
+                return from.options.group.name === 'items';
+              },
+            }"
+            :animation="200"
+            :ghost-class="'ghost-item'"
+            :chosen-class="'chosen-item'"
+            :drag-class="'drag-item'"
+            @start="onItemDragStart"
+            @end="onItemDragEnd"
+            @change="onItemChange"
           >
-            <Item
-              :item="item"
-              :newly-created-item-id="newlyCreatedItemId"
-              :category-completed="isCompleted"
-              :is-dragging="draggingItemId === item.id"
-              @update:item="$emit('update:item', $event)"
-              @copy:item="$emit('copy:item', $event)"
-              @delete:item="$emit('delete:item', $event)"
-            />
-          </div>
-        </template>
-      </draggable>
+            <template #item="{ element: item }">
+              <div
+                :key="item.id"
+                :data-item-id="item.id"
+              >
+                <Item
+                  :item="item"
+                  :newly-created-item-id="newlyCreatedItemId"
+                  :category-completed="isCompleted"
+                  :is-dragging="draggingItemId === item.id"
+                  @update:item="$emit('update:item', $event)"
+                  @copy:item="$emit('copy:item', $event)"
+                  @delete:item="$emit('delete:item', $event)"
+                />
+              </div>
+            </template>
+          </draggable>
 
-      <AddItemButton
-        :category-completed="isCompleted"
-        @click="$emit('create:item', category.id)"
-      />
+          <AddItemButton
+            :category-completed="isCompleted"
+            @click="$emit('create:item', category.id)"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -182,6 +232,9 @@ const isComposing = ref(false);
 // Drag state
 const draggingItemId = ref(null);
 
+// Collapse state
+const isCollapsed = ref(false);
+
 // ------------------------------------------------------------------------------
 // Computed
 // ------------------------------------------------------------------------------
@@ -218,8 +271,15 @@ const isCompleted = computed(() => {
 });
 
 // ------------------------------------------------------------------------------
-// Editing functions
+// Functions
 // ------------------------------------------------------------------------------
+
+/**
+ * Toggle category collapse state
+ */
+function toggleCollapse() {
+  isCollapsed.value = !isCollapsed.value;
+}
 
 /**
  * Handle composition start (IME input begins)
@@ -302,20 +362,12 @@ function cancelEdit() {
   editedName.value = props.category.name;
 }
 
-// ------------------------------------------------------------------------------
-// Category management
-// ------------------------------------------------------------------------------
-
 /**
  * Emit delete event for this category
  */
 function handleDelete() {
   emit('delete:category', props.category.id);
 }
-
-// ------------------------------------------------------------------------------
-// Drag and drop handlers (vuedraggable events)
-// ------------------------------------------------------------------------------
 
 /**
  * Set dragging item ID when drag starts

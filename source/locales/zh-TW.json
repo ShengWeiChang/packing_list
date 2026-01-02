@@ -29,7 +29,9 @@
     "newCategory": "新增分類",
     "defaultName": "新分類",
     "shoppingList": "待買/待辦",
-    "itemsLeft": "項待處理"
+    "itemsLeft": "項待處理",
+    "expand": "展開",
+    "collapse": "收合"
   },
   "item": {
     "newItem": "新增物品",
