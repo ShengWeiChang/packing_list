@@ -19,6 +19,9 @@ Created: 2025-09-19
       ref="buttonRef"
       type="button"
       :class="buttonClass"
+      :aria-label="props.isEditing ? $t('common.save') : $t('common.moreOptions')"
+      aria-haspopup="true"
+      :aria-expanded="showMenu"
       @click.stop="props.isEditing ? handleConfirmEdit() : toggleMenu()"
     >
       <!-- Checkmark icon when editing -->

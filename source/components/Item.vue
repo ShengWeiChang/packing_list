@@ -25,6 +25,7 @@ Created: 2025-09-19
         v-model="isItemPacked"
         :name="`item-${item.id}-packed`"
         type="checkbox"
+        :aria-label="$t('item.togglePacked')"
         :class="[
           'size-5 flex-none shrink-0 rounded-full md:size-4',
           isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600',
@@ -45,6 +46,7 @@ Created: 2025-09-19
         ref="editInput"
         v-model="editedName"
         :name="`item-${item.id}-name`"
+        :aria-label="$t('item.name')"
         :class="[
           'w-full border-b border-blue-300 bg-transparent p-1 text-lg leading-none focus:border-blue-500 focus:outline-none md:text-base',
           {
@@ -67,6 +69,7 @@ Created: 2025-09-19
           },
         ]"
         style="word-break: break-word; overflow-wrap: break-word"
+        role="button"
         @click="startEdit"
       >
         {{ item.name }}
@@ -123,6 +126,7 @@ Created: 2025-09-19
           type="button"
           class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
           :class="buttonVisibilityClass"
+          :aria-label="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           @click.stop="item.quantity === 1 ? handleDelete() : decrementQuantity()"
           @mousedown.prevent
@@ -174,6 +178,7 @@ Created: 2025-09-19
           type="button"
           class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
           :class="buttonVisibilityClass"
+          :aria-label="$t('item.increaseQuantity')"
           :title="$t('item.increaseQuantity')"
           @click.stop="incrementQuantity"
           @mousedown.prevent

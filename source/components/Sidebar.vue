@@ -28,6 +28,7 @@ Created: 2025-09-19
     <!-- Toggle Button -->
     <button
       class="mb-2 flex w-full items-center rounded-lg hover:bg-gray-100"
+      :aria-label="$t('sidebar.toggle')"
       @click="$emit('toggle-sidebar')"
     >
       <div class="shrink-0 p-3">
@@ -142,6 +143,7 @@ Created: 2025-09-19
                             : 'text-secondary',
                         ],
                   ]"
+                  :aria-current="selectedChecklistId === checklist.id ? 'page' : null"
                   @click="$emit('select-checklist', checklist.id)"
                 >
                   <!-- Expanded: show full name -->

@@ -12,6 +12,7 @@ Created: 2025-09-19
 <template>
   <div
     class="flex min-h-32 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-4 shadow-md transition-shadow duration-200 hover:border-gray-400 hover:shadow-lg"
+    role="button"
     @click="$emit('click')"
   >
     <div class="text-center">

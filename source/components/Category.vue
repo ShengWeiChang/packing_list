@@ -25,6 +25,7 @@ Created: 2025-09-19
           ref="editInput"
           v-model="editedName"
           :name="`category-${category.id}-name`"
+          :aria-label="$t('category.name')"
           class="w-full border-b border-blue-300 bg-transparent p-1 text-2xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none md:text-xl"
           @keydown.enter="handleEnterKey"
           @keyup.escape="cancelEdit"
@@ -36,6 +37,7 @@ Created: 2025-09-19
           v-else
           class="text-primary cursor-pointer rounded p-1 text-2xl font-semibold leading-snug hover:bg-gray-50 md:text-xl"
           style="word-break: break-word; overflow-wrap: break-word"
+          role="button"
           @click="startEdit"
         >
           {{ category.name }}
@@ -49,6 +51,9 @@ Created: 2025-09-19
           type="button"
           class="ml-2 flex size-8 items-center justify-center rounded-full text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600 md:invisible md:size-6 md:group-hover:visible"
           :title="isCollapsed ? $t('category.expand') : $t('category.collapse')"
+          :aria-label="isCollapsed ? $t('category.expand') : $t('category.collapse')"
+          :aria-expanded="!isCollapsed"
+          :aria-controls="`category-${category.id}-items`"
           @click.stop="toggleCollapse"
         >
           <!-- Down arrow (Expand) -->
@@ -106,6 +111,7 @@ Created: 2025-09-19
 
     <!-- Items List -->
     <div
+      :id="`category-${category.id}-items`"
       class="grid transition-[grid-template-rows] duration-300 ease-in-out"
       :class="isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
     >
