@@ -305,8 +305,10 @@ const draggableCategories = computed({
 });
 
 // ------------------------------------------------------------------------------
-// Editing functions
+// Functions
 // ------------------------------------------------------------------------------
+
+// ---------- Editing Functions ----------
 
 /**
  * Handle composition start (IME input begins)
@@ -408,9 +410,7 @@ function cancelEdit() {
   editedEndDate.value = props.checklist.endDate;
 }
 
-// ------------------------------------------------------------------------------
-// Checklist management
-// ------------------------------------------------------------------------------
+// ---------- Checklist Management ----------
 
 /**
  * Emit delete event for this checklist
@@ -419,9 +419,7 @@ function handleDelete() {
   emit('delete:checklist', props.checklist.id);
 }
 
-// ------------------------------------------------------------------------------
-// Drag and drop handlers (vuedraggable events)
-// ------------------------------------------------------------------------------
+// --- Drag and Drop Handlers ---
 
 /**
  * Set dragging category ID when drag starts
@@ -460,9 +458,7 @@ function handleItemMove(moveData) {
   emit('move:item', moveData);
 }
 
-// ------------------------------------------------------------------------------
-// Helpers
-// ------------------------------------------------------------------------------
+// --- Helpers ---
 
 /**
  * Format date range as string for display

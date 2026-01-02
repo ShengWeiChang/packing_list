@@ -274,18 +274,6 @@ const editInput = ref(null);
 const isComposing = ref(false);
 
 // ------------------------------------------------------------------------------
-// Methods
-// ------------------------------------------------------------------------------
-
-// Handle mouse enter - prevent hover state on touch devices to avoid accidental button clicks
-const handleMouseEnter = () => {
-  // Only enable hover state if the device supports hover (i.e., has a mouse/pointer)
-  if (window.matchMedia('(hover: hover)').matches) {
-    isHovered.value = true;
-  }
-};
-
-// ------------------------------------------------------------------------------
 // Computed
 // ------------------------------------------------------------------------------
 
@@ -330,6 +318,18 @@ const isItemPacked = computed({
 // Functions
 // ------------------------------------------------------------------------------
 
+// ---------- UI Handlers ----------
+
+// Handle mouse enter - prevent hover state on touch devices to avoid accidental button clicks
+const handleMouseEnter = () => {
+  // Only enable hover state if the device supports hover (i.e., has a mouse/pointer)
+  if (window.matchMedia('(hover: hover)').matches) {
+    isHovered.value = true;
+  }
+};
+
+// ---------- Editing Functions ----------
+
 /**
  * Handle composition start (IME input begins)
  */
@@ -356,44 +356,6 @@ function handleEnterKey(event) {
   }
   // Otherwise, save the edit
   saveEdit();
-}
-
-/**
- * Toggle the pending state of the item (to-buy / to-do)
- */
-function togglePending() {
-  const newPending = !props.item.isPending;
-  const updatedItem = new Item({
-    ...props.item,
-    isPending: newPending,
-    // If user marks as pending, automatically clear packed state to avoid contradiction
-    isPacked: newPending ? false : props.item.isPacked,
-  });
-  emit('update:item', updatedItem);
-}
-
-/**
- * Increment item quantity
- */
-function incrementQuantity() {
-  const updatedItem = new Item({
-    ...props.item,
-    quantity: props.item.quantity + 1,
-  });
-  emit('update:item', updatedItem);
-}
-
-/**
- * Decrement item quantity (minimum 1)
- */
-function decrementQuantity() {
-  if (props.item.quantity <= 1) return;
-
-  const updatedItem = new Item({
-    ...props.item,
-    quantity: props.item.quantity - 1,
-  });
-  emit('update:item', updatedItem);
 }
 
 /**
@@ -455,6 +417,46 @@ function saveEdit() {
 function cancelEdit() {
   isEditing.value = false;
   editedName.value = props.item.name;
+}
+
+// ---------- Item Actions ----------
+
+/**
+ * Toggle the pending state of the item (to-buy / to-do)
+ */
+function togglePending() {
+  const newPending = !props.item.isPending;
+  const updatedItem = new Item({
+    ...props.item,
+    isPending: newPending,
+    // If user marks as pending, automatically clear packed state to avoid contradiction
+    isPacked: newPending ? false : props.item.isPacked,
+  });
+  emit('update:item', updatedItem);
+}
+
+/**
+ * Increment item quantity
+ */
+function incrementQuantity() {
+  const updatedItem = new Item({
+    ...props.item,
+    quantity: props.item.quantity + 1,
+  });
+  emit('update:item', updatedItem);
+}
+
+/**
+ * Decrement item quantity (minimum 1)
+ */
+function decrementQuantity() {
+  if (props.item.quantity <= 1) return;
+
+  const updatedItem = new Item({
+    ...props.item,
+    quantity: props.item.quantity - 1,
+  });
+  emit('update:item', updatedItem);
 }
 
 /**

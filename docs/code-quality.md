@@ -140,7 +140,7 @@ JS files should use appropriate grouping based on file type:
 2. Constants — module-level constants, config
 3. Service initialization — service instantiation (Composables only)
 4. State — `ref`, `reactive` (Composables only)
-5. Computed properties — `computed` (Composables only)
+5. Computed — `computed` (Composables only)
 6. Functions — all functions, methods
 7. Watchers — `watch`, `watchEffect` (Composables only)
 8. Class definition — class definition (Class files)

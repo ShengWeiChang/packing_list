@@ -274,12 +274,16 @@ const isCompleted = computed(() => {
 // Functions
 // ------------------------------------------------------------------------------
 
+// ---------- UI Handlers ----------
+
 /**
  * Toggle category collapse state
  */
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value;
 }
+
+// ---------- Editing Functions ----------
 
 /**
  * Handle composition start (IME input begins)
@@ -362,12 +366,16 @@ function cancelEdit() {
   editedName.value = props.category.name;
 }
 
+// ---------- Category Management ----------
+
 /**
  * Emit delete event for this category
  */
 function handleDelete() {
   emit('delete:category', props.category.id);
 }
+
+// ---------- Drag and Drop Handlers ----------
 
 /**
  * Set dragging item ID when drag starts

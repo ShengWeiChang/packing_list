@@ -404,8 +404,10 @@ const draggableChecklists = computed({
 // Current language label no longer shown on the button; dropdown indicates selection
 
 // ------------------------------------------------------------------------------
-// Language menu handlers
+// Functions
 // ------------------------------------------------------------------------------
+
+// ---------- Language Menu Handlers ----------
 
 /**
  * Toggle language dropdown menu visibility
@@ -488,9 +490,7 @@ function closeLanguageMenuOnScroll() {
   showLanguageMenu.value = false;
 }
 
-// ------------------------------------------------------------------------------
-// Drag and drop handlers (vuedraggable events)
-// ------------------------------------------------------------------------------
+// --- Drag and Drop Handlers ---
 
 /**
  * Set dragging checklist ID when drag starts

@@ -232,8 +232,10 @@ const svgClass = computed(() => {
 });
 
 // ------------------------------------------------------------------------------
-// Menu positioning
+// Functions
 // ------------------------------------------------------------------------------
+
+// ---------- Menu Positioning ----------
 
 /**
  * Calculate and apply dropdown position to avoid viewport overflow
@@ -262,9 +264,7 @@ function positionDropdown() {
   };
 }
 
-// ------------------------------------------------------------------------------
-// Menu actions
-// ------------------------------------------------------------------------------
+// ---------- Menu Actions ----------
 
 /**
  * Toggle the overflow menu visibility and dispatch custom event
@@ -326,9 +326,7 @@ function handleConfirmEdit() {
   emit('confirm-edit');
 }
 
-// ------------------------------------------------------------------------------
-// Event handlers
-// ------------------------------------------------------------------------------
+// ---------- Event Handlers ----------
 
 /**
  * Close menu when user clicks outside the dropdown
