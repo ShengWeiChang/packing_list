@@ -15,7 +15,12 @@ Created: 2025-09-19
     <div
       v-if="(isMobileViewport || (isSmallDesktop && isSidebarOpen)) && isSidebarOpen"
       class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+      role="button"
+      tabindex="0"
+      aria-label="Close sidebar"
       @click="toggleSidebar"
+      @keydown.enter="toggleSidebar"
+      @keydown.space="toggleSidebar"
     ></div>
 
     <!-- Mobile Topbar -->

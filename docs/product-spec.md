@@ -224,6 +224,23 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Detection: With no prior preference, infer from the browser language; non-`zh` series defaults to English; `zh/zh-Hant/zh-TW/zh-HK/zh-MO` are mapped to `zh-TW`.
   - Fallback: Temporarily remove a translation key to verify the app falls back to English (ensuring `fallbackLocale` takes effect).
 
+#### Accessibility
+
+- Purpose: Ensure the application is accessible to all users, including keyboard and screen reader users, complying with WCAG 2.1 Level AA standards.
+- Key features:
+  - Keyboard Navigation: All interactive elements (buttons, links, inputs) are focusable and operable via the `Tab` key; non-native buttons implement `Enter`/`Space` triggers.
+  - Focus Management:
+    - Hidden elements (e.g., hover buttons) automatically show when focused (`opacity-0` -> `opacity-100`).
+    - Mobile hidden elements use `absolute` to move out of the document flow and switch back to `static` when focused to avoid taking up space.
+    - Ensure no focus traps and clear visual focus indicators.
+  - Semantics & ARIA:
+    - Prioritize native semantic tags (`<button>`, `<nav>`, `<main>`).
+    - Add `aria-label` to icon buttons; use `aria-expanded` to indicate collapse states.
+- Validation:
+  - Static Analysis: Passes `eslint-plugin-vuejs-accessibility` checks with zero errors.
+  - Keyboard Testing: Core flows (create checklist, add item, edit, delete) can be completed using only a keyboard.
+  - Screen Reader: Verify all buttons and states have correct descriptive labels.
+
 #### Drag and Drop
 
 - Purpose: Quickly reorder and reorganize checklists/categories/items by dragging, keeping orders consistent with minimal effort.

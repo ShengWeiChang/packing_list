@@ -10,6 +10,7 @@ Created: 2025-09-19
 -->
 
 <template>
+  <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
   <div
     :class="[
       'group flex cursor-grab items-center rounded-md px-1 py-0.5 transition-all duration-200 md:pl-2',
@@ -18,6 +19,8 @@ Created: 2025-09-19
     ]"
     @mouseenter="handleMouseEnter"
     @mouseleave="isHovered = false"
+    @focusin="isHovered = true"
+    @focusout="isHovered = false"
   >
     <div class="mr-1 flex size-11 flex-none items-center justify-center md:mr-2 md:size-auto">
       <input
@@ -88,7 +91,7 @@ Created: 2025-09-19
           ? 'bg-orange-500 text-white hover:bg-orange-600'
           : 'bg-gray-200 text-gray-400 hover:bg-gray-300',
         pendingButtonVisibilityClass,
-        'focus:visible focus:opacity-100', // Ensure visible on focus
+        'focus:pointer-events-auto focus:static focus:opacity-100', // Ensure visible on focus
       ]"
       :title="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
       :aria-label="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
@@ -113,16 +116,19 @@ Created: 2025-09-19
     </button>
 
     <!-- Quantity control - Amazon-style stepper -->
+    <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
     <div
       class="relative ml-1 sm:ml-1.5"
       :class="[
         isEditing || item.quantity > 1 || (item.quantity === 1 && isHovered)
           ? 'pointer-events-auto opacity-100'
-          : 'pointer-events-none opacity-0',
-        'focus-within:pointer-events-auto focus-within:opacity-100', // Ensure visible when children have focus
+          : 'pointer-events-none absolute opacity-0 md:static',
+        'focus-within:pointer-events-auto focus-within:static focus-within:opacity-100', // Ensure visible when children have focus
       ]"
       @mouseenter="isQuantityHovered = true"
       @mouseleave="isQuantityHovered = false"
+      @focusin="isQuantityHovered = true"
+      @focusout="isQuantityHovered = false"
     >
       <!-- Quantity stepper: [-] [x5] [+] -->
       <div class="flex items-center gap-0">
@@ -302,7 +308,9 @@ const buttonVisibilityClass = computed(() => {
  */
 const pendingButtonVisibilityClass = computed(() => {
   const shouldShow = props.item.isPending || isHovered.value || isEditing.value;
-  return shouldShow ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none';
+  return shouldShow
+    ? 'opacity-100 pointer-events-auto'
+    : 'opacity-0 pointer-events-none absolute md:static';
 });
 
 const isItemPacked = computed({

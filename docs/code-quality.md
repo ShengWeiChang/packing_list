@@ -12,7 +12,7 @@ Applies to this project’s stack: Vue 3 + Vite + Tailwind, ES Modules.
 
 ## 2. Toolchain
 
-- ESLint (Flat Config) with eslint-plugin-vue, eslint-plugin-tailwindcss
+- ESLint (Flat Config) with eslint-plugin-vue, eslint-plugin-tailwindcss, eslint-plugin-vuejs-accessibility
 - Prettier with prettier-plugin-tailwindcss
 - simple-import-sort (imports/exports ordering)
 - husky + lint-staged (pre-commit automation)
@@ -260,6 +260,28 @@ Validation
 - JSDoc: Enforced by ESLint (`eslint-plugin-jsdoc`)
 - Section dividers: Manually maintained at 80 characters
 - File headers and inline comments: Code review
+
+### 3.9 Accessibility (A11y)
+
+Follow WCAG 2.1 Level AA standards to ensure the application is accessible to all users, including keyboard and screen reader users.
+
+- **Keyboard Navigation**:
+  - All interactive elements (buttons, links, inputs) must be focusable via the `Tab` key.
+  - Non-native buttons must include `role="button"`, `tabindex="0"`, and implement `@keydown.enter` and `@keydown.space`.
+- **Focus Management**:
+  - Hidden interactive elements (e.g., buttons that appear on hover) must be visible when focused.
+  - Use `opacity-0` + `pointer-events-none` instead of `display: none`, paired with `focus:opacity-100`.
+- **Semantic HTML & ARIA**:
+  - Prioritize native semantic tags.
+  - Add `aria-label` to icon buttons without text labels.
+  - Use `aria-expanded` and `aria-controls` to indicate collapse/expand states.
+- **Focus Indicators**:
+  - All focusable elements must have clear visual feedback when focused.
+
+Validation
+
+- Static analysis: `npm run lint` (via `eslint-plugin-vuejs-accessibility`)
+- Manual testing: Navigate all features using only the `Tab` key to ensure no focus traps and full operability.
 
 ## 4. Git Hooks (Husky)
 
