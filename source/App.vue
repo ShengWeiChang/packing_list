@@ -15,7 +15,12 @@ Created: 2025-09-19
     <div
       v-if="(isMobileViewport || (isSmallDesktop && isSidebarOpen)) && isSidebarOpen"
       class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+      role="button"
+      tabindex="0"
+      aria-label="Close sidebar"
       @click="toggleSidebar"
+      @keydown.enter="toggleSidebar"
+      @keydown.space="toggleSidebar"
     ></div>
 
     <!-- Mobile Topbar -->
@@ -199,8 +204,10 @@ const isOverlayVisible = computed(
 );
 
 // ------------------------------------------------------------------------------
-// Helpers
+// Functions
 // ------------------------------------------------------------------------------
+
+// ---------- General Helpers ----------
 
 // Generic error handler for async operations
 const handleAsyncAction = async (action, ...args) => {
@@ -225,10 +232,6 @@ function checkScreenSize() {
   }
 }
 
-// ------------------------------------------------------------------------------
-// UI Handlers
-// ------------------------------------------------------------------------------
-
 /**
  * Handle window resize events and update viewport state
  */
@@ -252,9 +255,7 @@ function toggleSidebar() {
   }
 }
 
-// ------------------------------------------------------------------------------
-// Item Handlers
-// ------------------------------------------------------------------------------
+// ---------- Item Handlers ----------
 
 /**
  * Create a new item in the specified category with default values
@@ -339,9 +340,7 @@ async function handleItemMove(moveData) {
   await getItems();
 }
 
-// ------------------------------------------------------------------------------
-// Category Handlers
-// ------------------------------------------------------------------------------
+// ---------- Category Handlers ----------
 
 /**
  * Create a new category with default values
@@ -405,9 +404,7 @@ async function handleCategoryReorder(reorderedCategories) {
   await getCategories();
 }
 
-// ------------------------------------------------------------------------------
-// Checklist Handlers
-// ------------------------------------------------------------------------------
+// ---------- Checklist Handlers ----------
 
 /**
  * Create a new checklist with default values

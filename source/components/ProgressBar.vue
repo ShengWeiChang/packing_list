@@ -10,7 +10,14 @@ Created: 2025-09-19
 -->
 
 <template>
-  <div class="w-full">
+  <div
+    class="w-full"
+    role="progressbar"
+    :aria-valuenow="percentage"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    :aria-label="$t('progress.label', { completed, total })"
+  >
     <!-- Progress bar track and fill -->
     <div
       class="mb-2 h-2 w-full overflow-hidden rounded-full"

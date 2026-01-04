@@ -29,6 +29,7 @@ Created: 2025-09-19
               v-model="editedName"
               :name="`checklist-${checklist.id}-name`"
               :placeholder="$t('checklist.name')"
+              :aria-label="$t('checklist.name')"
               class="text-primary w-full border-b-2 border-blue-300 bg-transparent p-1 text-3xl font-bold focus:border-blue-500 focus:outline-none"
               @keydown.enter="handleEnterKey"
               @keyup.escape="cancelEdit"
@@ -38,7 +39,11 @@ Created: 2025-09-19
             <h2
               v-else
               class="text-primary cursor-pointer break-words rounded p-1 text-3xl font-bold hover:bg-gray-50"
+              role="button"
+              tabindex="0"
               @click="startEdit"
+              @keydown.enter.prevent="startEdit"
+              @keydown.space.prevent="startEdit"
             >
               {{ checklist.name || $t('checklist.untitled') }}
             </h2>
@@ -60,6 +65,7 @@ Created: 2025-09-19
                 v-model="editedStartDate"
                 :name="`checklist-${checklist.id}-start-date`"
                 type="date"
+                :aria-label="$t('checklist.startDate')"
                 class="text-secondary w-28 rounded border border-gray-300 bg-transparent p-1 text-base focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
                 @keydown.enter="handleEnterKey"
                 @keyup.escape="cancelEdit"
@@ -72,6 +78,7 @@ Created: 2025-09-19
                 :name="`checklist-${checklist.id}-end-date`"
                 type="date"
                 :min="editedStartDate"
+                :aria-label="$t('checklist.endDate')"
                 class="text-secondary w-28 rounded border border-gray-300 bg-transparent p-1 text-base focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
                 @keydown.enter="handleEnterKey"
                 @keyup.escape="cancelEdit"
@@ -80,7 +87,11 @@ Created: 2025-09-19
             <span
               v-else
               class="text-secondary cursor-pointer whitespace-nowrap rounded py-1 pl-1 pr-2 text-lg hover:bg-gray-50 md:px-2 md:text-base"
+              role="button"
+              tabindex="0"
               @click="startEdit"
+              @keydown.enter.prevent="startEdit"
+              @keydown.space.prevent="startEdit"
             >
               {{ formatDateRange(checklist.startDate, checklist.endDate) }}
             </span>
@@ -305,8 +316,10 @@ const draggableCategories = computed({
 });
 
 // ------------------------------------------------------------------------------
-// Editing functions
+// Functions
 // ------------------------------------------------------------------------------
+
+// ---------- Editing Functions ----------
 
 /**
  * Handle composition start (IME input begins)
@@ -408,9 +421,7 @@ function cancelEdit() {
   editedEndDate.value = props.checklist.endDate;
 }
 
-// ------------------------------------------------------------------------------
-// Checklist management
-// ------------------------------------------------------------------------------
+// ---------- Checklist Management ----------
 
 /**
  * Emit delete event for this checklist
@@ -419,9 +430,7 @@ function handleDelete() {
   emit('delete:checklist', props.checklist.id);
 }
 
-// ------------------------------------------------------------------------------
-// Drag and drop handlers (vuedraggable events)
-// ------------------------------------------------------------------------------
+// --- Drag and Drop Handlers ---
 
 /**
  * Set dragging category ID when drag starts
@@ -460,9 +469,7 @@ function handleItemMove(moveData) {
   emit('move:item', moveData);
 }
 
-// ------------------------------------------------------------------------------
-// Helpers
-// ------------------------------------------------------------------------------
+// --- Helpers ---
 
 /**
  * Format date range as string for display

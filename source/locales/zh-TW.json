@@ -6,7 +6,8 @@
     "cancel": "取消",
     "save": "儲存",
     "confirm": "確認",
-    "copySuffix": " (複製)"
+    "copySuffix": " (複製)",
+    "moreOptions": "更多選項"
   },
   "sidebar": {
     "title": "清單列表",
@@ -23,17 +24,24 @@
     "deleteConfirm": "確定要刪除這個清單嗎？",
     "cannotDeleteLast": "無法刪除最後一個清單",
     "defaultName": "新清單",
-    "pleaseCreate": "請先建立一個新清單"
+    "pleaseCreate": "請先建立一個新清單",
+    "startDate": "開始日期",
+    "endDate": "結束日期"
   },
   "category": {
+    "name": "分類名稱",
     "newCategory": "新增分類",
     "defaultName": "新分類",
     "shoppingList": "待買/待辦",
-    "itemsLeft": "項待處理"
+    "itemsLeft": "項待處理",
+    "expand": "展開",
+    "collapse": "收合"
   },
   "item": {
+    "name": "物品名稱",
     "newItem": "新增物品",
     "defaultName": "新物品",
+    "togglePacked": "切換打包狀態",
     "markAsPending": "標記為待買/待辦",
     "markedAsPending": "已標記為待買/待辦",
     "markAsBought": "標記為已買/已辦",

@@ -10,6 +10,7 @@ Created: 2025-09-19
 -->
 
 <template>
+  <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
   <div
     :class="[
       'group flex cursor-grab items-center rounded-md px-1 py-0.5 transition-all duration-200 md:pl-2',
@@ -18,6 +19,8 @@ Created: 2025-09-19
     ]"
     @mouseenter="handleMouseEnter"
     @mouseleave="isHovered = false"
+    @focusin="isHovered = true"
+    @focusout="isHovered = false"
   >
     <div class="mr-1 flex size-11 flex-none items-center justify-center md:mr-2 md:size-auto">
       <input
@@ -25,6 +28,7 @@ Created: 2025-09-19
         v-model="isItemPacked"
         :name="`item-${item.id}-packed`"
         type="checkbox"
+        :aria-label="$t('item.togglePacked')"
         :class="[
           'size-5 flex-none shrink-0 rounded-full md:size-4',
           isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600',
@@ -45,6 +49,7 @@ Created: 2025-09-19
         ref="editInput"
         v-model="editedName"
         :name="`item-${item.id}-name`"
+        :aria-label="$t('item.name')"
         :class="[
           'w-full border-b border-blue-300 bg-transparent p-1 text-lg leading-none focus:border-blue-500 focus:outline-none md:text-base',
           {
@@ -67,7 +72,11 @@ Created: 2025-09-19
           },
         ]"
         style="word-break: break-word; overflow-wrap: break-word"
+        role="button"
+        tabindex="0"
         @click="startEdit"
+        @keydown.enter.prevent="startEdit"
+        @keydown.space.prevent="startEdit"
       >
         {{ item.name }}
       </span>
@@ -82,6 +91,7 @@ Created: 2025-09-19
           ? 'bg-orange-500 text-white hover:bg-orange-600'
           : 'bg-gray-200 text-gray-400 hover:bg-gray-300',
         pendingButtonVisibilityClass,
+        'focus:pointer-events-auto focus:static focus:opacity-100', // Ensure visible on focus
       ]"
       :title="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
       :aria-label="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
@@ -106,15 +116,19 @@ Created: 2025-09-19
     </button>
 
     <!-- Quantity control - Amazon-style stepper -->
+    <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
     <div
       class="relative ml-1 sm:ml-1.5"
-      :class="
+      :class="[
         isEditing || item.quantity > 1 || (item.quantity === 1 && isHovered)
-          ? 'visible'
-          : 'invisible'
-      "
+          ? 'opacity-100'
+          : 'absolute opacity-0 md:static',
+        'focus-within:static focus-within:opacity-100', // Ensure visible when children have focus
+      ]"
       @mouseenter="isQuantityHovered = true"
       @mouseleave="isQuantityHovered = false"
+      @focusin="isQuantityHovered = true"
+      @focusout="isQuantityHovered = false"
     >
       <!-- Quantity stepper: [-] [x5] [+] -->
       <div class="flex items-center gap-0">
@@ -122,7 +136,8 @@ Created: 2025-09-19
         <button
           type="button"
           class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
-          :class="buttonVisibilityClass"
+          :class="[buttonVisibilityClass, 'focus:opacity-100']"
+          :aria-label="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           @click.stop="item.quantity === 1 ? handleDelete() : decrementQuantity()"
           @mousedown.prevent
@@ -173,7 +188,8 @@ Created: 2025-09-19
         <button
           type="button"
           class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
-          :class="buttonVisibilityClass"
+          :class="[buttonVisibilityClass, 'focus:opacity-100']"
+          :aria-label="$t('item.increaseQuantity')"
           :title="$t('item.increaseQuantity')"
           @click.stop="incrementQuantity"
           @mousedown.prevent
@@ -274,18 +290,6 @@ const editInput = ref(null);
 const isComposing = ref(false);
 
 // ------------------------------------------------------------------------------
-// Methods
-// ------------------------------------------------------------------------------
-
-// Handle mouse enter - prevent hover state on touch devices to avoid accidental button clicks
-const handleMouseEnter = () => {
-  // Only enable hover state if the device supports hover (i.e., has a mouse/pointer)
-  if (window.matchMedia('(hover: hover)').matches) {
-    isHovered.value = true;
-  }
-};
-
-// ------------------------------------------------------------------------------
 // Computed
 // ------------------------------------------------------------------------------
 
@@ -296,7 +300,7 @@ const handleMouseEnter = () => {
  */
 const buttonVisibilityClass = computed(() => {
   const shouldShow = isHovered.value || isEditing.value;
-  return shouldShow ? 'visible' : 'hidden md:invisible md:flex';
+  return shouldShow ? 'opacity-100' : 'opacity-0';
 });
 
 /**
@@ -304,7 +308,7 @@ const buttonVisibilityClass = computed(() => {
  */
 const pendingButtonVisibilityClass = computed(() => {
   const shouldShow = props.item.isPending || isHovered.value || isEditing.value;
-  return shouldShow ? 'visible' : 'hidden md:invisible md:flex';
+  return shouldShow ? 'opacity-100' : 'opacity-0 absolute md:static';
 });
 
 const isItemPacked = computed({
@@ -329,6 +333,18 @@ const isItemPacked = computed({
 // ------------------------------------------------------------------------------
 // Functions
 // ------------------------------------------------------------------------------
+
+// ---------- UI Handlers ----------
+
+// Handle mouse enter - prevent hover state on touch devices to avoid accidental button clicks
+const handleMouseEnter = () => {
+  // Only enable hover state if the device supports hover (i.e., has a mouse/pointer)
+  if (window.matchMedia('(hover: hover)').matches) {
+    isHovered.value = true;
+  }
+};
+
+// ---------- Editing Functions ----------
 
 /**
  * Handle composition start (IME input begins)
@@ -356,44 +372,6 @@ function handleEnterKey(event) {
   }
   // Otherwise, save the edit
   saveEdit();
-}
-
-/**
- * Toggle the pending state of the item (to-buy / to-do)
- */
-function togglePending() {
-  const newPending = !props.item.isPending;
-  const updatedItem = new Item({
-    ...props.item,
-    isPending: newPending,
-    // If user marks as pending, automatically clear packed state to avoid contradiction
-    isPacked: newPending ? false : props.item.isPacked,
-  });
-  emit('update:item', updatedItem);
-}
-
-/**
- * Increment item quantity
- */
-function incrementQuantity() {
-  const updatedItem = new Item({
-    ...props.item,
-    quantity: props.item.quantity + 1,
-  });
-  emit('update:item', updatedItem);
-}
-
-/**
- * Decrement item quantity (minimum 1)
- */
-function decrementQuantity() {
-  if (props.item.quantity <= 1) return;
-
-  const updatedItem = new Item({
-    ...props.item,
-    quantity: props.item.quantity - 1,
-  });
-  emit('update:item', updatedItem);
 }
 
 /**
@@ -455,6 +433,46 @@ function saveEdit() {
 function cancelEdit() {
   isEditing.value = false;
   editedName.value = props.item.name;
+}
+
+// ---------- Item Actions ----------
+
+/**
+ * Toggle the pending state of the item (to-buy / to-do)
+ */
+function togglePending() {
+  const newPending = !props.item.isPending;
+  const updatedItem = new Item({
+    ...props.item,
+    isPending: newPending,
+    // If user marks as pending, automatically clear packed state to avoid contradiction
+    isPacked: newPending ? false : props.item.isPacked,
+  });
+  emit('update:item', updatedItem);
+}
+
+/**
+ * Increment item quantity
+ */
+function incrementQuantity() {
+  const updatedItem = new Item({
+    ...props.item,
+    quantity: props.item.quantity + 1,
+  });
+  emit('update:item', updatedItem);
+}
+
+/**
+ * Decrement item quantity (minimum 1)
+ */
+function decrementQuantity() {
+  if (props.item.quantity <= 1) return;
+
+  const updatedItem = new Item({
+    ...props.item,
+    quantity: props.item.quantity - 1,
+  });
+  emit('update:item', updatedItem);
 }
 
 /**

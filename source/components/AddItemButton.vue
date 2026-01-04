@@ -11,15 +11,17 @@ Created: 2025-09-19
 
 <template>
   <button
-    class="flex w-full items-center justify-start rounded-md px-1 py-0.5 transition-colors duration-200 md:pl-2"
+    class="flex w-full items-center justify-start rounded-md p-1 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 md:pl-2"
     :class="[categoryCompleted ? 'bg-green-50' : 'bg-white hover:bg-gray-100']"
     @click="$emit('click')"
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
+    @focus="isHovered = true"
+    @blur="isHovered = false"
   >
     <!-- Plus icon aligned with checkbox column -->
     <span
-      class="mr-1 flex size-11 flex-none items-center justify-center md:mr-2 md:size-auto"
+      class="mr-2 flex size-11 flex-none items-center justify-center md:mr-3 md:size-auto"
       :class="isHovered ? 'text-primary' : 'text-secondary'"
     >
       <svg

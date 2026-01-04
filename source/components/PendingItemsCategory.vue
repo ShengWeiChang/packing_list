@@ -57,6 +57,8 @@ Created: 2025-11-01
             (e) => (e.target.style.backgroundColor = THEME_COLORS.PENDING_ITEMS.BUTTON_HOVER)
           "
           @mouseleave="(e) => (e.target.style.backgroundColor = THEME_COLORS.PENDING_ITEMS.BUTTON)"
+          @focus="(e) => (e.target.style.backgroundColor = THEME_COLORS.PENDING_ITEMS.BUTTON_HOVER)"
+          @blur="(e) => (e.target.style.backgroundColor = THEME_COLORS.PENDING_ITEMS.BUTTON)"
         >
           <!-- Checkmark icon -->
           <svg

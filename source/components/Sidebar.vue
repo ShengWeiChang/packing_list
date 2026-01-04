@@ -28,6 +28,7 @@ Created: 2025-09-19
     <!-- Toggle Button -->
     <button
       class="mb-2 flex w-full items-center rounded-lg hover:bg-gray-100"
+      :aria-label="$t('sidebar.toggle')"
       @click="$emit('toggle-sidebar')"
     >
       <div class="shrink-0 p-3">
@@ -142,6 +143,7 @@ Created: 2025-09-19
                             : 'text-secondary',
                         ],
                   ]"
+                  :aria-current="selectedChecklistId === checklist.id ? 'page' : null"
                   @click="$emit('select-checklist', checklist.id)"
                 >
                   <!-- Expanded: show full name -->
@@ -186,6 +188,7 @@ Created: 2025-09-19
     <div
       ref="settingsRoot"
       class="relative mt-auto pt-4"
+      @focusout="handleLanguageFocusOut"
     >
       <button
         ref="languageButtonRef"
@@ -404,8 +407,10 @@ const draggableChecklists = computed({
 // Current language label no longer shown on the button; dropdown indicates selection
 
 // ------------------------------------------------------------------------------
-// Language menu handlers
+// Functions
 // ------------------------------------------------------------------------------
+
+// ---------- Language Menu Handlers ----------
 
 /**
  * Toggle language dropdown menu visibility
@@ -482,15 +487,29 @@ function closeLanguageMenu(event) {
 }
 
 /**
+ * Handle focus out event to close menu when tabbing away
+ * @param {FocusEvent} event - The focus event
+ */
+function handleLanguageFocusOut(event) {
+  // Check if the new focus target is still within the settings component or dropdown
+  const newFocus = event.relatedTarget;
+  const isFocusInRoot = settingsRoot.value && settingsRoot.value.contains(newFocus);
+  const isFocusInDropdown =
+    languageDropdownRef.value && languageDropdownRef.value.contains(newFocus);
+
+  if (!isFocusInRoot && !isFocusInDropdown) {
+    showLanguageMenu.value = false;
+  }
+}
+
+/**
  * Close language menu when user scrolls the page
  */
 function closeLanguageMenuOnScroll() {
   showLanguageMenu.value = false;
 }
 
-// ------------------------------------------------------------------------------
-// Drag and drop handlers (vuedraggable events)
-// ------------------------------------------------------------------------------
+// --- Drag and Drop Handlers ---
 
 /**
  * Set dragging checklist ID when drag starts

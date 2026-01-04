@@ -18,6 +18,7 @@ import jsdoc from 'eslint-plugin-jsdoc';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tailwindcss from 'eslint-plugin-tailwindcss';
 import pluginVue from 'eslint-plugin-vue';
+import vueAccessibility from 'eslint-plugin-vuejs-accessibility';
 
 // ------------------------------------------------------------------------------
 // Configuration
@@ -34,6 +35,9 @@ export default [
 
   // Vue recommended rules
   ...pluginVue.configs['flat/recommended'],
+
+  // Vue Accessibility rules
+  ...vueAccessibility.configs['flat/recommended'],
 
   // Tailwind CSS rules
   ...tailwindcss.configs['flat/recommended'],

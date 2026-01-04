@@ -108,13 +108,15 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Delete category: Cascade delete all items under it.
   - Reorder categories: Drag to update `order` (starting at 0); persists and remains after reload.
   - Progress display: Calculate completion percentage based on `isPacked` of items within the category.
+  - Category Collapse: Click the arrow button next to the category title to collapse/expand the item list. Title and progress bar remain visible when collapsed to improve browsing efficiency for long lists.
 - Flow:
-  - Add → rename → delete → drag to reorder.
+  - Add → rename → delete → drag to reorder → collapse/expand.
 - Validation:
   - After add: Category `order` is last; localStorage updates; order persists after reload.
   - After delete: Its items disappear from UI and localStorage.
   - After drag: Each category `order` is continuous from 0; order persists after reload.
   - Progress: Completed/total syncs with item check/uncheck.
+  - Collapse functionality: Item list expands/collapses smoothly on click; title and progress bar remain visible in collapsed state.
 
 #### Item Management
 
@@ -222,9 +224,36 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Detection: With no prior preference, infer from the browser language; non-`zh` series defaults to English; `zh/zh-Hant/zh-TW/zh-HK/zh-MO` are mapped to `zh-TW`.
   - Fallback: Temporarily remove a translation key to verify the app falls back to English (ensuring `fallbackLocale` takes effect).
 
+#### Accessibility
+
+- Purpose: Ensure the application is accessible to all users, including keyboard and screen reader users, complying with WCAG 2.1 Level AA standards.
+- Key features:
+  - Keyboard Navigation: All interactive elements (buttons, links, inputs) are focusable and operable via the `Tab` key; non-native buttons implement `Enter`/`Space` triggers.
+  - Focus Management:
+    - Hidden elements (e.g., hover buttons) automatically show when focused (`opacity-0` -> `opacity-100`).
+    - Mobile hidden elements use `absolute` to move out of the document flow and switch back to `static` when focused to avoid taking up space.
+    - Ensure no focus traps and clear visual focus indicators.
+  - Semantics & ARIA:
+    - Prioritize native semantic tags (`<button>`, `<nav>`, `<main>`).
+    - Add `aria-label` to icon buttons; use `aria-expanded` to indicate collapse states.
+- Validation:
+  - Static Analysis: Passes `eslint-plugin-vuejs-accessibility` checks with zero errors.
+  - Keyboard Testing: Core flows (create checklist, add item, edit, delete) can be completed using only a keyboard.
+  - Screen Reader: Verify all buttons and states have correct descriptive labels.
+
 #### Drag and Drop
 
 - Purpose: Quickly reorder and reorganize checklists/categories/items by dragging, keeping orders consistent with minimal effort.
+- Technical Implementation & Trade-offs:
+  - Checklist & Item:
+    - Implementation: Uses **Flexbox (Column)** layout.
+    - Characteristics: Standard vertical list; other items slide smoothly to make space during dragging, providing excellent and intuitive UX.
+  - Category:
+    - Implementation: Uses **CSS Columns (Masonry)** layout.
+    - Characteristics:
+      - Pros: High space utilization; category cards of varying heights stack tightly like bricks with no vertical gaps.
+      - Cons: No smooth sliding animation during drag (due to browser recalculating columns causing instant jumps); layout order is "top-to-bottom, then left-to-right" (N-shaped), unlike the Z-shaped order of a horizontal grid; new items may appear at the bottom of the first column instead of the far right.
+    - Decision: To achieve optimal space utilization and visual aesthetics on wide screens, the masonry layout is retained, accepting the limitation of a less fluid dragging feel.
 - Key features:
   - Checklist dragging (`Sidebar.vue` with `vuedraggable` group: `checklists`):
     - Reorder checklists in the sidebar; after drop, set checklists' `order = 0..n`.
