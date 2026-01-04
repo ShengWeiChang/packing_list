@@ -116,7 +116,7 @@ Created: 2025-09-19
     <div
       :id="`category-${category.id}-items`"
       class="grid transition-[grid-template-rows] duration-300 ease-in-out"
-      :class="isCollapsed ? 'invisible grid-rows-[0fr]' : 'grid-rows-[1fr]'"
+      :class="isCollapsed ? 'hidden' : 'grid-rows-[1fr]'"
     >
       <div class="min-h-0 overflow-hidden">
         <div class="space-y-0.5 pt-1">

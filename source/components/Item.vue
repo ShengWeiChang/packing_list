@@ -121,9 +121,9 @@ Created: 2025-09-19
       class="relative ml-1 sm:ml-1.5"
       :class="[
         isEditing || item.quantity > 1 || (item.quantity === 1 && isHovered)
-          ? 'pointer-events-auto opacity-100'
-          : 'pointer-events-none absolute opacity-0 md:static',
-        'focus-within:pointer-events-auto focus-within:static focus-within:opacity-100', // Ensure visible when children have focus
+          ? 'opacity-100'
+          : 'absolute opacity-0 md:static',
+        'focus-within:static focus-within:opacity-100', // Ensure visible when children have focus
       ]"
       @mouseenter="isQuantityHovered = true"
       @mouseleave="isQuantityHovered = false"
@@ -300,7 +300,7 @@ const isComposing = ref(false);
  */
 const buttonVisibilityClass = computed(() => {
   const shouldShow = isHovered.value || isEditing.value;
-  return shouldShow ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none';
+  return shouldShow ? 'opacity-100' : 'opacity-0';
 });
 
 /**
@@ -308,9 +308,7 @@ const buttonVisibilityClass = computed(() => {
  */
 const pendingButtonVisibilityClass = computed(() => {
   const shouldShow = props.item.isPending || isHovered.value || isEditing.value;
-  return shouldShow
-    ? 'opacity-100 pointer-events-auto'
-    : 'opacity-0 pointer-events-none absolute md:static';
+  return shouldShow ? 'opacity-100' : 'opacity-0 absolute md:static';
 });
 
 const isItemPacked = computed({
