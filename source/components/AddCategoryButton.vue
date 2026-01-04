@@ -10,13 +10,10 @@ Created: 2025-09-19
 -->
 
 <template>
-  <div
-    class="flex min-h-32 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-4 shadow-md transition-shadow duration-200 hover:border-gray-400 hover:shadow-lg"
-    role="button"
-    tabindex="0"
+  <button
+    type="button"
+    class="flex min-h-32 w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-4 shadow-md transition-shadow duration-200 hover:border-gray-400 hover:shadow-lg"
     @click="$emit('click')"
-    @keydown.enter.prevent="$emit('click')"
-    @keydown.space.prevent="$emit('click')"
   >
     <div class="text-center">
       <!-- Plus icon -->
@@ -39,7 +36,7 @@ Created: 2025-09-19
         {{ $t('category.newCategory') }}
       </span>
     </div>
-  </div>
+  </button>
 </template>
 
 <script setup>

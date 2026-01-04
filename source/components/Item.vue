@@ -136,7 +136,7 @@ Created: 2025-09-19
         <button
           type="button"
           class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
-          :class="[buttonVisibilityClass, 'focus:visible focus:opacity-100']"
+          :class="[buttonVisibilityClass, 'focus:opacity-100']"
           :aria-label="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           @click.stop="item.quantity === 1 ? handleDelete() : decrementQuantity()"
@@ -188,7 +188,7 @@ Created: 2025-09-19
         <button
           type="button"
           class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
-          :class="[buttonVisibilityClass, 'focus:visible focus:opacity-100']"
+          :class="[buttonVisibilityClass, 'focus:opacity-100']"
           :aria-label="$t('item.increaseQuantity')"
           :title="$t('item.increaseQuantity')"
           @click.stop="incrementQuantity"

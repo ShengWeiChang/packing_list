@@ -52,7 +52,7 @@ Created: 2025-09-19
         <!-- Collapse/Expand Button -->
         <button
           type="button"
-          class="ml-2 flex size-8 items-center justify-center rounded-full text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600 focus:visible focus:opacity-100 md:invisible md:size-6 md:group-hover:visible"
+          class="ml-2 flex size-8 items-center justify-center rounded-full text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-blue-500 md:size-6 md:opacity-0 md:group-hover:opacity-100"
           :title="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-label="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-expanded="!isCollapsed"
@@ -116,7 +116,7 @@ Created: 2025-09-19
     <div
       :id="`category-${category.id}-items`"
       class="grid transition-[grid-template-rows] duration-300 ease-in-out"
-      :class="isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
+      :class="isCollapsed ? 'invisible grid-rows-[0fr]' : 'grid-rows-[1fr]'"
     >
       <div class="min-h-0 overflow-hidden">
         <div class="space-y-0.5 pt-1">
