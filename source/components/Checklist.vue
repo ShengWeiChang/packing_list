@@ -532,6 +532,22 @@ watch(
     }
   }
 );
+
+// When user selects a start date while editing, automatically focus end date
+watch(editedStartDate, (newVal) => {
+  if (!isEditing.value) return;
+  if (!newVal) return;
+
+  // If end date is empty or earlier than the new start, set to start
+  if (!editedEndDate.value || editedEndDate.value < newVal) {
+    editedEndDate.value = newVal;
+  }
+
+  // Move focus to end date so user can continue selecting
+  nextTick(() => {
+    endDateInput.value?.focus();
+  });
+});
 </script>
 
 <style scoped>

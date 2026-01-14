@@ -81,3 +81,23 @@ body {
 .text-secondary {
   color: var(--color-text-secondary) !important;
 }
+
+/* Icon frame utilities: unified size and shape for interactive icons */
+.icon-frame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem; /* 36px */
+  height: 2.25rem; /* 36px */
+  border-radius: 9999px; /* fully rounded */
+}
+
+.icon-frame--small {
+  width: 1.75rem; /* 28px */
+  height: 1.75rem; /* 28px */
+}
+
+.icon-svg {
+  width: 1rem; /* 16px */
+  height: 1rem; /* 16px */
+}

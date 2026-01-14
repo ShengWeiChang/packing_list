@@ -200,7 +200,7 @@ const root = ref(null);
 // Button visibility based on props and menu state
 const buttonClass = computed(() => {
   const baseClass =
-    'p-3 md:p-1 flex items-center justify-center rounded-md transition-all duration-200 hover:bg-gray-200';
+    'p-3 md:p-1 flex items-center justify-center icon-frame transition-all duration-200 hover:bg-gray-200';
 
   // Green checkmark style when editing
   if (props.isEditing) {
@@ -233,7 +233,7 @@ const dropdownClass = computed(
 
 // SVG icon size based on menu type
 const svgClass = computed(() => {
-  return props.menuType === 'item' ? 'size-5' : 'size-6';
+  return 'icon-svg';
 });
 
 // ------------------------------------------------------------------------------

@@ -273,7 +273,6 @@ Created: 2025-09-19
           "
           @click="selectLanguage(lang.code)"
         >
-          <span class="mr-2">{{ lang.icon }}</span>
           <span>{{ lang.label }}</span>
           <svg
             v-if="currentLocale === lang.code"
@@ -313,8 +312,8 @@ const { locale } = useI18n();
 // Available languages configuration
 // TODO: Expand this array when adding more language support
 const availableLanguages = [
-  { code: 'en', label: 'English', icon: '🇺🇸' },
-  { code: 'zh-TW', label: '繁體中文', icon: '🇹🇼' },
+  { code: 'en', label: 'English' },
+  { code: 'zh-TW', label: '繁體中文' },
 ];
 
 // ------------------------------------------------------------------------------
