@@ -21,7 +21,7 @@ Created: 2025-09-19
   >
     <!-- Plus icon aligned with checkbox column -->
     <span
-      class="mr-2 flex size-11 flex-none items-center justify-center md:mr-3 md:size-auto"
+      class="mr-2 flex size-9 flex-none items-center justify-center md:mr-3 md:size-6"
       :class="isHovered ? 'text-primary' : 'text-secondary'"
     >
       <svg

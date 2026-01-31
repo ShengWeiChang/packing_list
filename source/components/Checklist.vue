@@ -30,7 +30,8 @@ Created: 2025-09-19
               :name="`checklist-${checklist.id}-name`"
               :placeholder="$t('checklist.name')"
               :aria-label="$t('checklist.name')"
-              class="text-primary w-full border-b-2 border-blue-300 bg-transparent p-1 text-3xl font-bold focus:border-blue-500 focus:outline-none"
+              class="text-primary w-full bg-transparent p-1 text-3xl font-bold focus:outline-none"
+              style="box-shadow: inset 0 -2px 0 0 #3b82f6"
               @keydown.enter="handleEnterKey"
               @keyup.escape="cancelEdit"
               @compositionstart="handleCompositionStart"
@@ -368,7 +369,7 @@ function handleEditBlur(_event) {
     if (!isStillEditing && isEditing.value && !isComposing.value) {
       saveEdit();
     }
-  }, 10);
+  }, 100);
 }
 
 /**
@@ -533,20 +534,26 @@ watch(
   }
 );
 
-// When user selects a start date while editing, automatically focus end date
-watch(editedStartDate, (newVal) => {
+// Watch start date changes - ensure end date is not earlier than start date
+watch(editedStartDate, (newStartDate) => {
   if (!isEditing.value) return;
-  if (!newVal) return;
+  if (!newStartDate) return;
 
-  // If end date is empty or earlier than the new start, set to start
-  if (!editedEndDate.value || editedEndDate.value < newVal) {
-    editedEndDate.value = newVal;
+  // If end date is empty or earlier than the new start date, set end date to start date
+  if (!editedEndDate.value || editedEndDate.value < newStartDate) {
+    editedEndDate.value = newStartDate;
   }
+});
 
-  // Move focus to end date so user can continue selecting
-  nextTick(() => {
-    endDateInput.value?.focus();
-  });
+// Watch end date changes - ensure end date is not earlier than start date
+watch(editedEndDate, (newEndDate) => {
+  if (!isEditing.value) return;
+  if (!newEndDate || !editedStartDate.value) return;
+
+  // If end date is earlier than start date, set end date to start date
+  if (newEndDate < editedStartDate.value) {
+    editedEndDate.value = editedStartDate.value;
+  }
 });
 </script>
 

@@ -30,11 +30,11 @@ export const defaultItemsEN = [
   { name: 'Windbreaker', category: 'Winter Wear', quantity: 1 },
   { name: 'Pants', category: 'Winter Wear', quantity: 1 },
 
-  // Underwear / Sleepwear
+  // Underwear
   { name: 'Underwear (Top)', category: 'Underwear', quantity: 1 },
   { name: 'Underwear (Bottom)', category: 'Underwear', quantity: 1 },
   { name: 'Socks', category: 'Underwear', quantity: 1 },
-  { name: 'Pajamas', category: 'Sleepwear', quantity: 1 },
+  { name: 'Pajamas', category: 'Underwear', quantity: 1 },
 
   // Accessories
   { name: 'Cap / Hat', category: 'Accessories', quantity: 1 },
