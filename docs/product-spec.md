@@ -79,9 +79,12 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Purpose: Let users manage multiple packing lists and create a new list for each trip.
 - Key features:
   - Create checklist: Auto-seed default categories and items from `source/data/defaultItems.js`.
-    - Categories: Built from default data by removing duplicate category names; assign `order` based on creation sequence (starting at 0).
+    - Categories: Built from default data by removing duplicate category names; assign `order` based on creation sequence (starting at 0). Default items split "Underwear" into separate top/bottom categories if needed.
     - Items: Created one by one with the correct `categoryId`, `isPacked=false`, and sequential `order` (starting at 0).
-  - Edit checklist: Edit `name`, `startDate`, `endDate` (native date inputs, ISO format).
+  - Edit checklist: Edit `name`.
+  - Date Editing:
+    - Uses native HTML5 date input for reliability.
+    - Bidirectional protection: Changing start date updates end date if end < start. Changing end date updates it to start date if end < start.
   - Copy checklist: Duplicate an existing checklist with all its categories and items.
   - Delete checklist: Cascade delete all categories and items under the checklist.
   - Reorder checklists: Drag to update `order` (starting at 0); persists and remains after reload.
@@ -124,6 +127,8 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Key features:
   - Create item: In a specified category, `isPacked=false`, `order = max order of that category + 1`.
   - Edit item: Inline edit name and quantity (min 1); delete item.
+  - UI Improvements: Element element sizes unified (size-9 mobile, size-6 desktop).
+  - Edit Mode: Uses `box-shadow` instead of `border-b` for underlines to prevent layout shifts; uses consistent deep blue (`#3b82f6`) theme color.
   - Toggle status: Toggling `isPacked` immediately updates category and checklist progress; preserves `order`.
   - Dragging:
     - Same category: After reorder, rewrite `order` sequentially (0-based).
