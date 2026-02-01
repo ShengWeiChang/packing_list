@@ -39,7 +39,7 @@ Created: 2025-09-19
             />
             <h2
               v-else
-              class="cursor-pointer break-words rounded p-1 text-3xl font-bold text-primary hover:bg-gray-50"
+              class="cursor-pointer break-words rounded p-1 text-3xl font-bold text-primary hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-2"
               role="button"
               tabindex="0"
               @click="startEdit"
@@ -67,7 +67,7 @@ Created: 2025-09-19
                 :name="`checklist-${checklist.id}-start-date`"
                 type="date"
                 :aria-label="$t('checklist.startDate')"
-                class="w-28 rounded border border-gray-300 bg-transparent p-1 text-base text-secondary focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
+                class="w-28 rounded border border-border-color-medium bg-transparent p-1 text-base text-secondary focus:border-interactive-focus focus:outline-none sm:w-auto sm:px-2"
                 @keydown.enter="handleEnterKey"
                 @keyup.escape="cancelEdit"
               />
@@ -80,14 +80,14 @@ Created: 2025-09-19
                 type="date"
                 :min="editedStartDate"
                 :aria-label="$t('checklist.endDate')"
-                class="w-28 rounded border border-gray-300 bg-transparent p-1 text-base text-secondary focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
+                class="w-28 rounded border border-border-color-medium bg-transparent p-1 text-base text-secondary focus:border-interactive-focus focus:outline-none sm:w-auto sm:px-2"
                 @keydown.enter="handleEnterKey"
                 @keyup.escape="cancelEdit"
               />
             </div>
             <span
               v-else
-              class="cursor-pointer whitespace-nowrap rounded py-1 pl-1 pr-2 text-lg text-secondary hover:bg-gray-50 md:px-2 md:text-base"
+              class="cursor-pointer whitespace-nowrap rounded py-1 pl-1 pr-2 text-lg text-secondary hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-2 md:px-2 md:text-base"
               role="button"
               tabindex="0"
               @click="startEdit"

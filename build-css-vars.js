@@ -129,6 +129,29 @@ const groups = {
   success: ['--success'],
   pending: ['--pending', '--pending-foreground', '--pending-accent', '--pending-button'],
   overlay: ['--overlay'],
+  interaction: [
+    '--interactive-focus',
+    '--interactive-hover',
+    '--interactive-hover-light',
+    '--interactive-hover-dark',
+  ],
+  surface: [
+    '--border-light',
+    '--border-medium',
+    '--border-dark',
+    '--control-bg',
+    '--control-hover',
+    '--control-accent',
+  ],
+  stateSuccess: [
+    '--success-bg',
+    '--success-text',
+    '--success-text-dark',
+    '--success-border',
+    '--success-accent',
+    '--success-text-complete',
+  ],
+  stateDanger: ['--danger-text', '--danger-bg', '--danger-focus'],
 };
 
 // Text colors
@@ -197,6 +220,42 @@ cssVarsString += '\n';
 // Overlay colors
 cssVarsString += '  /* Overlay Colors */\n';
 for (const varName of groups.overlay) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
+}
+cssVarsString += '\n';
+
+// Interaction colors
+cssVarsString += '  /* Interaction Colors */\n';
+for (const varName of groups.interaction) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
+}
+cssVarsString += '\n';
+
+// Surface colors
+cssVarsString += '  /* Surface Colors */\n';
+for (const varName of groups.surface) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
+}
+cssVarsString += '\n';
+
+// State - Success colors
+cssVarsString += '  /* State - Success/Complete Colors */\n';
+for (const varName of groups.stateSuccess) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
+}
+cssVarsString += '\n';
+
+// State - Danger colors
+cssVarsString += '  /* State - Danger/Delete Colors */\n';
+for (const varName of groups.stateDanger) {
   if (cssVars[varName]) {
     cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
   }

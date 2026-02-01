@@ -46,7 +46,7 @@ Created: 2025-11-01
         <!-- Completion button (left side) - mark as completed -->
         <button
           type="button"
-          class="pending-complete-btn mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center rounded-full text-white transition-all hover:scale-110 sm:mr-2"
+          class="mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center rounded-full bg-pending-button text-white transition-all hover:scale-110 sm:mr-2"
           :title="$t('item.markAsBought')"
           :aria-label="$t('item.markAsBought')"
           @click.stop="markAsCompleted(item)"
@@ -76,7 +76,7 @@ Created: 2025-11-01
           <!-- Quantity display (only show if quantity > 1) -->
           <div
             v-if="item.quantity > 1"
-            class="flex h-6 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 px-1 text-xs font-semibold text-secondary"
+            class="flex h-6 w-8 shrink-0 items-center justify-center rounded-md bg-control-bg px-1 text-xs font-semibold text-secondary"
           >
             <span class="mr-0.5">x</span>
             <span>{{ item.quantity }}</span>

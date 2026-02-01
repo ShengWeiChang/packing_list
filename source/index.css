@@ -55,6 +55,33 @@ Created: 2025-09-19
 
   /* Overlay Colors */
   --overlay: rgba(0, 0, 0, 0.5);
+
+  /* Interaction Colors */
+  --interactive-focus: #3b82f6;
+  --interactive-hover: #f3f4f6;
+  --interactive-hover-light: #f9fafb;
+  --interactive-hover-dark: #e5e7eb;
+
+  /* Surface Colors */
+  --border-light: #e5e7eb;
+  --border-medium: #d1d5db;
+  --border-dark: #9ca3af;
+  --control-bg: #f3f4f6;
+  --control-hover: #e5e7eb;
+  --control-accent: #4b5563;
+
+  /* State - Success/Complete Colors */
+  --success-bg: #f0fdf4;
+  --success-text: #16a34a;
+  --success-text-dark: #15803d;
+  --success-border: #86efac;
+  --success-accent: #16a34a;
+  --success-text-complete: #166534;
+
+  /* State - Danger/Delete Colors */
+  --danger-text: #dc2626;
+  --danger-bg: #fef2f2;
+  --danger-focus: #ef4444;
 }
 
 /* ============================================================================

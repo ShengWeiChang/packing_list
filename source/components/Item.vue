@@ -14,7 +14,9 @@ Created: 2025-09-19
   <div
     :class="[
       'group flex cursor-grab items-center rounded-md px-1 py-0.5 transition-all duration-200 md:pl-2',
-      categoryCompleted ? 'bg-green-50 text-green-800' : 'bg-white hover:bg-gray-100',
+      categoryCompleted
+        ? 'bg-success-state-bg text-success-state-complete'
+        : 'bg-white hover:bg-interactive-hover',
       isDragging ? 'scale-105 cursor-grabbing opacity-50 shadow-lg' : '',
     ]"
     @mouseenter="handleMouseEnter"
@@ -23,7 +25,7 @@ Created: 2025-09-19
     @focusout="isHovered = false"
   >
     <div
-      class="mr-1 flex size-9 flex-none items-center justify-center rounded-lg focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-1 md:mr-2 md:size-6"
+      class="mr-1 flex size-9 flex-none items-center justify-center rounded-lg focus-within:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-interactive-focus has-[:focus-visible]:ring-offset-1 md:mr-2 md:size-6"
     >
       <input
         :id="`item-${item.id}-packed`"
@@ -33,7 +35,9 @@ Created: 2025-09-19
         :aria-label="$t('item.togglePacked')"
         :class="[
           'size-5 flex-none shrink-0 cursor-pointer focus:outline-none md:size-4',
-          isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600',
+          isItemPacked
+            ? 'border-success-state-border accent-success-state-accent'
+            : 'border-border-color-medium accent-control-accent',
         ]"
         :style="isItemPacked ? { accentColor: 'var(--theme-primary)' } : {}"
       />
@@ -68,7 +72,7 @@ Created: 2025-09-19
       <span
         v-else
         :class="[
-          'block cursor-pointer rounded-lg px-1 py-0.5 text-lg leading-snug hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 md:text-base',
+          'block cursor-pointer rounded-lg px-1 py-0.5 text-lg leading-snug hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:text-base',
           {
             'text-secondary line-through': item.isPacked,
           },
@@ -88,10 +92,10 @@ Created: 2025-09-19
     <button
       type="button"
       :class="[
-        'ml-1.5 flex size-9 flex-none items-center justify-center rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 sm:ml-2 md:size-6',
+        'ml-1.5 flex size-9 flex-none items-center justify-center rounded-lg transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 sm:ml-2 md:size-6',
         item.isPending
-          ? 'bg-orange-500 text-white hover:bg-orange-600'
-          : 'bg-gray-100 text-secondary hover:bg-gray-200',
+          ? 'bg-pending-button text-white hover:bg-pending-accent'
+          : 'bg-control-bg text-secondary hover:bg-control-hover',
         pendingButtonVisibilityClass,
         'focus:pointer-events-auto focus:static focus:opacity-100', // Ensure visible on focus
       ]"
@@ -137,7 +141,7 @@ Created: 2025-09-19
         <!-- Decrement button / Delete button (when quantity = 1) -->
         <button
           type="button"
-          class="flex size-9 flex-none items-center justify-center rounded-lg bg-gray-100 text-secondary transition-colors hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 md:size-6"
+          class="flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-colors hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6"
           :class="[buttonVisibilityClass, 'focus:visible focus:opacity-100']"
           :aria-label="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
@@ -179,7 +183,7 @@ Created: 2025-09-19
 
         <!-- Quantity display -->
         <div
-          class="flex h-9 w-8 items-center justify-center rounded-lg bg-gray-100 px-1 text-xs font-semibold text-secondary transition-colors hover:bg-gray-200 md:h-6"
+          class="flex h-9 w-8 items-center justify-center rounded-lg bg-control-bg px-1 text-xs font-semibold text-secondary transition-colors hover:bg-control-hover md:h-6"
           :class="{ 'bg-transparent': !isHovered && !isEditing && item.quantity > 1 }"
         >
           <span class="mr-0.5">x</span>
@@ -189,7 +193,7 @@ Created: 2025-09-19
         <!-- Increment button -->
         <button
           type="button"
-          class="flex size-9 flex-none items-center justify-center rounded-lg bg-gray-100 text-secondary transition-colors hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 md:size-6"
+          class="flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-colors hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6"
           :class="[buttonVisibilityClass, 'focus:visible focus:opacity-100']"
           :aria-label="$t('item.increaseQuantity')"
           :title="$t('item.increaseQuantity')"

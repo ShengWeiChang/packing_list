@@ -79,7 +79,7 @@ Created: 2025-09-19
     <!-- Main Content -->
     <main
       :class="[
-        'min-w-0 flex-1 overflow-y-auto bg-gray-50 p-4 duration-200 md:p-6',
+        'min-w-0 flex-1 overflow-y-auto bg-bg-secondary p-4 duration-200 md:p-6',
         {
           'pointer-events-none blur-sm': isSidebarOpen && (isMobileViewport || isSmallDesktop),
         },

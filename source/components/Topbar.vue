@@ -11,11 +11,11 @@ Created: 2025-09-19
 
 <template>
   <header
-    class="flex w-full items-center justify-between border-b border-gray-200 bg-white px-3 py-2 md:hidden"
+    class="flex w-full items-center justify-between border-b border-border-color-light bg-white px-3 py-2 md:hidden"
   >
     <!-- Toggle sidebar navigation -->
     <button
-      class="rounded-md p-2 hover:bg-gray-100"
+      class="rounded-md p-2 hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :aria-label="$t('topbar.toggleNav')"
       @click="$emit('toggle')"
     >
@@ -36,7 +36,7 @@ Created: 2025-09-19
 
     <!-- New checklist action -->
     <button
-      class="rounded-md p-2 hover:bg-gray-100"
+      class="rounded-md p-2 hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :aria-label="$t('topbar.newChecklist')"
       @click="$emit('new')"
     >

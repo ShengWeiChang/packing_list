@@ -13,7 +13,7 @@ Created: 2025-09-19
   <div
     :class="[
       'group rounded-xl p-3 shadow-md transition-all duration-200 hover:shadow-lg',
-      isCompleted ? 'bg-green-50' : 'bg-white',
+      isCompleted ? 'bg-success-state-bg' : 'bg-white',
     ]"
   >
     <!-- Category Header -->
@@ -36,7 +36,7 @@ Created: 2025-09-19
         />
         <h3
           v-else
-          class="cursor-pointer rounded p-1 text-2xl font-semibold leading-snug text-primary hover:bg-gray-50 md:text-xl"
+          class="cursor-pointer rounded p-1 text-2xl font-semibold leading-snug text-primary hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus md:text-xl"
           style="word-break: break-word; overflow-wrap: break-word"
           role="button"
           tabindex="0"
@@ -53,7 +53,7 @@ Created: 2025-09-19
         <!-- Collapse/Expand Button -->
         <button
           type="button"
-          class="ml-2 flex size-8 items-center justify-center rounded-full text-secondary transition-all duration-200 hover:bg-gray-100 hover:text-primary focus:visible focus:opacity-100 md:invisible md:size-6 md:group-hover:visible"
+          class="ml-2 flex size-8 items-center justify-center rounded-full text-secondary transition-all duration-200 hover:bg-interactive-hover hover:text-primary focus:visible focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus md:invisible md:size-6 md:group-hover:visible"
           :title="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-label="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-expanded="!isCollapsed"

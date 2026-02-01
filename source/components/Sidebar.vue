@@ -12,7 +12,7 @@ Created: 2025-09-19
 <template>
   <aside
     :class="[
-      'flex flex-col border-r border-gray-200 bg-white p-2 transition-all duration-300 ease-in-out',
+      'flex flex-col border-r border-border-color-light bg-white p-2 transition-all duration-300 ease-in-out',
       isMobile ? 'h-full' : 'h-screen',
       // Mobile: overlay drawer when expanded, hidden when collapsed
       isMobile
@@ -27,7 +27,7 @@ Created: 2025-09-19
   >
     <!-- Toggle Button -->
     <button
-      class="mb-2 flex w-full items-center rounded-lg hover:bg-gray-100"
+      class="mb-2 flex w-full items-center rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :aria-label="$t('sidebar.toggle')"
       @click="$emit('toggle-sidebar')"
     >
@@ -50,7 +50,7 @@ Created: 2025-09-19
 
     <!-- New Checklist Button -->
     <button
-      class="mb-4 flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg hover:bg-gray-100"
+      class="mb-4 flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :class="[isExpanded || isMobile ? 'pr-4' : '']"
       @click="$emit('create-checklist')"
     >
@@ -122,12 +122,14 @@ Created: 2025-09-19
               <div
                 class="group relative flex items-center rounded-lg px-1 transition-colors duration-200"
                 :class="[
-                  selectedChecklistId === checklist.id ? 'bg-gray-100' : 'hover:bg-gray-100',
+                  selectedChecklistId === checklist.id
+                    ? 'bg-interactive-hover'
+                    : 'hover:bg-interactive-hover',
                 ]"
               >
                 <button
                   :class="[
-                    'min-w-0 grow py-3 text-left transition-colors duration-300 ease-in-out md:py-2',
+                    'min-w-0 grow py-3 text-left transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:py-2',
                     isExpanded || isMobile ? 'px-4 pr-8' : 'flex items-center justify-center px-3',
                     isExpanded || isMobile
                       ? [
@@ -192,7 +194,7 @@ Created: 2025-09-19
     >
       <button
         ref="languageButtonRef"
-        class="flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg transition-colors duration-200 hover:bg-gray-100"
+        class="flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg transition-colors duration-200 hover:bg-interactive-hover"
         :class="[isExpanded || isMobile ? 'pr-4' : '']"
         :aria-label="$t('language.switchLanguage')"
         :title="$t('language.switchLanguage')"
@@ -261,15 +263,17 @@ Created: 2025-09-19
       <div
         v-if="showLanguageMenu"
         ref="languageDropdownRef"
-        class="z-50 min-w-40 rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+        class="z-50 min-w-40 rounded-md border border-border-color-light bg-white py-1 shadow-lg"
         :style="languageDropdownStyle"
       >
         <button
           v-for="lang in availableLanguages"
           :key="lang.code"
-          class="flex w-full items-center px-4 py-2 text-base transition-colors duration-150 hover:bg-gray-100 md:text-sm"
+          class="flex w-full items-center px-4 py-2 text-base transition-colors duration-150 hover:bg-interactive-hover md:text-sm"
           :class="
-            currentLocale === lang.code ? 'bg-gray-50 font-medium text-primary' : 'text-secondary'
+            currentLocale === lang.code
+              ? 'bg-interactive-hover-light font-medium text-primary'
+              : 'text-secondary'
           "
           @click="selectLanguage(lang.code)"
         >
