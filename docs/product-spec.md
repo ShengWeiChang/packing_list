@@ -370,13 +370,38 @@ Notes:
 
 #### Color System
 
-- Primary text: `#212121` — dark gray
-- Secondary text: `#646464` — mid gray
-- Primary brand: `#2f6b46` — forest green
-- Accent: `#d3e3db` — light green-gray
-- Background: `#ffffff` — white
-- Surface: `#f8fafc` — light gray
-- Pending Items: `#fff7ed` background, `#7c2d12` text, `#f97316` accent — orange theme
+The application uses a centralized color management system with semantic naming:
+
+**Text Colors:**
+
+- `text-primary` (`#212121`) — Dark gray for primary text (headings, body text)
+- `text-secondary` (`#646464`) — Mid gray for secondary text (timestamps, helper text)
+
+**Background Colors:**
+
+- `bg-primary` (`#ffffff`) — White for cards and sidebar
+- `bg-secondary` (`#f8fafc`) — Light gray for page background
+
+**Theme/Brand Colors:**
+
+- `theme-primary` (`#2f6b46`) — Forest green for progress bars and brand elements
+- `theme-secondary` (`#d3e3db`) — Light green-gray for progress bar backgrounds
+
+**Pending Items (To-Buy/To-Do):**
+
+- Background: `#fff7ed` (orange-50)
+- Text: `#7c2d12` (orange-900)
+- Accent: `#ea580c` (orange-600)
+- Button: `#f97316` (orange-500)
+
+**Implementation:**
+
+- Single Source of Truth: All colors defined in `source/utils/constants.js` (`THEME_COLORS` object)
+- Build Pipeline: `npm run build:css-vars` generates CSS variables in `source/index.css`
+- Usage:
+  - CSS: `var(--text-primary)`, `var(--bg-primary)`, `var(--theme-primary)`
+  - Tailwind: `text-primary`, `bg-bg-primary`, `bg-theme-primary`
+  - JavaScript: `THEME_COLORS.textPrimary`, `THEME_COLORS.bgPrimary`
 
 #### Design System
 

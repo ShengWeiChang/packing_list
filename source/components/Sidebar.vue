@@ -33,7 +33,7 @@ Created: 2025-09-19
     >
       <div class="shrink-0 p-3">
         <svg
-          class="text-secondary size-6"
+          class="size-6 text-secondary"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -56,7 +56,7 @@ Created: 2025-09-19
     >
       <div class="shrink-0 p-3">
         <svg
-          class="text-secondary size-6"
+          class="size-6 text-secondary"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -70,7 +70,7 @@ Created: 2025-09-19
         </svg>
       </div>
       <span
-        class="text-secondary ml-4 text-lg transition-opacity duration-300 ease-in-out md:text-base"
+        class="ml-4 text-lg text-secondary transition-opacity duration-300 ease-in-out md:text-base"
         :class="{
           'opacity-0': !isExpanded && !isMobile,
           'opacity-100 delay-150': isExpanded || isMobile,
@@ -85,7 +85,7 @@ Created: 2025-09-19
       <div class="flex flex-col">
         <h1 class="mb-2 overflow-hidden whitespace-nowrap px-2 text-2xl font-bold md:text-xl">
           <span
-            class="text-primary inline-block transition-all duration-300 ease-in-out"
+            class="inline-block text-primary transition-all duration-300 ease-in-out"
             :class="{
               '-translate-x-4 opacity-0': !isExpanded && !isMobile,
               'translate-x-0 opacity-100 delay-150': isExpanded || isMobile,
@@ -132,14 +132,14 @@ Created: 2025-09-19
                     isExpanded || isMobile
                       ? [
                           selectedChecklistId === checklist.id
-                            ? 'text-primary font-medium'
+                            ? 'font-medium text-primary'
                             : 'text-secondary',
                           // Apply cursor styles only when dragging is enabled
                           draggingChecklistId === checklist.id ? 'cursor-grabbing' : 'cursor-grab',
                         ]
                       : [
                           selectedChecklistId === checklist.id
-                            ? 'text-primary font-medium'
+                            ? 'font-medium text-primary'
                             : 'text-secondary',
                         ],
                   ]"
@@ -200,7 +200,7 @@ Created: 2025-09-19
       >
         <div class="shrink-0 p-3">
           <svg
-            class="text-secondary size-6"
+            class="size-6 text-secondary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -269,14 +269,14 @@ Created: 2025-09-19
           :key="lang.code"
           class="flex w-full items-center px-4 py-2 text-base transition-colors duration-150 hover:bg-gray-100 md:text-sm"
           :class="
-            currentLocale === lang.code ? 'text-primary bg-gray-50 font-medium' : 'text-secondary'
+            currentLocale === lang.code ? 'bg-gray-50 font-medium text-primary' : 'text-secondary'
           "
           @click="selectLanguage(lang.code)"
         >
           <span>{{ lang.label }}</span>
           <svg
             v-if="currentLocale === lang.code"
-            class="text-primary ml-auto size-4"
+            class="ml-auto size-4 text-primary"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -550,8 +550,8 @@ onUnmounted(() => {
 /* Checklist drag and drop styles */
 .ghost-checklist {
   opacity: 0.3;
-  background: var(--color-gray-gray-100);
-  border: 2px dashed var(--color-gray-gray-400);
+  background: var(--ghost-background);
+  border: 2px dashed var(--ghost-border);
   border-radius: 0.5rem;
 }
 
@@ -563,7 +563,7 @@ onUnmounted(() => {
   opacity: 0.5;
   transform: scale(1.02);
   box-shadow:
-    0 10px 15px -3px var(--color-shadow-black-10),
-    0 4px 6px -2px var(--color-shadow-black-5);
+    0 10px 15px -3px var(--shadow-medium),
+    0 4px 6px -2px var(--shadow-light);
 }
 </style>

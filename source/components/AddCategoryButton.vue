@@ -18,7 +18,7 @@ Created: 2025-09-19
     <div class="text-center">
       <!-- Plus icon -->
       <svg
-        class="text-secondary mx-auto mb-2 size-8"
+        class="mx-auto mb-2 size-8 text-secondary"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -32,7 +32,7 @@ Created: 2025-09-19
       </svg>
 
       <!-- Button label -->
-      <span class="text-secondary group-hover:text-primary text-base">
+      <span class="text-base text-secondary group-hover:text-primary">
         {{ $t('category.newCategory') }}
       </span>
     </div>

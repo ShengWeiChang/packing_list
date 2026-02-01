@@ -26,7 +26,7 @@ Created: 2025-09-19
           v-model="editedName"
           :name="`category-${category.id}-name`"
           :aria-label="$t('category.name')"
-          class="w-full bg-transparent p-1 text-2xl font-semibold leading-snug text-slate-800 focus:outline-none md:text-xl"
+          class="w-full bg-transparent p-1 text-2xl font-semibold leading-snug text-primary focus:outline-none md:text-xl"
           style="box-shadow: inset 0 -2px 0 0 #3b82f6"
           @keydown.enter="handleEnterKey"
           @keyup.escape="cancelEdit"
@@ -36,7 +36,7 @@ Created: 2025-09-19
         />
         <h3
           v-else
-          class="text-primary cursor-pointer rounded p-1 text-2xl font-semibold leading-snug hover:bg-gray-50 md:text-xl"
+          class="cursor-pointer rounded p-1 text-2xl font-semibold leading-snug text-primary hover:bg-gray-50 md:text-xl"
           style="word-break: break-word; overflow-wrap: break-word"
           role="button"
           tabindex="0"
@@ -53,7 +53,7 @@ Created: 2025-09-19
         <!-- Collapse/Expand Button -->
         <button
           type="button"
-          class="text-secondary hover:text-primary ml-2 flex size-8 items-center justify-center rounded-full transition-all duration-200 hover:bg-gray-100 focus:visible focus:opacity-100 md:invisible md:size-6 md:group-hover:visible"
+          class="ml-2 flex size-8 items-center justify-center rounded-full text-secondary transition-all duration-200 hover:bg-gray-100 hover:text-primary focus:visible focus:opacity-100 md:invisible md:size-6 md:group-hover:visible"
           :title="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-label="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-expanded="!isCollapsed"
@@ -498,8 +498,8 @@ watch(
 /* Drag and drop styles */
 .ghost-item {
   opacity: 0.3;
-  background: var(--color-gray-gray-100);
-  border: 2px dashed var(--color-gray-gray-400);
+  background: var(--ghost-background);
+  border: 2px dashed var(--ghost-border);
 }
 
 .chosen-item {
@@ -510,8 +510,8 @@ watch(
   opacity: 0.5;
   transform: scale(1.05);
   box-shadow:
-    0 10px 15px -3px var(--color-shadow-black-10),
-    0 4px 6px -2px var(--color-shadow-black-5);
+    0 10px 15px -3px var(--shadow-medium),
+    0 4px 6px -2px var(--shadow-light);
 }
 
 /* Drag handle */
@@ -525,7 +525,7 @@ watch(
 
 /* Drop zone visual feedback */
 .bg-blue-50 {
-  background-color: var(--color-blue-blue-50);
+  background-color: var(--drop-zone);
 }
 
 .border-dashed {
@@ -539,7 +539,7 @@ watch(
     border-color: transparent;
   }
   50% {
-    border-color: var(--color-green-green-600);
+    border-color: var(--success);
   }
 }
 

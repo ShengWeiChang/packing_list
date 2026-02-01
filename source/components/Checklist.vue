@@ -30,7 +30,7 @@ Created: 2025-09-19
               :name="`checklist-${checklist.id}-name`"
               :placeholder="$t('checklist.name')"
               :aria-label="$t('checklist.name')"
-              class="text-primary w-full bg-transparent p-1 text-3xl font-bold focus:outline-none"
+              class="w-full bg-transparent p-1 text-3xl font-bold text-primary focus:outline-none"
               style="box-shadow: inset 0 -2px 0 0 #3b82f6"
               @keydown.enter="handleEnterKey"
               @keyup.escape="cancelEdit"
@@ -39,7 +39,7 @@ Created: 2025-09-19
             />
             <h2
               v-else
-              class="text-primary cursor-pointer break-words rounded p-1 text-3xl font-bold hover:bg-gray-50"
+              class="cursor-pointer break-words rounded p-1 text-3xl font-bold text-primary hover:bg-gray-50"
               role="button"
               tabindex="0"
               @click="startEdit"
@@ -67,11 +67,11 @@ Created: 2025-09-19
                 :name="`checklist-${checklist.id}-start-date`"
                 type="date"
                 :aria-label="$t('checklist.startDate')"
-                class="text-secondary w-28 rounded border border-gray-300 bg-transparent p-1 text-base focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
+                class="w-28 rounded border border-gray-300 bg-transparent p-1 text-base text-secondary focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
                 @keydown.enter="handleEnterKey"
                 @keyup.escape="cancelEdit"
               />
-              <span class="text-secondary hidden md:inline">-</span>
+              <span class="hidden text-secondary md:inline">-</span>
               <input
                 :id="`checklist-${checklist.id}-end-date`"
                 ref="endDateInput"
@@ -80,14 +80,14 @@ Created: 2025-09-19
                 type="date"
                 :min="editedStartDate"
                 :aria-label="$t('checklist.endDate')"
-                class="text-secondary w-28 rounded border border-gray-300 bg-transparent p-1 text-base focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
+                class="w-28 rounded border border-gray-300 bg-transparent p-1 text-base text-secondary focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
                 @keydown.enter="handleEnterKey"
                 @keyup.escape="cancelEdit"
               />
             </div>
             <span
               v-else
-              class="text-secondary cursor-pointer whitespace-nowrap rounded py-1 pl-1 pr-2 text-lg hover:bg-gray-50 md:px-2 md:text-base"
+              class="cursor-pointer whitespace-nowrap rounded py-1 pl-1 pr-2 text-lg text-secondary hover:bg-gray-50 md:px-2 md:text-base"
               role="button"
               tabindex="0"
               @click="startEdit"
@@ -561,8 +561,8 @@ watch(editedEndDate, (newEndDate) => {
 /* Category drag and drop styles */
 .ghost-category {
   opacity: 0.3;
-  background: var(--color-gray-gray-100);
-  border: 2px dashed var(--color-gray-gray-400);
+  background: var(--ghost-background);
+  border: 2px dashed var(--ghost-border);
   border-radius: 0.75rem;
 }
 
@@ -574,8 +574,8 @@ watch(editedEndDate, (newEndDate) => {
   opacity: 0.5;
   transform: scale(1.02);
   box-shadow:
-    0 20px 25px -5px var(--color-shadow-black-10),
-    0 10px 10px -5px var(--color-shadow-black-4);
+    0 20px 25px -5px var(--shadow-medium),
+    0 10px 10px -5px var(--shadow-light);
   z-index: 1000;
 }
 
@@ -635,13 +635,13 @@ watch(editedEndDate, (newEndDate) => {
   0%,
   100% {
     box-shadow:
-      0 4px 6px -1px var(--color-shadow-black-10),
-      0 2px 4px -1px var(--color-shadow-black-6);
+      0 4px 6px -1px var(--shadow-medium),
+      0 2px 4px -1px var(--shadow-light);
   }
   50% {
     box-shadow:
-      0 4px 6px -1px var(--color-shadow-green-30),
-      0 2px 4px -1px var(--color-shadow-green-20);
+      0 4px 6px -1px var(--shadow-success),
+      0 2px 4px -1px var(--shadow-success-light);
   }
 }
 

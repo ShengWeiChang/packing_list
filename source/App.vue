@@ -10,7 +10,7 @@ Created: 2025-09-19
 -->
 
 <template>
-  <div :class="['min-h-screen text-slate-800', isMobileViewport ? 'flex flex-col' : 'flex']">
+  <div :class="['min-h-screen text-primary', isMobileViewport ? 'flex flex-col' : 'flex']">
     <!-- Overlay for narrow screens when sidebar is open -->
     <div
       v-if="(isMobileViewport || (isSmallDesktop && isSidebarOpen)) && isSidebarOpen"
@@ -110,7 +110,7 @@ Created: 2025-09-19
       </div>
       <div
         v-else
-        class="text-secondary mt-20 text-center"
+        class="mt-20 text-center text-secondary"
       >
         {{ $t('checklist.pleaseCreate') }}
       </div>
@@ -519,6 +519,6 @@ watch([isSidebarOpen, isMobileViewport, isSmallDesktop], () => {
 
 <style>
 .backdrop {
-  background-color: var(--color-overlay-backdrop);
+  background-color: var(--overlay);
 }
 </style>

@@ -33,100 +33,76 @@ export const VALIDATION = {
 
 /**
  * Theme Color System - Single Source of Truth
- * All colors should be defined here and used via CSS variables
+ *
+ * 命名邏輯：
+ * - text-primary / text-secondary: 文字色（灰黑、灰）
+ * - bg-primary / bg-secondary: 背景色（白、淺灰）
+ * - theme-primary / theme-secondary: 品牌色（綠、淺綠）
+ *
+ * 使用方式：
+ * - CSS: var(--text-primary), var(--bg-primary)
+ * - Tailwind: text-primary, bg-primary (需在 tailwind.config.js 註冊)
+ * - JS: THEME_COLORS.textPrimary, THEME_COLORS.bgPrimary
+ *
  * Run `npm run build:css-vars` after making changes to regenerate CSS
  */
 export const THEME_COLORS = {
   // ============================================================================
-  // Core Theme Colors (6-Color System)
+  // Text Colors (文字色)
   // ============================================================================
 
-  // Text colors
-  TEXT_PRIMARY: 'rgba(33, 33, 33, 1)', // dark gray (main text)
-  TEXT_SECONDARY: 'rgba(100, 100, 100, 1)', // lighter gray (secondary text)
-
-  // Brand theme colors
-  PRIMARY: 'rgba(47, 107, 70, 1)', // deep forest green (actions, progress)
-  SECONDARY: 'rgba(211, 227, 219, 1)', // gray-green (completion states, accents)
-
-  // Background colors
-  BACKGROUND_PRIMARY: 'rgba(255, 255, 255, 1)', // white (cards, panels, sidebar)
-  BACKGROUND_SECONDARY: 'rgba(248, 250, 252, 1)', // light gray (app background, hover states)
+  textPrimary: 'rgba(33, 33, 33, 1)', // 主要文字 - 灰黑色 #212121
+  textSecondary: 'rgba(100, 100, 100, 1)', // 次要文字 - 灰色 #646464
 
   // ============================================================================
-  // Pending Items Theme Colors
+  // Background Colors (背景色)
   // ============================================================================
 
-  PENDING_ITEMS: {
-    BACKGROUND: 'rgba(255, 247, 237, 1)', // orange-50 (light orange background)
-    TEXT: 'rgba(124, 45, 18, 1)', // orange-900 (dark orange text)
-    ACCENT: 'rgba(234, 88, 12, 1)', // orange-600 (accent color)
-    BUTTON: 'rgba(249, 115, 22, 1)', // orange-500 (button background)
-    BUTTON_HOVER: 'rgba(234, 88, 12, 1)', // orange-600 (button hover)
-  },
+  bgPrimary: 'rgba(255, 255, 255, 1)', // 主要背景 - 白色 (卡片、sidebar)
+  bgSecondary: 'rgba(248, 250, 252, 1)', // 次要背景 - 淺灰 (頁面背景)
 
   // ============================================================================
-  // Utility Colors (Gray Scale)
+  // Theme/Brand Colors (品牌色)
   // ============================================================================
 
-  GRAY: {
-    GRAY_50: 'rgba(249, 250, 251, 1)', // lightest gray
-    GRAY_100: 'rgba(243, 244, 246, 1)', // very light gray (drag ghost bg)
-    GRAY_200: 'rgba(229, 231, 235, 1)', // light gray
-    GRAY_300: 'rgba(209, 213, 219, 1)', // medium-light gray
-    GRAY_400: 'rgba(156, 163, 175, 1)', // medium gray (borders, dashed lines)
-    GRAY_600: 'rgba(75, 85, 99, 1)', // dark gray
-  },
+  themePrimary: 'rgba(47, 107, 70, 1)', // 品牌主色 - 深森林綠 #2f6b46 (進度條)
+  themeSecondary: 'rgba(211, 227, 219, 1)', // 品牌副色 - 淺灰綠 #d3e3db (進度條背景)
 
   // ============================================================================
-  // Semantic Colors (Green for success/completion)
+  // Drag & Drop Colors (拖放相關)
   // ============================================================================
 
-  GREEN: {
-    GREEN_50: 'rgba(240, 253, 244, 1)', // lightest green
-    GREEN_100: 'rgba(220, 252, 231, 1)', // very light green
-    GREEN_200: 'rgba(187, 247, 208, 1)', // light green
-    GREEN_300: 'rgba(134, 239, 172, 1)', // medium-light green
-    GREEN_500: 'rgba(34, 197, 94, 1)', // medium green
-    GREEN_600: 'rgba(16, 185, 129, 1)', // primary green (animations, borders)
-    GREEN_800: 'rgba(5, 126, 71, 1)', // dark green
-  },
+  ghostBackground: 'rgba(243, 244, 246, 1)', // ghost 背景 (gray-100)
+  ghostBorder: 'rgba(156, 163, 175, 1)', // ghost 邊框 (gray-400)
+  dropZone: 'rgba(239, 246, 255, 1)', // 放置區 (blue-50)
 
   // ============================================================================
-  // Additional Utility Colors (Orange for highlights)
+  // Shadow Colors (陰影色)
   // ============================================================================
 
-  ORANGE: {
-    ORANGE_50: 'rgba(255, 247, 237, 1)', // lightest orange
-    ORANGE_500: 'rgba(249, 115, 22, 1)', // medium orange
-    ORANGE_600: 'rgba(234, 88, 12, 1)', // primary orange
-    ORANGE_900: 'rgba(124, 45, 18, 1)', // dark orange
-  },
+  shadowLight: 'rgba(0, 0, 0, 0.05)', // 淡陰影
+  shadowMedium: 'rgba(0, 0, 0, 0.1)', // 中陰影
+  shadowSuccess: 'rgba(34, 197, 94, 0.3)', // 成功動畫陰影 (green-500)
+  shadowSuccessLight: 'rgba(34, 197, 94, 0.2)',
 
   // ============================================================================
-  // Additional Utility Colors (Blue for info/drops)
+  // Status Colors - Success (成功狀態)
   // ============================================================================
 
-  BLUE: {
-    BLUE_50: 'rgba(239, 246, 255, 1)', // lightest blue (drop zones)
-    BLUE_300: 'rgba(147, 197, 253, 1)', // light blue
-    BLUE_500: 'rgba(59, 130, 246, 1)', // medium blue
-  },
+  success: 'rgba(22, 163, 74, 1)', // 成功邊框 (green-600)
 
   // ============================================================================
-  // System Colors (Shadows, Overlays)
+  // Status Colors - Pending (待辦狀態 - 橘色系)
   // ============================================================================
 
-  SHADOW: {
-    BLACK_10: 'rgba(0, 0, 0, 0.1)', // light shadow
-    BLACK_5: 'rgba(0, 0, 0, 0.05)', // very light shadow
-    BLACK_4: 'rgba(0, 0, 0, 0.04)', // extra light shadow
-    BLACK_6: 'rgba(0, 0, 0, 0.06)', // subtle shadow
-    GREEN_30: 'rgba(16, 185, 129, 0.3)', // success shadow
-    GREEN_20: 'rgba(16, 185, 129, 0.2)', // success shadow light
-  },
+  pending: 'rgba(255, 247, 237, 1)', // 待辦背景 (orange-50)
+  pendingForeground: 'rgba(124, 45, 18, 1)', // 待辦文字 (orange-900)
+  pendingAccent: 'rgba(234, 88, 12, 1)', // 待辦強調 (orange-600)
+  pendingButton: 'rgba(249, 115, 22, 1)', // 待辦按鈕 (orange-500)
 
-  OVERLAY: {
-    BACKDROP: 'rgba(0, 0, 0, 0.5)', // modal/overlay backdrop
-  },
+  // ============================================================================
+  // Overlay Colors (覆蓋層)
+  // ============================================================================
+
+  overlay: 'rgba(0, 0, 0, 0.5)', // 遮罩背景
 };

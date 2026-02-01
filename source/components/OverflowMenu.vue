@@ -76,7 +76,7 @@ Created: 2025-09-19
       :style="dropdownStyle"
     >
       <button
-        class="text-primary flex w-full items-center px-3 py-2 text-base hover:bg-gray-100 md:text-sm"
+        class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-gray-100 md:text-sm"
         @click="handleEdit"
       >
         <svg
@@ -96,7 +96,7 @@ Created: 2025-09-19
       </button>
 
       <button
-        class="text-primary flex w-full items-center px-3 py-2 text-base hover:bg-gray-100 md:text-sm"
+        class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-gray-100 md:text-sm"
         @click="handleCopy"
       >
         <svg

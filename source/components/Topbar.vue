@@ -20,7 +20,7 @@ Created: 2025-09-19
       @click="$emit('toggle')"
     >
       <svg
-        class="text-secondary size-6"
+        class="size-6 text-secondary"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -41,7 +41,7 @@ Created: 2025-09-19
       @click="$emit('new')"
     >
       <svg
-        class="text-secondary size-6"
+        class="size-6 text-secondary"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
