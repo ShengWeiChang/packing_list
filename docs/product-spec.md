@@ -79,7 +79,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Purpose: Let users manage multiple packing lists and create a new list for each trip.
 - Key features:
   - Create checklist: Auto-seed default categories and items from `source/data/defaultItems.js`.
-    - Categories: Built from default data by removing duplicate category names; assign `order` based on creation sequence (starting at 0). Default items split "Underwear" into separate top/bottom categories if needed.
+    - Categories: Built from default data by removing duplicate category names; assign `order` based on creation sequence (starting at 0).
     - Items: Created one by one with the correct `categoryId`, `isPacked=false`, and sequential `order` (starting at 0).
   - Edit checklist: Edit `name`.
   - Date Editing:

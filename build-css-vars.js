@@ -265,12 +265,6 @@ for (const varName of groups.stateDanger) {
 const cssPath = join(__dirname, 'source', 'index.css');
 let cssContent = readFileSync(cssPath, 'utf-8');
 
-// Define markers for auto-generated section
-const startMarker =
-  '  /* ============================================================================';
-const endMarker =
-  '\n\n  /* ============================================================================\n   * Legacy';
-
 // Find the :root section and replace
 const rootStart = cssContent.indexOf(':root {');
 const rootEnd = cssContent.indexOf('}', rootStart);

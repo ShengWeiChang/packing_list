@@ -62,7 +62,7 @@ Created: 2025-09-19
             'text-secondary line-through': item.isPacked,
           },
         ]"
-        style="border-radius: 0; box-shadow: inset 0 -2px 0 0 #3b82f6"
+        style="border-radius: 0; box-shadow: inset 0 -2px 0 0 var(--interactive-focus)"
         @keydown.enter="handleEnterKey"
         @keyup.escape="cancelEdit"
         @compositionstart="handleCompositionStart"
@@ -142,7 +142,7 @@ Created: 2025-09-19
         <button
           type="button"
           class="flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-colors hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6"
-          :class="[buttonVisibilityClass, 'focus:visible focus:opacity-100']"
+          :class="buttonVisibilityClass"
           :aria-label="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           @click.stop="item.quantity === 1 ? handleDelete() : decrementQuantity()"
@@ -194,7 +194,7 @@ Created: 2025-09-19
         <button
           type="button"
           class="flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-colors hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6"
-          :class="[buttonVisibilityClass, 'focus:visible focus:opacity-100']"
+          :class="buttonVisibilityClass"
           :aria-label="$t('item.increaseQuantity')"
           :title="$t('item.increaseQuantity')"
           @click.stop="incrementQuantity"
@@ -398,7 +398,7 @@ function handleEditBlur(_event) {
     if (!isStillEditing && isEditing.value && !isComposing.value) {
       saveEdit();
     }
-  }, 10);
+  }, 50); // 50ms: balance between focus transfer reliability and user responsiveness
 }
 
 /**

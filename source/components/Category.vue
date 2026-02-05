@@ -27,7 +27,7 @@ Created: 2025-09-19
           :name="`category-${category.id}-name`"
           :aria-label="$t('category.name')"
           class="w-full bg-transparent p-1 text-2xl font-semibold leading-snug text-primary focus:outline-none md:text-xl"
-          style="box-shadow: inset 0 -2px 0 0 #3b82f6"
+          style="box-shadow: inset 0 -2px 0 0 var(--interactive-focus)"
           @keydown.enter="handleEnterKey"
           @keyup.escape="cancelEdit"
           @blur="handleBlur"
@@ -53,7 +53,7 @@ Created: 2025-09-19
         <!-- Collapse/Expand Button -->
         <button
           type="button"
-          class="ml-2 flex size-8 items-center justify-center rounded-full text-secondary transition-all duration-200 hover:bg-interactive-hover hover:text-primary focus:visible focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus md:invisible md:size-6 md:group-hover:visible"
+          class="ml-2 flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-all duration-200 hover:bg-control-hover hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6 md:opacity-0 md:focus-visible:opacity-100 md:group-hover:opacity-100"
           :title="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-label="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-expanded="!isCollapsed"
@@ -119,7 +119,10 @@ Created: 2025-09-19
       class="grid transition-[grid-template-rows] duration-300 ease-in-out"
       :class="isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
     >
-      <div class="min-h-0 overflow-hidden">
+      <div
+        class="min-h-0 overflow-hidden"
+        :aria-hidden="isCollapsed"
+      >
         <div class="space-y-1 pt-1">
           <draggable
             v-model="draggableItems"

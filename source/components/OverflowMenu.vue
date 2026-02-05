@@ -200,7 +200,7 @@ const root = ref(null);
 // Button visibility based on props and menu state
 const buttonClass = computed(() => {
   const baseClass =
-    'size-9 md:size-6 flex items-center justify-center rounded-lg transition-all duration-200 hover:bg-interactive-hover-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1';
+    'size-9 md:size-6 flex items-center justify-center rounded-lg bg-control-bg transition-all duration-200 hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1';
 
   // Green checkmark style when editing
   if (props.isEditing) {

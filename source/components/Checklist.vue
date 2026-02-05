@@ -31,7 +31,7 @@ Created: 2025-09-19
               :placeholder="$t('checklist.name')"
               :aria-label="$t('checklist.name')"
               class="w-full bg-transparent p-1 text-3xl font-bold text-primary focus:outline-none"
-              style="box-shadow: inset 0 -2px 0 0 #3b82f6"
+              style="box-shadow: inset 0 -2px 0 0 var(--interactive-focus)"
               @keydown.enter="handleEnterKey"
               @keyup.escape="cancelEdit"
               @compositionstart="handleCompositionStart"
@@ -281,6 +281,7 @@ const nameInput = ref(null);
 const startDateInput = ref(null);
 const endDateInput = ref(null);
 const isComposing = ref(false);
+const isAdjustingDates = ref(false); // Guard flag to prevent watcher infinite loops
 
 // Drag state
 const draggingCategoryId = ref(null);
@@ -369,7 +370,7 @@ function handleEditBlur(_event) {
     if (!isStillEditing && isEditing.value && !isComposing.value) {
       saveEdit();
     }
-  }, 100);
+  }, 50); // 50ms: balance between focus transfer reliability and user responsiveness
 }
 
 /**
@@ -537,22 +538,32 @@ watch(
 // Watch start date changes - ensure end date is not earlier than start date
 watch(editedStartDate, (newStartDate) => {
   if (!isEditing.value) return;
+  if (isAdjustingDates.value) return; // Prevent watcher loops
   if (!newStartDate) return;
 
   // If end date is empty or earlier than the new start date, set end date to start date
   if (!editedEndDate.value || editedEndDate.value < newStartDate) {
+    isAdjustingDates.value = true;
     editedEndDate.value = newStartDate;
+    nextTick(() => {
+      isAdjustingDates.value = false;
+    });
   }
 });
 
 // Watch end date changes - ensure end date is not earlier than start date
 watch(editedEndDate, (newEndDate) => {
   if (!isEditing.value) return;
+  if (isAdjustingDates.value) return; // Prevent watcher loops
   if (!newEndDate || !editedStartDate.value) return;
 
   // If end date is earlier than start date, set end date to start date
   if (newEndDate < editedStartDate.value) {
+    isAdjustingDates.value = true;
     editedEndDate.value = editedStartDate.value;
+    nextTick(() => {
+      isAdjustingDates.value = false;
+    });
   }
 });
 </script>
