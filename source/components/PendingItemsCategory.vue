@@ -46,7 +46,7 @@ Created: 2025-11-01
         <!-- Completion button (left side) - mark as completed -->
         <button
           type="button"
-          class="mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center rounded-full bg-pending-button text-white transition-all hover:scale-110 sm:mr-2"
+          class="mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center rounded-full bg-pending-button text-white transition-all hover:scale-110 hover:bg-pending-accent sm:mr-2"
           :title="$t('item.markAsBought')"
           :aria-label="$t('item.markAsBought')"
           @click.stop="markAsCompleted(item)"
@@ -150,16 +150,6 @@ function markAsCompleted(item) {
 </script>
 
 <style scoped>
-/* Pending complete button - uses CSS variables for consistent theming */
-.pending-complete-btn {
-  background-color: var(--pending-button);
-}
-
-.pending-complete-btn:hover,
-.pending-complete-btn:focus {
-  background-color: var(--pending-accent);
-}
-
 /* Multi-column grid layout matching category columns */
 .pending-items-grid {
   display: grid;
