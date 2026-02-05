@@ -14,7 +14,9 @@ Created: 2025-09-19
   <div
     :class="[
       'group flex cursor-grab items-center rounded-md px-1 py-0.5 transition-all duration-200 md:pl-2',
-      categoryCompleted ? 'bg-green-50 text-green-800' : 'bg-white hover:bg-gray-100',
+      categoryCompleted
+        ? 'bg-success-state-bg text-success-state-complete'
+        : 'bg-white hover:bg-interactive-hover',
       isDragging ? 'scale-105 cursor-grabbing opacity-50 shadow-lg' : '',
     ]"
     @mouseenter="handleMouseEnter"
@@ -22,7 +24,9 @@ Created: 2025-09-19
     @focusin="isHovered = true"
     @focusout="isHovered = false"
   >
-    <div class="mr-1 flex size-11 flex-none items-center justify-center md:mr-2 md:size-auto">
+    <div
+      class="mr-1 flex size-9 flex-none items-center justify-center rounded-lg focus-within:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-interactive-focus has-[:focus-visible]:ring-offset-1 md:mr-2 md:size-6"
+    >
       <input
         :id="`item-${item.id}-packed`"
         v-model="isItemPacked"
@@ -30,10 +34,12 @@ Created: 2025-09-19
         type="checkbox"
         :aria-label="$t('item.togglePacked')"
         :class="[
-          'size-5 flex-none shrink-0 rounded-full md:size-4',
-          isItemPacked ? 'border-green-300 accent-green-600' : 'border-gray-300 accent-gray-600',
+          'size-5 flex-none shrink-0 cursor-pointer focus:outline-none md:size-4',
+          isItemPacked
+            ? 'border-success-state-border accent-success-state-accent'
+            : 'border-border-color-medium accent-control-accent',
         ]"
-        :style="isItemPacked ? { accentColor: 'var(--color-primary)' } : {}"
+        :style="isItemPacked ? { accentColor: 'var(--theme-primary)' } : {}"
       />
     </div>
 
@@ -51,12 +57,12 @@ Created: 2025-09-19
         :name="`item-${item.id}-name`"
         :aria-label="$t('item.name')"
         :class="[
-          'w-full border-b border-blue-300 bg-transparent p-1 text-lg leading-none focus:border-blue-500 focus:outline-none md:text-base',
+          'w-full bg-transparent px-1 py-0.5 text-lg leading-snug focus:outline-none md:text-base',
           {
             'text-secondary line-through': item.isPacked,
           },
         ]"
-        style="border-radius: 0"
+        style="border-radius: 0; box-shadow: inset 0 -2px 0 0 var(--interactive-focus)"
         @keydown.enter="handleEnterKey"
         @keyup.escape="cancelEdit"
         @compositionstart="handleCompositionStart"
@@ -66,7 +72,7 @@ Created: 2025-09-19
       <span
         v-else
         :class="[
-          'block cursor-pointer rounded p-1 text-lg leading-snug hover:bg-gray-50 md:text-base',
+          'block cursor-pointer rounded-lg px-1 py-0.5 text-lg leading-snug hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:text-base',
           {
             'text-secondary line-through': item.isPacked,
           },
@@ -86,10 +92,10 @@ Created: 2025-09-19
     <button
       type="button"
       :class="[
-        'ml-1.5 flex size-10 flex-none items-center justify-center rounded-full transition-colors duration-200 sm:ml-2 md:size-6',
+        'ml-1.5 flex size-9 flex-none items-center justify-center rounded-lg transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 sm:ml-2 md:size-6',
         item.isPending
-          ? 'bg-orange-500 text-white hover:bg-orange-600'
-          : 'bg-gray-200 text-gray-400 hover:bg-gray-300',
+          ? 'bg-pending-button text-white hover:bg-pending-accent'
+          : 'bg-control-bg text-secondary hover:bg-control-hover',
         pendingButtonVisibilityClass,
         'focus:pointer-events-auto focus:static focus:opacity-100', // Ensure visible on focus
       ]"
@@ -121,9 +127,9 @@ Created: 2025-09-19
       class="relative ml-1 sm:ml-1.5"
       :class="[
         isEditing || item.quantity > 1 || (item.quantity === 1 && isHovered)
-          ? 'opacity-100'
-          : 'absolute opacity-0 md:static',
-        'focus-within:static focus-within:opacity-100', // Ensure visible when children have focus
+          ? 'pointer-events-auto opacity-100'
+          : 'pointer-events-none absolute opacity-0 md:static',
+        'focus-within:pointer-events-auto focus-within:static focus-within:opacity-100', // Ensure visible when children have focus
       ]"
       @mouseenter="isQuantityHovered = true"
       @mouseleave="isQuantityHovered = false"
@@ -131,12 +137,12 @@ Created: 2025-09-19
       @focusout="isQuantityHovered = false"
     >
       <!-- Quantity stepper: [-] [x5] [+] -->
-      <div class="flex items-center gap-0">
+      <div class="flex items-center gap-1">
         <!-- Decrement button / Delete button (when quantity = 1) -->
         <button
           type="button"
-          class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
-          :class="[buttonVisibilityClass, 'focus:opacity-100']"
+          class="flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-colors hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6"
+          :class="buttonVisibilityClass"
           :aria-label="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           @click.stop="item.quantity === 1 ? handleDelete() : decrementQuantity()"
@@ -145,7 +151,7 @@ Created: 2025-09-19
           <!-- Trash icon when quantity is 1 -->
           <svg
             v-if="item.quantity === 1"
-            class="size-3.5"
+            class="size-4"
             fill="none"
             stroke="currentColor"
             stroke-width="2"
@@ -177,7 +183,7 @@ Created: 2025-09-19
 
         <!-- Quantity display -->
         <div
-          class="text-secondary flex h-10 w-8 items-center justify-center rounded-md bg-gray-100 px-1 text-xs font-semibold transition-colors hover:bg-gray-200 md:h-6"
+          class="flex h-9 w-8 items-center justify-center rounded-lg bg-control-bg px-1 text-xs font-semibold text-secondary transition-colors hover:bg-control-hover md:h-6"
           :class="{ 'bg-transparent': !isHovered && !isEditing && item.quantity > 1 }"
         >
           <span class="mr-0.5">x</span>
@@ -187,8 +193,8 @@ Created: 2025-09-19
         <!-- Increment button -->
         <button
           type="button"
-          class="text-secondary flex size-10 flex-none items-center justify-center rounded-md bg-gray-100 transition-colors hover:bg-gray-200 md:size-6"
-          :class="[buttonVisibilityClass, 'focus:opacity-100']"
+          class="flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-colors hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6"
+          :class="buttonVisibilityClass"
           :aria-label="$t('item.increaseQuantity')"
           :title="$t('item.increaseQuantity')"
           @click.stop="incrementQuantity"
@@ -219,7 +225,7 @@ Created: 2025-09-19
       :is-editing="isEditing"
       menu-type="item"
       alignment="left"
-      class="ml-0"
+      class="ml-1"
       @edit="startEdit"
       @copy="$emit('copy:item', item.id)"
       @delete="handleDelete"
@@ -300,7 +306,7 @@ const isComposing = ref(false);
  */
 const buttonVisibilityClass = computed(() => {
   const shouldShow = isHovered.value || isEditing.value;
-  return shouldShow ? 'opacity-100' : 'opacity-0';
+  return shouldShow ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none';
 });
 
 /**
@@ -308,7 +314,9 @@ const buttonVisibilityClass = computed(() => {
  */
 const pendingButtonVisibilityClass = computed(() => {
   const shouldShow = props.item.isPending || isHovered.value || isEditing.value;
-  return shouldShow ? 'opacity-100' : 'opacity-0 absolute md:static';
+  return shouldShow
+    ? 'opacity-100 pointer-events-auto'
+    : 'opacity-0 pointer-events-none absolute md:static';
 });
 
 const isItemPacked = computed({
@@ -390,7 +398,7 @@ function handleEditBlur(_event) {
     if (!isStillEditing && isEditing.value && !isComposing.value) {
       saveEdit();
     }
-  }, 10);
+  }, 50); // 50ms: balance between focus transfer reliability and user responsiveness
 }
 
 /**

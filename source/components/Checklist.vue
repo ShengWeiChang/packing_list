@@ -30,7 +30,8 @@ Created: 2025-09-19
               :name="`checklist-${checklist.id}-name`"
               :placeholder="$t('checklist.name')"
               :aria-label="$t('checklist.name')"
-              class="text-primary w-full border-b-2 border-blue-300 bg-transparent p-1 text-3xl font-bold focus:border-blue-500 focus:outline-none"
+              class="w-full bg-transparent p-1 text-3xl font-bold text-primary focus:outline-none"
+              style="box-shadow: inset 0 -2px 0 0 var(--interactive-focus)"
               @keydown.enter="handleEnterKey"
               @keyup.escape="cancelEdit"
               @compositionstart="handleCompositionStart"
@@ -38,7 +39,7 @@ Created: 2025-09-19
             />
             <h2
               v-else
-              class="text-primary cursor-pointer break-words rounded p-1 text-3xl font-bold hover:bg-gray-50"
+              class="cursor-pointer break-words rounded p-1 text-3xl font-bold text-primary hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-2"
               role="button"
               tabindex="0"
               @click="startEdit"
@@ -66,11 +67,11 @@ Created: 2025-09-19
                 :name="`checklist-${checklist.id}-start-date`"
                 type="date"
                 :aria-label="$t('checklist.startDate')"
-                class="text-secondary w-28 rounded border border-gray-300 bg-transparent p-1 text-base focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
+                class="w-28 rounded border border-border-color-medium bg-transparent p-1 text-base text-secondary focus:border-interactive-focus focus:outline-none sm:w-auto sm:px-2"
                 @keydown.enter="handleEnterKey"
                 @keyup.escape="cancelEdit"
               />
-              <span class="text-secondary hidden md:inline">-</span>
+              <span class="hidden text-secondary md:inline">-</span>
               <input
                 :id="`checklist-${checklist.id}-end-date`"
                 ref="endDateInput"
@@ -79,14 +80,14 @@ Created: 2025-09-19
                 type="date"
                 :min="editedStartDate"
                 :aria-label="$t('checklist.endDate')"
-                class="text-secondary w-28 rounded border border-gray-300 bg-transparent p-1 text-base focus:border-blue-500 focus:outline-none sm:w-auto sm:px-2"
+                class="w-28 rounded border border-border-color-medium bg-transparent p-1 text-base text-secondary focus:border-interactive-focus focus:outline-none sm:w-auto sm:px-2"
                 @keydown.enter="handleEnterKey"
                 @keyup.escape="cancelEdit"
               />
             </div>
             <span
               v-else
-              class="text-secondary cursor-pointer whitespace-nowrap rounded py-1 pl-1 pr-2 text-lg hover:bg-gray-50 md:px-2 md:text-base"
+              class="cursor-pointer whitespace-nowrap rounded py-1 pl-1 pr-2 text-lg text-secondary hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-2 md:px-2 md:text-base"
               role="button"
               tabindex="0"
               @click="startEdit"
@@ -280,6 +281,7 @@ const nameInput = ref(null);
 const startDateInput = ref(null);
 const endDateInput = ref(null);
 const isComposing = ref(false);
+const isAdjustingDates = ref(false); // Guard flag to prevent watcher infinite loops
 
 // Drag state
 const draggingCategoryId = ref(null);
@@ -368,7 +370,7 @@ function handleEditBlur(_event) {
     if (!isStillEditing && isEditing.value && !isComposing.value) {
       saveEdit();
     }
-  }, 10);
+  }, 50); // 50ms: balance between focus transfer reliability and user responsiveness
 }
 
 /**
@@ -532,14 +534,46 @@ watch(
     }
   }
 );
+
+// Watch start date changes - ensure end date is not earlier than start date
+watch(editedStartDate, (newStartDate) => {
+  if (!isEditing.value) return;
+  if (isAdjustingDates.value) return; // Prevent watcher loops
+  if (!newStartDate) return;
+
+  // If end date is empty or earlier than the new start date, set end date to start date
+  if (!editedEndDate.value || editedEndDate.value < newStartDate) {
+    isAdjustingDates.value = true;
+    editedEndDate.value = newStartDate;
+    nextTick(() => {
+      isAdjustingDates.value = false;
+    });
+  }
+});
+
+// Watch end date changes - ensure end date is not earlier than start date
+watch(editedEndDate, (newEndDate) => {
+  if (!isEditing.value) return;
+  if (isAdjustingDates.value) return; // Prevent watcher loops
+  if (!newEndDate || !editedStartDate.value) return;
+
+  // If end date is earlier than start date, set end date to start date
+  if (newEndDate < editedStartDate.value) {
+    isAdjustingDates.value = true;
+    editedEndDate.value = editedStartDate.value;
+    nextTick(() => {
+      isAdjustingDates.value = false;
+    });
+  }
+});
 </script>
 
 <style scoped>
 /* Category drag and drop styles */
 .ghost-category {
   opacity: 0.3;
-  background: var(--color-gray-gray-100);
-  border: 2px dashed var(--color-gray-gray-400);
+  background: var(--ghost-background);
+  border: 2px dashed var(--ghost-border);
   border-radius: 0.75rem;
 }
 
@@ -551,8 +585,8 @@ watch(
   opacity: 0.5;
   transform: scale(1.02);
   box-shadow:
-    0 20px 25px -5px var(--color-shadow-black-10),
-    0 10px 10px -5px var(--color-shadow-black-4);
+    0 20px 25px -5px var(--shadow-medium),
+    0 10px 10px -5px var(--shadow-light);
   z-index: 1000;
 }
 
@@ -612,13 +646,13 @@ watch(
   0%,
   100% {
     box-shadow:
-      0 4px 6px -1px var(--color-shadow-black-10),
-      0 2px 4px -1px var(--color-shadow-black-6);
+      0 4px 6px -1px var(--shadow-medium),
+      0 2px 4px -1px var(--shadow-light);
   }
   50% {
     box-shadow:
-      0 4px 6px -1px var(--color-shadow-green-30),
-      0 2px 4px -1px var(--color-shadow-green-20);
+      0 4px 6px -1px var(--shadow-success),
+      0 2px 4px -1px var(--shadow-success-light);
   }
 }
 

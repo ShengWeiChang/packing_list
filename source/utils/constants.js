@@ -33,100 +33,116 @@ export const VALIDATION = {
 
 /**
  * Theme Color System - Single Source of Truth
- * All colors should be defined here and used via CSS variables
+ *
+ * Naming Logic:
+ * - text-primary / text-secondary: Text colors (charcoal, gray)
+ * - bg-primary / bg-secondary: Background colors (white, light gray)
+ * - theme-primary / theme-secondary: Brand colors (green, light green)
+ *
+ * Usage:
+ * - CSS: var(--text-primary), var(--bg-primary)
+ * - Tailwind: text-primary, bg-primary (requires registration in tailwind.config.js)
+ * - JS: THEME_COLORS.textPrimary, THEME_COLORS.bgPrimary
+ *
  * Run `npm run build:css-vars` after making changes to regenerate CSS
  */
 export const THEME_COLORS = {
   // ============================================================================
-  // Core Theme Colors (6-Color System)
+  // Text Colors
   // ============================================================================
 
-  // Text colors
-  TEXT_PRIMARY: 'rgba(33, 33, 33, 1)', // dark gray (main text)
-  TEXT_SECONDARY: 'rgba(100, 100, 100, 1)', // lighter gray (secondary text)
-
-  // Brand theme colors
-  PRIMARY: 'rgba(47, 107, 70, 1)', // deep forest green (actions, progress)
-  SECONDARY: 'rgba(211, 227, 219, 1)', // gray-green (completion states, accents)
-
-  // Background colors
-  BACKGROUND_PRIMARY: 'rgba(255, 255, 255, 1)', // white (cards, panels, sidebar)
-  BACKGROUND_SECONDARY: 'rgba(248, 250, 252, 1)', // light gray (app background, hover states)
+  textPrimary: 'rgba(33, 33, 33, 1)', // Primary text - charcoal gray #212121
+  textSecondary: 'rgba(100, 100, 100, 1)', // Secondary text - gray #646464
 
   // ============================================================================
-  // Pending Items Theme Colors
+  // Background Colors
   // ============================================================================
 
-  PENDING_ITEMS: {
-    BACKGROUND: 'rgba(255, 247, 237, 1)', // orange-50 (light orange background)
-    TEXT: 'rgba(124, 45, 18, 1)', // orange-900 (dark orange text)
-    ACCENT: 'rgba(234, 88, 12, 1)', // orange-600 (accent color)
-    BUTTON: 'rgba(249, 115, 22, 1)', // orange-500 (button background)
-    BUTTON_HOVER: 'rgba(234, 88, 12, 1)', // orange-600 (button hover)
-  },
+  bgPrimary: 'rgba(255, 255, 255, 1)', // Primary background - white (cards, sidebar)
+  bgSecondary: 'rgba(248, 250, 252, 1)', // Secondary background - light gray (page background)
 
   // ============================================================================
-  // Utility Colors (Gray Scale)
+  // Theme/Brand Colors
   // ============================================================================
 
-  GRAY: {
-    GRAY_50: 'rgba(249, 250, 251, 1)', // lightest gray
-    GRAY_100: 'rgba(243, 244, 246, 1)', // very light gray (drag ghost bg)
-    GRAY_200: 'rgba(229, 231, 235, 1)', // light gray
-    GRAY_300: 'rgba(209, 213, 219, 1)', // medium-light gray
-    GRAY_400: 'rgba(156, 163, 175, 1)', // medium gray (borders, dashed lines)
-    GRAY_600: 'rgba(75, 85, 99, 1)', // dark gray
-  },
+  themePrimary: 'rgba(47, 107, 70, 1)', // Primary brand color - dark forest green #2f6b46 (progress bar)
+  themeSecondary: 'rgba(211, 227, 219, 1)', // Secondary brand color - light grayish green #d3e3db (progress bar background)
 
   // ============================================================================
-  // Semantic Colors (Green for success/completion)
+  // Drag & Drop Colors
   // ============================================================================
 
-  GREEN: {
-    GREEN_50: 'rgba(240, 253, 244, 1)', // lightest green
-    GREEN_100: 'rgba(220, 252, 231, 1)', // very light green
-    GREEN_200: 'rgba(187, 247, 208, 1)', // light green
-    GREEN_300: 'rgba(134, 239, 172, 1)', // medium-light green
-    GREEN_500: 'rgba(34, 197, 94, 1)', // medium green
-    GREEN_600: 'rgba(16, 185, 129, 1)', // primary green (animations, borders)
-    GREEN_800: 'rgba(5, 126, 71, 1)', // dark green
-  },
+  ghostBackground: 'rgba(243, 244, 246, 1)', // Ghost background (gray-100)
+  ghostBorder: 'rgba(156, 163, 175, 1)', // Ghost border (gray-400)
+  dropZone: 'rgba(239, 246, 255, 1)', // Drop zone (blue-50)
 
   // ============================================================================
-  // Additional Utility Colors (Orange for highlights)
+  // Shadow Colors
   // ============================================================================
 
-  ORANGE: {
-    ORANGE_50: 'rgba(255, 247, 237, 1)', // lightest orange
-    ORANGE_500: 'rgba(249, 115, 22, 1)', // medium orange
-    ORANGE_600: 'rgba(234, 88, 12, 1)', // primary orange
-    ORANGE_900: 'rgba(124, 45, 18, 1)', // dark orange
-  },
+  shadowLight: 'rgba(0, 0, 0, 0.05)', // Light shadow
+  shadowMedium: 'rgba(0, 0, 0, 0.1)', // Medium shadow
+  shadowSuccess: 'rgba(34, 197, 94, 0.3)', // Success animation shadow (green-500)
+  shadowSuccessLight: 'rgba(34, 197, 94, 0.2)',
 
   // ============================================================================
-  // Additional Utility Colors (Blue for info/drops)
+  // Status Colors - Success
   // ============================================================================
 
-  BLUE: {
-    BLUE_50: 'rgba(239, 246, 255, 1)', // lightest blue (drop zones)
-    BLUE_300: 'rgba(147, 197, 253, 1)', // light blue
-    BLUE_500: 'rgba(59, 130, 246, 1)', // medium blue
-  },
+  success: 'rgba(22, 163, 74, 1)', // Success border (green-600)
 
   // ============================================================================
-  // System Colors (Shadows, Overlays)
+  // Status Colors - Pending (Orange theme)
   // ============================================================================
 
-  SHADOW: {
-    BLACK_10: 'rgba(0, 0, 0, 0.1)', // light shadow
-    BLACK_5: 'rgba(0, 0, 0, 0.05)', // very light shadow
-    BLACK_4: 'rgba(0, 0, 0, 0.04)', // extra light shadow
-    BLACK_6: 'rgba(0, 0, 0, 0.06)', // subtle shadow
-    GREEN_30: 'rgba(16, 185, 129, 0.3)', // success shadow
-    GREEN_20: 'rgba(16, 185, 129, 0.2)', // success shadow light
-  },
+  pending: 'rgba(255, 247, 237, 1)', // Pending background (orange-50)
+  pendingForeground: 'rgba(124, 45, 18, 1)', // Pending text (orange-900)
+  pendingAccent: 'rgba(234, 88, 12, 1)', // Pending accent (orange-600)
+  pendingButton: 'rgba(249, 115, 22, 1)', // Pending button (orange-500)
 
-  OVERLAY: {
-    BACKDROP: 'rgba(0, 0, 0, 0.5)', // modal/overlay backdrop
-  },
+  // ============================================================================
+  // Overlay Colors
+  // ============================================================================
+
+  overlay: 'rgba(0, 0, 0, 0.5)', // Overlay background
+
+  // ============================================================================
+  // Interaction Colors (Interactive States)
+  // ============================================================================
+
+  interactiveFocus: 'rgba(59, 130, 246, 1)', // Focus indicator - blue #3b82f6 (blue-500)
+  interactiveHover: 'rgba(243, 244, 246, 1)', // Hover background - light gray #f3f4f6 (gray-100)
+  interactiveHoverLight: 'rgba(249, 250, 251, 1)', // Hover background (light) - very light gray #f9fafb (gray-50)
+  interactiveHoverDark: 'rgba(229, 231, 235, 1)', // Hover background (dark) - medium gray #e5e7eb (gray-200)
+
+  // ============================================================================
+  // Surface Colors (Surface Decoration - borders, controls)
+  // ============================================================================
+
+  borderLight: 'rgba(229, 231, 235, 1)', // Light border #e5e7eb (gray-200)
+  borderMedium: 'rgba(209, 213, 219, 1)', // Medium border #d1d5db (gray-300)
+  borderDark: 'rgba(156, 163, 175, 1)', // Dark border #9ca3af (gray-400)
+
+  controlBg: 'rgba(243, 244, 246, 1)', // Control background #f3f4f6 (gray-100)
+  controlHover: 'rgba(229, 231, 235, 1)', // Control hover #e5e7eb (gray-200)
+  controlAccent: 'rgba(75, 85, 99, 1)', // Control accent #4b5563 (gray-600)
+
+  // ============================================================================
+  // State Colors - Success/Complete (Green theme)
+  // ============================================================================
+
+  successBg: 'rgba(240, 253, 244, 1)', // Success background #f0fdf4 (green-50)
+  successText: 'rgba(22, 163, 74, 1)', // Success text #16a34a (green-600)
+  successTextDark: 'rgba(21, 128, 61, 1)', // Success text (dark) #15803d (green-700)
+  successBorder: 'rgba(134, 239, 172, 1)', // Success border #86efac (green-300)
+  successAccent: 'rgba(22, 163, 74, 1)', // Success accent #16a34a (green-600)
+  successTextComplete: 'rgba(22, 101, 52, 1)', // Complete text (darkest) #166534 (green-800)
+
+  // ============================================================================
+  // State Colors - Danger/Delete (Red theme)
+  // ============================================================================
+
+  dangerText: 'rgba(220, 38, 38, 1)', // Danger text #dc2626 (red-600)
+  dangerBg: 'rgba(254, 242, 242, 1)', // Danger background #fef2f2 (red-50)
+  dangerFocus: 'rgba(239, 68, 68, 1)', // Danger focus #ef4444 (red-500)
 };

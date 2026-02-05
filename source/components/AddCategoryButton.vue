@@ -12,13 +12,13 @@ Created: 2025-09-19
 <template>
   <button
     type="button"
-    class="flex min-h-32 w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-4 shadow-md transition-shadow duration-200 hover:border-gray-400 hover:shadow-lg"
+    class="flex min-h-32 w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border-color-medium bg-white p-4 shadow-md transition-shadow duration-200 hover:border-border-color-dark hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-2"
     @click="$emit('click')"
   >
     <div class="text-center">
       <!-- Plus icon -->
       <svg
-        class="text-secondary mx-auto mb-2 size-8"
+        class="mx-auto mb-2 size-8 text-secondary"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -32,7 +32,7 @@ Created: 2025-09-19
       </svg>
 
       <!-- Button label -->
-      <span class="text-secondary group-hover:text-primary text-base">
+      <span class="text-base text-secondary group-hover:text-primary">
         {{ $t('category.newCategory') }}
       </span>
     </div>

@@ -12,7 +12,7 @@ Created: 2025-09-19
 <template>
   <aside
     :class="[
-      'flex flex-col border-r border-gray-200 bg-white p-2 transition-all duration-300 ease-in-out',
+      'flex flex-col border-r border-border-color-light bg-white p-2 transition-all duration-300 ease-in-out',
       isMobile ? 'h-full' : 'h-screen',
       // Mobile: overlay drawer when expanded, hidden when collapsed
       isMobile
@@ -27,13 +27,13 @@ Created: 2025-09-19
   >
     <!-- Toggle Button -->
     <button
-      class="mb-2 flex w-full items-center rounded-lg hover:bg-gray-100"
+      class="mb-2 flex w-full items-center rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :aria-label="$t('sidebar.toggle')"
       @click="$emit('toggle-sidebar')"
     >
       <div class="shrink-0 p-3">
         <svg
-          class="text-secondary size-6"
+          class="size-6 text-secondary"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -50,13 +50,13 @@ Created: 2025-09-19
 
     <!-- New Checklist Button -->
     <button
-      class="mb-4 flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg hover:bg-gray-100"
+      class="mb-4 flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :class="[isExpanded || isMobile ? 'pr-4' : '']"
       @click="$emit('create-checklist')"
     >
       <div class="shrink-0 p-3">
         <svg
-          class="text-secondary size-6"
+          class="size-6 text-secondary"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -70,7 +70,7 @@ Created: 2025-09-19
         </svg>
       </div>
       <span
-        class="text-secondary ml-4 text-lg transition-opacity duration-300 ease-in-out md:text-base"
+        class="ml-4 text-lg text-secondary transition-opacity duration-300 ease-in-out md:text-base"
         :class="{
           'opacity-0': !isExpanded && !isMobile,
           'opacity-100 delay-150': isExpanded || isMobile,
@@ -85,7 +85,7 @@ Created: 2025-09-19
       <div class="flex flex-col">
         <h1 class="mb-2 overflow-hidden whitespace-nowrap px-2 text-2xl font-bold md:text-xl">
           <span
-            class="text-primary inline-block transition-all duration-300 ease-in-out"
+            class="inline-block text-primary transition-all duration-300 ease-in-out"
             :class="{
               '-translate-x-4 opacity-0': !isExpanded && !isMobile,
               'translate-x-0 opacity-100 delay-150': isExpanded || isMobile,
@@ -122,24 +122,26 @@ Created: 2025-09-19
               <div
                 class="group relative flex items-center rounded-lg px-1 transition-colors duration-200"
                 :class="[
-                  selectedChecklistId === checklist.id ? 'bg-gray-100' : 'hover:bg-gray-100',
+                  selectedChecklistId === checklist.id
+                    ? 'bg-interactive-hover'
+                    : 'hover:bg-interactive-hover',
                 ]"
               >
                 <button
                   :class="[
-                    'min-w-0 grow py-3 text-left transition-colors duration-300 ease-in-out md:py-2',
+                    'min-w-0 grow py-3 text-left transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:py-2',
                     isExpanded || isMobile ? 'px-4 pr-8' : 'flex items-center justify-center px-3',
                     isExpanded || isMobile
                       ? [
                           selectedChecklistId === checklist.id
-                            ? 'text-primary font-medium'
+                            ? 'font-medium text-primary'
                             : 'text-secondary',
                           // Apply cursor styles only when dragging is enabled
                           draggingChecklistId === checklist.id ? 'cursor-grabbing' : 'cursor-grab',
                         ]
                       : [
                           selectedChecklistId === checklist.id
-                            ? 'text-primary font-medium'
+                            ? 'font-medium text-primary'
                             : 'text-secondary',
                         ],
                   ]"
@@ -192,7 +194,7 @@ Created: 2025-09-19
     >
       <button
         ref="languageButtonRef"
-        class="flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg transition-colors duration-200 hover:bg-gray-100"
+        class="flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg transition-colors duration-200 hover:bg-interactive-hover"
         :class="[isExpanded || isMobile ? 'pr-4' : '']"
         :aria-label="$t('language.switchLanguage')"
         :title="$t('language.switchLanguage')"
@@ -200,7 +202,7 @@ Created: 2025-09-19
       >
         <div class="shrink-0 p-3">
           <svg
-            class="text-secondary size-6"
+            class="size-6 text-secondary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -261,23 +263,24 @@ Created: 2025-09-19
       <div
         v-if="showLanguageMenu"
         ref="languageDropdownRef"
-        class="z-50 min-w-40 rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+        class="z-50 min-w-40 rounded-md border border-border-color-light bg-white py-1 shadow-lg"
         :style="languageDropdownStyle"
       >
         <button
           v-for="lang in availableLanguages"
           :key="lang.code"
-          class="flex w-full items-center px-4 py-2 text-base transition-colors duration-150 hover:bg-gray-100 md:text-sm"
+          class="flex w-full items-center px-4 py-2 text-base transition-colors duration-150 hover:bg-interactive-hover md:text-sm"
           :class="
-            currentLocale === lang.code ? 'text-primary bg-gray-50 font-medium' : 'text-secondary'
+            currentLocale === lang.code
+              ? 'bg-interactive-hover-light font-medium text-primary'
+              : 'text-secondary'
           "
           @click="selectLanguage(lang.code)"
         >
-          <span class="mr-2">{{ lang.icon }}</span>
           <span>{{ lang.label }}</span>
           <svg
             v-if="currentLocale === lang.code"
-            class="text-primary ml-auto size-4"
+            class="ml-auto size-4 text-primary"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -313,8 +316,8 @@ const { locale } = useI18n();
 // Available languages configuration
 // TODO: Expand this array when adding more language support
 const availableLanguages = [
-  { code: 'en', label: 'English', icon: '🇺🇸' },
-  { code: 'zh-TW', label: '繁體中文', icon: '🇹🇼' },
+  { code: 'en', label: 'English' },
+  { code: 'zh-TW', label: '繁體中文' },
 ];
 
 // ------------------------------------------------------------------------------
@@ -551,8 +554,8 @@ onUnmounted(() => {
 /* Checklist drag and drop styles */
 .ghost-checklist {
   opacity: 0.3;
-  background: var(--color-gray-gray-100);
-  border: 2px dashed var(--color-gray-gray-400);
+  background: var(--ghost-background);
+  border: 2px dashed var(--ghost-border);
   border-radius: 0.5rem;
 }
 
@@ -564,7 +567,7 @@ onUnmounted(() => {
   opacity: 0.5;
   transform: scale(1.02);
   box-shadow:
-    0 10px 15px -3px var(--color-shadow-black-10),
-    0 4px 6px -2px var(--color-shadow-black-5);
+    0 10px 15px -3px var(--shadow-medium),
+    0 4px 6px -2px var(--shadow-light);
 }
 </style>

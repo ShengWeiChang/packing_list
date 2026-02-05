@@ -81,7 +81,10 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Create checklist: Auto-seed default categories and items from `source/data/defaultItems.js`.
     - Categories: Built from default data by removing duplicate category names; assign `order` based on creation sequence (starting at 0).
     - Items: Created one by one with the correct `categoryId`, `isPacked=false`, and sequential `order` (starting at 0).
-  - Edit checklist: Edit `name`, `startDate`, `endDate` (native date inputs, ISO format).
+  - Edit checklist: Edit `name`.
+  - Date Editing:
+    - Uses native HTML5 date input for reliability.
+    - Bidirectional protection: Changing start date updates end date if end < start. Changing end date updates it to start date if end < start.
   - Copy checklist: Duplicate an existing checklist with all its categories and items.
   - Delete checklist: Cascade delete all categories and items under the checklist.
   - Reorder checklists: Drag to update `order` (starting at 0); persists and remains after reload.
@@ -124,6 +127,8 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Key features:
   - Create item: In a specified category, `isPacked=false`, `order = max order of that category + 1`.
   - Edit item: Inline edit name and quantity (min 1); delete item.
+  - UI Improvements: Element element sizes unified (size-9 mobile, size-6 desktop).
+  - Edit Mode: Uses `box-shadow` instead of `border-b` for underlines to prevent layout shifts; uses consistent deep blue (`#3b82f6`) theme color.
   - Toggle status: Toggling `isPacked` immediately updates category and checklist progress; preserves `order`.
   - Dragging:
     - Same category: After reorder, rewrite `order` sequentially (0-based).
@@ -365,13 +370,38 @@ Notes:
 
 #### Color System
 
-- Primary text: `#212121` — dark gray
-- Secondary text: `#646464` — mid gray
-- Primary brand: `#2f6b46` — forest green
-- Accent: `#d3e3db` — light green-gray
-- Background: `#ffffff` — white
-- Surface: `#f8fafc` — light gray
-- Pending Items: `#fff7ed` background, `#7c2d12` text, `#f97316` accent — orange theme
+The application uses a centralized color management system with semantic naming:
+
+**Text Colors:**
+
+- `text-primary` (`#212121`) — Dark gray for primary text (headings, body text)
+- `text-secondary` (`#646464`) — Mid gray for secondary text (timestamps, helper text)
+
+**Background Colors:**
+
+- `bg-primary` (`#ffffff`) — White for cards and sidebar
+- `bg-secondary` (`#f8fafc`) — Light gray for page background
+
+**Theme/Brand Colors:**
+
+- `theme-primary` (`#2f6b46`) — Forest green for progress bars and brand elements
+- `theme-secondary` (`#d3e3db`) — Light green-gray for progress bar backgrounds
+
+**Pending Items (To-Buy/To-Do):**
+
+- Background: `#fff7ed` (orange-50)
+- Text: `#7c2d12` (orange-900)
+- Accent: `#ea580c` (orange-600)
+- Button: `#f97316` (orange-500)
+
+**Implementation:**
+
+- Single Source of Truth: All colors defined in `source/utils/constants.js` (`THEME_COLORS` object)
+- Build Pipeline: `npm run build:css-vars` generates CSS variables in `source/index.css`
+- Usage:
+  - CSS: `var(--text-primary)`, `var(--bg-primary)`, `var(--theme-primary)`
+  - Tailwind: `text-primary`, `bg-bg-primary`, `bg-theme-primary`
+  - JavaScript: `THEME_COLORS.textPrimary`, `THEME_COLORS.bgPrimary`
 
 #### Design System
 

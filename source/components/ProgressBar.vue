@@ -60,10 +60,10 @@ import { THEME_COLORS } from '../utils/constants';
 // Constants
 // ------------------------------------------------------------------------------
 
-// Theme colors
-const progressColor = THEME_COLORS.PRIMARY;
-const textColor = THEME_COLORS.TEXT_PRIMARY;
-const backgroundColor = THEME_COLORS.SECONDARY;
+// Theme colors - Use semantic tokens from constants.js
+const progressColor = THEME_COLORS.themePrimary; // 深綠色進度條
+const textColor = THEME_COLORS.textPrimary; // 主要文字色 (灰黑)
+const backgroundColor = THEME_COLORS.themeSecondary; // 淺灰綠背景
 
 // ------------------------------------------------------------------------------
 // Props & Emits

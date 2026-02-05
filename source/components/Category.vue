@@ -13,7 +13,7 @@ Created: 2025-09-19
   <div
     :class="[
       'group rounded-xl p-3 shadow-md transition-all duration-200 hover:shadow-lg',
-      isCompleted ? 'bg-green-50' : 'bg-white',
+      isCompleted ? 'bg-success-state-bg' : 'bg-white',
     ]"
   >
     <!-- Category Header -->
@@ -26,7 +26,8 @@ Created: 2025-09-19
           v-model="editedName"
           :name="`category-${category.id}-name`"
           :aria-label="$t('category.name')"
-          class="w-full border-b border-blue-300 bg-transparent p-1 text-2xl font-semibold text-slate-800 focus:border-blue-500 focus:outline-none md:text-xl"
+          class="w-full bg-transparent p-1 text-2xl font-semibold leading-snug text-primary focus:outline-none md:text-xl"
+          style="box-shadow: inset 0 -2px 0 0 var(--interactive-focus)"
           @keydown.enter="handleEnterKey"
           @keyup.escape="cancelEdit"
           @blur="handleBlur"
@@ -35,7 +36,7 @@ Created: 2025-09-19
         />
         <h3
           v-else
-          class="text-primary cursor-pointer rounded p-1 text-2xl font-semibold leading-snug hover:bg-gray-50 md:text-xl"
+          class="cursor-pointer rounded p-1 text-2xl font-semibold leading-snug text-primary hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus md:text-xl"
           style="word-break: break-word; overflow-wrap: break-word"
           role="button"
           tabindex="0"
@@ -52,7 +53,7 @@ Created: 2025-09-19
         <!-- Collapse/Expand Button -->
         <button
           type="button"
-          class="ml-2 flex size-8 items-center justify-center rounded-full text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-blue-500 md:size-6 md:opacity-0 md:group-hover:opacity-100"
+          class="ml-2 flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-all duration-200 hover:bg-control-hover hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6 md:opacity-0 md:focus-visible:opacity-100 md:group-hover:opacity-100"
           :title="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-label="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-expanded="!isCollapsed"
@@ -116,10 +117,13 @@ Created: 2025-09-19
     <div
       :id="`category-${category.id}-items`"
       class="grid transition-[grid-template-rows] duration-300 ease-in-out"
-      :class="isCollapsed ? 'hidden' : 'grid-rows-[1fr]'"
+      :class="isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
     >
-      <div class="min-h-0 overflow-hidden">
-        <div class="space-y-0.5 pt-1">
+      <div
+        class="min-h-0 overflow-hidden"
+        :aria-hidden="isCollapsed"
+      >
+        <div class="space-y-1 pt-1">
           <draggable
             v-model="draggableItems"
             item-key="id"
@@ -137,6 +141,7 @@ Created: 2025-09-19
             :ghost-class="'ghost-item'"
             :chosen-class="'chosen-item'"
             :drag-class="'drag-item'"
+            class="space-y-1"
             @start="onItemDragStart"
             @end="onItemDragEnd"
             @change="onItemChange"
@@ -496,8 +501,8 @@ watch(
 /* Drag and drop styles */
 .ghost-item {
   opacity: 0.3;
-  background: var(--color-gray-gray-100);
-  border: 2px dashed var(--color-gray-gray-400);
+  background: var(--ghost-background);
+  border: 2px dashed var(--ghost-border);
 }
 
 .chosen-item {
@@ -508,8 +513,8 @@ watch(
   opacity: 0.5;
   transform: scale(1.05);
   box-shadow:
-    0 10px 15px -3px var(--color-shadow-black-10),
-    0 4px 6px -2px var(--color-shadow-black-5);
+    0 10px 15px -3px var(--shadow-medium),
+    0 4px 6px -2px var(--shadow-light);
 }
 
 /* Drag handle */
@@ -523,7 +528,7 @@ watch(
 
 /* Drop zone visual feedback */
 .bg-blue-50 {
-  background-color: var(--color-blue-blue-50);
+  background-color: var(--drop-zone);
 }
 
 .border-dashed {
@@ -537,7 +542,7 @@ watch(
     border-color: transparent;
   }
   50% {
-    border-color: var(--color-green-green-600);
+    border-color: var(--success);
   }
 }
 

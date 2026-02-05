@@ -76,7 +76,7 @@ Created: 2025-09-19
       :style="dropdownStyle"
     >
       <button
-        class="text-primary flex w-full items-center px-3 py-2 text-base hover:bg-gray-100 md:text-sm"
+        class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
         @click="handleEdit"
       >
         <svg
@@ -96,7 +96,7 @@ Created: 2025-09-19
       </button>
 
       <button
-        class="text-primary flex w-full items-center px-3 py-2 text-base hover:bg-gray-100 md:text-sm"
+        class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
         @click="handleCopy"
       >
         <svg
@@ -116,7 +116,7 @@ Created: 2025-09-19
       </button>
 
       <button
-        class="flex w-full items-center px-3 py-2 text-base text-red-600 hover:bg-red-50 md:text-sm"
+        class="flex w-full items-center px-3 py-2 text-base text-danger-text hover:bg-danger-bg focus:bg-danger-bg focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-danger-focus md:text-sm"
         @click="handleDelete"
       >
         <svg
@@ -200,11 +200,11 @@ const root = ref(null);
 // Button visibility based on props and menu state
 const buttonClass = computed(() => {
   const baseClass =
-    'p-3 md:p-1 flex items-center justify-center rounded-md transition-all duration-200 hover:bg-gray-200';
+    'size-9 md:size-6 flex items-center justify-center rounded-lg bg-control-bg transition-all duration-200 hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1';
 
   // Green checkmark style when editing
   if (props.isEditing) {
-    return `${baseClass} opacity-100 text-green-600 hover:text-green-700 hover:bg-green-50`;
+    return `${baseClass} opacity-100 text-success-state-text hover:text-success-state-text-dark hover:bg-success-state-bg`;
   }
 
   // Gray three-dot style when not editing
@@ -228,12 +228,12 @@ const buttonClass = computed(() => {
 
 // Dropdown styling
 const dropdownClass = computed(
-  () => `mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-auto max-w-xs`
+  () => `mt-1 bg-white border border-border-color-light rounded-md shadow-lg z-50 w-auto max-w-xs`
 );
 
 // SVG icon size based on menu type
 const svgClass = computed(() => {
-  return props.menuType === 'item' ? 'size-5' : 'size-6';
+  return props.menuType === 'item' ? 'size-4' : 'size-5';
 });
 
 // ------------------------------------------------------------------------------

@@ -31,7 +31,8 @@ export const defaultItemsEN = [
   { name: 'Pants', category: 'Winter Wear', quantity: 1 },
 
   // Underwear
-  { name: 'Underwear', category: 'Underwear', quantity: 1 },
+  { name: 'Underwear (Top)', category: 'Underwear', quantity: 1 },
+  { name: 'Underwear (Bottom)', category: 'Underwear', quantity: 1 },
   { name: 'Socks', category: 'Underwear', quantity: 1 },
   { name: 'Pajamas', category: 'Underwear', quantity: 1 },
 

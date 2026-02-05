@@ -14,14 +14,14 @@ Created: 2025-11-01
   <div
     v-if="pendingItems.length > 0"
     class="group rounded-xl p-3 shadow-md transition-all duration-200 hover:shadow-lg"
-    :style="{ backgroundColor: THEME_COLORS.PENDING_ITEMS.BACKGROUND }"
+    :style="{ backgroundColor: THEME_COLORS.pending }"
   >
     <!-- Header -->
     <div class="relative mb-3 flex items-center justify-between">
       <div class="grow">
         <h3
-          class="text-primary cursor-pointer rounded p-1 text-xl font-semibold"
-          :style="{ color: THEME_COLORS.PENDING_ITEMS.TEXT }"
+          class="cursor-pointer rounded p-1 text-xl font-semibold text-primary"
+          :style="{ color: THEME_COLORS.pendingForeground }"
         >
           {{ $t('category.shoppingList') }}
         </h3>
@@ -30,7 +30,7 @@ Created: 2025-11-01
       <!-- Item count (replaces overflow menu) -->
       <span
         class="font-medium"
-        :style="{ color: THEME_COLORS.PENDING_ITEMS.ACCENT }"
+        :style="{ color: THEME_COLORS.pendingAccent }"
       >
         {{ pendingItems.length }} {{ $t('category.itemsLeft') }}
       </span>
@@ -46,19 +46,10 @@ Created: 2025-11-01
         <!-- Completion button (left side) - mark as completed -->
         <button
           type="button"
-          class="mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center rounded-full text-white transition-all hover:scale-110 sm:mr-2"
-          :style="{
-            backgroundColor: THEME_COLORS.PENDING_ITEMS.BUTTON,
-          }"
+          class="mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center rounded-full bg-pending-button text-white transition-all hover:scale-110 hover:bg-pending-accent sm:mr-2"
           :title="$t('item.markAsBought')"
           :aria-label="$t('item.markAsBought')"
           @click.stop="markAsCompleted(item)"
-          @mouseenter="
-            (e) => (e.target.style.backgroundColor = THEME_COLORS.PENDING_ITEMS.BUTTON_HOVER)
-          "
-          @mouseleave="(e) => (e.target.style.backgroundColor = THEME_COLORS.PENDING_ITEMS.BUTTON)"
-          @focus="(e) => (e.target.style.backgroundColor = THEME_COLORS.PENDING_ITEMS.BUTTON_HOVER)"
-          @blur="(e) => (e.target.style.backgroundColor = THEME_COLORS.PENDING_ITEMS.BUTTON)"
         >
           <!-- Checkmark icon -->
           <svg
@@ -78,17 +69,14 @@ Created: 2025-11-01
 
         <!-- Item name and optional quantity -->
         <div class="flex grow items-center gap-1">
-          <span
-            class="truncate text-base"
-            :style="{ color: THEME_COLORS.TEXT_PRIMARY }"
-          >
+          <span class="truncate text-base text-primary">
             {{ item.name }}
           </span>
 
           <!-- Quantity display (only show if quantity > 1) -->
           <div
             v-if="item.quantity > 1"
-            class="text-secondary flex h-6 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 px-1 text-xs font-semibold"
+            class="flex h-6 w-8 shrink-0 items-center justify-center rounded-md bg-control-bg px-1 text-xs font-semibold text-secondary"
           >
             <span class="mr-0.5">x</span>
             <span>{{ item.quantity }}</span>

@@ -30,7 +30,7 @@ const constantsPath = join(__dirname, 'source', 'utils', 'constants.js');
 const constantsContent = readFileSync(constantsPath, 'utf-8');
 
 // Extract THEME_COLORS object using regex
-const themeColorsMatch = constantsContent.match(/export const THEME_COLORS = {([\s\S]*?)^};/m);
+const themeColorsMatch = constantsContent.match(/export const THEME_COLORS = \{([\s\S]*?)\n\};/m);
 
 if (!themeColorsMatch) {
   console.error('Could not find THEME_COLORS in constants.js');
@@ -63,77 +63,42 @@ function normalizeColor(rgba) {
 }
 
 /**
- * Convert SCREAMING_SNAKE_CASE or camelCase to kebab-case
- * @param {string} str - input string
- * @returns {string} - kebab-case string
+ * Convert camelCase to kebab-case
+ * @param {string} str - input string (e.g., "cardForeground")
+ * @returns {string} - kebab-case string (e.g., "card-foreground")
  */
 function toKebabCase(str) {
-  return str
-    .split('_') // Split by underscores first
-    .map((part) => {
-      // Convert each part from camelCase to kebab-case
-      return part
-        .replace(/([a-z])([A-Z])/g, '$1-$2') // Add hyphen between lowercase and uppercase
-        .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2') // Handle consecutive capitals
-        .toLowerCase();
-    })
-    .join('-'); // Join all parts with hyphens
+  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
 /**
- * Parse THEME_COLORS object recursively
+ * Parse flat THEME_COLORS object
  * @param {string} content - JS object content as string
- * @param {string} prefix - CSS variable prefix
  * @returns {object} - flat object with CSS variable names as keys
  */
-function parseThemeColors(content, prefix = '') {
+function parseThemeColors(content) {
   const colors = {};
   const lines = content.split('\n');
-
-  let currentKey = '';
-  let nestedContent = '';
-  let braceLevel = 0;
 
   for (const line of lines) {
     const trimmed = line.trim();
 
     // Skip comments and empty lines
-    if (trimmed.startsWith('//') || trimmed === '') continue;
-
-    // Check for nested object
-    const nestedMatch = trimmed.match(/^(\w+):\s*{/);
-    if (nestedMatch) {
-      currentKey = nestedMatch[1];
-      braceLevel = 1;
-      nestedContent = '';
+    if (
+      trimmed.startsWith('//') ||
+      trimmed.startsWith('/*') ||
+      trimmed === '' ||
+      trimmed.startsWith('*')
+    ) {
       continue;
     }
 
-    // Inside nested object
-    if (braceLevel > 0) {
-      nestedContent += line + '\n';
-      braceLevel += (line.match(/{/g) || []).length;
-      braceLevel -= (line.match(/}/g) || []).length;
-
-      if (braceLevel === 0) {
-        // Recursively parse nested content
-        const nestedColors = parseThemeColors(
-          nestedContent,
-          prefix + toKebabCase(currentKey) + '-'
-        );
-        Object.assign(colors, nestedColors);
-        currentKey = '';
-        nestedContent = '';
-      }
-      continue;
-    }
-
-    // Parse color value
+    // Parse color value: key: 'rgba(...)',
     const colorMatch = trimmed.match(/^(\w+):\s*'(rgba?\([^)]+\))',?/);
     if (colorMatch) {
       const key = colorMatch[1];
       const value = colorMatch[2];
-      const varName = '--color-' + prefix + toKebabCase(key);
+      const varName = '--' + toKebabCase(key);
       colors[varName] = normalizeColor(value);
     }
   }
@@ -146,83 +111,178 @@ const themeColorsContent = themeColorsMatch[1];
 const cssVars = parseThemeColors(themeColorsContent);
 
 // Generate CSS variables string
-let cssVarsString = '  /* Theme Colors - Auto-generated from constants.js */\n';
-cssVarsString += '  /* DO NOT EDIT THIS SECTION MANUALLY */\n';
-cssVarsString += '  /* Run: npm run build:css-vars to regenerate */\n\n';
+let cssVarsString =
+  '  /* ============================================================================\n';
+cssVarsString += '   * Theme Colors - Auto-generated from constants.js\n';
+cssVarsString += '   * DO NOT EDIT THIS SECTION MANUALLY\n';
+cssVarsString += '   * Run: npm run build:css-vars to regenerate\n';
+cssVarsString +=
+  '   * ============================================================================ */\n\n';
 
-// Group by category for better readability
+// Group variables by category for better readability
 const groups = {
-  text: [],
-  theme: [],
-  background: [],
-  pending: [],
+  text: ['--text-primary', '--text-secondary'],
+  background: ['--bg-primary', '--bg-secondary'],
+  theme: ['--theme-primary', '--theme-secondary'],
+  dragDrop: ['--ghost-background', '--ghost-border', '--drop-zone'],
+  shadow: ['--shadow-light', '--shadow-medium', '--shadow-success', '--shadow-success-light'],
+  success: ['--success'],
+  pending: ['--pending', '--pending-foreground', '--pending-accent', '--pending-button'],
+  overlay: ['--overlay'],
+  interaction: [
+    '--interactive-focus',
+    '--interactive-hover',
+    '--interactive-hover-light',
+    '--interactive-hover-dark',
+  ],
+  surface: [
+    '--border-light',
+    '--border-medium',
+    '--border-dark',
+    '--control-bg',
+    '--control-hover',
+    '--control-accent',
+  ],
+  stateSuccess: [
+    '--success-bg',
+    '--success-text',
+    '--success-text-dark',
+    '--success-border',
+    '--success-accent',
+    '--success-text-complete',
+  ],
+  stateDanger: ['--danger-text', '--danger-bg', '--danger-focus'],
 };
 
-for (const [varName, value] of Object.entries(cssVars)) {
-  if (varName.includes('text-')) {
-    groups.text.push(`  ${varName}: ${value};`);
-  } else if (varName.includes('pending-items-')) {
-    groups.pending.push(`  ${varName}: ${value};`);
-  } else if (varName.includes('background-')) {
-    groups.background.push(`  ${varName}: ${value};`);
-  } else {
-    groups.theme.push(`  ${varName}: ${value};`);
+// Text colors
+cssVarsString += '  /* Text Colors */\n';
+for (const varName of groups.text) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
   }
 }
+cssVarsString += '\n';
 
-// Add text colors
-if (groups.text.length > 0) {
-  cssVarsString += '  /* Text Colors */\n';
-  cssVarsString += groups.text.join('\n') + '\n\n';
+// Background colors
+cssVarsString += '  /* Background Colors */\n';
+for (const varName of groups.background) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
 }
+cssVarsString += '\n';
 
-// Add theme colors
-if (groups.theme.length > 0) {
-  cssVarsString += '  /* Theme Colors */\n';
-  cssVarsString += groups.theme.join('\n') + '\n\n';
+// Theme/Brand colors
+cssVarsString += '  /* Theme/Brand Colors */\n';
+for (const varName of groups.theme) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
 }
+cssVarsString += '\n';
 
-// Add background colors
-if (groups.background.length > 0) {
-  cssVarsString += '  /* Background Colors */\n';
-  cssVarsString += groups.background.join('\n') + '\n\n';
+// Drag & Drop colors
+cssVarsString += '  /* Drag & Drop Colors */\n';
+for (const varName of groups.dragDrop) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
 }
+cssVarsString += '\n';
 
-// Add pending items colors
-if (groups.pending.length > 0) {
-  cssVarsString += '  /* Pending Items Colors */\n';
-  cssVarsString += groups.pending.join('\n') + '\n';
+// Shadow colors
+cssVarsString += '  /* Shadow Colors */\n';
+for (const varName of groups.shadow) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
+}
+cssVarsString += '\n';
+
+// Success colors
+cssVarsString += '  /* Success Colors */\n';
+for (const varName of groups.success) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
+}
+cssVarsString += '\n';
+
+// Pending status colors
+cssVarsString += '  /* Pending Status Colors */\n';
+for (const varName of groups.pending) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
+}
+cssVarsString += '\n';
+
+// Overlay colors
+cssVarsString += '  /* Overlay Colors */\n';
+for (const varName of groups.overlay) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
+}
+cssVarsString += '\n';
+
+// Interaction colors
+cssVarsString += '  /* Interaction Colors */\n';
+for (const varName of groups.interaction) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
+}
+cssVarsString += '\n';
+
+// Surface colors
+cssVarsString += '  /* Surface Colors */\n';
+for (const varName of groups.surface) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
+}
+cssVarsString += '\n';
+
+// State - Success colors
+cssVarsString += '  /* State - Success/Complete Colors */\n';
+for (const varName of groups.stateSuccess) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
+}
+cssVarsString += '\n';
+
+// State - Danger colors
+cssVarsString += '  /* State - Danger/Delete Colors */\n';
+for (const varName of groups.stateDanger) {
+  if (cssVars[varName]) {
+    cssVarsString += `  ${varName}: ${cssVars[varName]};\n`;
+  }
 }
 
 // Read current index.css
 const cssPath = join(__dirname, 'source', 'index.css');
 let cssContent = readFileSync(cssPath, 'utf-8');
 
-// Define markers for auto-generated section
-const startMarker = '  /* Theme Colors - Auto-generated from constants.js */';
-const endMarker = '  /* Additional utility colors (manually maintained) */';
+// Find the :root section and replace
+const rootStart = cssContent.indexOf(':root {');
+const rootEnd = cssContent.indexOf('}', rootStart);
 
-// Find the auto-generated section
-const startIndex = cssContent.indexOf(startMarker);
-const endIndex = cssContent.indexOf(endMarker);
-
-if (startIndex === -1) {
-  console.error('Could not find start marker in index.css');
-  console.error('Expected: "/* Theme Colors - Auto-generated from constants.js */"');
+if (rootStart === -1) {
+  console.error('Could not find :root section in index.css');
   process.exit(1);
 }
 
-if (endIndex === -1) {
-  console.error('Could not find end marker in index.css');
-  console.error('Expected: "/* Additional utility colors (manually maintained) */"');
-  process.exit(1);
-}
+// Build new :root content
+const newRootContent = `:root {\n${cssVarsString}}`;
 
-// Replace the auto-generated section
-const beforeSection = cssContent.substring(0, startIndex);
-const afterSection = cssContent.substring(endIndex);
+// Find where :root ends and what comes after
+const afterRoot = cssContent.substring(rootEnd + 1);
 
-cssContent = beforeSection + cssVarsString + '\n' + afterSection;
+// Rebuild the CSS file
+const beforeRoot = cssContent.substring(0, rootStart);
+cssContent = beforeRoot + newRootContent + afterRoot;
 
 // Write updated CSS
 writeFileSync(cssPath, cssContent, 'utf-8');

@@ -24,10 +24,11 @@ export const defaultItemsZhTW = [
   { name: '防風外套', category: '冬季服裝', quantity: 1 },
   { name: '長褲', category: '冬季服裝', quantity: 1 },
 
-  // 內衣褲
-  { name: '內衣褲', category: '內衣褲', quantity: 1 },
-  { name: '襪子', category: '內衣褲', quantity: 1 },
-  { name: '睡衣', category: '內衣褲', quantity: 1 },
+  // 內衣類
+  { name: '內衣', category: '內衣類', quantity: 1 },
+  { name: '內褲', category: '內衣類', quantity: 1 },
+  { name: '襪子', category: '內衣類', quantity: 1 },
+  { name: '睡衣', category: '內衣類', quantity: 1 },
 
   // 配件
   { name: '帽子', category: '配件', quantity: 1 },
