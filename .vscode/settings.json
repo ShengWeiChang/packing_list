@@ -17,7 +17,6 @@
   "tailwindCSS.experimental.classRegex": [["class:\\s*['\"`]([^'\"`]*)['\"`]", "([^'\"`]*)"]],
   "files.exclude": {
     "**/.eslintcache": true,
-    "**/package-lock.json": true,
     "**/.editorconfig": true,
     "**/postcss.config.js": true
   }
