@@ -178,19 +178,31 @@ describe('Item', () => {
       expect(restored.checklistId).toBe(original.checklistId);
       expect(restored.order).toBe(original.order);
     });
+  });
 
-    // Test Case 14: Should accept categoryId
-    it('should accept categoryId', () => {
-      const item = new Item({ name: 'Test', categoryId: 'cat-123' });
+  // ---------------------------------------------------------------------------
+  // Test Group 5: togglePacked
+  // ---------------------------------------------------------------------------
 
-      expect(item.categoryId).toBe('cat-123');
+  describe('togglePacked', () => {
+    // Test Case 14: togglePacked should flip isPacked from false to true
+    it('should toggle isPacked from false to true', () => {
+      const item = new Item({ name: 'Test', isPacked: false });
+      expect(item.isPacked).toBe(false);
+
+      item.togglePacked();
+
+      expect(item.isPacked).toBe(true);
     });
 
-    // Test Case 15: Should accept checklistId
-    it('should accept checklistId', () => {
-      const item = new Item({ name: 'Test', checklistId: 'cl-456' });
+    // Test Case 15: togglePacked should flip isPacked from true to false
+    it('should toggle isPacked from true to false', () => {
+      const item = new Item({ name: 'Test', isPacked: true });
+      expect(item.isPacked).toBe(true);
 
-      expect(item.checklistId).toBe('cl-456');
+      item.togglePacked();
+
+      expect(item.isPacked).toBe(false);
     });
   });
 });

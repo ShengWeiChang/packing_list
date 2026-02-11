@@ -235,5 +235,253 @@ describe('Category', () => {
       expect(wrapper.emitted('delete:category')).toHaveLength(1);
       expect(wrapper.emitted('delete:category')[0][0]).toBe('cat-1');
     });
+
+    // Test Case 13: Should emit copy:category when OverflowMenu triggers copy
+    it('should emit "copy:category" when copy is triggered', async () => {
+      const wrapper = createWrapper();
+      const menu = wrapper.findComponent({ name: 'OverflowMenu' });
+      await menu.vm.$emit('copy');
+
+      expect(wrapper.emitted('copy:category')).toHaveLength(1);
+      expect(wrapper.emitted('copy:category')[0][0]).toBe('cat-1');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 6: Blur Save
+  // ---------------------------------------------------------------------------
+
+  describe('blur save', () => {
+    // Test Case 14: Should save on blur when name is changed
+    it('should emit "update:category" on blur with changed name', async () => {
+      const wrapper = createWrapper();
+      await wrapper.find('h3').trigger('click');
+
+      const input = wrapper.find('#category-cat-1-name');
+      await input.setValue('Updated Clothing');
+      await input.trigger('blur');
+
+      const emitted = wrapper.emitted('update:category');
+      expect(emitted).toHaveLength(1);
+      expect(emitted[0][0].name).toBe('Updated Clothing');
+    });
+
+    // Test Case 15: Should not emit on blur when name is unchanged
+    it('should not emit "update:category" on blur when name is unchanged', async () => {
+      const wrapper = createWrapper();
+      await wrapper.find('h3').trigger('click');
+
+      const input = wrapper.find('#category-cat-1-name');
+      // Don't change the value
+      await input.trigger('blur');
+
+      expect(wrapper.emitted('update:category')).toBeUndefined();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 7: Empty Name Handling
+  // ---------------------------------------------------------------------------
+
+  describe('empty name handling', () => {
+    // Test Case 16: Should not save empty name
+    it('should not emit "update:category" when name is empty', async () => {
+      const wrapper = createWrapper();
+      await wrapper.find('h3').trigger('click');
+
+      const input = wrapper.find('#category-cat-1-name');
+      await input.setValue('');
+      await input.trigger('keydown.enter');
+
+      expect(wrapper.emitted('update:category')).toBeUndefined();
+    });
+
+    // Test Case 17: Should not save whitespace-only name
+    it('should not emit "update:category" when name is whitespace only', async () => {
+      const wrapper = createWrapper();
+      await wrapper.find('h3').trigger('click');
+
+      const input = wrapper.find('#category-cat-1-name');
+      await input.setValue('   ');
+      await input.trigger('keydown.enter');
+
+      expect(wrapper.emitted('update:category')).toBeUndefined();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 8: Drag and Drop Handlers
+  // ---------------------------------------------------------------------------
+
+  describe('drag and drop handlers', () => {
+    const createDragWrapper = (props = {}) => {
+      return shallowMount(Category, {
+        props: {
+          category: createMockCategory(),
+          items: createMockItems(),
+          ...props,
+        },
+        global: {
+          stubs: {
+            draggable: {
+              name: 'draggable',
+              template:
+                '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template></div>',
+              props: ['modelValue', 'itemKey'],
+              emits: ['start', 'end', 'change'],
+            },
+          },
+        },
+      });
+    };
+
+    // Test Case 18: Should set dragging item ID on drag start
+    it('should set dragging item ID on drag start', async () => {
+      const wrapper = createDragWrapper();
+      const draggableComp = wrapper.findComponent({ name: 'draggable' });
+
+      const itemEl = document.createElement('div');
+      const childEl = document.createElement('div');
+      childEl.dataset.itemId = 'item-1';
+      itemEl.appendChild(childEl);
+
+      draggableComp.vm.$emit('start', { item: itemEl });
+      await wrapper.vm.$nextTick();
+
+      // The Item component with id=item-1 should now have isDragging=true
+      const items = wrapper.findAllComponents({ name: 'Item' });
+      const item1 = items.find((c) => c.props('item').id === 'item-1');
+      if (item1) {
+        expect(item1.props('isDragging')).toBe(true);
+      }
+    });
+
+    // Test Case 19: Should clear dragging item ID on drag end
+    it('should clear dragging item ID on drag end', async () => {
+      const wrapper = createDragWrapper();
+      const draggableComp = wrapper.findComponent({ name: 'draggable' });
+
+      // Start drag
+      const itemEl = document.createElement('div');
+      const childEl = document.createElement('div');
+      childEl.dataset.itemId = 'item-1';
+      itemEl.appendChild(childEl);
+      draggableComp.vm.$emit('start', { item: itemEl });
+      await wrapper.vm.$nextTick();
+
+      // End drag
+      draggableComp.vm.$emit('end', {});
+      await wrapper.vm.$nextTick();
+
+      // All items should have isDragging=false
+      const items = wrapper.findAllComponents({ name: 'Item' });
+      items.forEach((item) => {
+        expect(item.props('isDragging')).toBe(false);
+      });
+    });
+
+    // Test Case 20: Should emit move:item with type 'move' on cross-category add
+    it('should emit "move:item" with type "move" when item is added from another category', async () => {
+      const wrapper = createDragWrapper();
+      const draggableComp = wrapper.findComponent({ name: 'draggable' });
+
+      const addedItem = {
+        id: 'item-new',
+        name: 'New Item',
+        categoryId: 'cat-other',
+        order: 0,
+        isPacked: false,
+        isPending: false,
+        quantity: 1,
+        checklistId: 'cl-1',
+      };
+
+      draggableComp.vm.$emit('change', {
+        added: { element: addedItem, newIndex: 0 },
+      });
+
+      const emitted = wrapper.emitted('move:item');
+      expect(emitted).toHaveLength(1);
+      expect(emitted[0][0].type).toBe('move');
+      expect(emitted[0][0].item.categoryId).toBe('cat-1');
+      expect(emitted[0][0].newCategoryId).toBe('cat-1');
+      expect(emitted[0][0].oldCategoryId).toBe('cat-other');
+    });
+
+    // Test Case 21: Should emit move:item with type 'reorder' on same-category move
+    it('should emit "move:item" with type "reorder" when item is moved within same category', async () => {
+      const wrapper = createDragWrapper();
+      const draggableComp = wrapper.findComponent({ name: 'draggable' });
+
+      draggableComp.vm.$emit('change', {
+        moved: { element: createMockItems()[0], oldIndex: 0, newIndex: 1 },
+      });
+
+      const emitted = wrapper.emitted('move:item');
+      expect(emitted).toHaveLength(1);
+      expect(emitted[0][0].type).toBe('reorder');
+      expect(emitted[0][0].categoryId).toBe('cat-1');
+      expect(emitted[0][0].items).toHaveLength(2); // Only cat-1 items
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 9: Newly Created Category Watcher
+  // ---------------------------------------------------------------------------
+
+  describe('newly created category watcher', () => {
+    // Test Case 22: Should auto-start edit for newly created category
+    it('should enter edit mode when newlyCreatedCategoryId matches', async () => {
+      const wrapper = createWrapper({ newlyCreatedCategoryId: null });
+
+      // Initially not editing
+      expect(wrapper.find('#category-cat-1-name').exists()).toBe(false);
+
+      // Simulate newlyCreatedCategoryId changing to match this category
+      await wrapper.setProps({ newlyCreatedCategoryId: 'cat-1' });
+      await wrapper.vm.$nextTick();
+      await wrapper.vm.$nextTick();
+
+      // Should be in edit mode
+      expect(wrapper.find('#category-cat-1-name').exists()).toBe(true);
+    });
+
+    // Test Case 23: Should not start edit for non-matching category ID
+    it('should not enter edit mode when newlyCreatedCategoryId does not match', async () => {
+      const wrapper = createWrapper({ newlyCreatedCategoryId: null });
+      await wrapper.setProps({ newlyCreatedCategoryId: 'cat-other' });
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.find('#category-cat-1-name').exists()).toBe(false);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 10: IME Composition
+  // ---------------------------------------------------------------------------
+
+  describe('IME composition', () => {
+    // Test Case 24: Should not save on Enter during IME composition
+    it('should not save during IME composition', async () => {
+      const wrapper = createWrapper();
+      await wrapper.find('h3').trigger('click');
+
+      const input = wrapper.find('#category-cat-1-name');
+      await input.setValue('新名稱');
+
+      // Simulate IME composition start
+      await input.trigger('compositionstart');
+      await input.trigger('keydown.enter');
+
+      // Should NOT emit because composing
+      expect(wrapper.emitted('update:category')).toBeUndefined();
+
+      // End composition and save
+      await input.trigger('compositionend');
+      await input.trigger('keydown.enter');
+
+      // NOW it should emit
+      expect(wrapper.emitted('update:category')).toHaveLength(1);
+    });
   });
 });

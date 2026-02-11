@@ -6,7 +6,7 @@ Description: E2E tests for the complete item packing workflow.
              packed status, and verifying progress updates.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
-Created: 2026-02-06
+Created: 2026-02-10
 ================================================================================
 */
 
@@ -148,21 +148,20 @@ test.describe('Item Packing Workflow', () => {
       // Check the first unpacked checkbox
       const checkboxes = page.getByTestId('item-checkbox');
       const count = await checkboxes.count();
+      expect(count).toBeGreaterThan(0);
 
-      if (count > 0) {
-        // Find an unchecked checkbox and click it
-        for (let i = 0; i < count; i++) {
-          const cb = checkboxes.nth(i);
-          if (!(await cb.isChecked())) {
-            await cb.click();
-            break;
-          }
+      // Find an unchecked checkbox and click it
+      for (let i = 0; i < count; i++) {
+        const cb = checkboxes.nth(i);
+        if (!(await cb.isChecked())) {
+          await cb.click();
+          break;
         }
-
-        // Progress text should have changed
-        const updatedText = await progressBar.textContent();
-        expect(updatedText).not.toBe(initialText);
       }
+
+      // Progress text should have changed
+      const updatedText = await progressBar.textContent();
+      expect(updatedText).not.toBe(initialText);
     });
 
     // Test Case 7: Progress should show 100% when all items packed

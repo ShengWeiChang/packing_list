@@ -99,5 +99,20 @@ describe('DataService', () => {
     it('should throw not implemented for deleteItem', async () => {
       await expect(service.deleteItem('clId', 'itemId')).rejects.toThrow('Not implemented');
     });
+
+    // Test Case 14: getChecklistById should throw not implemented error
+    it('should throw not implemented for getChecklistById', async () => {
+      await expect(service.getChecklistById('id')).rejects.toThrow('Not implemented');
+    });
+
+    // Test Case 15: getCategoryById should throw not implemented error
+    it('should throw not implemented for getCategoryById', async () => {
+      await expect(service.getCategoryById('catId')).rejects.toThrow('Not implemented');
+    });
+
+    // Test Case 16: getItemById should throw not implemented error
+    it('should throw not implemented for getItemById', async () => {
+      await expect(service.getItemById('clId', 'itemId')).rejects.toThrow('Not implemented');
+    });
   });
 });

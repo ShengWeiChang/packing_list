@@ -305,4 +305,191 @@ describe('LocalStorageService', () => {
       expect(data.checklists.some((c) => c.name === 'New')).toBe(true);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 6: Duplicate Operations
+  // ---------------------------------------------------------------------------
+
+  describe('duplicate operations', () => {
+    let checklistId;
+    let categoryId;
+
+    beforeEach(async () => {
+      const checklist = await service.createChecklist({ name: 'Trip' });
+      checklistId = checklist.id;
+      const category = await service.createCategory(checklistId, { name: 'Clothes' });
+      categoryId = category.id;
+    });
+
+    // Test Case 21: duplicateChecklist should create a copy with new ID
+    it('should duplicate a checklist with all categories and items', async () => {
+      await service.createItem(checklistId, { name: 'Shirt', categoryId, quantity: 2 });
+
+      const duplicated = await service.duplicateChecklist(checklistId);
+
+      expect(duplicated.id).not.toBe(checklistId);
+      expect(duplicated.name).toContain('Trip');
+
+      const dupCategories = await service.getCategories(duplicated.id);
+      expect(dupCategories.length).toBeGreaterThan(0);
+
+      const dupItems = await service.getItems(duplicated.id);
+      expect(dupItems.length).toBeGreaterThan(0);
+      // Duplicated items should have isPacked reset to false
+      expect(dupItems.every((i) => i.isPacked === false)).toBe(true);
+    });
+
+    // Test Case 22: duplicateChecklist with non-existent ID should throw
+    it('should throw error when duplicating non-existent checklist', async () => {
+      await expect(service.duplicateChecklist('non-existent')).rejects.toThrow('not found');
+    });
+
+    // Test Case 23: duplicateCategory should create a copy with new ID
+    it('should duplicate a category with all its items', async () => {
+      await service.createItem(checklistId, { name: 'Pants', categoryId });
+
+      const duplicated = await service.duplicateCategory(categoryId);
+
+      expect(duplicated.id).not.toBe(categoryId);
+      expect(duplicated.name).toContain('Clothes');
+      expect(duplicated.checklistId).toBe(checklistId);
+
+      // New category should have its own items
+      const data = await service.getData();
+      const dupItems = data.items.filter((i) => i.categoryId === duplicated.id);
+      expect(dupItems.length).toBeGreaterThan(0);
+      expect(dupItems.every((i) => i.isPacked === false)).toBe(true);
+    });
+
+    // Test Case 24: duplicateCategory with non-existent ID should throw
+    it('should throw error when duplicating non-existent category', async () => {
+      await expect(service.duplicateCategory('non-existent')).rejects.toThrow('not found');
+    });
+
+    // Test Case 25: duplicateItem should create a copy with new ID
+    it('should duplicate an item within the same category', async () => {
+      const item = await service.createItem(checklistId, {
+        name: 'Shirt',
+        categoryId,
+        quantity: 3,
+      });
+
+      const duplicated = await service.duplicateItem(checklistId, item.id);
+
+      expect(duplicated.id).not.toBe(item.id);
+      expect(duplicated.name).toContain('Shirt');
+      expect(duplicated.quantity).toBe(3);
+      expect(duplicated.categoryId).toBe(categoryId);
+      expect(duplicated.isPacked).toBe(false);
+    });
+
+    // Test Case 26: duplicateItem with non-existent ID should throw
+    it('should throw error when duplicating non-existent item', async () => {
+      await expect(service.duplicateItem(checklistId, 'non-existent')).rejects.toThrow('not found');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 7: Batch Operations
+  // ---------------------------------------------------------------------------
+
+  describe('batch operations', () => {
+    // Test Case 27: updateMultipleChecklists should update all checklists
+    it('should update multiple checklists at once', async () => {
+      const cl1 = await service.createChecklist({ name: 'List A' });
+      const cl2 = await service.createChecklist({ name: 'List B' });
+
+      const result = await service.updateMultipleChecklists([
+        { ...cl1, name: 'Updated A', order: 1 },
+        { ...cl2, name: 'Updated B', order: 0 },
+      ]);
+
+      expect(result).toHaveLength(2);
+
+      const data = await service.getData();
+      const updatedA = data.checklists.find((c) => c.id === cl1.id);
+      const updatedB = data.checklists.find((c) => c.id === cl2.id);
+      expect(updatedA.name).toBe('Updated A');
+      expect(updatedB.name).toBe('Updated B');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 8: _getCopySuffix and dispose
+  // ---------------------------------------------------------------------------
+
+  describe('internal helpers', () => {
+    // Test Case 28: _getCopySuffix should return localized copy suffix
+    it('should return English copy suffix by default', () => {
+      const suffix = service._getCopySuffix('en');
+      expect(suffix).toBeTruthy();
+      expect(typeof suffix).toBe('string');
+    });
+
+    // Test Case 29: _getCopySuffix should return Chinese copy suffix for zh-TW
+    it('should return Chinese copy suffix for zh-TW locale', () => {
+      const suffix = service._getCopySuffix('zh-TW');
+      expect(suffix).toBeTruthy();
+      expect(typeof suffix).toBe('string');
+    });
+
+    // Test Case 30: _getCopySuffix should fallback for unknown locale
+    it('should return fallback copy suffix for unknown locale', () => {
+      const suffix = service._getCopySuffix('fr');
+      expect(suffix).toBe(' (Copy)');
+    });
+
+    // Test Case 31: dispose should clear cache and remove listener
+    it('should dispose resources and clear cache', async () => {
+      await service.getData(); // populate cache
+
+      service.dispose();
+
+      expect(service._cache).toBeNull();
+      expect(service._initialized).toBe(false);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 9: Edge Cases
+  // ---------------------------------------------------------------------------
+
+  describe('edge cases', () => {
+    // Test Case 32: Delete non-existent category should not throw
+    it('should handle deleting non-existent category gracefully', async () => {
+      await service.createChecklist({ name: 'Test' });
+      await expect(service.deleteCategory('non-existent')).resolves.not.toThrow();
+    });
+
+    // Test Case 33: Delete non-existent item should not throw
+    it('should handle deleting non-existent item gracefully', async () => {
+      const cl = await service.createChecklist({ name: 'Test' });
+      await expect(service.deleteItem(cl.id, 'non-existent')).resolves.not.toThrow();
+    });
+
+    // Test Case 34: Storage failure should propagate errors
+    it('should propagate errors when storage save fails', async () => {
+      await service.getData(); // Initialize cache
+
+      // Override _saveData to simulate storage failure
+      service._saveData = () => {
+        throw new Error('Storage operation failed: quota exceeded');
+      };
+
+      await expect(service.createChecklist({ name: 'Overflow' })).rejects.toThrow(
+        'Storage operation failed'
+      );
+    });
+
+    // Test Case 35: Duplicate checklist name truncation for long names
+    it('should truncate duplicate name when original name is at max length', async () => {
+      const longName = 'a'.repeat(100);
+      const cl = await service.createChecklist({ name: longName });
+
+      const duplicated = await service.duplicateChecklist(cl.id);
+
+      // Duplicated name should not exceed max length
+      expect(duplicated.name.length).toBeLessThanOrEqual(100);
+    });
+  });
 });

@@ -41,6 +41,9 @@ describe('OverflowMenu', () => {
       x: 100,
       y: 100,
     }));
+
+    // Mock requestAnimationFrame to execute synchronously
+    vi.stubGlobal('requestAnimationFrame', (cb) => cb());
   });
 
   afterEach(() => {
@@ -183,6 +186,206 @@ describe('OverflowMenu', () => {
       await w.find('button').trigger('click');
       // Should only have the trigger button, no menu items
       expect(w.findAll('button').length).toBe(1);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 5: Close Handlers
+  // ---------------------------------------------------------------------------
+
+  describe('close handlers', () => {
+    // Test Case 13: Should close menu on outside click
+    it('should close menu when clicking outside the component', async () => {
+      const w = createWrapper();
+      await w.find('button').trigger('click');
+      expect(w.findAll('button').length).toBe(4);
+
+      // Click outside
+      document.dispatchEvent(new Event('click', { bubbles: true }));
+      await w.vm.$nextTick();
+
+      expect(w.findAll('button').length).toBe(1);
+    });
+
+    // Test Case 14: Should close menu on scroll
+    it('should close menu on window scroll', async () => {
+      const w = createWrapper();
+      await w.find('button').trigger('click');
+      expect(w.findAll('button').length).toBe(4);
+
+      window.dispatchEvent(new Event('scroll'));
+      await w.vm.$nextTick();
+
+      expect(w.findAll('button').length).toBe(1);
+    });
+
+    // Test Case 15: Should close menu on focusout to external element
+    it('should close menu when focus leaves the component', async () => {
+      const w = createWrapper();
+      await w.find('button').trigger('click');
+      expect(w.findAll('button').length).toBe(4);
+
+      // Trigger focusout with relatedTarget outside component
+      const rootDiv = w.find('.relative');
+      await rootDiv.trigger('focusout', { relatedTarget: document.body });
+
+      expect(w.findAll('button').length).toBe(1);
+    });
+
+    // Test Case 16: Should close this menu when another overflow menu opens
+    it('should close when another overflow menu opens', async () => {
+      const w = createWrapper({ itemId: 'my-id', menuType: 'item' });
+      await w.find('button').trigger('click');
+      expect(w.findAll('button').length).toBe(4);
+
+      // Simulate another menu opening
+      window.dispatchEvent(
+        new CustomEvent('overflow-menu-open', {
+          detail: { id: 'other-id', type: 'item' },
+        })
+      );
+      await w.vm.$nextTick();
+
+      expect(w.findAll('button').length).toBe(1);
+    });
+
+    // Test Case 17: Should NOT close when same menu dispatches its own open event
+    it('should not close when the same menu dispatches its own open event', async () => {
+      const w = createWrapper({ itemId: 'my-id', menuType: 'item' });
+      await w.find('button').trigger('click');
+      expect(w.findAll('button').length).toBe(4);
+
+      // Simulate same menu opening (should be ignored)
+      window.dispatchEvent(
+        new CustomEvent('overflow-menu-open', {
+          detail: { id: 'my-id', type: 'item' },
+        })
+      );
+      await w.vm.$nextTick();
+
+      expect(w.findAll('button').length).toBe(4);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 6: SVG Size
+  // ---------------------------------------------------------------------------
+
+  describe('icon sizing', () => {
+    // Test Case 18: Should use smaller icon for item menu type
+    it('should use size-4 class for item menu type', () => {
+      const w = createWrapper({ menuType: 'item' });
+      const svg = w.find('svg');
+      expect(svg.classes()).toContain('size-4');
+    });
+
+    // Test Case 19: Should use larger icon for category menu type
+    it('should use size-5 class for category menu type', () => {
+      const w = createWrapper({ menuType: 'category' });
+      const svg = w.find('svg');
+      expect(svg.classes()).toContain('size-5');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 7: Dropdown Positioning
+  // ---------------------------------------------------------------------------
+
+  describe('dropdown positioning', () => {
+    // Test Case 20: Should apply fixed positioning when menu opens
+    it('should apply fixed positioning styles to dropdown', async () => {
+      // Use deferred rAF so positionDropdown runs after Vue renders the dropdown
+      const rafCallbacks = [];
+      vi.stubGlobal('requestAnimationFrame', (cb) => {
+        rafCallbacks.push(cb);
+        return rafCallbacks.length;
+      });
+
+      const w = createWrapper();
+      await w.find('button').trigger('click');
+      await w.vm.$nextTick(); // Vue renders v-if="showMenu" dropdown
+
+      // Flush the two nested rAF callbacks
+      while (rafCallbacks.length) rafCallbacks.shift()();
+      await w.vm.$nextTick();
+
+      const dropdownEl = w.find('[style*="position: fixed"]');
+      expect(dropdownEl.exists()).toBe(true);
+      const style = dropdownEl.attributes('style');
+      expect(style).toContain('position: fixed');
+      expect(style).not.toContain('-9999px');
+    });
+
+    // Test Case 21: Should dispatch custom event when menu opens
+    it('should dispatch overflow-menu-open CustomEvent when opened', async () => {
+      const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+      const w = createWrapper({ itemId: 'test-item', menuType: 'item' });
+
+      await w.find('button').trigger('click');
+
+      const customEvents = dispatchSpy.mock.calls.filter(
+        (call) => call[0] instanceof CustomEvent && call[0].type === 'overflow-menu-open'
+      );
+      expect(customEvents.length).toBe(1);
+      expect(customEvents[0][0].detail).toEqual({ id: 'test-item', type: 'item' });
+    });
+
+    // Test Case 22: Should clamp dropdown position within viewport bounds
+    it('should clamp dropdown position within viewport bounds', async () => {
+      // Use deferred rAF
+      const rafCallbacks = [];
+      vi.stubGlobal('requestAnimationFrame', (cb) => {
+        rafCallbacks.push(cb);
+        return rafCallbacks.length;
+      });
+
+      // Mock getBoundingClientRect to return position near viewport edge
+      Element.prototype.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 100,
+        left: 2,
+        right: 102,
+        bottom: 140,
+        width: 100,
+        height: 40,
+        x: 2,
+        y: 100,
+      });
+
+      const w = createWrapper();
+      await w.find('button').trigger('click');
+      await w.vm.$nextTick();
+
+      while (rafCallbacks.length) rafCallbacks.shift()();
+      await w.vm.$nextTick();
+
+      const dropdownEl = w.find('[style*="position: fixed"]');
+      expect(dropdownEl.exists()).toBe(true);
+      const style = dropdownEl.attributes('style');
+      expect(style).toContain('position: fixed');
+      // Left should be clamped to minimum padding (8px) since btnRect.right - ddRect.width = 2
+      expect(style).toContain('left: 8px');
+    });
+
+    // Test Case 23: Should use CustomEvent fallback when constructor throws
+    it('should fall back to createEvent when CustomEvent constructor throws', async () => {
+      const dispatchSpy = vi.spyOn(window, 'dispatchEvent').mockImplementation(() => true);
+
+      // Mock CustomEvent constructor to throw
+      const origCustomEvent = window.CustomEvent;
+      vi.stubGlobal('CustomEvent', function () {
+        throw new Error('Not supported');
+      });
+
+      const w = createWrapper({ itemId: 'fallback-id', menuType: 'category' });
+      await w.find('button').trigger('click');
+
+      // The fallback should have dispatched an event via createEvent
+      expect(dispatchSpy).toHaveBeenCalled();
+      const lastCall = dispatchSpy.mock.calls[dispatchSpy.mock.calls.length - 1][0];
+      expect(lastCall.type).toBe('overflow-menu-open');
+
+      // Restore
+      vi.stubGlobal('CustomEvent', origCustomEvent);
     });
   });
 });

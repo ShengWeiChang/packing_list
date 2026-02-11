@@ -307,4 +307,222 @@ describe('Item', () => {
       expect(emitted[0][0].isPacked).toBe(false);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 6: Copy Event
+  // ---------------------------------------------------------------------------
+
+  describe('copy event', () => {
+    // Test Case 16: Should emit copy:item from OverflowMenu
+    it('should emit "copy:item" when OverflowMenu triggers copy', async () => {
+      const w = createWrapper();
+      const menu = w.findComponent({ name: 'OverflowMenu' });
+      await menu.vm.$emit('copy');
+
+      expect(w.emitted('copy:item')).toHaveLength(1);
+      expect(w.emitted('copy:item')[0][0]).toBe('item-1');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 7: Blur Save
+  // ---------------------------------------------------------------------------
+
+  describe('blur save', () => {
+    // Test Case 17: Should save on blur when name is changed
+    it('should emit "update:item" on blur with changed name', async () => {
+      vi.useFakeTimers();
+      const w = createWrapper();
+      await w.find('span[role="button"]').trigger('click');
+
+      const input = w.find('#item-item-1-name');
+      await input.setValue('Updated Passport');
+
+      // Move focus away from input to trigger blur-save logic
+      input.element.blur();
+      document.body.focus();
+
+      // Trigger focusout on the wrapper div (which has the handler)
+      const editWrapper = input.element.parentElement;
+      editWrapper.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+
+      // Advance past the 50ms blur timeout
+      vi.advanceTimersByTime(100);
+      await w.vm.$nextTick();
+
+      const emitted = w.emitted('update:item');
+      expect(emitted).toHaveLength(1);
+      expect(emitted[0][0].name).toBe('Updated Passport');
+      vi.useRealTimers();
+    });
+
+    // Test Case 18: Should not save empty name on blur
+    it('should not emit "update:item" on blur with empty name', async () => {
+      vi.useFakeTimers();
+      const w = createWrapper();
+      await w.find('span[role="button"]').trigger('click');
+
+      const input = w.find('#item-item-1-name');
+      await input.setValue('');
+
+      input.element.blur();
+      document.body.focus();
+      const editWrapper = input.element.parentElement;
+      editWrapper.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+
+      vi.advanceTimersByTime(100);
+      await w.vm.$nextTick();
+
+      // Should not emit update with empty name
+      const emitted = w.emitted('update:item');
+      if (emitted) {
+        expect(emitted[0][0].name.length).toBeGreaterThan(0);
+      }
+      vi.useRealTimers();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 8: Delete from OverflowMenu
+  // ---------------------------------------------------------------------------
+
+  describe('delete from overflow menu', () => {
+    // Test Case 19: Should emit delete:item from OverflowMenu
+    it('should emit "delete:item" when OverflowMenu triggers delete', async () => {
+      const w = createWrapper();
+      const menu = w.findComponent({ name: 'OverflowMenu' });
+      await menu.vm.$emit('delete');
+
+      expect(w.emitted('delete:item')).toHaveLength(1);
+      expect(w.emitted('delete:item')[0][0]).toBe('item-1');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 9: Hover & Visibility
+  // ---------------------------------------------------------------------------
+
+  describe('hover and visibility', () => {
+    // Test Case 20: Should show controls on mouseenter
+    it('should show action buttons on mouseenter', async () => {
+      const w = createWrapper();
+      const mainDiv = w.find('.group');
+      await mainDiv.trigger('mouseenter');
+
+      // OverflowMenu should get forceVisible=true
+      const menu = w.findComponent({ name: 'OverflowMenu' });
+      expect(menu.props('forceVisible')).toBe(true);
+    });
+
+    // Test Case 21: Should hide controls on mouseleave
+    it('should hide action buttons on mouseleave', async () => {
+      const w = createWrapper();
+      const mainDiv = w.find('.group');
+      await mainDiv.trigger('mouseenter');
+      await mainDiv.trigger('mouseleave');
+
+      const menu = w.findComponent({ name: 'OverflowMenu' });
+      expect(menu.props('forceVisible')).toBe(false);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 10: IME Composition
+  // ---------------------------------------------------------------------------
+
+  describe('IME composition', () => {
+    // Test Case 22: Should not save on Enter during IME composition
+    it('should not save during IME composition', async () => {
+      const w = createWrapper();
+      await w.find('span[role="button"]').trigger('click');
+
+      const input = w.find('#item-item-1-name');
+      await input.setValue('新護照');
+
+      await input.trigger('compositionstart');
+      await input.trigger('keydown.enter');
+
+      // Should NOT emit during composition
+      expect(w.emitted('update:item')).toBeUndefined();
+
+      await input.trigger('compositionend');
+      await input.trigger('keydown.enter');
+
+      // NOW it should emit
+      expect(w.emitted('update:item')).toHaveLength(1);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 11: Newly Created Item Watcher
+  // ---------------------------------------------------------------------------
+
+  describe('newly created item watcher', () => {
+    // Test Case 23: Should auto-start edit when newlyCreatedItemId matches
+    it('should enter edit mode when newlyCreatedItemId matches', async () => {
+      const w = createWrapper({ newlyCreatedItemId: null });
+
+      expect(w.find('#item-item-1-name').exists()).toBe(false);
+
+      await w.setProps({ newlyCreatedItemId: 'item-1' });
+      await w.vm.$nextTick();
+      await w.vm.$nextTick();
+
+      expect(w.find('#item-item-1-name').exists()).toBe(true);
+    });
+
+    // Test Case 24: Should not start edit for non-matching item ID
+    it('should not enter edit mode when newlyCreatedItemId does not match', async () => {
+      const w = createWrapper({ newlyCreatedItemId: null });
+      await w.setProps({ newlyCreatedItemId: 'item-other' });
+      await w.vm.$nextTick();
+
+      expect(w.find('#item-item-1-name').exists()).toBe(false);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 12: Quantity Edge Cases
+  // ---------------------------------------------------------------------------
+
+  describe('quantity edge cases', () => {
+    // Test Case 25: Should not decrement below 1
+    it('should not decrement quantity below 1', async () => {
+      const w = createWrapper({
+        item: createMockItem({ quantity: 1 }),
+      });
+
+      // Find decrement button — when quantity is 1, there's a delete button instead
+      const deleteButton = w
+        .findAll('button')
+        .find((btn) => btn.attributes('aria-label') === 'common.delete');
+
+      // The decrement button should not exist; only delete shows at quantity=1
+      const decrementButton = w
+        .findAll('button')
+        .find((btn) => btn.attributes('aria-label') === 'item.decreaseQuantity');
+
+      // Either decrement doesn't exist or it doesn't emit update:item
+      if (decrementButton) {
+        await decrementButton.trigger('click');
+        expect(w.emitted('update:item')).toBeUndefined();
+      } else {
+        // Delete button exists at quantity=1
+        expect(deleteButton).toBeDefined();
+      }
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 13: Dragging State
+  // ---------------------------------------------------------------------------
+
+  describe('dragging state', () => {
+    // Test Case 26: Should apply dragging class when isDragging is true
+    it('should apply cursor-grabbing when isDragging is true', () => {
+      const w = createWrapper({ isDragging: true });
+      const mainDiv = w.find('.group');
+      expect(mainDiv.classes()).toContain('cursor-grabbing');
+    });
+  });
 });

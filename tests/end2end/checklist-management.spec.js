@@ -5,7 +5,7 @@ Description: E2E tests for checklist CRUD operations.
              Tests creating, renaming, switching, and deleting checklists.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
-Created: 2026-02-06
+Created: 2026-02-10
 ================================================================================
 */
 
@@ -127,23 +127,22 @@ test.describe('Checklist Management', () => {
 
       const sidebarItems = page.getByTestId('sidebar-checklist-item');
       const countBefore = await sidebarItems.count();
+      expect(countBefore).toBeGreaterThanOrEqual(2);
 
       // Accept the confirmation dialog
       page.on('dialog', (dialog) => dialog.accept());
 
-      // Find and click the overflow menu (three dots) on the main checklist area
+      // Find and click the overflow menu on the main checklist header area
       const overflowButton = page.locator('[aria-haspopup="true"]').first();
+      await expect(overflowButton).toBeVisible();
+      await overflowButton.click();
 
-      if (await overflowButton.isVisible()) {
-        await overflowButton.click();
+      // Look for delete option and click it
+      const deleteButton = page.locator('button', { hasText: /delete|刪除/i });
+      await expect(deleteButton).toBeVisible();
+      await deleteButton.click();
 
-        // Look for delete option
-        const deleteButton = page.locator('button', { hasText: /delete|刪除/i });
-        if (await deleteButton.isVisible()) {
-          await deleteButton.click();
-          await expect(sidebarItems).toHaveCount(countBefore - 1);
-        }
-      }
+      await expect(sidebarItems).toHaveCount(countBefore - 1);
     });
   });
 });

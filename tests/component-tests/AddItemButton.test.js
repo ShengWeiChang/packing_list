@@ -75,4 +75,56 @@ describe('AddItemButton', () => {
       expect(wrapper.emitted('click')).toHaveLength(1);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 3: Hover State
+  // ---------------------------------------------------------------------------
+
+  describe('hover state', () => {
+    // Test Case 5: Should apply primary text on mouseenter
+    it('should apply primary text color on mouseenter', async () => {
+      const wrapper = createWrapper();
+      const button = wrapper.find('button');
+
+      await button.trigger('mouseenter');
+
+      const icon = wrapper.find('span.flex');
+      expect(icon.classes()).toContain('text-primary');
+    });
+
+    // Test Case 6: Should revert to secondary text on mouseleave
+    it('should revert to secondary text color on mouseleave', async () => {
+      const wrapper = createWrapper();
+      const button = wrapper.find('button');
+
+      await button.trigger('mouseenter');
+      await button.trigger('mouseleave');
+
+      const icon = wrapper.find('span.flex');
+      expect(icon.classes()).toContain('text-secondary');
+    });
+
+    // Test Case 7: Should apply primary text on focus
+    it('should apply primary text color on focus', async () => {
+      const wrapper = createWrapper();
+      const button = wrapper.find('button');
+
+      await button.trigger('focus');
+
+      const icon = wrapper.find('span.flex');
+      expect(icon.classes()).toContain('text-primary');
+    });
+
+    // Test Case 8: Should revert to secondary text on blur
+    it('should revert to secondary text color on blur', async () => {
+      const wrapper = createWrapper();
+      const button = wrapper.find('button');
+
+      await button.trigger('focus');
+      await button.trigger('blur');
+
+      const icon = wrapper.find('span.flex');
+      expect(icon.classes()).toContain('text-secondary');
+    });
+  });
 });
