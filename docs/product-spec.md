@@ -127,8 +127,11 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Key features:
   - Create item: In a specified category, `isPacked=false`, `order = max order of that category + 1`.
   - Edit item: Inline edit name and quantity (min 1); delete item.
-  - UI Improvements: Element element sizes unified (size-9 mobile, size-6 desktop).
-  - Edit Mode: Uses `box-shadow` instead of `border-b` for underlines to prevent layout shifts; uses consistent deep blue (`#3b82f6`) theme color.
+  - Edit Mode:
+    - Uses `box-shadow` instead of `border-bottom` to avoid layout shifts.
+    - Input field styling matches display text exactly (font size, line height, padding) to ensure seamless toggle.
+  - UI Improvements:
+    - Interactive elements (buttons, menus) unified sizing: `size-9` on mobile, `size-6` on desktop for visual consistency.
   - Toggle status: Toggling `isPacked` immediately updates category and checklist progress; preserves `order`.
   - Dragging:
     - Same category: After reorder, rewrite `order` sequentially (0-based).

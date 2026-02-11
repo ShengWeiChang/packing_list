@@ -351,3 +351,11 @@ Validation
 
 - Update this document’s summaries when configuration changes
 - Configuration files are the source of truth; this document emphasizes principles and usage
+
+## 9. Future Considerations
+
+- Add if needed (optional):
+  - `eslint-plugin-unicorn` (select curated rules) — when code style needs further improvement
+  - GitHub Actions: lightweight Quality Gate (`eslint --quiet`, `prettier --check`) — when you want automated quality checks on PR/push (multi-contributor or public projects)
+  - `stylelint` (currently minimal CSS, Tailwind-first) — when custom CSS grows significantly (>500 lines) or multiple people manage CSS
+  - `eslint-plugin-i18n-json` (currently only 2 locale files, manual maintenance is sufficient) — when language count >2 or i18n keys >100
