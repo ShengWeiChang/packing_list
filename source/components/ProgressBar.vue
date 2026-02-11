@@ -13,6 +13,7 @@ Created: 2025-09-19
   <div
     class="w-full"
     role="progressbar"
+    data-testid="progress-bar"
     :aria-valuenow="percentage"
     aria-valuemin="0"
     aria-valuemax="100"

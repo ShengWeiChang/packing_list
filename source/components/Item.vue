@@ -32,6 +32,7 @@ Created: 2025-09-19
         v-model="isItemPacked"
         :name="`item-${item.id}-packed`"
         type="checkbox"
+        data-testid="item-checkbox"
         :aria-label="$t('item.togglePacked')"
         :class="[
           'size-5 flex-none shrink-0 cursor-pointer focus:outline-none md:size-4',
@@ -56,6 +57,7 @@ Created: 2025-09-19
         v-model="editedName"
         :name="`item-${item.id}-name`"
         :aria-label="$t('item.name')"
+        data-testid="item-edit-input"
         :class="[
           'w-full bg-transparent px-1 py-0.5 text-lg leading-snug focus:outline-none md:text-base',
           {
@@ -80,6 +82,7 @@ Created: 2025-09-19
         style="word-break: break-word; overflow-wrap: break-word"
         role="button"
         tabindex="0"
+        data-testid="item-name"
         @click="startEdit"
         @keydown.enter.prevent="startEdit"
         @keydown.space.prevent="startEdit"

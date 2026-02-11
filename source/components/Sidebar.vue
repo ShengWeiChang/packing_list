@@ -52,6 +52,7 @@ Created: 2025-09-19
     <button
       class="mb-4 flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :class="[isExpanded || isMobile ? 'pr-4' : '']"
+      data-testid="sidebar-new-checklist"
       @click="$emit('create-checklist')"
     >
       <div class="shrink-0 p-3">
@@ -146,6 +147,7 @@ Created: 2025-09-19
                         ],
                   ]"
                   :aria-current="selectedChecklistId === checklist.id ? 'page' : null"
+                  data-testid="sidebar-checklist-item"
                   @click="$emit('select-checklist', checklist.id)"
                 >
                   <!-- Expanded: show full name -->

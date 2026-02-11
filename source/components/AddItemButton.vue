@@ -12,6 +12,7 @@ Created: 2025-09-19
 <template>
   <button
     class="flex w-full items-center justify-start rounded-md p-1 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:pl-2"
+    data-testid="add-item-button"
     :class="[categoryCompleted ? 'bg-success-state-bg' : 'bg-white hover:bg-interactive-hover']"
     @click="$emit('click')"
     @mouseenter="isHovered = true"
