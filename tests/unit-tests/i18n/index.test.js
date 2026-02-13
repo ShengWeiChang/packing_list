@@ -19,7 +19,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // -----------------------------------------------------------------------------
 
 /**
- *
+ * Dynamically load the i18n module after resetting module cache.
+ * @returns {Promise<typeof import('../../../source/i18n/index.js')>} Loaded i18n module.
  */
 async function loadI18nModule() {
   vi.resetModules();

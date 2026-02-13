@@ -39,6 +39,7 @@ yarn-error.log*
 
 # Personal documentation
 docs/**-zh.md
+prompts/
 
 # OS generated files
 .DS_Store

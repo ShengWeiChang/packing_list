@@ -1,4 +1,4 @@
 {
-  "*.{js,vue}": ["eslint --fix", "prettier --write"],
+  "*.{js,vue}": ["eslint --fix --max-warnings=0", "prettier --write"],
   "*.{json,md,css,html}": ["prettier --write"]
 }

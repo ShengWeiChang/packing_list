@@ -17,7 +17,7 @@ import { expect, test } from '@playwright/test';
 
 /**
  * Create a checklist and confirm edit input appears.
- * @param {import('@playwright/test').Page} page
+ * @param {import('@playwright/test').Page} page - Active Playwright page.
  */
 async function createChecklist(page) {
   await page.getByTestId('sidebar-new-checklist').click();
@@ -28,8 +28,8 @@ async function createChecklist(page) {
 
 /**
  * Rename currently selected checklist.
- * @param {import('@playwright/test').Page} page
- * @param {string} name
+ * @param {import('@playwright/test').Page} page - Active Playwright page.
+ * @param {string} name - New checklist name.
  */
 async function renameSelectedChecklist(page, name) {
   await page.getByTestId('checklist-name').click();
