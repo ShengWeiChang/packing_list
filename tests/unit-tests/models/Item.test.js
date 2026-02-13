@@ -123,6 +123,13 @@ describe('Item', () => {
 
       expect(item.quantity).toBe(999);
     });
+
+    // Test Case 11: Quantity greater than 999 should throw error
+    it('should throw error for quantity greater than 999', () => {
+      expect(() => new Item({ name: 'Test', quantity: 1000 })).toThrow(
+        'Quantity must be an integer between 1 and 999'
+      );
+    });
   });
 
   // ---------------------------------------------------------------------------

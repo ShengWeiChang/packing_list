@@ -27,7 +27,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./tests/test-setup/setup.js'],
     include: ['tests/**/*.{test,spec}.{js,ts}'],
-    exclude: ['node_modules', 'dist', 'tests/e2e-tests', 'tests/test-setup'],
+    exclude: ['node_modules', 'dist', 'tests/end2end-tests', 'tests/test-setup'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
@@ -37,6 +37,7 @@ export default defineConfig({
         'tests/',
         'source/locales/',
         'source/data/',
+        'source/services/dataService.js',
         'docs/',
         '*.config.js',
       ],

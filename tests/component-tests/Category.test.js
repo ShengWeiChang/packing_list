@@ -130,7 +130,8 @@ describe('Category', () => {
     it('should not apply completed styling when some items are unpacked', () => {
       const wrapper = createWrapper();
       // Default: 1 packed + 1 unpacked → not completed
-      expect(wrapper.find('.bg-success-state-bg').exists()).toBe(false);
+      const card = wrapper.get('[data-testid="category-card"]');
+      expect(card.attributes('data-completed')).toBe('false');
     });
 
     // Test Case 5: Should apply completed styling when all items are packed
@@ -140,7 +141,8 @@ describe('Category', () => {
         isPacked: item.categoryId === 'cat-1' ? true : item.isPacked,
       }));
       const wrapper = createWrapper({ items });
-      expect(wrapper.find('.bg-success-state-bg').exists()).toBe(true);
+      const card = wrapper.get('[data-testid="category-card"]');
+      expect(card.attributes('data-completed')).toBe('true');
     });
   });
 
@@ -152,19 +154,17 @@ describe('Category', () => {
     // Test Case 6: Should start with items visible (not collapsed)
     it('should start with items visible (not collapsed)', () => {
       const wrapper = createWrapper();
-      const itemsContainer = wrapper.find('.grid');
+      const itemsContainer = wrapper.get('[data-testid="category-items-container"]');
       expect(itemsContainer.classes()).toContain('grid-rows-[1fr]');
     });
 
     // Test Case 7: Should collapse items when toggle button is clicked
     it('should collapse items when toggle button is clicked', async () => {
       const wrapper = createWrapper();
-      const collapseButton = wrapper
-        .findAll('button')
-        .find((btn) => btn.attributes('aria-label') === 'category.collapse');
+      const collapseButton = wrapper.get('[data-testid="category-collapse-toggle"]');
       await collapseButton.trigger('click');
 
-      const itemsContainer = wrapper.find('.grid');
+      const itemsContainer = wrapper.get('[data-testid="category-items-container"]');
       expect(itemsContainer.classes()).toContain('grid-rows-[0fr]');
     });
   });
@@ -177,18 +177,18 @@ describe('Category', () => {
     // Test Case 8: Should enter edit mode when category name is clicked
     it('should show input when category name is clicked', async () => {
       const wrapper = createWrapper();
-      const nameHeading = wrapper.find('h3');
+      const nameHeading = wrapper.get('[data-testid="category-name"]');
       await nameHeading.trigger('click');
 
-      expect(wrapper.find('#category-cat-1-name').exists()).toBe(true);
+      expect(wrapper.get('[data-testid="category-name-input"]').element.value).toBe('Clothing');
     });
 
     // Test Case 9: Should emit update:category with new name on Enter
     it('should emit "update:category" with new name on Enter', async () => {
       const wrapper = createWrapper();
-      await wrapper.find('h3').trigger('click');
+      await wrapper.find('[data-testid="category-name"]').trigger('click');
 
-      const input = wrapper.find('#category-cat-1-name');
+      const input = wrapper.find('[data-testid="category-name-input"]');
       await input.setValue('Updated Clothing');
       await input.trigger('keydown.enter');
 
@@ -200,13 +200,13 @@ describe('Category', () => {
     // Test Case 10: Should cancel edit mode on Escape key
     it('should cancel edit mode on Escape key', async () => {
       const wrapper = createWrapper();
-      await wrapper.find('h3').trigger('click');
+      await wrapper.find('[data-testid="category-name"]').trigger('click');
 
-      const input = wrapper.find('#category-cat-1-name');
+      const input = wrapper.find('[data-testid="category-name-input"]');
       await input.setValue('Changed');
       await input.trigger('keyup.escape');
 
-      expect(wrapper.find('h3').exists()).toBe(true);
+      expect(wrapper.get('[data-testid="category-name"]').text()).toBe('Clothing');
       expect(wrapper.text()).toContain('Clothing');
     });
   });
@@ -255,9 +255,9 @@ describe('Category', () => {
     // Test Case 14: Should save on blur when name is changed
     it('should emit "update:category" on blur with changed name', async () => {
       const wrapper = createWrapper();
-      await wrapper.find('h3').trigger('click');
+      await wrapper.find('[data-testid="category-name"]').trigger('click');
 
-      const input = wrapper.find('#category-cat-1-name');
+      const input = wrapper.find('[data-testid="category-name-input"]');
       await input.setValue('Updated Clothing');
       await input.trigger('blur');
 
@@ -269,9 +269,9 @@ describe('Category', () => {
     // Test Case 15: Should not emit on blur when name is unchanged
     it('should not emit "update:category" on blur when name is unchanged', async () => {
       const wrapper = createWrapper();
-      await wrapper.find('h3').trigger('click');
+      await wrapper.find('[data-testid="category-name"]').trigger('click');
 
-      const input = wrapper.find('#category-cat-1-name');
+      const input = wrapper.find('[data-testid="category-name-input"]');
       // Don't change the value
       await input.trigger('blur');
 
@@ -287,9 +287,9 @@ describe('Category', () => {
     // Test Case 16: Should not save empty name
     it('should not emit "update:category" when name is empty', async () => {
       const wrapper = createWrapper();
-      await wrapper.find('h3').trigger('click');
+      await wrapper.find('[data-testid="category-name"]').trigger('click');
 
-      const input = wrapper.find('#category-cat-1-name');
+      const input = wrapper.find('[data-testid="category-name-input"]');
       await input.setValue('');
       await input.trigger('keydown.enter');
 
@@ -299,9 +299,9 @@ describe('Category', () => {
     // Test Case 17: Should not save whitespace-only name
     it('should not emit "update:category" when name is whitespace only', async () => {
       const wrapper = createWrapper();
-      await wrapper.find('h3').trigger('click');
+      await wrapper.find('[data-testid="category-name"]').trigger('click');
 
-      const input = wrapper.find('#category-cat-1-name');
+      const input = wrapper.find('[data-testid="category-name-input"]');
       await input.setValue('   ');
       await input.trigger('keydown.enter');
 
@@ -327,8 +327,8 @@ describe('Category', () => {
               name: 'draggable',
               template:
                 '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template></div>',
-              props: ['modelValue', 'itemKey'],
-              emits: ['start', 'end', 'change'],
+              props: ['modelValue', 'itemKey', 'group'],
+              emits: ['start', 'end', 'change', 'update:modelValue'],
             },
           },
         },
@@ -423,6 +423,25 @@ describe('Category', () => {
       expect(emitted[0][0].categoryId).toBe('cat-1');
       expect(emitted[0][0].items).toHaveLength(2); // Only cat-1 items
     });
+
+    // Test Case 22: Should forward Item events (update/copy/delete)
+    it('should forward Item events from child Item component', async () => {
+      const wrapper = createDragWrapper();
+      const itemComponents = wrapper.findAllComponents({ name: 'Item' });
+      expect(itemComponents.length).toBeGreaterThan(0);
+
+      const mockUpdated = { id: 'item-1', name: 'Updated' };
+      await itemComponents[0].vm.$emit('update:item', mockUpdated);
+      await itemComponents[0].vm.$emit('copy:item', 'item-1');
+      await itemComponents[0].vm.$emit('delete:item', 'item-1');
+
+      expect(wrapper.emitted('update:item')).toHaveLength(1);
+      expect(wrapper.emitted('update:item')[0][0]).toEqual(mockUpdated);
+      expect(wrapper.emitted('copy:item')).toHaveLength(1);
+      expect(wrapper.emitted('copy:item')[0][0]).toBe('item-1');
+      expect(wrapper.emitted('delete:item')).toHaveLength(1);
+      expect(wrapper.emitted('delete:item')[0][0]).toBe('item-1');
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -430,12 +449,12 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('newly created category watcher', () => {
-    // Test Case 22: Should auto-start edit for newly created category
+    // Test Case 23: Should auto-start edit for newly created category
     it('should enter edit mode when newlyCreatedCategoryId matches', async () => {
       const wrapper = createWrapper({ newlyCreatedCategoryId: null });
 
       // Initially not editing
-      expect(wrapper.find('#category-cat-1-name').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="category-name-input"]').exists()).toBe(false);
 
       // Simulate newlyCreatedCategoryId changing to match this category
       await wrapper.setProps({ newlyCreatedCategoryId: 'cat-1' });
@@ -443,16 +462,18 @@ describe('Category', () => {
       await wrapper.vm.$nextTick();
 
       // Should be in edit mode
-      expect(wrapper.find('#category-cat-1-name').exists()).toBe(true);
+      expect(wrapper.get('[data-testid="category-name-input"]').attributes('aria-label')).toBe(
+        'category.name'
+      );
     });
 
-    // Test Case 23: Should not start edit for non-matching category ID
+    // Test Case 24: Should not start edit for non-matching category ID
     it('should not enter edit mode when newlyCreatedCategoryId does not match', async () => {
       const wrapper = createWrapper({ newlyCreatedCategoryId: null });
       await wrapper.setProps({ newlyCreatedCategoryId: 'cat-other' });
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('#category-cat-1-name').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="category-name-input"]').exists()).toBe(false);
     });
   });
 
@@ -461,12 +482,12 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('IME composition', () => {
-    // Test Case 24: Should not save on Enter during IME composition
+    // Test Case 25: Should not save on Enter during IME composition
     it('should not save during IME composition', async () => {
       const wrapper = createWrapper();
-      await wrapper.find('h3').trigger('click');
+      await wrapper.find('[data-testid="category-name"]').trigger('click');
 
-      const input = wrapper.find('#category-cat-1-name');
+      const input = wrapper.find('[data-testid="category-name-input"]');
       await input.setValue('新名稱');
 
       // Simulate IME composition start

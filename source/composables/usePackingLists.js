@@ -13,12 +13,14 @@ Created: 2025-09-19
 // Imports
 // -----------------------------------------------------------------------------
 
-import { computed, readonly, ref, watch } from 'vue';
+import { computed, getCurrentInstance, onMounted, onUnmounted, readonly, ref, watch } from 'vue';
 
 import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';
 import { Item } from '../models/Item';
 import { LocalStorageService } from '../services/localStorageService';
+import { STORAGE_KEYS } from '../utils/constants.js';
+import { debounce } from '../utils/helpers.js';
 
 /**
  * Composable for managing packing list state and operations
@@ -30,6 +32,34 @@ export function usePackingLists() {
   // ---------------------------------------------------------------------------
 
   const dataService = new LocalStorageService();
+
+  // ---------------------------------------------------------------------------
+  // Cross-tab sync (storage event)
+  // ---------------------------------------------------------------------------
+
+  const handleStorageEvent = debounce((e) => {
+    // Only react to app data changes coming from other tabs/windows.
+    if (!e || e.key !== STORAGE_KEYS.APP_DATA) return;
+
+    // Refresh in-memory state to prevent stale UI and reduce overwrite risk.
+    void initialize();
+  }, 50);
+
+  // Register lifecycle hooks only when used within a component `setup()`.
+  // (Unit tests may call this composable directly without an active instance.)
+  if (getCurrentInstance()) {
+    onMounted(() => {
+      if (typeof window !== 'undefined' && window.addEventListener) {
+        window.addEventListener('storage', handleStorageEvent);
+      }
+    });
+
+    onUnmounted(() => {
+      if (typeof window !== 'undefined' && window.removeEventListener) {
+        window.removeEventListener('storage', handleStorageEvent);
+      }
+    });
+  }
 
   // ---------------------------------------------------------------------------
   // State
@@ -102,23 +132,27 @@ export function usePackingLists() {
       const raw = await dataService.getData();
 
       // Populate checklists, categories and items from the raw data
-      const preChecklists = (raw.checklists || []).map((cl) => Checklist.fromJSON(cl));
+      // (Also repair legacy checklists that predate the `order` field.)
+      const rawChecklists = raw.checklists || [];
+      const checklistsToUpdate = [];
+
+      const preChecklists = rawChecklists.map((cl, index) => {
+        if (typeof cl.order === 'undefined') {
+          const repaired = { ...cl, order: index };
+          checklistsToUpdate.push(repaired);
+          return Checklist.fromJSON(repaired);
+        }
+        return Checklist.fromJSON(cl);
+      });
       const preCategories = (raw.categories || []).map((cat) => Category.fromJSON(cat));
       const preItems = (raw.items || []).map((it) => Item.fromJSON(it));
 
-      // Ensure all checklists have order values and sort them
-      const checklistsToUpdate = [];
-      preChecklists.forEach((checklist, index) => {
-        if (typeof checklist.order === 'undefined') {
-          checklist.order = index;
-          checklistsToUpdate.push(checklist);
-        }
-      });
+      // Sort checklists by order
       preChecklists.sort((a, b) => (a.order || 0) - (b.order || 0));
 
       // Persist missing order values to localStorage for old checklists
       if (checklistsToUpdate.length > 0) {
-        await Promise.all(checklistsToUpdate.map((cl) => dataService.updateChecklist(cl.toJSON())));
+        await Promise.all(checklistsToUpdate.map((cl) => dataService.updateChecklist(cl)));
       }
 
       // Load checklists
@@ -126,6 +160,14 @@ export function usePackingLists() {
       // If no selected checklist yet, pick the first
       if (checklists.value.length > 0 && !selectedChecklistId.value) {
         selectedChecklistId.value = checklists.value[0].id;
+      }
+
+      // If the selected checklist was deleted in another tab, fall back safely
+      if (
+        selectedChecklistId.value &&
+        !checklists.value.some((cl) => cl.id === selectedChecklistId.value)
+      ) {
+        selectedChecklistId.value = checklists.value[0]?.id || null;
       }
 
       // Load categories and items for the currently selected checklist
@@ -295,11 +337,11 @@ export function usePackingLists() {
       () => dataService.updateCategory(categoryData),
       'Error updating category'
     );
-    if (result) {
-      await getCategories();
-      return result;
+    if (!result) {
+      return null;
     }
-    return null;
+    await getCategories();
+    return result;
   }
 
   /**

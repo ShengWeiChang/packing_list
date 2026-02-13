@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: tests/end2end/app-loading.spec.js
+File: tests/end2end-tests/app-loading.spec.js
 Description: E2E tests for basic app loading and initial state.
              Verifies the app renders correctly on first visit.
 Author: Sheng-Wei Chang

@@ -91,7 +91,7 @@ describe('PendingItemsCategory', () => {
       const items = createMockItems().map((item) => ({ ...item, isPending: false }));
       const wrapper = createWrapper({ items });
       // The root v-if should prevent rendering
-      expect(wrapper.find('.group').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="pending-items-category"]').exists()).toBe(false);
     });
 
     // Test Case 3: Should display the pending items count
@@ -105,7 +105,7 @@ describe('PendingItemsCategory', () => {
     it('should show quantity badge when quantity is greater than 1', () => {
       const wrapper = createWrapper();
       // Sunscreen has quantity 2 — look for the badge container
-      const badges = wrapper.findAll('.text-xs.font-semibold');
+      const badges = wrapper.findAll('[data-testid="pending-item-quantity"]');
       expect(badges.length).toBeGreaterThanOrEqual(1);
     });
   });
@@ -118,7 +118,7 @@ describe('PendingItemsCategory', () => {
     // Test Case 5: Should emit update:item with isPending=false on completion
     it('should emit "update:item" with isPending=false when completion button clicked', async () => {
       const wrapper = createWrapper();
-      const completeButtons = wrapper.findAll('button');
+      const completeButtons = wrapper.findAll('[data-testid="pending-item-complete"]');
       await completeButtons[0].trigger('click');
 
       const emitted = wrapper.emitted('update:item');

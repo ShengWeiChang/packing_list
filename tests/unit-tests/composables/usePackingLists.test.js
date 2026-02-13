@@ -13,6 +13,7 @@ Created: 2026-02-05
 // Imports
 // -----------------------------------------------------------------------------
 
+import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usePackingLists } from '../../../source/composables/usePackingLists';
@@ -84,11 +85,40 @@ describe('usePackingLists', () => {
   describe('initialize', () => {
     // Test Case 3: Initialize should populate state from localStorage
     it('should load data from storage on initialize', async () => {
-      const { initialize, checklists } = usePackingLists();
+      vi.spyOn(LocalStorageService.prototype, 'getData').mockResolvedValue({
+        checklists: [
+          {
+            id: 'cl-1',
+            name: 'Trip A',
+            startDate: '2026-01-01',
+            endDate: '2026-01-05',
+            order: 0,
+          },
+        ],
+        categories: [{ id: 'cat-1', name: 'Clothing', checklistId: 'cl-1', order: 0 }],
+        items: [
+          {
+            id: 'item-1',
+            name: 'Passport',
+            quantity: 1,
+            categoryId: 'cat-1',
+            isPacked: false,
+            isPending: false,
+            checklistId: 'cl-1',
+            order: 0,
+          },
+        ],
+      });
+
+      const { initialize, checklists, selectedChecklistId, categories, items } = usePackingLists();
 
       await initialize();
 
-      expect(Array.isArray(checklists.value)).toBe(true);
+      expect(checklists.value).toHaveLength(1);
+      expect(checklists.value[0].id).toBe('cl-1');
+      expect(selectedChecklistId.value).toBe('cl-1');
+      expect(categories.value).toHaveLength(1);
+      expect(items.value).toHaveLength(1);
     });
 
     // Test Case 4: isLoading should transition during async operation
@@ -100,6 +130,102 @@ describe('usePackingLists', () => {
       // After initialize completes, loading should be false
       await initialize();
       expect(isLoading.value).toBe(false);
+    });
+
+    // Test Case 5: Legacy checklists missing order should be repaired and persisted
+    it('should repair missing checklist order and persist repaired checklist', async () => {
+      vi.spyOn(LocalStorageService.prototype, 'getData').mockResolvedValue({
+        checklists: [
+          {
+            id: 'cl-legacy',
+            name: 'Legacy Checklist',
+            startDate: '2026-03-01',
+            endDate: '2026-03-02',
+          },
+          {
+            id: 'cl-ordered',
+            name: 'Ordered Checklist',
+            startDate: '2026-04-01',
+            endDate: '2026-04-02',
+            order: 5,
+          },
+        ],
+        categories: [],
+        items: [],
+      });
+      const updateChecklistSpy = vi
+        .spyOn(LocalStorageService.prototype, 'updateChecklist')
+        .mockResolvedValue({});
+
+      const { initialize, checklists, selectedChecklistId } = usePackingLists();
+      await initialize();
+
+      expect(updateChecklistSpy).toHaveBeenCalledTimes(1);
+      expect(updateChecklistSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'cl-legacy', order: 0 })
+      );
+      expect(checklists.value.map((c) => c.id)).toEqual(['cl-legacy', 'cl-ordered']);
+      expect(selectedChecklistId.value).toBe('cl-legacy');
+    });
+
+    // Test Case 6: Deleted selected checklist should fallback to first available checklist
+    it('should fallback selected checklist and reload scoped categories/items', async () => {
+      vi.spyOn(LocalStorageService.prototype, 'getData').mockResolvedValue({
+        checklists: [
+          { id: 'cl-1', name: 'Trip A', startDate: '2026-05-01', endDate: '2026-05-10', order: 0 },
+          { id: 'cl-2', name: 'Trip B', startDate: '2026-06-01', endDate: '2026-06-10', order: 1 },
+        ],
+        categories: [
+          { id: 'cat-1', name: 'A', checklistId: 'cl-1', order: 0 },
+          { id: 'cat-2', name: 'B', checklistId: 'cl-2', order: 0 },
+        ],
+        items: [
+          {
+            id: 'item-1',
+            name: 'Item A',
+            quantity: 1,
+            categoryId: 'cat-1',
+            isPacked: false,
+            isPending: false,
+            checklistId: 'cl-1',
+            order: 0,
+          },
+          {
+            id: 'item-2',
+            name: 'Item B',
+            quantity: 1,
+            categoryId: 'cat-2',
+            isPacked: false,
+            isPending: false,
+            checklistId: 'cl-2',
+            order: 0,
+          },
+        ],
+      });
+
+      const api = usePackingLists();
+      api.selectedChecklistId.value = 'cl-deleted';
+
+      await api.initialize();
+
+      expect(api.selectedChecklistId.value).toBe('cl-1');
+      expect(api.categories.value).toHaveLength(1);
+      expect(api.categories.value[0].checklistId).toBe('cl-1');
+      expect(api.items.value).toHaveLength(1);
+      expect(api.items.value[0].checklistId).toBe('cl-1');
+    });
+
+    // Test Case 7: Initialize should surface errors when data service throws
+    it('should set error and clear state when initialize fails unexpectedly', async () => {
+      vi.spyOn(LocalStorageService.prototype, 'getData').mockRejectedValue(new Error('boom'));
+
+      const { initialize, checklists, categories, items, error } = usePackingLists();
+      await initialize();
+
+      expect(checklists.value).toEqual([]);
+      expect(categories.value).toEqual([]);
+      expect(items.value).toEqual([]);
+      expect(error.value).toBe('Error initializing data: boom');
     });
   });
 
@@ -159,6 +285,34 @@ describe('usePackingLists', () => {
       expect(checklists.value.length).toBe(countBefore - 1);
       expect(checklists.value.find((c) => c.id === created.id)).toBeUndefined();
     });
+
+    // Test Case 9: createChecklist should return null when service call fails
+    it('should return null when createChecklist service call fails', async () => {
+      const api = usePackingLists();
+      const selectedBefore = api.selectedChecklistId.value;
+
+      vi.spyOn(LocalStorageService.prototype, 'createChecklist').mockRejectedValue(
+        new Error('Service error')
+      );
+
+      const result = await api.createChecklist({ name: 'Failing Checklist' });
+      expect(result).toBeNull();
+      expect(api.selectedChecklistId.value).toBe(selectedBefore);
+    });
+
+    // Test Case 10: updateChecklist should return null when service call fails
+    it('should return null when updateChecklist service call fails', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      const created = await api.createChecklist({ name: 'Original' });
+
+      vi.spyOn(LocalStorageService.prototype, 'updateChecklist').mockRejectedValue(
+        new Error('Service error')
+      );
+
+      const result = await api.updateChecklist({ ...created, name: 'Updated' });
+      expect(result).toBeNull();
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -200,7 +354,7 @@ describe('usePackingLists', () => {
 
       await initialize();
       await createChecklist({ name: 'Trip' });
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushPromises();
 
       const categoryId = categories.value[0]?.id;
       expect(categoryId).toBeDefined();
@@ -219,7 +373,7 @@ describe('usePackingLists', () => {
 
       await initialize();
       await createChecklist({ name: 'Trip' });
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushPromises();
 
       const categoryId = categories.value[0]?.id;
       expect(categoryId).toBeDefined();
@@ -254,7 +408,7 @@ describe('usePackingLists', () => {
 
       await initialize();
       await createChecklist({ name: 'Trip' });
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushPromises();
 
       const categoryId = categories.value[0]?.id;
       expect(categoryId).toBeDefined();
@@ -327,7 +481,7 @@ describe('usePackingLists', () => {
 
       await initialize();
       await createChecklist({ name: 'Trip' });
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushPromises();
 
       const categoryId = categories.value[0]?.id;
       expect(categoryId).toBeDefined();
@@ -347,7 +501,7 @@ describe('usePackingLists', () => {
 
       await initialize();
       await createChecklist({ name: 'Trip' });
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushPromises();
 
       const categoryId = categories.value[0]?.id;
       expect(categoryId).toBeDefined();
@@ -375,7 +529,7 @@ describe('usePackingLists', () => {
 
       await initialize();
       await createChecklist({ name: 'Trip' });
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushPromises();
 
       const categoryId = categories.value[0]?.id;
       expect(categoryId).toBeDefined();
@@ -394,7 +548,7 @@ describe('usePackingLists', () => {
 
       await initialize();
       await createChecklist({ name: 'Trip' });
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushPromises();
 
       const categoryId = categories.value[0]?.id;
       expect(categoryId).toBeDefined();
@@ -495,104 +649,153 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('service failure paths', () => {
-    // Test Case 28: createItem should return null when service fails
-    it('should return null when createItem service call fails', async () => {
-      const { createItem, createChecklist, selectedChecklistId } = usePackingLists();
+    // Tests 28-31, 33: Operations requiring a selected checklist should return
+    // null when the underlying service call rejects.
+    it.each([
+      ['createItem', 'createItem', { name: 'Item' }],
+      ['duplicateCategory', 'duplicateCategory', 'fake-cat-id'],
+      ['updateItem', 'updateItem', { id: 'fake', name: 'Updated' }],
+      ['duplicateItem', 'duplicateItem', 'fake-item-id'],
+      ['createCategory', 'createCategory', { name: 'Clothing' }],
+    ])(
+      'should return null when %s service call fails (with checklist)',
+      async (composableFn, serviceFn, arg) => {
+        const api = usePackingLists();
+        const cl = await api.createChecklist({ name: 'Trip' });
+        api.selectedChecklistId.value = cl.id;
 
-      const cl = await createChecklist({ name: 'Trip' });
-      selectedChecklistId.value = cl.id;
+        vi.spyOn(LocalStorageService.prototype, serviceFn).mockRejectedValue(
+          new Error('Service error')
+        );
 
-      // Mock the service method to throw
-      vi.spyOn(LocalStorageService.prototype, 'createItem').mockRejectedValue(
-        new Error('Service error')
-      );
+        const result = await api[composableFn](arg);
+        expect(result).toBeNull();
+      }
+    );
 
-      const result = await createItem({ name: 'Item' });
-      expect(result).toBeNull();
-    });
+    // Tests 32, 34: Operations that don't need a selected checklist should
+    // also return null when the service rejects.
+    it.each([
+      ['duplicateChecklist', 'duplicateChecklist', 'fake-cl-id'],
+      ['updateCategory', 'updateCategory', { id: 'fake', name: 'Updated' }],
+    ])(
+      'should return null when %s service call fails (no checklist)',
+      async (composableFn, serviceFn, arg) => {
+        const api = usePackingLists();
 
-    // Test Case 29: duplicateCategory should return null when service fails
-    it('should return null when duplicateCategory service call fails', async () => {
-      const { duplicateCategory, createChecklist, selectedChecklistId } = usePackingLists();
+        vi.spyOn(LocalStorageService.prototype, serviceFn).mockRejectedValue(
+          new Error('Service error')
+        );
 
-      const cl = await createChecklist({ name: 'Trip' });
-      selectedChecklistId.value = cl.id;
+        const result = await api[composableFn](arg);
+        expect(result).toBeNull();
+      }
+    );
 
-      vi.spyOn(LocalStorageService.prototype, 'duplicateCategory').mockRejectedValue(
-        new Error('Service error')
-      );
+    // Tests 35, 38: Should return null when the service resolves with a falsy value.
+    it.each([
+      ['updateCategory', 'updateCategory', { id: 'fake', name: 'Updated' }],
+      [
+        'updateMultipleChecklists',
+        'updateMultipleChecklists',
+        [{ id: 'cl-1', name: 'A', order: 0 }],
+      ],
+    ])(
+      'should return null when %s service returns undefined',
+      async (composableFn, serviceFn, arg) => {
+        const api = usePackingLists();
 
-      const result = await duplicateCategory('fake-cat-id');
-      expect(result).toBeNull();
-    });
+        vi.spyOn(LocalStorageService.prototype, serviceFn).mockResolvedValue(undefined);
 
-    // Test Case 30: updateItem should return null when service fails
-    it('should return null when updateItem service call fails', async () => {
-      const { updateItem, createChecklist, selectedChecklistId } = usePackingLists();
+        const result = await api[composableFn](arg);
+        expect(result).toBeNull();
+      }
+    );
 
-      const cl = await createChecklist({ name: 'Trip' });
-      selectedChecklistId.value = cl.id;
-
-      vi.spyOn(LocalStorageService.prototype, 'updateItem').mockRejectedValue(
-        new Error('Service error')
-      );
-
-      const result = await updateItem({ id: 'fake', name: 'Updated' });
-      expect(result).toBeNull();
-    });
-
-    // Test Case 31: duplicateItem should return null when service fails
-    it('should return null when duplicateItem service call fails', async () => {
-      const { duplicateItem, createChecklist, selectedChecklistId } = usePackingLists();
-
-      const cl = await createChecklist({ name: 'Trip' });
-      selectedChecklistId.value = cl.id;
-
-      vi.spyOn(LocalStorageService.prototype, 'duplicateItem').mockRejectedValue(
-        new Error('Service error')
-      );
-
-      const result = await duplicateItem('fake-item-id');
-      expect(result).toBeNull();
-    });
-
-    // Test Case 32: duplicateChecklist should return null when service fails
-    it('should return null when duplicateChecklist service call fails', async () => {
-      const { duplicateChecklist } = usePackingLists();
-
-      vi.spyOn(LocalStorageService.prototype, 'duplicateChecklist').mockRejectedValue(
-        new Error('Service error')
-      );
-
-      const result = await duplicateChecklist('fake-cl-id');
-      expect(result).toBeNull();
-    });
-
-    // Test Case 33: createCategory should return null when service fails
-    it('should return null when createCategory service call fails', async () => {
-      const { createCategory, createChecklist, selectedChecklistId } = usePackingLists();
-
-      const cl = await createChecklist({ name: 'Trip' });
-      selectedChecklistId.value = cl.id;
-
-      vi.spyOn(LocalStorageService.prototype, 'createCategory').mockRejectedValue(
-        new Error('Service error')
-      );
-
-      const result = await createCategory({ name: 'Clothing' });
-      expect(result).toBeNull();
-    });
-
-    // Test Case 34: updateCategory should return null when service fails
-    it('should return null when updateCategory service call fails', async () => {
+    // Test Case 36: Real service throws for non-existent entity
+    it('should return null when updateCategory throws (real service)', async () => {
       const { updateCategory } = usePackingLists();
 
-      vi.spyOn(LocalStorageService.prototype, 'updateCategory').mockRejectedValue(
-        new Error('Service error')
-      );
+      const result = await updateCategory({
+        id: 'cat-does-not-exist',
+        name: 'Updated',
+        checklistId: 'cl-1',
+        order: 0,
+      });
 
-      const result = await updateCategory({ id: 'fake', name: 'Updated' });
       expect(result).toBeNull();
+    });
+
+    // Test Case 37: updateCategory should refresh and return updated data on success
+    it('should refresh categories and return updated category on success', async () => {
+      const api = usePackingLists();
+      const { initialize, createChecklist, getCategories, categories, updateCategory } = api;
+
+      await initialize();
+      const cl = await createChecklist({ name: 'Trip' });
+      expect(cl).not.toBeNull();
+
+      await getCategories();
+      const first = categories.value[0];
+      expect(first).toBeDefined();
+
+      const updated = await updateCategory({ ...first, name: 'Updated Category' });
+      expect(updated).not.toBeNull();
+      expect(updated.name).toBe('Updated Category');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 13: Cross-tab Sync (storage event)
+  // ---------------------------------------------------------------------------
+
+  describe('cross-tab sync', () => {
+    // Test Case 39: Storage event should trigger state refresh
+    it('should refresh state when storage event updates app data key', async () => {
+      vi.useFakeTimers();
+
+      const addSpy = vi.spyOn(window, 'addEventListener');
+      const removeSpy = vi.spyOn(window, 'removeEventListener');
+
+      const getDataSpy = vi
+        .spyOn(LocalStorageService.prototype, 'getData')
+        .mockResolvedValue({ checklists: [], categories: [], items: [] });
+
+      const Host = {
+        template: '<div />',
+        setup() {
+          const api = usePackingLists();
+          return { api };
+        },
+      };
+
+      const wrapper = mount(Host);
+
+      const storageCalls = addSpy.mock.calls.filter((call) => call[0] === 'storage');
+      expect(storageCalls.length).toBeGreaterThan(0);
+
+      // LocalStorageService also registers a storage listener in its constructor.
+      // The composable registers its own debounced listener onMounted, which is
+      // expected to be the last registration.
+      const handler = storageCalls[storageCalls.length - 1][1];
+      expect(typeof handler).toBe('function');
+
+      // Unrelated key should be ignored
+      handler({ key: 'other-key' });
+      vi.runAllTimers();
+      await Promise.resolve();
+      expect(getDataSpy).not.toHaveBeenCalled();
+
+      // App data key should trigger refresh
+      handler({ key: 'packingListApp' });
+      vi.runAllTimers();
+      await Promise.resolve();
+      expect(getDataSpy).toHaveBeenCalled();
+
+      wrapper.unmount();
+      expect(removeSpy).toHaveBeenCalledWith('storage', handler);
+
+      vi.useRealTimers();
     });
   });
 });

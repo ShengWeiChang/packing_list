@@ -24,6 +24,7 @@ Created: 2025-09-19
     <span
       class="mr-2 flex size-9 flex-none items-center justify-center md:mr-3 md:size-6"
       :class="isHovered ? 'text-primary' : 'text-secondary'"
+      data-testid="add-item-button-icon"
     >
       <svg
         class="size-5 md:size-4"

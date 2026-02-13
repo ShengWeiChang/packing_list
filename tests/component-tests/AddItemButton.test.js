@@ -44,7 +44,8 @@ describe('AddItemButton', () => {
     // Test Case 1: Should render the add item button with label
     it('should render the add item button with label', () => {
       const wrapper = createWrapper();
-      expect(wrapper.find('button').exists()).toBe(true);
+      const button = wrapper.get('button');
+      expect(button.element.tagName).toBe('BUTTON');
       expect(wrapper.text()).toContain('item.newItem');
     });
 
@@ -88,7 +89,7 @@ describe('AddItemButton', () => {
 
       await button.trigger('mouseenter');
 
-      const icon = wrapper.find('span.flex');
+      const icon = wrapper.get('[data-testid="add-item-button-icon"]');
       expect(icon.classes()).toContain('text-primary');
     });
 
@@ -100,7 +101,7 @@ describe('AddItemButton', () => {
       await button.trigger('mouseenter');
       await button.trigger('mouseleave');
 
-      const icon = wrapper.find('span.flex');
+      const icon = wrapper.get('[data-testid="add-item-button-icon"]');
       expect(icon.classes()).toContain('text-secondary');
     });
 
@@ -111,7 +112,7 @@ describe('AddItemButton', () => {
 
       await button.trigger('focus');
 
-      const icon = wrapper.find('span.flex');
+      const icon = wrapper.get('[data-testid="add-item-button-icon"]');
       expect(icon.classes()).toContain('text-primary');
     });
 
@@ -123,7 +124,7 @@ describe('AddItemButton', () => {
       await button.trigger('focus');
       await button.trigger('blur');
 
-      const icon = wrapper.find('span.flex');
+      const icon = wrapper.get('[data-testid="add-item-button-icon"]');
       expect(icon.classes()).toContain('text-secondary');
     });
   });

@@ -29,6 +29,7 @@ Created: 2025-09-19
     <button
       class="mb-2 flex w-full items-center rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :aria-label="$t('sidebar.toggle')"
+      data-testid="sidebar-toggle"
       @click="$emit('toggle-sidebar')"
     >
       <div class="shrink-0 p-3">
@@ -111,6 +112,7 @@ Created: 2025-09-19
           :chosen-class="'chosen-checklist'"
           :drag-class="'drag-checklist'"
           :disabled="!isExpanded && !isMobile"
+          data-testid="sidebar-checklists-draggable"
           @start="onChecklistDragStart"
           @end="onChecklistDragEnd"
         >
@@ -148,6 +150,7 @@ Created: 2025-09-19
                   ]"
                   :aria-current="selectedChecklistId === checklist.id ? 'page' : null"
                   data-testid="sidebar-checklist-item"
+                  :data-checklist-id="checklist.id"
                   @click="$emit('select-checklist', checklist.id)"
                 >
                   <!-- Expanded: show full name -->
@@ -192,6 +195,7 @@ Created: 2025-09-19
     <div
       ref="settingsRoot"
       class="relative mt-auto pt-4"
+      data-testid="sidebar-language-settings"
       @focusout="handleLanguageFocusOut"
     >
       <button
@@ -200,6 +204,7 @@ Created: 2025-09-19
         :class="[isExpanded || isMobile ? 'pr-4' : '']"
         :aria-label="$t('language.switchLanguage')"
         :title="$t('language.switchLanguage')"
+        data-testid="sidebar-language-button"
         @click="toggleLanguageMenu"
       >
         <div class="shrink-0 p-3">
@@ -267,6 +272,7 @@ Created: 2025-09-19
         ref="languageDropdownRef"
         class="z-50 min-w-40 rounded-md border border-border-color-light bg-white py-1 shadow-lg"
         :style="languageDropdownStyle"
+        data-testid="sidebar-language-dropdown"
       >
         <button
           v-for="lang in availableLanguages"
@@ -277,6 +283,7 @@ Created: 2025-09-19
               ? 'bg-interactive-hover-light font-medium text-primary'
               : 'text-secondary'
           "
+          :data-testid="`sidebar-language-option-${lang.code}`"
           @click="selectLanguage(lang.code)"
         >
           <span>{{ lang.label }}</span>
@@ -307,6 +314,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 
+import { renumberOrder } from '../utils/order.js';
+import { positionDropdownAbove } from '../utils/positioning.js';
 import OverflowMenu from './OverflowMenu.vue';
 
 // ------------------------------------------------------------------------------
@@ -400,10 +409,7 @@ const draggableChecklists = computed({
   },
   set(newChecklists) {
     // When vuedraggable updates the array, emit the reorder event
-    const checklistsWithNewOrder = newChecklists.map((checklist, index) => ({
-      ...checklist,
-      order: index,
-    }));
+    const checklistsWithNewOrder = renumberOrder(newChecklists);
 
     emit('move:checklists', checklistsWithNewOrder);
   },
@@ -449,22 +455,12 @@ function positionLanguageDropdown() {
   const btnRect = languageButtonRef.value.getBoundingClientRect();
   const ddRect = languageDropdownRef.value.getBoundingClientRect();
 
-  // Position above the button, aligned to the left
-  let left = btnRect.left;
-  const top = btnRect.top - ddRect.height - 8; // 8px gap
-
-  // Clamp within viewport with padding
-  const minPadding = 8;
-  const maxLeft = window.innerWidth - ddRect.width - minPadding;
-  if (left < minPadding) left = minPadding;
-  if (left > maxLeft) left = maxLeft;
-
-  languageDropdownStyle.value = {
-    position: 'fixed',
-    left: `${left}px`,
-    top: `${top}px`,
-    zIndex: 9999,
-  };
+  languageDropdownStyle.value = positionDropdownAbove(
+    btnRect,
+    ddRect,
+    { width: window.innerWidth },
+    { gap: 8 }
+  );
 }
 
 /**

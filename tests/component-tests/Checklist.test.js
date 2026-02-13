@@ -72,6 +72,8 @@ const createMockItems = () => [
   },
 ];
 
+const BLUR_SETTLE_MS = 100;
+
 // -----------------------------------------------------------------------------
 // i18n Setup
 // -----------------------------------------------------------------------------
@@ -115,7 +117,8 @@ describe('Checklist', () => {
             name: 'draggable',
             template:
               '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template></div>',
-            props: ['modelValue', 'itemKey'],
+            props: ['modelValue', 'itemKey', 'group'],
+            emits: ['start', 'end', 'update', 'update:modelValue'],
           },
         },
       },
@@ -159,8 +162,8 @@ describe('Checklist', () => {
     // Test Case 5: Should render PendingItemsCategory when pending items exist
     it('should show PendingItemsCategory when pending items exist', () => {
       const wrapper = createWrapper();
-      const pending = wrapper.findComponent({ name: 'PendingItemsCategory' });
-      expect(pending.exists()).toBe(true);
+      const pending = wrapper.findAllComponents({ name: 'PendingItemsCategory' });
+      expect(pending).toHaveLength(1);
     });
 
     // Test Case 6: Should not render PendingItemsCategory when no pending items
@@ -180,10 +183,10 @@ describe('Checklist', () => {
     // Test Case 7: Should enter edit mode when checklist name is clicked
     it('should show input when checklist name is clicked', async () => {
       const wrapper = createWrapper();
-      const nameHeading = wrapper.find('[data-testid="checklist-name"]');
+      const nameHeading = wrapper.get('[data-testid="checklist-name"]');
       await nameHeading.trigger('click');
 
-      expect(wrapper.find('[data-testid="checklist-name-input"]').exists()).toBe(true);
+      expect(wrapper.get('[data-testid="checklist-name-input"]').element.value).toBe('Japan Trip');
     });
 
     // Test Case 8: Should emit update:checklist with new name on Enter
@@ -209,7 +212,7 @@ describe('Checklist', () => {
       await input.setValue('Changed');
       await input.trigger('keyup.escape');
 
-      expect(wrapper.find('[data-testid="checklist-name"]').exists()).toBe(true);
+      expect(wrapper.get('[data-testid="checklist-name"]').text()).toBe('Japan Trip');
       expect(wrapper.text()).toContain('Japan Trip');
     });
   });
@@ -248,35 +251,18 @@ describe('Checklist', () => {
       expect(wrapper.emitted('create:category')).toHaveLength(1);
     });
 
-    // Test Case 13: Should forward update:item events from Category
-    it('should forward "update:item" from Category component', async () => {
+    // Test Cases 13–15: Should forward events from Category component
+    it.each([
+      ['update:item', { id: 'item-1', name: 'Updated', isPacked: true }],
+      ['copy:category', 'cat-1'],
+      ['delete:category', 'cat-1'],
+    ])('should forward "%s" from Category component', async (eventName, payload) => {
       const wrapper = createWrapper();
       const category = wrapper.findComponent({ name: 'Category' });
-      const mockItem = { id: 'item-1', name: 'Updated', isPacked: true };
-      await category.vm.$emit('update:item', mockItem);
+      await category.vm.$emit(eventName, payload);
 
-      expect(wrapper.emitted('update:item')).toHaveLength(1);
-      expect(wrapper.emitted('update:item')[0][0]).toEqual(mockItem);
-    });
-
-    // Test Case 14: Should forward copy:category from Category component
-    it('should forward "copy:category" from Category', async () => {
-      const wrapper = createWrapper();
-      const category = wrapper.findComponent({ name: 'Category' });
-      await category.vm.$emit('copy:category', 'cat-1');
-
-      expect(wrapper.emitted('copy:category')).toHaveLength(1);
-      expect(wrapper.emitted('copy:category')[0][0]).toBe('cat-1');
-    });
-
-    // Test Case 15: Should forward delete:category from Category component
-    it('should forward "delete:category" from Category', async () => {
-      const wrapper = createWrapper();
-      const category = wrapper.findComponent({ name: 'Category' });
-      await category.vm.$emit('delete:category', 'cat-1');
-
-      expect(wrapper.emitted('delete:category')).toHaveLength(1);
-      expect(wrapper.emitted('delete:category')[0][0]).toBe('cat-1');
+      expect(wrapper.emitted(eventName)).toHaveLength(1);
+      expect(wrapper.emitted(eventName)[0][0]).toEqual(payload);
     });
   });
 
@@ -317,7 +303,7 @@ describe('Checklist', () => {
       await wrapper.vm.$nextTick();
 
       // End date should have been adjusted to match or be after start date
-      expect(endInput.element.value >= '2026-03-20').toBe(true);
+      expect(endInput.element.value).toBe('2026-03-20');
     });
 
     // Test Case 18: End date should not change when start date is before it
@@ -358,7 +344,7 @@ describe('Checklist', () => {
       await wrapper.vm.$nextTick();
 
       // End date should have been corrected to match start date
-      expect(endInput.element.value >= '2026-03-10').toBe(true);
+      expect(endInput.element.value).toBe('2026-03-10');
     });
   });
 
@@ -412,7 +398,7 @@ describe('Checklist', () => {
       const emitted = wrapper.emitted('update:checklist');
       expect(emitted).toHaveLength(1);
       // When empty, saveEdit uses t('checklist.untitled') as fallback
-      expect(emitted[0][0].name).toBeTruthy();
+      expect(emitted[0][0].name).toBe('Untitled Checklist');
     });
   });
 
@@ -429,7 +415,9 @@ describe('Checklist', () => {
 
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('[data-testid="checklist-name-input"]').exists()).toBe(true);
+      expect(wrapper.get('[data-testid="checklist-name-input"]').attributes('aria-label')).toBe(
+        'checklist.name'
+      );
     });
   });
 
@@ -449,7 +437,9 @@ describe('Checklist', () => {
       await wrapper.vm.$nextTick();
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('[data-testid="checklist-name-input"]').exists()).toBe(true);
+      expect(wrapper.get('[data-testid="checklist-name-input"]').attributes('aria-label')).toBe(
+        'checklist.name'
+      );
     });
   });
 
@@ -458,56 +448,20 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('additional event forwarding', () => {
-    // Test Case 25: Should forward copy:item from Category
-    it('should forward "copy:item" from Category component', async () => {
+    // Test Cases 25–29: Should forward various events from Category component
+    it.each([
+      ['copy:item', 'item-1'],
+      ['delete:item', 'item-1'],
+      ['create:item', 'cat-1'],
+      ['update:category', { id: 'cat-1', name: 'Updated' }],
+      ['move:item', { item: {}, type: 'move' }],
+    ])('should forward "%s" from Category component', async (eventName, payload) => {
       const wrapper = createWrapper();
       const category = wrapper.findComponent({ name: 'Category' });
-      await category.vm.$emit('copy:item', 'item-1');
+      await category.vm.$emit(eventName, payload);
 
-      expect(wrapper.emitted('copy:item')).toHaveLength(1);
-      expect(wrapper.emitted('copy:item')[0][0]).toBe('item-1');
-    });
-
-    // Test Case 26: Should forward delete:item from Category
-    it('should forward "delete:item" from Category component', async () => {
-      const wrapper = createWrapper();
-      const category = wrapper.findComponent({ name: 'Category' });
-      await category.vm.$emit('delete:item', 'item-1');
-
-      expect(wrapper.emitted('delete:item')).toHaveLength(1);
-      expect(wrapper.emitted('delete:item')[0][0]).toBe('item-1');
-    });
-
-    // Test Case 27: Should forward create:item from Category
-    it('should forward "create:item" from Category component', async () => {
-      const wrapper = createWrapper();
-      const category = wrapper.findComponent({ name: 'Category' });
-      await category.vm.$emit('create:item', 'cat-1');
-
-      expect(wrapper.emitted('create:item')).toHaveLength(1);
-      expect(wrapper.emitted('create:item')[0][0]).toBe('cat-1');
-    });
-
-    // Test Case 28: Should forward update:category from Category
-    it('should forward "update:category" from Category component', async () => {
-      const wrapper = createWrapper();
-      const category = wrapper.findComponent({ name: 'Category' });
-      const mockCat = { id: 'cat-1', name: 'Updated' };
-      await category.vm.$emit('update:category', mockCat);
-
-      expect(wrapper.emitted('update:category')).toHaveLength(1);
-      expect(wrapper.emitted('update:category')[0][0]).toEqual(mockCat);
-    });
-
-    // Test Case 29: Should forward move:item from Category
-    it('should forward "move:item" from Category component', async () => {
-      const wrapper = createWrapper();
-      const category = wrapper.findComponent({ name: 'Category' });
-      const moveData = { item: {}, type: 'move' };
-      await category.vm.$emit('move:item', moveData);
-
-      expect(wrapper.emitted('move:item')).toHaveLength(1);
-      expect(wrapper.emitted('move:item')[0][0]).toEqual(moveData);
+      expect(wrapper.emitted(eventName)).toHaveLength(1);
+      expect(wrapper.emitted(eventName)[0][0]).toEqual(payload);
     });
   });
 
@@ -539,7 +493,7 @@ describe('Checklist', () => {
         }),
       });
       // formatDateRange returns '' for empty dates
-      expect(wrapper.find('span[role="button"]').exists()).toBe(true);
+      expect(wrapper.get('[data-testid="checklist-name"]').text()).toBe('Japan Trip');
     });
   });
 
@@ -551,8 +505,7 @@ describe('Checklist', () => {
     // Test Case 32: Should forward update:item from PendingItemsCategory
     it('should forward "update:item" from PendingItemsCategory', async () => {
       const wrapper = createWrapper();
-      const pending = wrapper.findComponent({ name: 'PendingItemsCategory' });
-      expect(pending.exists()).toBe(true);
+      const pending = wrapper.getComponent({ name: 'PendingItemsCategory' });
 
       const mockItem = { id: 'item-3', isPending: false };
       await pending.vm.$emit('update:item', mockItem);
@@ -580,9 +533,8 @@ describe('Checklist', () => {
       draggableComp.vm.$emit('start', { item: categoryEl });
       await wrapper.vm.$nextTick();
 
-      // The dragging state should be set (we can check the class changes)
-      // Just verify no error and the event was handled
-      expect(wrapper.html()).toBeTruthy();
+      // The dragging class should be applied to the draggable container
+      expect(draggableComp.classes()).toContain('dragging');
     });
 
     // Test Case 34: Should handle category drag end
@@ -598,24 +550,33 @@ describe('Checklist', () => {
       draggableComp.vm.$emit('start', { item: categoryEl });
       await wrapper.vm.$nextTick();
 
+      // Verify dragging is active
+      expect(draggableComp.classes()).toContain('dragging');
+
       // Then end drag
       draggableComp.vm.$emit('end', {});
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.html()).toBeTruthy();
+      // Dragging class should be removed
+      expect(draggableComp.classes()).not.toContain('dragging');
     });
 
-    // Test Case 35: Should handle category reorder via update event
-    it('should handle category update event', async () => {
+    // Test Case 36: Should emit reorder:categories when draggable updates the array
+    it('should emit "reorder:categories" with renumbered order when v-model changes', async () => {
       const wrapper = createWrapper();
       const draggableComp = wrapper.findComponent({ name: 'draggable' });
 
-      draggableComp.vm.$emit('update', {});
+      const original = createMockCategories();
+      const swapped = [original[1], original[0]];
+
+      draggableComp.vm.$emit('update:modelValue', swapped);
       await wrapper.vm.$nextTick();
 
-      // onCategoryUpdate is intentionally a no-op since reorder
-      // is handled by the draggableCategories setter
-      expect(wrapper.html()).toBeTruthy();
+      const emitted = wrapper.emitted('reorder:categories');
+      expect(emitted).toHaveLength(1);
+      expect(emitted[0][0]).toHaveLength(2);
+      expect(emitted[0][0][0].id).toBe('cat-2');
+      expect(emitted[0][0][1].id).toBe('cat-1');
     });
   });
 
@@ -624,7 +585,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('edit blur handler', () => {
-    // Test Case 36: Should save on blur when focus leaves editing area
+    // Test Case 37: Should save on blur when focus leaves editing area
     it('should save when focus leaves all editing inputs', async () => {
       vi.useFakeTimers();
       const wrapper = createWrapper();
@@ -638,7 +599,7 @@ describe('Checklist', () => {
       const editDiv = input.element.parentElement;
       editDiv.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
 
-      vi.advanceTimersByTime(100);
+      vi.advanceTimersByTime(BLUR_SETTLE_MS);
       await wrapper.vm.$nextTick();
 
       const emitted = wrapper.emitted('update:checklist');

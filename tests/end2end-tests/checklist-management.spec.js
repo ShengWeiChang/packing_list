@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: tests/end2end/checklist-management.spec.js
+File: tests/end2end-tests/checklist-management.spec.js
 Description: E2E tests for checklist CRUD operations.
              Tests creating, renaming, switching, and deleting checklists.
 Author: Sheng-Wei Chang
@@ -20,16 +20,23 @@ import { expect, test } from '@playwright/test';
 // -----------------------------------------------------------------------------
 
 /**
- * Create a checklist via sidebar and confirm the default name.
- * After this helper returns, the checklist is in view mode (h2 visible).
- * @param {import('@playwright/test').Page} page - Playwright page object
+ * Create a checklist and confirm it appears in view mode.
+ * @param {import('@playwright/test').Page} page - Active Playwright page.
+ * @param {string} [name] - Optional checklist name
  */
-async function createAndConfirmChecklist(page) {
+async function createAndConfirmChecklist(page, name) {
   await page.getByTestId('sidebar-new-checklist').click();
   const nameInput = page.getByTestId('checklist-name-input');
   await expect(nameInput).toBeVisible();
+  if (name) {
+    await nameInput.fill(name);
+  }
   await nameInput.press('Enter');
-  await expect(page.getByTestId('checklist-name')).toBeVisible();
+  if (name) {
+    await expect(page.getByTestId('checklist-name')).toHaveText(name);
+  } else {
+    await expect(page.getByTestId('checklist-name')).toBeVisible();
+  }
 }
 
 // -----------------------------------------------------------------------------

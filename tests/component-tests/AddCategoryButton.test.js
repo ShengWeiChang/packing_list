@@ -36,12 +36,6 @@ describe('AddCategoryButton', () => {
   // ---------------------------------------------------------------------------
 
   describe('rendering', () => {
-    // Test Case 1: Should render a button element
-    it('should render a button element', () => {
-      const wrapper = createWrapper();
-      expect(wrapper.find('button').exists()).toBe(true);
-    });
-
     // Test Case 2: Should display the i18n label text
     it('should display the new category label', () => {
       const wrapper = createWrapper();

@@ -15,6 +15,7 @@ Created: 2025-11-01
     v-if="pendingItems.length > 0"
     class="group rounded-xl p-3 shadow-md transition-all duration-200 hover:shadow-lg"
     :style="{ backgroundColor: THEME_COLORS.pending }"
+    data-testid="pending-items-category"
   >
     <!-- Header -->
     <div class="relative mb-3 flex items-center justify-between">
@@ -42,6 +43,8 @@ Created: 2025-11-01
         v-for="item in pendingItems"
         :key="item.id"
         class="group flex items-center rounded-md px-1 py-0.5 transition-all duration-200"
+        data-testid="pending-item-row"
+        :data-item-id="item.id"
       >
         <!-- Completion button (left side) - mark as completed -->
         <button
@@ -49,6 +52,7 @@ Created: 2025-11-01
           class="mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center rounded-full bg-pending-button text-white transition-all hover:scale-110 hover:bg-pending-accent sm:mr-2"
           :title="$t('item.markAsBought')"
           :aria-label="$t('item.markAsBought')"
+          data-testid="pending-item-complete"
           @click.stop="markAsCompleted(item)"
         >
           <!-- Checkmark icon -->
@@ -77,6 +81,7 @@ Created: 2025-11-01
           <div
             v-if="item.quantity > 1"
             class="flex h-6 w-8 shrink-0 items-center justify-center rounded-md bg-control-bg px-1 text-xs font-semibold text-secondary"
+            data-testid="pending-item-quantity"
           >
             <span class="mr-0.5">x</span>
             <span>{{ item.quantity }}</span>

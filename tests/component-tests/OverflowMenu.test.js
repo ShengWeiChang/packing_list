@@ -17,6 +17,7 @@ import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import OverflowMenu from '../../source/components/OverflowMenu.vue';
+import { mockGetBoundingClientRect, mockRequestAnimationFrame } from '../test-setup/domMocks';
 
 // -----------------------------------------------------------------------------
 // OverflowMenu Component Tests
@@ -31,19 +32,10 @@ describe('OverflowMenu', () => {
 
   beforeEach(() => {
     // Mock getBoundingClientRect for dropdown positioning
-    Element.prototype.getBoundingClientRect = vi.fn(() => ({
-      top: 100,
-      left: 100,
-      right: 200,
-      bottom: 140,
-      width: 100,
-      height: 40,
-      x: 100,
-      y: 100,
-    }));
+    mockGetBoundingClientRect();
 
     // Mock requestAnimationFrame to execute synchronously
-    vi.stubGlobal('requestAnimationFrame', (cb) => cb());
+    mockRequestAnimationFrame();
   });
 
   afterEach(() => {
@@ -74,7 +66,9 @@ describe('OverflowMenu', () => {
     // Test Case 1: Should render the menu trigger button
     it('should render the menu trigger button', () => {
       const w = createWrapper();
-      expect(w.find('button').exists()).toBe(true);
+      expect(
+        w.get('[data-testid="overflow-trigger-item-test-id"]').attributes('aria-haspopup')
+      ).toBe('true');
     });
 
     // Test Case 2: Should show three-dot icon when not editing
@@ -90,14 +84,13 @@ describe('OverflowMenu', () => {
       const circles = w.findAll('circle');
       expect(circles.length).toBe(0);
       // Should have a path element for the checkmark
-      expect(w.find('path').exists()).toBe(true);
+      expect(w.get('path').attributes('d')).toContain('M5');
     });
 
     // Test Case 4: Dropdown should not be visible initially
     it('should not show dropdown menu initially', () => {
       const w = createWrapper();
-      // Only the trigger button should exist
-      expect(w.findAll('button').length).toBe(1);
+      expect(w.find('[data-testid="overflow-dropdown-item-test-id"]').exists()).toBe(false);
     });
   });
 
@@ -109,18 +102,18 @@ describe('OverflowMenu', () => {
     // Test Case 5: Should show dropdown when trigger button is clicked
     it('should show dropdown menu when trigger button is clicked', async () => {
       const w = createWrapper();
-      await w.find('button').trigger('click');
-      // After click: 1 trigger + 3 actions (edit, copy, delete) = 4
-      expect(w.findAll('button').length).toBe(4);
+      await w.get('[data-testid="overflow-trigger-item-test-id"]').trigger('click');
+      expect(
+        w.get('[data-testid="overflow-dropdown-item-test-id"]').attributes('data-testid')
+      ).toBe('overflow-dropdown-item-test-id');
     });
 
     // Test Case 6: Should hide dropdown on second click
     it('should hide dropdown menu when trigger button is clicked again', async () => {
       const w = createWrapper();
-      const trigger = w.find('button');
-      await trigger.trigger('click');
-      await trigger.trigger('click');
-      expect(w.findAll('button').length).toBe(1);
+      await w.get('[data-testid="overflow-trigger-item-test-id"]').trigger('click');
+      await w.get('[data-testid="overflow-trigger-item-test-id"]').trigger('click');
+      expect(w.find('[data-testid="overflow-dropdown-item-test-id"]').exists()).toBe(false);
     });
   });
 
@@ -132,39 +125,33 @@ describe('OverflowMenu', () => {
     // Test Case 7: Should emit edit when edit option is clicked
     it('should emit "edit" when edit option is clicked', async () => {
       const w = createWrapper();
-      await w.find('button').trigger('click');
-      const actionButtons = w.findAll('button');
-      // [0]=trigger, [1]=edit, [2]=copy, [3]=delete
-      await actionButtons[1].trigger('click');
+      await w.get('[data-testid="overflow-trigger-item-test-id"]').trigger('click');
+      await w.get('[data-testid="overflow-action-edit-item-test-id"]').trigger('click');
       expect(w.emitted('edit')).toHaveLength(1);
     });
 
     // Test Case 8: Should emit copy when copy option is clicked
     it('should emit "copy" when copy option is clicked', async () => {
       const w = createWrapper();
-      await w.find('button').trigger('click');
-      const actionButtons = w.findAll('button');
-      await actionButtons[2].trigger('click');
+      await w.get('[data-testid="overflow-trigger-item-test-id"]').trigger('click');
+      await w.get('[data-testid="overflow-action-copy-item-test-id"]').trigger('click');
       expect(w.emitted('copy')).toHaveLength(1);
     });
 
     // Test Case 9: Should emit delete when delete option is clicked
     it('should emit "delete" when delete option is clicked', async () => {
       const w = createWrapper();
-      await w.find('button').trigger('click');
-      const actionButtons = w.findAll('button');
-      await actionButtons[3].trigger('click');
+      await w.get('[data-testid="overflow-trigger-item-test-id"]').trigger('click');
+      await w.get('[data-testid="overflow-action-delete-item-test-id"]').trigger('click');
       expect(w.emitted('delete')).toHaveLength(1);
     });
 
     // Test Case 10: Should close dropdown after an action is performed
     it('should close dropdown after an action is performed', async () => {
       const w = createWrapper();
-      await w.find('button').trigger('click');
-      const actionButtons = w.findAll('button');
-      await actionButtons[1].trigger('click'); // edit
-      // Should be back to just the trigger button
-      expect(w.findAll('button').length).toBe(1);
+      await w.get('[data-testid="overflow-trigger-item-test-id"]').trigger('click');
+      await w.get('[data-testid="overflow-action-edit-item-test-id"]').trigger('click');
+      expect(w.find('[data-testid="overflow-dropdown-item-test-id"]').exists()).toBe(false);
     });
   });
 
@@ -176,7 +163,7 @@ describe('OverflowMenu', () => {
     // Test Case 11: Should emit confirm-edit when checkmark is clicked
     it('should emit "confirm-edit" when checkmark is clicked in edit mode', async () => {
       const w = createWrapper({ isEditing: true });
-      await w.find('button').trigger('click');
+      await w.get('[data-testid="overflow-trigger-item-test-id"]').trigger('click');
       expect(w.emitted('confirm-edit')).toHaveLength(1);
     });
 
@@ -226,7 +213,7 @@ describe('OverflowMenu', () => {
       expect(w.findAll('button').length).toBe(4);
 
       // Trigger focusout with relatedTarget outside component
-      const rootDiv = w.find('.relative');
+      const rootDiv = w.find('[data-testid="overflow-root-item-test-id"]');
       await rootDiv.trigger('focusout', { relatedTarget: document.body });
 
       expect(w.findAll('button').length).toBe(1);
@@ -310,7 +297,7 @@ describe('OverflowMenu', () => {
       await w.vm.$nextTick();
 
       const dropdownEl = w.find('[style*="position: fixed"]');
-      expect(dropdownEl.exists()).toBe(true);
+      expect(dropdownEl.attributes('style')).toContain('position: fixed');
       const style = dropdownEl.attributes('style');
       expect(style).toContain('position: fixed');
       expect(style).not.toContain('-9999px');
@@ -340,16 +327,7 @@ describe('OverflowMenu', () => {
       });
 
       // Mock getBoundingClientRect to return position near viewport edge
-      Element.prototype.getBoundingClientRect = vi.fn().mockReturnValue({
-        top: 100,
-        left: 2,
-        right: 102,
-        bottom: 140,
-        width: 100,
-        height: 40,
-        x: 2,
-        y: 100,
-      });
+      mockGetBoundingClientRect({ left: 2, right: 102, x: 2 });
 
       const w = createWrapper();
       await w.find('button').trigger('click');
@@ -359,7 +337,7 @@ describe('OverflowMenu', () => {
       await w.vm.$nextTick();
 
       const dropdownEl = w.find('[style*="position: fixed"]');
-      expect(dropdownEl.exists()).toBe(true);
+      expect(dropdownEl.attributes('style')).toContain('position: fixed');
       const style = dropdownEl.attributes('style');
       expect(style).toContain('position: fixed');
       // Left should be clamped to minimum padding (8px) since btnRect.right - ddRect.width = 2

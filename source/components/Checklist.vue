@@ -146,10 +146,7 @@ Created: 2025-09-19
         :group="{
           name: 'categories',
           pull: true,
-          put: function (to, from, dragEl, evt) {
-            // Only allow categories to be dropped in the category container
-            return from.options.group.name === 'categories';
-          },
+          put: putOnlyFromGroup('categories'),
         }"
         :animation="200"
         :ghost-class="'ghost-category'"
@@ -198,6 +195,8 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 
+import { putOnlyFromGroup } from '../utils/dragDrop.js';
+import { renumberOrder } from '../utils/order.js';
 import AddCategoryButton from './AddCategoryButton.vue';
 import Category from './Category.vue';
 import OverflowMenu from './OverflowMenu.vue';
@@ -310,10 +309,7 @@ const draggableCategories = computed({
   },
   set(newCategories) {
     // When vuedraggable updates the array, emit the reorder event
-    const categoriesWithNewOrder = newCategories.map((category, index) => ({
-      ...category,
-      order: index,
-    }));
+    const categoriesWithNewOrder = renumberOrder(newCategories);
 
     emit('reorder:categories', categoriesWithNewOrder);
   },

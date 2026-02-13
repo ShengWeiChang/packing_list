@@ -29,6 +29,8 @@ import {
 // -----------------------------------------------------------------------------
 
 describe('helpers', () => {
+  const DEBOUNCE_WAIT_MS = 100;
+
   // ---------------------------------------------------------------------------
   // Test Group 1: generateSecureId
   // ---------------------------------------------------------------------------
@@ -67,6 +69,43 @@ describe('helpers', () => {
       const id2 = generateSecureId('test-');
 
       expect(id1.length).toBe(id2.length);
+    });
+
+    // Test Case 5: Should fallback when crypto is unavailable
+    it('should fallback to Date.now/Math.random when crypto is unavailable', () => {
+      const originalCrypto = globalThis.crypto;
+
+      // Remove crypto
+      // (setup.js makes this configurable)
+
+      globalThis.crypto = undefined;
+
+      const id = generateSecureId('fallback-');
+      expect(id).toMatch(/^fallback-/);
+
+      // Restore
+      globalThis.crypto = originalCrypto;
+    });
+
+    // Test Case 6: Should fallback when crypto.randomUUID throws
+    it('should fallback when crypto.randomUUID throws', () => {
+      const originalCrypto = globalThis.crypto;
+
+      Object.defineProperty(globalThis, 'crypto', {
+        value: {
+          randomUUID: () => {
+            throw new Error('randomUUID failed');
+          },
+        },
+        writable: true,
+        configurable: true,
+      });
+
+      const id = generateSecureId('fallback-');
+      expect(id).toMatch(/^fallback-/);
+
+      // Restore
+      globalThis.crypto = originalCrypto;
     });
   });
 
@@ -201,26 +240,26 @@ describe('helpers', () => {
     // Test Case 17: Should delay function execution
     it('should delay function execution', () => {
       const fn = vi.fn();
-      const debouncedFn = debounce(fn, 100);
+      const debouncedFn = debounce(fn, DEBOUNCE_WAIT_MS);
 
       debouncedFn();
       expect(fn).not.toHaveBeenCalled();
 
-      vi.advanceTimersByTime(100);
+      vi.advanceTimersByTime(DEBOUNCE_WAIT_MS);
       expect(fn).toHaveBeenCalledTimes(1);
     });
 
     // Test Case 18: Should only execute once for rapid calls
     it('should only execute once for rapid calls', () => {
       const fn = vi.fn();
-      const debouncedFn = debounce(fn, 100);
+      const debouncedFn = debounce(fn, DEBOUNCE_WAIT_MS);
 
       debouncedFn();
       debouncedFn();
       debouncedFn();
       debouncedFn();
 
-      vi.advanceTimersByTime(100);
+      vi.advanceTimersByTime(DEBOUNCE_WAIT_MS);
 
       expect(fn).toHaveBeenCalledTimes(1);
     });
@@ -228,10 +267,10 @@ describe('helpers', () => {
     // Test Case 19: Should pass arguments to debounced function
     it('should pass arguments to debounced function', () => {
       const fn = vi.fn();
-      const debouncedFn = debounce(fn, 100);
+      const debouncedFn = debounce(fn, DEBOUNCE_WAIT_MS);
 
       debouncedFn('arg1', 'arg2');
-      vi.advanceTimersByTime(100);
+      vi.advanceTimersByTime(DEBOUNCE_WAIT_MS);
 
       expect(fn).toHaveBeenCalledWith('arg1', 'arg2');
     });

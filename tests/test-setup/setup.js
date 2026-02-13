@@ -30,13 +30,20 @@ const localStorageMock = {
 };
 Object.defineProperty(globalThis, 'localStorage', {
   value: localStorageMock,
+  writable: true,
+  configurable: true,
 });
+
+// Mock scrollIntoView (not implemented in jsdom)
+Element.prototype.scrollIntoView = vi.fn();
 
 // Mock crypto.randomUUID
 Object.defineProperty(globalThis, 'crypto', {
   value: {
     randomUUID: () => 'test-uuid-' + Math.random().toString(36).slice(2, 11),
   },
+  writable: true,
+  configurable: true,
 });
 
 // Clean up after each test

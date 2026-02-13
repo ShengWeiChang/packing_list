@@ -18,6 +18,7 @@ import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Item from '../../source/components/Item.vue';
+import { mockGetBoundingClientRect } from '../test-setup/domMocks';
 
 // -----------------------------------------------------------------------------
 // Test Data
@@ -34,6 +35,8 @@ const createMockItem = (overrides = {}) => ({
   order: 0,
   ...overrides,
 });
+
+const BLUR_SETTLE_MS = 100;
 
 // -----------------------------------------------------------------------------
 // Item Component Tests
@@ -63,16 +66,7 @@ describe('Item', () => {
     });
 
     // Mock getBoundingClientRect for OverflowMenu positioning
-    Element.prototype.getBoundingClientRect = vi.fn(() => ({
-      top: 0,
-      left: 0,
-      right: 100,
-      bottom: 40,
-      width: 100,
-      height: 40,
-      x: 0,
-      y: 0,
-    }));
+    mockGetBoundingClientRect({ top: 0, left: 0, right: 100, bottom: 40, x: 0, y: 0 });
   });
 
   afterEach(() => {
@@ -113,8 +107,8 @@ describe('Item', () => {
     // Test Case 2: Should render a checkbox input
     it('should render a checkbox input', () => {
       const w = createWrapper();
-      const checkbox = w.find('input[type="checkbox"]');
-      expect(checkbox.exists()).toBe(true);
+      const checkbox = w.get('input[type="checkbox"]');
+      expect(checkbox.attributes('type')).toBe('checkbox');
     });
 
     // Test Case 3: Should check the checkbox when item is packed
@@ -183,10 +177,10 @@ describe('Item', () => {
     // Test Case 8: Should show input field when item name is clicked
     it('should enter edit mode when item name is clicked', async () => {
       const w = createWrapper();
-      const nameSpan = w.find('span[role="button"]');
+      const nameSpan = w.get('span[role="button"]');
       await nameSpan.trigger('click');
 
-      expect(w.find('#item-item-1-name').exists()).toBe(true);
+      expect(w.get('[data-testid="item-edit-input"]').element.value).toBe('Passport');
     });
 
     // Test Case 9: Should save edited name on Enter key
@@ -194,7 +188,7 @@ describe('Item', () => {
       const w = createWrapper();
       await w.find('span[role="button"]').trigger('click');
 
-      const input = w.find('#item-item-1-name');
+      const input = w.find('[data-testid="item-edit-input"]');
       await input.setValue('Updated Passport');
       await input.trigger('keydown.enter');
 
@@ -208,12 +202,12 @@ describe('Item', () => {
       const w = createWrapper();
       await w.find('span[role="button"]').trigger('click');
 
-      const input = w.find('#item-item-1-name');
+      const input = w.find('[data-testid="item-edit-input"]');
       await input.setValue('Changed Name');
       await input.trigger('keyup.escape');
 
       // Should exit edit mode, showing the span again with original name
-      expect(w.find('span[role="button"]').exists()).toBe(true);
+      expect(w.get('span[role="button"]').text()).toBe('Passport');
       expect(w.text()).toContain('Passport');
     });
   });
@@ -335,7 +329,7 @@ describe('Item', () => {
       const w = createWrapper();
       await w.find('span[role="button"]').trigger('click');
 
-      const input = w.find('#item-item-1-name');
+      const input = w.find('[data-testid="item-edit-input"]');
       await input.setValue('Updated Passport');
 
       // Move focus away from input to trigger blur-save logic
@@ -347,7 +341,7 @@ describe('Item', () => {
       editWrapper.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
 
       // Advance past the 50ms blur timeout
-      vi.advanceTimersByTime(100);
+      vi.advanceTimersByTime(BLUR_SETTLE_MS);
       await w.vm.$nextTick();
 
       const emitted = w.emitted('update:item');
@@ -362,7 +356,7 @@ describe('Item', () => {
       const w = createWrapper();
       await w.find('span[role="button"]').trigger('click');
 
-      const input = w.find('#item-item-1-name');
+      const input = w.find('[data-testid="item-edit-input"]');
       await input.setValue('');
 
       input.element.blur();
@@ -370,14 +364,11 @@ describe('Item', () => {
       const editWrapper = input.element.parentElement;
       editWrapper.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
 
-      vi.advanceTimersByTime(100);
+      vi.advanceTimersByTime(BLUR_SETTLE_MS);
       await w.vm.$nextTick();
 
-      // Should not emit update with empty name
-      const emitted = w.emitted('update:item');
-      if (emitted) {
-        expect(emitted[0][0].name.length).toBeGreaterThan(0);
-      }
+      // Empty name should never trigger update:item (saveEdit guards on trim())
+      expect(w.emitted('update:item')).toBeUndefined();
       vi.useRealTimers();
     });
   });
@@ -406,7 +397,7 @@ describe('Item', () => {
     // Test Case 20: Should show controls on mouseenter
     it('should show action buttons on mouseenter', async () => {
       const w = createWrapper();
-      const mainDiv = w.find('.group');
+      const mainDiv = w.get('[data-testid="item-row"]');
       await mainDiv.trigger('mouseenter');
 
       // OverflowMenu should get forceVisible=true
@@ -417,7 +408,7 @@ describe('Item', () => {
     // Test Case 21: Should hide controls on mouseleave
     it('should hide action buttons on mouseleave', async () => {
       const w = createWrapper();
-      const mainDiv = w.find('.group');
+      const mainDiv = w.get('[data-testid="item-row"]');
       await mainDiv.trigger('mouseenter');
       await mainDiv.trigger('mouseleave');
 
@@ -436,7 +427,7 @@ describe('Item', () => {
       const w = createWrapper();
       await w.find('span[role="button"]').trigger('click');
 
-      const input = w.find('#item-item-1-name');
+      const input = w.find('[data-testid="item-edit-input"]');
       await input.setValue('新護照');
 
       await input.trigger('compositionstart');
@@ -462,13 +453,15 @@ describe('Item', () => {
     it('should enter edit mode when newlyCreatedItemId matches', async () => {
       const w = createWrapper({ newlyCreatedItemId: null });
 
-      expect(w.find('#item-item-1-name').exists()).toBe(false);
+      expect(w.find('[data-testid="item-edit-input"]').exists()).toBe(false);
 
       await w.setProps({ newlyCreatedItemId: 'item-1' });
       await w.vm.$nextTick();
       await w.vm.$nextTick();
 
-      expect(w.find('#item-item-1-name').exists()).toBe(true);
+      expect(w.get('[data-testid="item-edit-input"]').attributes('data-testid')).toBe(
+        'item-edit-input'
+      );
     });
 
     // Test Case 24: Should not start edit for non-matching item ID
@@ -477,7 +470,7 @@ describe('Item', () => {
       await w.setProps({ newlyCreatedItemId: 'item-other' });
       await w.vm.$nextTick();
 
-      expect(w.find('#item-item-1-name').exists()).toBe(false);
+      expect(w.find('[data-testid="item-edit-input"]').exists()).toBe(false);
     });
   });
 
@@ -492,24 +485,15 @@ describe('Item', () => {
         item: createMockItem({ quantity: 1 }),
       });
 
-      // Find decrement button — when quantity is 1, there's a delete button instead
-      const deleteButton = w
-        .findAll('button')
-        .find((btn) => btn.attributes('aria-label') === 'common.delete');
+      // At quantity=1, the decrement button becomes a delete button
+      const btn = w.get('[data-testid="item-quantity-decrement"]');
+      expect(btn.attributes('aria-label')).toBe('common.delete');
 
-      // The decrement button should not exist; only delete shows at quantity=1
-      const decrementButton = w
-        .findAll('button')
-        .find((btn) => btn.attributes('aria-label') === 'item.decreaseQuantity');
+      await btn.trigger('click');
 
-      // Either decrement doesn't exist or it doesn't emit update:item
-      if (decrementButton) {
-        await decrementButton.trigger('click');
-        expect(w.emitted('update:item')).toBeUndefined();
-      } else {
-        // Delete button exists at quantity=1
-        expect(deleteButton).toBeDefined();
-      }
+      // Should emit delete:item, NOT update:item with decremented quantity
+      expect(w.emitted('delete:item')).toHaveLength(1);
+      expect(w.emitted('update:item')).toBeUndefined();
     });
   });
 
@@ -521,7 +505,7 @@ describe('Item', () => {
     // Test Case 26: Should apply dragging class when isDragging is true
     it('should apply cursor-grabbing when isDragging is true', () => {
       const w = createWrapper({ isDragging: true });
-      const mainDiv = w.find('.group');
+      const mainDiv = w.get('[data-testid="item-row"]');
       expect(mainDiv.classes()).toContain('cursor-grabbing');
     });
   });

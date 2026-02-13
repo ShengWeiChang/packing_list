@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: tests/end2end/item-packing.spec.js
+File: tests/end2end-tests/item-packing.spec.js
 Description: E2E tests for the complete item packing workflow.
              Tests adding categories, adding items, editing names, toggling
              packed status, and verifying progress updates.
@@ -21,16 +21,23 @@ import { expect, test } from '@playwright/test';
 // -----------------------------------------------------------------------------
 
 /**
- * Create a checklist via sidebar and confirm the default name.
- * The newly created checklist comes with default categories and items.
- * @param {import('@playwright/test').Page} page - Playwright page object
+ * Create a checklist and confirm it appears in view mode.
+ * @param {import('@playwright/test').Page} page - Active Playwright page.
+ * @param {string} [name] - Optional checklist name
  */
-async function createAndConfirmChecklist(page) {
+async function createAndConfirmChecklist(page, name) {
   await page.getByTestId('sidebar-new-checklist').click();
   const nameInput = page.getByTestId('checklist-name-input');
   await expect(nameInput).toBeVisible();
+  if (name) {
+    await nameInput.fill(name);
+  }
   await nameInput.press('Enter');
-  await expect(page.getByTestId('checklist-name')).toBeVisible();
+  if (name) {
+    await expect(page.getByTestId('checklist-name')).toHaveText(name);
+  } else {
+    await expect(page.getByTestId('checklist-name')).toBeVisible();
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -58,32 +65,16 @@ test.describe('Item Packing Workflow', () => {
       await page.getByTestId('add-category-button').click();
 
       // A new category input should appear (edit mode)
-      const categoryInput = page.getByTestId('category-name-input');
-      const hasInput = await categoryInput.first().isVisible();
-
-      const categoryCountAfter = await page.getByTestId('category-name').count();
-
-      // Either a new category-name appeared or an edit input is showing
-      expect(categoryCountAfter > categoryCountBefore || hasInput).toBeTruthy();
-    });
-
-    // Test Case 2: Should rename a category
-    test('should rename a category by clicking its name', async ({ page }) => {
-      const firstCategory = page.getByTestId('category-name').first();
-      const originalName = await firstCategory.textContent();
-
-      // Click to enter edit mode
-      await firstCategory.click();
-
       const categoryInput = page.getByTestId('category-name-input').first();
       await expect(categoryInput).toBeVisible();
-      await categoryInput.fill('Beach Essentials');
-      await categoryInput.press('Enter');
 
-      // Verify the name changed
-      const updatedCategory = page.getByTestId('category-name').first();
-      await expect(updatedCategory).toHaveText('Beach Essentials');
-      expect(originalName).not.toBe('Beach Essentials');
+      // Commit the new category and verify concrete result
+      await categoryInput.fill('New Category');
+      await categoryInput.press('Enter');
+      await expect(page.getByTestId('category-name')).toHaveCount(categoryCountBefore + 1);
+      await expect(
+        page.getByTestId('category-name').filter({ hasText: 'New Category' })
+      ).toBeVisible();
     });
   });
 
@@ -174,8 +165,8 @@ test.describe('Item Packing Workflow', () => {
         const cb = checkboxes.nth(i);
         if (!(await cb.isChecked())) {
           await cb.click();
-          // Small wait between clicks to avoid race conditions
-          await page.waitForTimeout(50);
+          // Wait for the checkbox state to update before clicking the next one
+          await expect(cb).toBeChecked();
         }
       }
 

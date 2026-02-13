@@ -13,6 +13,7 @@ Created: 2025-09-19
   <div
     ref="root"
     class="relative"
+    :data-testid="`overflow-root-${props.menuType}-${props.itemId}`"
     @focusout="handleFocusOut"
   >
     <!-- Three-dot menu button or checkmark button when editing -->
@@ -23,6 +24,7 @@ Created: 2025-09-19
       :aria-label="props.isEditing ? $t('common.save') : $t('common.moreOptions')"
       aria-haspopup="true"
       :aria-expanded="showMenu"
+      :data-testid="`overflow-trigger-${props.menuType}-${props.itemId}`"
       @click.stop="props.isEditing ? handleConfirmEdit() : toggleMenu()"
     >
       <!-- Checkmark icon when editing -->
@@ -74,9 +76,11 @@ Created: 2025-09-19
       ref="dropdownRef"
       :class="dropdownClass"
       :style="dropdownStyle"
+      :data-testid="`overflow-dropdown-${props.menuType}-${props.itemId}`"
     >
       <button
         class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
+        :data-testid="`overflow-action-edit-${props.menuType}-${props.itemId}`"
         @click="handleEdit"
       >
         <svg
@@ -97,6 +101,7 @@ Created: 2025-09-19
 
       <button
         class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
+        :data-testid="`overflow-action-copy-${props.menuType}-${props.itemId}`"
         @click="handleCopy"
       >
         <svg
@@ -117,6 +122,7 @@ Created: 2025-09-19
 
       <button
         class="flex w-full items-center px-3 py-2 text-base text-danger-text hover:bg-danger-bg focus:bg-danger-bg focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-danger-focus md:text-sm"
+        :data-testid="`overflow-action-delete-${props.menuType}-${props.itemId}`"
         @click="handleDelete"
       >
         <svg

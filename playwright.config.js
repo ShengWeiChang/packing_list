@@ -19,7 +19,7 @@ import { defineConfig } from '@playwright/test';
 // -----------------------------------------------------------------------------
 
 export default defineConfig({
-  testDir: './tests/e2e-tests',
+  testDir: './tests/end2end-tests',
   fullyParallel: false,
   retries: 1,
   workers: 1,

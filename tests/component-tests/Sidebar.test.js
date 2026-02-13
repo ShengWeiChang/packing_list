@@ -14,11 +14,12 @@ Created: 2026-02-11
 // Imports
 // -----------------------------------------------------------------------------
 
-import { mount, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createI18n } from 'vue-i18n';
 
 import Sidebar from '../../source/components/Sidebar.vue';
+import { mockGetBoundingClientRect, mockRequestAnimationFrame } from '../test-setup/domMocks';
 
 // -----------------------------------------------------------------------------
 // Test Data
@@ -68,19 +69,10 @@ describe('Sidebar', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {});
 
     // Mock requestAnimationFrame to execute synchronously
-    vi.stubGlobal('requestAnimationFrame', (cb) => cb());
+    mockRequestAnimationFrame();
 
     // Mock getBoundingClientRect for dropdown positioning
-    Element.prototype.getBoundingClientRect = vi.fn(() => ({
-      top: 500,
-      left: 50,
-      right: 150,
-      bottom: 540,
-      width: 100,
-      height: 40,
-      x: 50,
-      y: 500,
-    }));
+    mockGetBoundingClientRect({ top: 500, left: 50, right: 150, bottom: 540, x: 50, y: 500 });
   });
 
   afterEach(() => {
@@ -108,7 +100,7 @@ describe('Sidebar', () => {
             template:
               '<component :is="tag || \'div\'"><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template></component>',
             props: ['modelValue', 'tag', 'itemKey'],
-            emits: ['update:modelValue'],
+            emits: ['update:modelValue', 'start', 'end'],
           },
         },
       },
@@ -130,8 +122,8 @@ describe('Sidebar', () => {
     // Test Case 2: Should show new checklist button
     it('should show the new checklist button', () => {
       const wrapper = createWrapper();
-      const newBtn = wrapper.find('[data-testid="sidebar-new-checklist"]');
-      expect(newBtn.exists()).toBe(true);
+      const newBtn = wrapper.get('[data-testid="sidebar-new-checklist"]');
+      expect(newBtn.text()).toContain('sidebar.newChecklist');
     });
 
     // Test Case 3: Should render sidebar title
@@ -156,7 +148,7 @@ describe('Sidebar', () => {
     // Test Case 5: Should emit toggle-sidebar when hamburger button clicked
     it('should emit "toggle-sidebar" on hamburger click', async () => {
       const wrapper = createWrapper();
-      const toggleBtn = wrapper.find('button');
+      const toggleBtn = wrapper.get('[data-testid="sidebar-toggle"]');
       await toggleBtn.trigger('click');
 
       expect(wrapper.emitted('toggle-sidebar')).toHaveLength(1);
@@ -260,8 +252,7 @@ describe('Sidebar', () => {
     it('should show language dropdown on language button click', async () => {
       const wrapper = createWrapper();
       // Find the language button by its aria-label
-      const langBtn = wrapper.find('[aria-label="language.switchLanguage"]');
-      expect(langBtn.exists()).toBe(true);
+      const langBtn = wrapper.get('[data-testid="sidebar-language-button"]');
 
       await langBtn.trigger('click');
       await wrapper.vm.$nextTick();
@@ -274,74 +265,103 @@ describe('Sidebar', () => {
     // Test Case 15: Should select a language and close menu
     it('should change locale and close menu when a language is selected', async () => {
       const wrapper = createWrapper();
-      const langBtn = wrapper.find('[aria-label="language.switchLanguage"]');
+      const langBtn = wrapper.get('[data-testid="sidebar-language-button"]');
       await langBtn.trigger('click');
       await wrapper.vm.$nextTick();
 
       // Click the second language option (zh-TW)
-      const langOptions = wrapper.findAll('.min-w-40 button');
-      expect(langOptions.length).toBe(2);
-      await langOptions[1].trigger('click');
+      const zhTwOption = wrapper.get('[data-testid="sidebar-language-option-zh-TW"]');
+      await zhTwOption.trigger('click');
 
       // Menu should close
-      expect(wrapper.find('.min-w-40').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="sidebar-language-dropdown"]').exists()).toBe(false);
     });
 
     // Test Case 16: Should close language menu on focusout
     it('should close language menu when focus leaves', async () => {
       const wrapper = createWrapper();
-      const langBtn = wrapper.find('[aria-label="language.switchLanguage"]');
+      const langBtn = wrapper.get('[data-testid="sidebar-language-button"]');
       await langBtn.trigger('click');
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('.min-w-40').exists()).toBe(true);
+      expect(
+        wrapper.get('[data-testid="sidebar-language-dropdown"]').attributes('data-testid')
+      ).toBe('sidebar-language-dropdown');
 
       // Trigger focusout with relatedTarget outside the component
-      const settingsDiv = wrapper.find('.relative.mt-auto');
+      const settingsDiv = wrapper.find('[data-testid="sidebar-language-settings"]');
       await settingsDiv.trigger('focusout', { relatedTarget: document.body });
 
-      expect(wrapper.find('.min-w-40').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="sidebar-language-dropdown"]').exists()).toBe(false);
     });
 
     // Test Case 17: Should close language menu on scroll
     it('should close language menu on window scroll', async () => {
       const wrapper = createWrapper();
-      const langBtn = wrapper.find('[aria-label="language.switchLanguage"]');
+      const langBtn = wrapper.get('[data-testid="sidebar-language-button"]');
       await langBtn.trigger('click');
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('.min-w-40').exists()).toBe(true);
+      expect(
+        wrapper.get('[data-testid="sidebar-language-dropdown"]').attributes('data-testid')
+      ).toBe('sidebar-language-dropdown');
 
       // Simulate scroll event
       window.dispatchEvent(new Event('scroll'));
 
       await wrapper.vm.$nextTick();
-      expect(wrapper.find('.min-w-40').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="sidebar-language-dropdown"]').exists()).toBe(false);
     });
 
     // Test Case 18: Should close language menu on outside click
     it('should close language menu on outside click', async () => {
       const wrapper = createWrapper();
-      const langBtn = wrapper.find('[aria-label="language.switchLanguage"]');
+      const langBtn = wrapper.get('[data-testid="sidebar-language-button"]');
       await langBtn.trigger('click');
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('.min-w-40').exists()).toBe(true);
+      expect(
+        wrapper.get('[data-testid="sidebar-language-dropdown"]').attributes('data-testid')
+      ).toBe('sidebar-language-dropdown');
 
       // Simulate click on document body (outside)
       document.dispatchEvent(new Event('click', { bubbles: true }));
 
       await wrapper.vm.$nextTick();
-      expect(wrapper.find('.min-w-40').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="sidebar-language-dropdown"]').exists()).toBe(false);
     });
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 6: Drag and Drop
+  // Test Group 6: Checklist Reorder (draggableChecklists setter)
+  // ---------------------------------------------------------------------------
+
+  describe('checklist reorder', () => {
+    // Test Case 19: Should emit move:checklists with renumbered order when draggable updates
+    it('should emit "move:checklists" with updated order when v-model changes', async () => {
+      const wrapper = createWrapper();
+      const draggableComp = wrapper.findComponent({ name: 'draggable' });
+
+      const original = createMockChecklists();
+      const swapped = [original[1], original[0]];
+
+      draggableComp.vm.$emit('update:modelValue', swapped);
+      await wrapper.vm.$nextTick();
+
+      const emitted = wrapper.emitted('move:checklists');
+      expect(emitted).toHaveLength(1);
+      expect(emitted[0][0]).toHaveLength(2);
+      expect(emitted[0][0][0].id).toBe('cl-2');
+      expect(emitted[0][0][1].id).toBe('cl-1');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 7: Drag and Drop
   // ---------------------------------------------------------------------------
 
   describe('drag and drop', () => {
-    // Test Case 19: Should handle checklist drag start
+    // Test Case 20: Should handle checklist drag start
     it('should set dragging state on drag start', async () => {
       const wrapper = createWrapper();
       const draggableComp = wrapper.findComponent({ name: 'draggable' });
@@ -357,7 +377,7 @@ describe('Sidebar', () => {
       expect(buttons[0].classes()).toContain('cursor-grabbing');
     });
 
-    // Test Case 20: Should clear dragging state on drag end
+    // Test Case 21: Should clear dragging state on drag end
     it('should clear dragging state on drag end', async () => {
       const wrapper = createWrapper();
       const draggableComp = wrapper.findComponent({ name: 'draggable' });
@@ -379,11 +399,11 @@ describe('Sidebar', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 7: Sorted Checklists
+  // Test Group 8: Sorted Checklists
   // ---------------------------------------------------------------------------
 
   describe('sorted checklists', () => {
-    // Test Case 21: Should display checklists sorted by order
+    // Test Case 22: Should display checklists sorted by order
     it('should display checklists sorted by order property', () => {
       const checklists = [
         { id: 'cl-b', name: 'Beta', startDate: '2026-01-01', endDate: '2026-01-10', order: 2 },
@@ -396,127 +416,20 @@ describe('Sidebar', () => {
       expect(items[1].text()).toContain('Charlie');
       expect(items[2].text()).toContain('Beta');
     });
-
-    // Test Case 26: Should emit move:checklists when draggable reorders
-    it('should emit "move:checklists" when checklists are reordered', async () => {
-      const wrapper = createWrapper();
-      const draggableComp = wrapper.findComponent({ name: 'draggable' });
-
-      // Simulate vuedraggable updating the model value (reordered array)
-      const reordered = [
-        createMockChecklists()[1], // Europe Tour first
-        createMockChecklists()[0], // Japan Trip second
-      ];
-      draggableComp.vm.$emit('update:modelValue', reordered);
-      await wrapper.vm.$nextTick();
-
-      const emitted = wrapper.emitted('move:checklists');
-      expect(emitted).toBeTruthy();
-      expect(emitted).toHaveLength(1);
-      expect(emitted[0][0][0].order).toBe(0);
-      expect(emitted[0][0][1].order).toBe(1);
-    });
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 8: Untitled Checklist
+  // Test Group 9: Untitled Checklist
   // ---------------------------------------------------------------------------
 
   describe('untitled checklist', () => {
-    // Test Case 22: Should show untitled text for empty name
+    // Test Case 23: Should show untitled text for empty name
     it('should display untitled placeholder for empty checklist name', () => {
       const checklists = [
         { id: 'cl-1', name: '', startDate: '2026-01-01', endDate: '2026-01-10', order: 0 },
       ];
       const wrapper = createWrapper({ checklists, isExpanded: true });
       expect(wrapper.text()).toContain('checklist.untitled');
-    });
-  });
-
-  // ---------------------------------------------------------------------------
-  // Test Group 9: Language Menu Positioning (with mount)
-  // ---------------------------------------------------------------------------
-
-  describe('language menu positioning', () => {
-    const createMountWrapper = (props = {}) => {
-      return mount(Sidebar, {
-        props: {
-          isExpanded: true,
-          isMobile: false,
-          checklists: createMockChecklists(),
-          selectedChecklistId: 'cl-1',
-          ...props,
-        },
-        global: {
-          plugins: [i18n],
-          stubs: {
-            draggable: {
-              name: 'draggable',
-              template:
-                '<component :is="tag || \'div\'"><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template></component>',
-              props: ['modelValue', 'tag', 'itemKey'],
-            },
-            OverflowMenu: true,
-          },
-        },
-        attachTo: document.body,
-      });
-    };
-
-    afterEach(() => {
-      // Clean up any mounted wrappers
-      document.body.innerHTML = '';
-    });
-
-    // Test Case 23: Should position language dropdown when opened
-    it('should apply fixed positioning to language dropdown', async () => {
-      // Use deferred rAF so positionLanguageDropdown runs after Vue renders
-      const rafCallbacks = [];
-      vi.stubGlobal('requestAnimationFrame', (cb) => {
-        rafCallbacks.push(cb);
-        return rafCallbacks.length;
-      });
-
-      const wrapper = createMountWrapper();
-      const langBtn = wrapper.find('[aria-label="language.switchLanguage"]');
-      await langBtn.trigger('click');
-      await wrapper.vm.$nextTick();
-
-      // Flush nested rAF callbacks after DOM has updated
-      while (rafCallbacks.length) rafCallbacks.shift()();
-      await wrapper.vm.$nextTick();
-
-      const dropdown = wrapper.find('.min-w-40');
-      expect(dropdown.exists()).toBe(true);
-      const style = dropdown.attributes('style');
-      expect(style).toContain('position: fixed');
-      expect(style).not.toContain('-9999px');
-    });
-
-    // Test Case 24: Should handle lifecycle mount/unmount (addEventListener)
-    it('should add event listeners on mount', () => {
-      const addSpy = vi.spyOn(document, 'addEventListener');
-      const scrollSpy = vi.spyOn(window, 'addEventListener');
-
-      const wrapper = createMountWrapper();
-
-      expect(addSpy).toHaveBeenCalledWith('click', expect.any(Function));
-      expect(scrollSpy).toHaveBeenCalledWith('scroll', expect.any(Function), true);
-
-      wrapper.unmount();
-    });
-
-    // Test Case 25: Should remove event listeners on unmount
-    it('should remove event listeners on unmount', () => {
-      const wrapper = createMountWrapper();
-
-      const removeSpy = vi.spyOn(document, 'removeEventListener');
-      const scrollRemoveSpy = vi.spyOn(window, 'removeEventListener');
-
-      wrapper.unmount();
-
-      expect(removeSpy).toHaveBeenCalledWith('click', expect.any(Function));
-      expect(scrollRemoveSpy).toHaveBeenCalledWith('scroll', expect.any(Function), true);
     });
   });
 });

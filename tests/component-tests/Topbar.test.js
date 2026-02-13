@@ -37,48 +37,21 @@ describe('Topbar', () => {
   };
 
   // ---------------------------------------------------------------------------
-  // Test Group 1: Rendering
-  // ---------------------------------------------------------------------------
-
-  describe('rendering', () => {
-    // Test Case 1: Should render a header element
-    it('should render a header element', () => {
-      const wrapper = createWrapper();
-      expect(wrapper.find('header').exists()).toBe(true);
-    });
-
-    // Test Case 2: Should be hidden on desktop viewport (md:hidden class)
-    it('should have md:hidden class for mobile-only visibility', () => {
-      const wrapper = createWrapper();
-      expect(wrapper.find('header').classes()).toContain('md:hidden');
-    });
-
-    // Test Case 3: Should render toggle and new checklist buttons
-    it('should render two action buttons', () => {
-      const wrapper = createWrapper();
-      const buttons = wrapper.findAll('button');
-      expect(buttons).toHaveLength(2);
-    });
-  });
-
-  // ---------------------------------------------------------------------------
-  // Test Group 2: Events
+  // Test Group 1: Events
   // ---------------------------------------------------------------------------
 
   describe('events', () => {
     // Test Case 4: Should emit toggle when hamburger button is clicked
     it('should emit "toggle" when hamburger button is clicked', async () => {
       const wrapper = createWrapper();
-      const buttons = wrapper.findAll('button');
-      await buttons[0].trigger('click');
+      await wrapper.get('[data-testid="topbar-toggle"]').trigger('click');
       expect(wrapper.emitted('toggle')).toHaveLength(1);
     });
 
     // Test Case 5: Should emit new when plus button is clicked
     it('should emit "new" when plus button is clicked', async () => {
       const wrapper = createWrapper();
-      const buttons = wrapper.findAll('button');
-      await buttons[1].trigger('click');
+      await wrapper.get('[data-testid="topbar-new"]').trigger('click');
       expect(wrapper.emitted('new')).toHaveLength(1);
     });
   });

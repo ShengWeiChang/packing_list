@@ -57,7 +57,7 @@ describe('ProgressBar', () => {
     // Test Case 3: Progress bar fill should have correct width style
     it('should set progress bar fill width based on percentage', () => {
       const wrapper = createWrapper({ total: 10, completed: 5 });
-      const fill = wrapper.find('.h-full.rounded-full');
+      const fill = wrapper.get('[data-testid="progress-bar-fill"]');
       expect(fill.attributes('style')).toContain('width: 50%');
     });
   });
@@ -93,13 +93,6 @@ describe('ProgressBar', () => {
   // ---------------------------------------------------------------------------
 
   describe('accessibility', () => {
-    // Test Case 7: Should have progressbar role
-    it('should have progressbar role', () => {
-      const wrapper = createWrapper();
-      const progressbar = wrapper.find('[role="progressbar"]');
-      expect(progressbar.exists()).toBe(true);
-    });
-
     // Test Case 8: Should have correct ARIA value attributes
     it('should have correct aria-valuenow, aria-valuemin, and aria-valuemax', () => {
       const wrapper = createWrapper({ total: 10, completed: 7 });
@@ -109,11 +102,12 @@ describe('ProgressBar', () => {
       expect(progressbar.attributes('aria-valuemax')).toBe('100');
     });
 
-    // Test Case 9: Should have an aria-label
+    // Test Case 9: Should have an aria-label describing progress
     it('should have an aria-label describing progress', () => {
       const wrapper = createWrapper({ total: 10, completed: 7 });
       const progressbar = wrapper.find('[role="progressbar"]');
-      expect(progressbar.attributes('aria-label')).toBeTruthy();
+      // Global $t mock returns the i18n key as-is
+      expect(progressbar.attributes('aria-label')).toBe('progress.label');
     });
   });
 });
