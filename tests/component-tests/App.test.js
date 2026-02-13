@@ -621,7 +621,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('item handlers', () => {
-    // Test Case 22: handleItemCreate should create item with correct order
+    // Test Case 24: handleItemCreate should create item with correct order
     it('should create item with maxOrder + 1 in the target category', async () => {
       mockCreateItem.mockResolvedValue({ id: 'item-new', name: 'New Item', order: 2 });
 
@@ -642,7 +642,7 @@ describe('App', () => {
       );
     });
 
-    // Test Case 23: handleItemCreate should handle empty category
+    // Test Case 25: handleItemCreate should handle empty category
     it('should create item with order 0 in an empty category', async () => {
       mockCreateItem.mockResolvedValue({ id: 'item-new', name: 'New Item', order: 0 });
 
@@ -663,7 +663,7 @@ describe('App', () => {
       );
     });
 
-    // Test Case 24: handleItemUpdate should update item and clear newly created flag
+    // Test Case 26: handleItemUpdate should update item and clear newly created flag
     it('should update item and clear newlyCreatedItemId if matching', async () => {
       mockCreateItem.mockResolvedValue({ id: 'item-new', name: 'New Item', order: 2 });
       mockUpdateItem.mockResolvedValue(undefined);
@@ -686,7 +686,7 @@ describe('App', () => {
       expect(mockUpdateItem).toHaveBeenCalledWith(updatedItem);
     });
 
-    // Test Case 25: handleItemCopy should call duplicateItem
+    // Test Case 27: handleItemCopy should call duplicateItem
     it('should call duplicateItem on copy:item emit', async () => {
       mockDuplicateItem.mockResolvedValue({ id: 'item-copy' });
 
@@ -702,7 +702,7 @@ describe('App', () => {
       expect(mockDuplicateItem).toHaveBeenCalledWith('item-1');
     });
 
-    // Test Case 26: handleItemDelete should call deleteItem
+    // Test Case 28: handleItemDelete should call deleteItem
     it('should call deleteItem on delete:item emit', async () => {
       mockDeleteItem.mockResolvedValue(undefined);
 
@@ -724,7 +724,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('handleItemMove', () => {
-    // Test Case 27: Should handle cross-category item move
+    // Test Case 29: Should handle cross-category item move
     it('should update item categoryId and reordered items on move type', async () => {
       mockUpdateItem.mockResolvedValue(undefined);
       mockGetItems.mockResolvedValue(undefined);
@@ -757,7 +757,7 @@ describe('App', () => {
       expect(mockGetItems).toHaveBeenCalled();
     });
 
-    // Test Case 28: Should handle same-category reorder
+    // Test Case 30: Should handle same-category reorder
     it('should update all items with new order on reorder type', async () => {
       mockUpdateItem.mockResolvedValue(undefined);
       mockGetItems.mockResolvedValue(undefined);
@@ -783,7 +783,7 @@ describe('App', () => {
       expect(mockGetItems).toHaveBeenCalled();
     });
 
-    // Test Case 29: Should handle move without reorderedItems
+    // Test Case 31: Should handle move without reorderedItems
     it('should handle move with empty reorderedItems gracefully', async () => {
       mockUpdateItem.mockResolvedValue(undefined);
       mockGetItems.mockResolvedValue(undefined);
@@ -814,7 +814,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('category handlers', () => {
-    // Test Case 30: handleCategoryCreate should create with maxOrder + 1
+    // Test Case 32: handleCategoryCreate should create with maxOrder + 1
     it('should create category with correct order', async () => {
       mockCreateCategory.mockResolvedValue({ id: 'cat-new', name: 'New Category', order: 1 });
 
@@ -835,7 +835,7 @@ describe('App', () => {
       );
     });
 
-    // Test Case 31: handleCategoryUpdate should call updateCategory
+    // Test Case 33: handleCategoryUpdate should call updateCategory
     it('should update category and clear newlyCreatedCategoryId if matching', async () => {
       mockCreateCategory.mockResolvedValue({ id: 'cat-new', name: 'New Category', order: 1 });
       mockUpdateCategory.mockResolvedValue(undefined);
@@ -858,7 +858,7 @@ describe('App', () => {
       expect(mockUpdateCategory).toHaveBeenCalledWith({ id: 'cat-new', name: 'Renamed' });
     });
 
-    // Test Case 32: handleCategoryCopy should call duplicateCategory
+    // Test Case 34: handleCategoryCopy should call duplicateCategory
     it('should call duplicateCategory on copy:category emit', async () => {
       mockDuplicateCategory.mockResolvedValue({ id: 'cat-copy' });
 
@@ -874,7 +874,7 @@ describe('App', () => {
       expect(mockDuplicateCategory).toHaveBeenCalledWith('cat-1');
     });
 
-    // Test Case 33: handleCategoryDelete should call deleteCategory
+    // Test Case 35: handleCategoryDelete should call deleteCategory
     it('should call deleteCategory on delete:category emit', async () => {
       mockDeleteCategory.mockResolvedValue(undefined);
 
@@ -896,7 +896,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('handleCategoryReorder', () => {
-    // Test Case 34: Should update all categories and refresh
+    // Test Case 36: Should update all categories and refresh
     it('should update each category and call getCategories', async () => {
       mockUpdateCategory.mockResolvedValue(undefined);
       mockGetCategories.mockResolvedValue(undefined);
@@ -925,7 +925,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('overlay and body scroll lock', () => {
-    // Test Case 35: Should show overlay on mobile when sidebar is open
+    // Test Case 37: Should show overlay on mobile when sidebar is open
     it('should display overlay backdrop when sidebar is open on mobile', async () => {
       setInnerWidth(375);
       const wrapper = createWrapper();
@@ -941,7 +941,7 @@ describe('App', () => {
       expect(overlay.attributes('role')).toBe('button');
     });
 
-    // Test Case 36: Should close sidebar when overlay is clicked
+    // Test Case 38: Should close sidebar when overlay is clicked
     it('should close sidebar when overlay backdrop is clicked', async () => {
       setInnerWidth(375);
       const wrapper = createWrapper();
@@ -961,7 +961,7 @@ describe('App', () => {
       expect(wrapper.find('[role="button"][aria-label="Close sidebar"]').exists()).toBe(false);
     });
 
-    // Test Case 37: Should lock body scroll when overlay is active
+    // Test Case 39: Should lock body scroll when overlay is active
     it('should set body overflow hidden when overlay is active', async () => {
       setInnerWidth(375);
       const wrapper = createWrapper();
@@ -988,14 +988,14 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('lifecycle', () => {
-    // Test Case 38: Should call initialize on mount
+    // Test Case 40: Should call initialize on mount
     it('should call initialize on mount', () => {
       setInnerWidth(1280);
       createWrapper();
       expect(mockInitialize).toHaveBeenCalled();
     });
 
-    // Test Case 39: Should remove resize listener on unmount
+    // Test Case 41: Should remove resize listener on unmount
     it('should clean up resize event listener on unmount', async () => {
       const removeSpy = vi.spyOn(window, 'removeEventListener');
 

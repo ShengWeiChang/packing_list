@@ -234,7 +234,7 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('checklist operations', () => {
-    // Test Case 5: Creating a checklist should add it to state
+    // Test Case 8: Creating a checklist should add it to state
     it('should create a new checklist', async () => {
       const { initialize, createChecklist, checklists, selectedChecklistId } = usePackingLists();
 
@@ -247,7 +247,7 @@ describe('usePackingLists', () => {
       expect(selectedChecklistId.value).toBe(checklist.id);
     });
 
-    // Test Case 6: First checklist should be auto-selected
+    // Test Case 9: First checklist should be auto-selected
     it('should select the first checklist after creation', async () => {
       const { initialize, createChecklist, selectedChecklistId, selectedChecklist } =
         usePackingLists();
@@ -260,7 +260,7 @@ describe('usePackingLists', () => {
       expect(selectedChecklist.value.name).toBe('First');
     });
 
-    // Test Case 7: Update should modify checklist data
+    // Test Case 10: Update should modify checklist data
     it('should update an existing checklist', async () => {
       const { initialize, createChecklist, updateChecklist, checklists } = usePackingLists();
 
@@ -272,7 +272,7 @@ describe('usePackingLists', () => {
       expect(updated.name).toBe('Updated');
     });
 
-    // Test Case 8: Delete should remove checklist from state
+    // Test Case 11: Delete should remove checklist from state
     it('should delete a checklist', async () => {
       const { initialize, createChecklist, deleteChecklist, checklists } = usePackingLists();
 
@@ -286,7 +286,7 @@ describe('usePackingLists', () => {
       expect(checklists.value.find((c) => c.id === created.id)).toBeUndefined();
     });
 
-    // Test Case 9: createChecklist should return null when service call fails
+    // Test Case 12: createChecklist should return null when service call fails
     it('should return null when createChecklist service call fails', async () => {
       const api = usePackingLists();
       const selectedBefore = api.selectedChecklistId.value;
@@ -300,7 +300,7 @@ describe('usePackingLists', () => {
       expect(api.selectedChecklistId.value).toBe(selectedBefore);
     });
 
-    // Test Case 10: updateChecklist should return null when service call fails
+    // Test Case 13: updateChecklist should return null when service call fails
     it('should return null when updateChecklist service call fails', async () => {
       const api = usePackingLists();
       await api.initialize();
@@ -320,7 +320,7 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('category operations', () => {
-    // Test Case 9: Category should be created in current checklist
+    // Test Case 14: Category should be created in current checklist
     it('should create a category in the selected checklist', async () => {
       const { initialize, createChecklist, createCategory, categories } = usePackingLists();
 
@@ -333,7 +333,7 @@ describe('usePackingLists', () => {
       expect(categories.value.some((c) => c.name === 'Clothes')).toBe(true);
     });
 
-    // Test Case 10: Category operations should fail without selected checklist
+    // Test Case 15: Category operations should fail without selected checklist
     it('should return null if no checklist is selected', async () => {
       const { createCategory } = usePackingLists();
 
@@ -348,7 +348,7 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('item operations', () => {
-    // Test Case 11: Item should be created with correct properties
+    // Test Case 16: Item should be created with correct properties
     it('should create an item in the selected checklist', async () => {
       const { initialize, createChecklist, categories, createItem, items } = usePackingLists();
 
@@ -366,7 +366,7 @@ describe('usePackingLists', () => {
       expect(items.value.some((i) => i.name === 'Passport')).toBe(true);
     });
 
-    // Test Case 12: Toggle should flip isPacked state
+    // Test Case 17: Toggle should flip isPacked state
     it('should toggle item packed status', async () => {
       const { initialize, createChecklist, categories, createItem, toggleItemPacked, items } =
         usePackingLists();
@@ -393,7 +393,7 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('computed properties', () => {
-    // Test Case 13: Progress should reflect packed/total ratio
+    // Test Case 18: Progress should reflect packed/total ratio
     it('should calculate progress correctly', async () => {
       const {
         initialize,
@@ -426,7 +426,7 @@ describe('usePackingLists', () => {
       expect(progress.value).toBeGreaterThan(0);
     });
 
-    // Test Case 14: Empty items should result in 0 progress
+    // Test Case 19: Empty items should result in 0 progress
     it('should return 0 progress for empty checklist', async () => {
       const { progress, totalItems } = usePackingLists();
 
@@ -440,7 +440,7 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('error handling', () => {
-    // Test Case 15: localStorage corruption should be handled gracefully
+    // Test Case 20: localStorage corruption should be handled gracefully
     it('should handle storage errors gracefully during initialization', async () => {
       const { initialize, checklists, error } = usePackingLists();
 
@@ -460,7 +460,7 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('duplicate operations', () => {
-    // Test Case 16: Should duplicate a checklist
+    // Test Case 21: Should duplicate a checklist
     it('should duplicate a checklist and refresh state', async () => {
       const { initialize, createChecklist, duplicateChecklist, checklists } = usePackingLists();
 
@@ -475,7 +475,7 @@ describe('usePackingLists', () => {
       expect(checklists.value.length).toBe(countBefore + 1);
     });
 
-    // Test Case 17: Should duplicate a category
+    // Test Case 22: Should duplicate a category
     it('should duplicate a category and refresh state', async () => {
       const { initialize, createChecklist, categories, duplicateCategory } = usePackingLists();
 
@@ -494,7 +494,7 @@ describe('usePackingLists', () => {
       expect(categories.value.length).toBe(countBefore + 1);
     });
 
-    // Test Case 18: Should duplicate an item
+    // Test Case 23: Should duplicate an item
     it('should duplicate an item and refresh state', async () => {
       const { initialize, createChecklist, categories, createItem, duplicateItem, items } =
         usePackingLists();
@@ -522,7 +522,7 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('delete category and item', () => {
-    // Test Case 19: Should delete a category and its items
+    // Test Case 24: Should delete a category and its items
     it('should delete a category and refresh both categories and items', async () => {
       const { initialize, createChecklist, categories, createItem, deleteCategory } =
         usePackingLists();
@@ -541,7 +541,7 @@ describe('usePackingLists', () => {
       expect(categories.value.find((c) => c.id === categoryId)).toBeUndefined();
     });
 
-    // Test Case 20: Should delete an item
+    // Test Case 25: Should delete an item
     it('should delete an item and refresh items', async () => {
       const { initialize, createChecklist, categories, createItem, deleteItem, items } =
         usePackingLists();
@@ -568,7 +568,7 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('updateMultipleChecklists', () => {
-    // Test Case 21: Should update multiple checklists at once
+    // Test Case 26: Should update multiple checklists at once
     it('should update multiple checklists and refresh state', async () => {
       const { initialize, createChecklist, updateMultipleChecklists, checklists } =
         usePackingLists();
@@ -593,7 +593,7 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('null-guard paths', () => {
-    // Test Case 22: createItem without selected checklist should return null
+    // Test Case 27: createItem without selected checklist should return null
     it('should return null when creating item without selected checklist', async () => {
       const { createItem } = usePackingLists();
 
@@ -601,7 +601,7 @@ describe('usePackingLists', () => {
       expect(result).toBeNull();
     });
 
-    // Test Case 23: duplicateItem without selected checklist should return null
+    // Test Case 28: duplicateItem without selected checklist should return null
     it('should return null when duplicating item without selected checklist', async () => {
       const { duplicateItem } = usePackingLists();
 
@@ -609,7 +609,7 @@ describe('usePackingLists', () => {
       expect(result).toBeNull();
     });
 
-    // Test Case 24: updateItem without selected checklist should return null
+    // Test Case 29: updateItem without selected checklist should return null
     it('should return null when updating item without selected checklist', async () => {
       const { updateItem } = usePackingLists();
 
@@ -617,7 +617,7 @@ describe('usePackingLists', () => {
       expect(result).toBeNull();
     });
 
-    // Test Case 25: getCategories without selected checklist should return empty
+    // Test Case 30: getCategories without selected checklist should return empty
     it('should return empty array when getting categories without selected checklist', async () => {
       const { getCategories, categories } = usePackingLists();
 
@@ -626,7 +626,7 @@ describe('usePackingLists', () => {
       expect(categories.value).toEqual([]);
     });
 
-    // Test Case 26: getItems without selected checklist should return empty
+    // Test Case 31: getItems without selected checklist should return empty
     it('should return empty array when getting items without selected checklist', async () => {
       const { getItems, items } = usePackingLists();
 
@@ -635,7 +635,7 @@ describe('usePackingLists', () => {
       expect(items.value).toEqual([]);
     });
 
-    // Test Case 27: deleteItem without selected checklist should return early
+    // Test Case 32: deleteItem without selected checklist should return early
     it('should return early when deleting item without selected checklist', async () => {
       const { deleteItem } = usePackingLists();
 
@@ -712,7 +712,7 @@ describe('usePackingLists', () => {
       }
     );
 
-    // Test Case 36: Real service throws for non-existent entity
+    // Test Case 33: Real service throws for non-existent entity
     it('should return null when updateCategory throws (real service)', async () => {
       const { updateCategory } = usePackingLists();
 
@@ -726,7 +726,7 @@ describe('usePackingLists', () => {
       expect(result).toBeNull();
     });
 
-    // Test Case 37: updateCategory should refresh and return updated data on success
+    // Test Case 34: updateCategory should refresh and return updated data on success
     it('should refresh categories and return updated category on success', async () => {
       const api = usePackingLists();
       const { initialize, createChecklist, getCategories, categories, updateCategory } = api;
@@ -750,7 +750,7 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('cross-tab sync', () => {
-    // Test Case 39: Storage event should trigger state refresh
+    // Test Case 35: Storage event should trigger state refresh
     it('should refresh state when storage event updates app data key', async () => {
       vi.useFakeTimers();
 

@@ -41,14 +41,14 @@ describe('Topbar', () => {
   // ---------------------------------------------------------------------------
 
   describe('events', () => {
-    // Test Case 4: Should emit toggle when hamburger button is clicked
+    // Test Case 1: Should emit toggle when hamburger button is clicked
     it('should emit "toggle" when hamburger button is clicked', async () => {
       const wrapper = createWrapper();
       await wrapper.get('[data-testid="topbar-toggle"]').trigger('click');
       expect(wrapper.emitted('toggle')).toHaveLength(1);
     });
 
-    // Test Case 5: Should emit new when plus button is clicked
+    // Test Case 2: Should emit new when plus button is clicked
     it('should emit "new" when plus button is clicked', async () => {
       const wrapper = createWrapper();
       await wrapper.get('[data-testid="topbar-new"]').trigger('click');

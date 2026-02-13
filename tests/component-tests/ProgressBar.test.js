@@ -93,7 +93,7 @@ describe('ProgressBar', () => {
   // ---------------------------------------------------------------------------
 
   describe('accessibility', () => {
-    // Test Case 8: Should have correct ARIA value attributes
+    // Test Case 7: Should have correct ARIA value attributes
     it('should have correct aria-valuenow, aria-valuemin, and aria-valuemax', () => {
       const wrapper = createWrapper({ total: 10, completed: 7 });
       const progressbar = wrapper.find('[role="progressbar"]');
@@ -102,7 +102,7 @@ describe('ProgressBar', () => {
       expect(progressbar.attributes('aria-valuemax')).toBe('100');
     });
 
-    // Test Case 9: Should have an aria-label describing progress
+    // Test Case 8: Should have an aria-label describing progress
     it('should have an aria-label describing progress', () => {
       const wrapper = createWrapper({ total: 10, completed: 7 });
       const progressbar = wrapper.find('[role="progressbar"]');

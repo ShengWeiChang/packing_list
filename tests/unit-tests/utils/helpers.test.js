@@ -114,7 +114,7 @@ describe('helpers', () => {
   // ---------------------------------------------------------------------------
 
   describe('formatDate', () => {
-    // Test Case 5: Should format date string correctly
+    // Test Case 7: Should format date string correctly
     it('should format date string correctly', () => {
       const formatted = formatDate('2026-03-15');
 
@@ -123,7 +123,7 @@ describe('helpers', () => {
       expect(formatted).toMatch(/15|14|16/);
     });
 
-    // Test Case 6: Should handle null date (returns epoch date)
+    // Test Case 8: Should handle null date (returns epoch date)
     it('should handle null date (returns epoch date)', () => {
       const formatted = formatDate(null);
 
@@ -131,14 +131,14 @@ describe('helpers', () => {
       expect(formatted).toMatch(/December 31, 1969/);
     });
 
-    // Test Case 7: Should handle undefined date (returns Invalid Date)
+    // Test Case 9: Should handle undefined date (returns Invalid Date)
     it('should handle undefined date (returns Invalid Date)', () => {
       const formatted = formatDate(undefined);
 
       expect(formatted).toBe('Invalid Date');
     });
 
-    // Test Case 8: Should handle empty string (returns Invalid Date)
+    // Test Case 10: Should handle empty string (returns Invalid Date)
     it('should handle empty string (returns Invalid Date)', () => {
       const formatted = formatDate('');
 
@@ -151,26 +151,26 @@ describe('helpers', () => {
   // ---------------------------------------------------------------------------
 
   describe('calculatePercentage', () => {
-    // Test Case 9: Should calculate percentage correctly
+    // Test Case 11: Should calculate percentage correctly
     it('should calculate percentage correctly', () => {
       expect(calculatePercentage(50, 100)).toBe(50);
       expect(calculatePercentage(25, 100)).toBe(25);
       expect(calculatePercentage(1, 4)).toBe(25);
     });
 
-    // Test Case 10: Should return 0 when total is 0
+    // Test Case 12: Should return 0 when total is 0
     it('should return 0 when total is 0', () => {
       expect(calculatePercentage(0, 0)).toBe(0);
       expect(calculatePercentage(10, 0)).toBe(0);
     });
 
-    // Test Case 11: Should handle 100%
+    // Test Case 13: Should handle 100%
     it('should handle 100%', () => {
       expect(calculatePercentage(100, 100)).toBe(100);
       expect(calculatePercentage(5, 5)).toBe(100);
     });
 
-    // Test Case 12: Should round to integer
+    // Test Case 14: Should round to integer
     it('should round to integer', () => {
       expect(calculatePercentage(1, 3)).toBe(33);
       expect(calculatePercentage(2, 3)).toBe(67);
@@ -182,7 +182,7 @@ describe('helpers', () => {
   // ---------------------------------------------------------------------------
 
   describe('deepClone', () => {
-    // Test Case 13: Should clone primitive values
+    // Test Case 15: Should clone primitive values
     it('should clone primitive values', () => {
       expect(deepClone(42)).toBe(42);
       expect(deepClone('hello')).toBe('hello');
@@ -190,7 +190,7 @@ describe('helpers', () => {
       expect(deepClone(null)).toBe(null);
     });
 
-    // Test Case 14: Should deep clone objects
+    // Test Case 16: Should deep clone objects
     it('should deep clone objects', () => {
       const original = { a: 1, b: { c: 2 } };
       const cloned = deepClone(original);
@@ -200,7 +200,7 @@ describe('helpers', () => {
       expect(cloned.b).not.toBe(original.b);
     });
 
-    // Test Case 15: Should deep clone arrays
+    // Test Case 17: Should deep clone arrays
     it('should deep clone arrays', () => {
       const original = [1, [2, 3], { a: 4 }];
       const cloned = deepClone(original);
@@ -211,7 +211,7 @@ describe('helpers', () => {
       expect(cloned[2]).not.toBe(original[2]);
     });
 
-    // Test Case 16: Modifying clone should not affect original
+    // Test Case 18: Modifying clone should not affect original
     it('should not affect original when modifying clone', () => {
       const original = { a: 1, b: { c: 2 } };
       const cloned = deepClone(original);
@@ -237,7 +237,7 @@ describe('helpers', () => {
       vi.useRealTimers();
     });
 
-    // Test Case 17: Should delay function execution
+    // Test Case 19: Should delay function execution
     it('should delay function execution', () => {
       const fn = vi.fn();
       const debouncedFn = debounce(fn, DEBOUNCE_WAIT_MS);
@@ -249,7 +249,7 @@ describe('helpers', () => {
       expect(fn).toHaveBeenCalledTimes(1);
     });
 
-    // Test Case 18: Should only execute once for rapid calls
+    // Test Case 20: Should only execute once for rapid calls
     it('should only execute once for rapid calls', () => {
       const fn = vi.fn();
       const debouncedFn = debounce(fn, DEBOUNCE_WAIT_MS);
@@ -264,7 +264,7 @@ describe('helpers', () => {
       expect(fn).toHaveBeenCalledTimes(1);
     });
 
-    // Test Case 19: Should pass arguments to debounced function
+    // Test Case 21: Should pass arguments to debounced function
     it('should pass arguments to debounced function', () => {
       const fn = vi.fn();
       const debouncedFn = debounce(fn, DEBOUNCE_WAIT_MS);

@@ -83,7 +83,7 @@ test.describe('Item Packing Workflow', () => {
   // ---------------------------------------------------------------------------
 
   test.describe('item operations', () => {
-    // Test Case 3: Should create a new item in a category
+    // Test Case 2: Should create a new item in a category
     test('should create a new item via add button', async ({ page }) => {
       const addItemBtn = page.getByTestId('add-item-button').first();
       await addItemBtn.click();
@@ -93,7 +93,7 @@ test.describe('Item Packing Workflow', () => {
       await expect(itemInput.first()).toBeVisible();
     });
 
-    // Test Case 4: Should edit an item name
+    // Test Case 3: Should edit an item name
     test('should edit an item name', async ({ page }) => {
       // Add a new item
       await page.getByTestId('add-item-button').first().click();
@@ -107,7 +107,7 @@ test.describe('Item Packing Workflow', () => {
       await expect(page.locator('text=Sunscreen SPF 50')).toBeVisible();
     });
 
-    // Test Case 5: Should toggle item packed status via checkbox
+    // Test Case 4: Should toggle item packed status via checkbox
     test('should toggle item packed status via checkbox', async ({ page }) => {
       const checkbox = page.getByTestId('item-checkbox').first();
       await expect(checkbox).toBeVisible();
@@ -128,7 +128,7 @@ test.describe('Item Packing Workflow', () => {
   // ---------------------------------------------------------------------------
 
   test.describe('progress tracking', () => {
-    // Test Case 6: Progress bar should update when items are packed
+    // Test Case 5: Progress bar should update when items are packed
     test('should update progress when items are packed', async ({ page }) => {
       const progressBar = page.getByTestId('progress-bar').first();
       await expect(progressBar).toBeVisible();
@@ -155,7 +155,7 @@ test.describe('Item Packing Workflow', () => {
       expect(updatedText).not.toBe(initialText);
     });
 
-    // Test Case 7: Progress should show 100% when all items packed
+    // Test Case 6: Progress should show 100% when all items packed
     test('should show 100% when all items in a category are packed', async ({ page }) => {
       // Pack all checkboxes
       const checkboxes = page.getByTestId('item-checkbox');
@@ -181,7 +181,7 @@ test.describe('Item Packing Workflow', () => {
   // ---------------------------------------------------------------------------
 
   test.describe('data persistence', () => {
-    // Test Case 8: Changes should persist after page reload
+    // Test Case 7: Changes should persist after page reload
     test('should persist data after page reload', async ({ page }) => {
       // Rename the checklist
       await page.getByTestId('checklist-name').click();

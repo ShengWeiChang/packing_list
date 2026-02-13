@@ -36,7 +36,7 @@ describe('AddCategoryButton', () => {
   // ---------------------------------------------------------------------------
 
   describe('rendering', () => {
-    // Test Case 2: Should display the i18n label text
+    // Test Case 1: Should display the i18n label text
     it('should display the new category label', () => {
       const wrapper = createWrapper();
       expect(wrapper.text()).toContain('category.newCategory');
@@ -48,7 +48,7 @@ describe('AddCategoryButton', () => {
   // ---------------------------------------------------------------------------
 
   describe('events', () => {
-    // Test Case 3: Should emit click event when button is clicked
+    // Test Case 2: Should emit click event when button is clicked
     it('should emit "click" when button is clicked', async () => {
       const wrapper = createWrapper();
       await wrapper.find('button').trigger('click');

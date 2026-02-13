@@ -636,7 +636,7 @@ describe('LocalStorageService', () => {
       expect(duplicated.name.length).toBeLessThanOrEqual(100);
     });
 
-    // Test Case 36: Cross-tab storage event should invalidate cache
+    // Test Case 45: Cross-tab storage event should invalidate cache
     it('should invalidate cache when storage event fires with app key', () => {
       service._cache = { checklists: [], categories: [], items: [] };
       service._initialized = true;
@@ -653,7 +653,7 @@ describe('LocalStorageService', () => {
       expect(service._initialized).toBe(true);
     });
 
-    // Test Case 37: Cross-tab storage deletion should reset initialized flag
+    // Test Case 46: Cross-tab storage deletion should reset initialized flag
     it('should reset initialized flag when storage key is deleted externally', () => {
       service._cache = { checklists: [], categories: [], items: [] };
       service._initialized = true;
@@ -669,7 +669,7 @@ describe('LocalStorageService', () => {
       expect(service._initialized).toBe(false);
     });
 
-    // Test Case 38: Storage event with different key should not affect cache
+    // Test Case 47: Storage event with different key should not affect cache
     it('should ignore storage events for unrelated keys', () => {
       service._cache = { checklists: [], categories: [], items: [] };
       service._initialized = true;
@@ -684,7 +684,7 @@ describe('LocalStorageService', () => {
       expect(service._initialized).toBe(true);
     });
 
-    // Test Case 39: _saveData should throw when localStorage.setItem fails
+    // Test Case 48: _saveData should throw when localStorage.setItem fails
     it('should throw when localStorage.setItem fails in _saveData', () => {
       const origSetItem = globalThis.localStorage.setItem.getMockImplementation();
       globalThis.localStorage.setItem.mockImplementation(() => {
@@ -699,7 +699,7 @@ describe('LocalStorageService', () => {
       globalThis.localStorage.setItem.mockImplementation(origSetItem);
     });
 
-    // Test Case 40: updateCategory should throw for non-existent category
+    // Test Case 49: updateCategory should throw for non-existent category
     it('should throw when updating non-existent category', async () => {
       await service.createChecklist({ name: 'Test' });
 
@@ -708,7 +708,7 @@ describe('LocalStorageService', () => {
       );
     });
 
-    // Test Case 44: Duplicate category name truncation for long names
+    // Test Case 50: Duplicate category name truncation for long names
     it('should truncate duplicate category name when at max length', async () => {
       await service.createChecklist({ name: 'Test' });
       const data = await service.getData();
@@ -724,7 +724,7 @@ describe('LocalStorageService', () => {
       }
     });
 
-    // Test Case 45: Duplicate item name truncation for long names
+    // Test Case 51: Duplicate item name truncation for long names
     it('should truncate duplicate item name when at max length', async () => {
       const cl = await service.createChecklist({ name: 'Test' });
       const data = await service.getData();
@@ -745,11 +745,11 @@ describe('LocalStorageService', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 12: _getCopySuffix from localStorage
+  // Test Group 10: _getCopySuffix from localStorage
   // ---------------------------------------------------------------------------
 
   describe('_getCopySuffix locale from localStorage', () => {
-    // Test Case 49: Should read locale from localStorage when no argument is passed
+    // Test Case 52: Should read locale from localStorage when no argument is passed
     it('should read user-locale from localStorage when no locale argument provided', () => {
       // Temporarily swap getItem to return zh-TW for user-locale
       const origGetItem = localStorage.getItem;
@@ -765,7 +765,7 @@ describe('LocalStorageService', () => {
       localStorage.getItem = origGetItem;
     });
 
-    // Test Case 50: Should default to English when localStorage has no locale
+    // Test Case 53: Should default to English when localStorage has no locale
     it('should default to English suffix when no locale in storage or argument', () => {
       // No user-locale in mockStorage
       const suffix = service._getCopySuffix();
@@ -774,11 +774,11 @@ describe('LocalStorageService', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 13: dispose in non-browser environment
+  // Test Group 11: dispose in non-browser environment
   // ---------------------------------------------------------------------------
 
   describe('dispose edge cases', () => {
-    // Test Case 51: Should handle dispose when removeEventListener called twice
+    // Test Case 54: Should handle dispose when removeEventListener called twice
     it('should handle multiple dispose calls gracefully', async () => {
       await service.getData(); // initialize
 
@@ -793,11 +793,11 @@ describe('LocalStorageService', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 14: Special Characters & Unicode
+  // Test Group 12: Special Characters & Unicode
   // ---------------------------------------------------------------------------
 
   describe('special characters and unicode', () => {
-    // Test Case 52: Should handle emoji in checklist names
+    // Test Case 55: Should handle emoji in checklist names
     it('should store and retrieve emoji in checklist name', async () => {
       const cl = await service.createChecklist({ name: '🌍 World Trip ✈️' });
       expect(cl.name).toBe('🌍 World Trip ✈️');
@@ -806,7 +806,7 @@ describe('LocalStorageService', () => {
       expect(retrieved.name).toBe('🌍 World Trip ✈️');
     });
 
-    // Test Case 53: Should handle CJK characters in category names
+    // Test Case 56: Should handle CJK characters in category names
     it('should store and retrieve CJK characters in category name', async () => {
       const cl = await service.createChecklist({ name: 'Trip' });
       const cat = await service.createCategory(cl.id, { name: '衣物與配件' });
@@ -817,7 +817,7 @@ describe('LocalStorageService', () => {
       expect(found.name).toBe('衣物與配件');
     });
 
-    // Test Case 54: Should handle HTML-like strings safely
+    // Test Case 57: Should handle HTML-like strings safely
     it('should store HTML-like strings as plain text', async () => {
       const cl = await service.createChecklist({ name: '<script>alert("xss")</script>' });
       expect(cl.name).toBe('<script>alert("xss")</script>');
@@ -826,7 +826,7 @@ describe('LocalStorageService', () => {
       expect(retrieved.name).toBe('<script>alert("xss")</script>');
     });
 
-    // Test Case 55: Should handle special characters in item names
+    // Test Case 58: Should handle special characters in item names
     it('should handle special characters in item names', async () => {
       const cl = await service.createChecklist({ name: 'Trip' });
       const data = await service.getData();
@@ -842,11 +842,11 @@ describe('LocalStorageService', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 15: localStorage Disabled / Throwing
+  // Test Group 13: localStorage Disabled / Throwing
   // ---------------------------------------------------------------------------
 
   describe('localStorage disabled', () => {
-    // Test Case 56: Should handle getItem throwing (e.g. private browsing, disabled storage)
+    // Test Case 59: Should handle getItem throwing (e.g. private browsing, disabled storage)
     it('should handle gracefully when getItem throws on getData', async () => {
       const freshService = new LocalStorageService();
 
@@ -865,11 +865,11 @@ describe('LocalStorageService', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 16: || [] Fallback Branch Coverage
+  // Test Group 14: || [] Fallback Branch Coverage
   // ---------------------------------------------------------------------------
 
   describe('fallback branches when data fields are undefined', () => {
-    // Test Case 57: should normalize missing arrays from storage payload
+    // Test Case 60: should normalize missing arrays from storage payload
     it('should normalize missing arrays from storage payload', async () => {
       mockStorage['packingListApp'] = JSON.stringify({});
       service._cache = null;
@@ -880,7 +880,7 @@ describe('LocalStorageService', () => {
       expect(data.items).toEqual([]);
     });
 
-    // Test Case 58: should handle missing checklists array in cache
+    // Test Case 61: should handle missing checklists array in cache
     it('should handle missing checklists array in cache', async () => {
       service._initialized = true;
       service._cache = { categories: [], items: [] };
@@ -894,7 +894,7 @@ describe('LocalStorageService', () => {
       await expect(service.duplicateChecklist('missing')).rejects.toThrow('not found');
     });
 
-    // Test Case 59: should handle missing categories array in cache
+    // Test Case 62: should handle missing categories array in cache
     it('should handle missing categories array in cache', async () => {
       service._initialized = true;
       service._cache = { checklists: [], items: [] };
@@ -908,7 +908,7 @@ describe('LocalStorageService', () => {
       await expect(service.duplicateCategory('missing')).rejects.toThrow('not found');
     });
 
-    // Test Case 60: should handle missing items array in cache
+    // Test Case 63: should handle missing items array in cache
     it('should handle missing items array in cache', async () => {
       service._initialized = true;
       service._cache = { checklists: [], categories: [] };
@@ -922,7 +922,7 @@ describe('LocalStorageService', () => {
       await expect(service.duplicateItem('cl-1', 'missing')).rejects.toThrow('not found');
     });
 
-    // Test Case 61: should allow create operations with sparse cache shape
+    // Test Case 64: should allow create operations with sparse cache shape
     it('should allow create operations with sparse cache shape', async () => {
       service._initialized = true;
       service._cache = {};
@@ -944,11 +944,11 @@ describe('LocalStorageService', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 17: updateMultipleChecklists Skip Path
+  // Test Group 15: updateMultipleChecklists Skip Path
   // ---------------------------------------------------------------------------
 
   describe('updateMultipleChecklists skip path', () => {
-    // Test Case 70: Should skip non-existent checklists in batch update
+    // Test Case 65: Should skip non-existent checklists in batch update
     it('should skip checklists that do not exist in storage', async () => {
       const cl1 = await service.createChecklist({ name: 'Real' });
 
@@ -971,11 +971,11 @@ describe('LocalStorageService', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 18: getCategories Without checklistId Filter
+  // Test Group 16: getCategories Without checklistId Filter
   // ---------------------------------------------------------------------------
 
   describe('getCategories without checklistId', () => {
-    // Test Case 71: Should return all categories when no checklistId provided
+    // Test Case 66: Should return all categories when no checklistId provided
     it('should return all categories across all checklists', async () => {
       const cl1 = await service.createChecklist({ name: 'Trip 1' });
       const cl2 = await service.createChecklist({ name: 'Trip 2' });
@@ -997,11 +997,11 @@ describe('LocalStorageService', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 19: Orphan Item categoryId Fallback in duplicateChecklist
+  // Test Group 17: Orphan Item categoryId Fallback in duplicateChecklist
   // ---------------------------------------------------------------------------
 
   describe('orphan item categoryId fallback', () => {
-    // Test Case 72: Should preserve original categoryId when category mapping misses
+    // Test Case 67: Should preserve original categoryId when category mapping misses
     it('should use original categoryId for items whose category was not found', async () => {
       const cl = await service.createChecklist({ name: 'Trip' });
 
@@ -1035,11 +1035,11 @@ describe('LocalStorageService', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 20: Duplicate Method || [] Fallback Branches
+  // Test Group 18: Duplicate Method || [] Fallback Branches
   // ---------------------------------------------------------------------------
 
   describe('duplicate method fallback branches', () => {
-    // Test Case 77: duplicateChecklist || [] branches when cache fields are undefined
+    // Test Case 68: duplicateChecklist || [] branches when cache fields are undefined
     it('should duplicate checklist when cache categories and items are undefined', async () => {
       service._initialized = true;
       service._cache = {
@@ -1051,7 +1051,7 @@ describe('LocalStorageService', () => {
       expect(dup.name).toContain('Trip');
     });
 
-    // Test Case 78: duplicateCategory || [] branches when cache items is undefined
+    // Test Case 69: duplicateCategory || [] branches when cache items is undefined
     it('should duplicate category when cache items is undefined', async () => {
       service._initialized = true;
       service._cache = {
@@ -1064,7 +1064,7 @@ describe('LocalStorageService', () => {
       expect(dup.name).toContain('Clothes');
     });
 
-    // Test Case 79: duplicateItem || [] branches when items cache is manipulated
+    // Test Case 70: duplicateItem || [] branches when items cache is manipulated
     it('should duplicate item when cache data has items but no reorder targets', async () => {
       service._initialized = true;
       service._cache = {
@@ -1091,11 +1091,11 @@ describe('LocalStorageService', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 21: High-value persistence scenarios
+  // Test Group 19: High-value persistence scenarios
   // ---------------------------------------------------------------------------
 
   describe('high-value persistence scenarios', () => {
-    // Test Case 93: concurrent checklist updates should follow last-write-wins
+    // Test Case 71: concurrent checklist updates should follow last-write-wins
     it('should apply last-write-wins semantics for concurrent checklist updates', async () => {
       const checklist = await service.createChecklist({ name: 'Trip' });
       const staleSnapshot = { ...checklist };
@@ -1108,7 +1108,7 @@ describe('LocalStorageService', () => {
       expect(finalChecklist.name).toBe('Trip B');
     });
 
-    // Test Case 94: storage event should invalidate cache
+    // Test Case 72: storage event should invalidate cache
     it('should invalidate cache after storage event from another tab', async () => {
       await service.createChecklist({ name: 'Original' });
       expect(service._cache).not.toBeNull();
@@ -1145,7 +1145,7 @@ describe('LocalStorageService', () => {
       );
     });
 
-    // Test Case 95: should handle high data volume (50+) efficiently
+    // Test Case 73: should handle high data volume (50+) efficiently
     it('should handle high data volume (50+) without losing correctness', async () => {
       const checklistCount = 60;
       for (let i = 0; i < checklistCount; i++) {
@@ -1167,7 +1167,7 @@ describe('LocalStorageService', () => {
       expect(allData.items.length).toBeGreaterThanOrEqual(checklistCount);
     });
 
-    // Test Case 96: deleting checklist should cascade to categories and items
+    // Test Case 74: deleting checklist should cascade to categories and items
     it('should cascade delete categories and items when deleting checklist', async () => {
       const checklist = await service.createChecklist({ name: 'Cascade' });
       const category = await service.createCategory(checklist.id, { name: 'Extra' });
@@ -1185,7 +1185,7 @@ describe('LocalStorageService', () => {
       expect(data.items.find((i) => i.id === item.id)).toBeUndefined();
     });
 
-    // Test Case 97: deleting category should cascade to category items
+    // Test Case 75: deleting category should cascade to category items
     it('should cascade delete all items in a deleted category', async () => {
       const checklist = await service.createChecklist({ name: 'Cascade Category' });
       const category = await service.createCategory(checklist.id, { name: 'Clothes' });
@@ -1207,7 +1207,7 @@ describe('LocalStorageService', () => {
       expect(items.filter((i) => i.categoryId === category.id)).toHaveLength(0);
     });
 
-    // Test Case 98: duplicate item should preserve relative order semantics
+    // Test Case 76: duplicate item should preserve relative order semantics
     it('should preserve relative order semantics after duplicate and delete', async () => {
       const checklist = await service.createChecklist({ name: 'Order' });
       const category = await service.createCategory(checklist.id, { name: 'OrderCat' });
@@ -1237,7 +1237,7 @@ describe('LocalStorageService', () => {
       expect(copiedB.order).toBe(originalB.order + 1);
     });
 
-    // Test Case 99: default data shape should remain stable across locales
+    // Test Case 77: default data shape should remain stable across locales
     it('should keep default data shape stable across en and zh-TW locales', async () => {
       mockStorage['user-locale'] = 'en';
       const enChecklist = await service.createChecklist({ name: 'EN' });
@@ -1255,7 +1255,7 @@ describe('LocalStorageService', () => {
       expect(enItems.length).toBeGreaterThan(0);
     });
 
-    // Test Case 100: rapid sequential stale updates should honor final write on item
+    // Test Case 78: rapid sequential stale updates should honor final write on item
     it('should persist final state after rapid sequential stale item updates', async () => {
       const checklist = await service.createChecklist({ name: 'Race' });
       const category = await service.createCategory(checklist.id, { name: 'Essentials' });

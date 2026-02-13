@@ -137,7 +137,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('serialization', () => {
-    // Test Case 11: toJSON should return plain object
+    // Test Case 12: toJSON should return plain object
     it('should serialize to JSON correctly', () => {
       const item = new Item({
         name: 'Passport',
@@ -152,7 +152,7 @@ describe('Item', () => {
       expect(json.isPacked).toBe(true);
     });
 
-    // Test Case 12: fromJSON should recreate Item instance
+    // Test Case 13: fromJSON should recreate Item instance
     it('should deserialize from JSON correctly', () => {
       const original = new Item({ name: 'Laptop', quantity: 2 });
       const json = original.toJSON();
@@ -163,7 +163,7 @@ describe('Item', () => {
       expect(restored.quantity).toBe(original.quantity);
     });
 
-    // Test Case 13: Roundtrip serialization should preserve all data
+    // Test Case 14: Roundtrip serialization should preserve all data
     it('should preserve all properties through roundtrip', () => {
       const original = new Item({
         name: 'Camera',
@@ -192,7 +192,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('togglePacked', () => {
-    // Test Case 14: togglePacked should flip isPacked from false to true
+    // Test Case 15: togglePacked should flip isPacked from false to true
     it('should toggle isPacked from false to true', () => {
       const item = new Item({ name: 'Test', isPacked: false });
       expect(item.isPacked).toBe(false);
@@ -202,7 +202,7 @@ describe('Item', () => {
       expect(item.isPacked).toBe(true);
     });
 
-    // Test Case 15: togglePacked should flip isPacked from true to false
+    // Test Case 16: togglePacked should flip isPacked from true to false
     it('should toggle isPacked from true to false', () => {
       const item = new Item({ name: 'Test', isPacked: true });
       expect(item.isPacked).toBe(true);
