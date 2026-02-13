@@ -31,16 +31,28 @@ async function loadI18nModule() {
 // i18n Tests
 // -----------------------------------------------------------------------------
 
-describe.skip('i18n locale selection and persistence', () => {
+describe('i18n locale selection and persistence', () => {
   let mockStorage;
+  let getItemSpy;
+  let setItemSpy;
+  let originalLanguagesDescriptor;
+  let originalLanguageDescriptor;
 
+  // ---------------------------------------------------------------------------
+  // Test Setup and Teardown
+  // ---------------------------------------------------------------------------
   beforeEach(() => {
     mockStorage = {};
 
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => mockStorage[key] || null);
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
+    getItemSpy = vi.spyOn(globalThis.localStorage, 'getItem').mockImplementation((key) => {
+      return mockStorage[key] || null;
+    });
+    setItemSpy = vi.spyOn(globalThis.localStorage, 'setItem').mockImplementation((key, value) => {
       mockStorage[key] = value;
     });
+
+    originalLanguagesDescriptor = Object.getOwnPropertyDescriptor(window.navigator, 'languages');
+    originalLanguageDescriptor = Object.getOwnPropertyDescriptor(window.navigator, 'language');
 
     Object.defineProperty(window.navigator, 'languages', {
       configurable: true,
@@ -53,9 +65,24 @@ describe.skip('i18n locale selection and persistence', () => {
   });
 
   afterEach(() => {
+    if (originalLanguagesDescriptor) {
+      Object.defineProperty(window.navigator, 'languages', originalLanguagesDescriptor);
+    }
+
+    if (originalLanguageDescriptor) {
+      Object.defineProperty(window.navigator, 'language', originalLanguageDescriptor);
+    }
+
+    getItemSpy?.mockRestore();
+    setItemSpy?.mockRestore();
     vi.restoreAllMocks();
   });
 
+  // ---------------------------------------------------------------------------
+  // Test Group 1: Initial Locale Detection
+  // ---------------------------------------------------------------------------
+
+  // Test Case 1: Should use saved locale from localStorage
   it('should use saved locale when it is supported', async () => {
     mockStorage['user-locale'] = 'zh-TW';
 
@@ -64,6 +91,7 @@ describe.skip('i18n locale selection and persistence', () => {
     expect(getLocale()).toBe('zh-TW');
   });
 
+  // Test Case 2: Should map Traditional Chinese variants to zh-TW and persist
   it('should map zh-HK browser language to zh-TW and persist initial locale', async () => {
     Object.defineProperty(window.navigator, 'languages', {
       configurable: true,
@@ -73,9 +101,10 @@ describe.skip('i18n locale selection and persistence', () => {
     const { getLocale } = await loadI18nModule();
 
     expect(getLocale()).toBe('zh-TW');
-    expect(Storage.prototype.setItem).toHaveBeenCalledWith('user-locale', 'zh-TW');
+    expect(setItemSpy).toHaveBeenCalledWith('user-locale', 'zh-TW');
   });
 
+  // Test Case 3: Should fallback to en for unsupported browser language
   it('should fallback to en for unsupported browser language', async () => {
     Object.defineProperty(window.navigator, 'languages', {
       configurable: true,
@@ -87,15 +116,21 @@ describe.skip('i18n locale selection and persistence', () => {
     expect(getLocale()).toBe('en');
   });
 
+  // ---------------------------------------------------------------------------
+  // Test Group 2: Locale Update and Guard Behavior
+  // ---------------------------------------------------------------------------
+
+  // Test Case 4: Should persist locale when setLocale receives supported value
   it('should persist locale when setLocale receives a supported value', async () => {
     const { getLocale, setLocale } = await loadI18nModule();
 
     setLocale('zh-TW');
 
     expect(getLocale()).toBe('zh-TW');
-    expect(Storage.prototype.setItem).toHaveBeenCalledWith('user-locale', 'zh-TW');
+    expect(setItemSpy).toHaveBeenCalledWith('user-locale', 'zh-TW');
   });
 
+  // Test Case 5: Should reject unsupported locale values
   it('should ignore unsupported setLocale values and keep current locale', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { getLocale, setLocale } = await loadI18nModule();

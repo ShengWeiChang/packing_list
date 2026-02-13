@@ -17,7 +17,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | Total tests        | 428    |
 | Unit tests         | 190    |
 | Component tests    | 199    |
-| E2E tests          | 39     |
+| E2E tests          | 40     |
 | Line coverage      | 94.40% |
 | Statement coverage | 93.48% |
 | Branch coverage    | 86.98% |
@@ -31,7 +31,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
 | Unit      | Vitest                   | 190   | Pure logic in models, services, composables, utils |
 | Component | Vitest + @vue/test-utils | 199   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 39    | Full user flows in a real browser                  |
+| E2E       | Playwright               | 40    | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -80,7 +80,7 @@ tests/
 │   ├── PendingItemsCategory.test.js     #  5  tests
 │   └── AddCategoryButton.test.js        #  2  tests
 │
-└── end2end-tests/                       # 39  tests
+└── end2end-tests/                       # 40  tests
     ├── mobile-workflow.spec.js          #  9  tests
     ├── item-packing.spec.js             #  7  tests
     ├── language-switch.spec.js          #  6  tests
@@ -88,7 +88,7 @@ tests/
     ├── checklist-management.spec.js     #  5  tests
     ├── category-crud.spec.js            #  3  tests
     ├── drag-and-drop.spec.js            #  1  test
-    └── multi-tab-sync.spec.js           #  3  tests
+    └── multi-tab-sync.spec.js           #  4  tests
 ```
 
 ### Naming Conventions
@@ -384,7 +384,7 @@ This project uses three layers to balance speed and reliability.
 | 44  | should return null when updateCategory service returns undefined              | Falsy result guard            |
 | 45  | should return null when updateMultipleChecklists returns undefined            | Falsy result guard            |
 
-#### 8.1.4 Utils (28 tests)
+#### 8.1.4 i18n (5 tests)
 
 ##### 8.1.4.1 index.test.js (5 tests)
 
@@ -396,7 +396,9 @@ This project uses three layers to balance speed and reliability.
 | 4   | should persist locale when setLocale receives a supported value    | Locale persistence           |
 | 5   | should ignore unsupported setLocale values and keep current locale | Setter guard                 |
 
-##### 8.1.4.2 helpers.test.js (21 tests)
+#### 8.1.5 Utils (28 tests)
+
+##### 8.1.5.1 helpers.test.js (21 tests)
 
 | #   | Test                                                               | What it verifies               |
 | --- | ------------------------------------------------------------------ | ------------------------------ |
@@ -422,21 +424,21 @@ This project uses three layers to balance speed and reliability.
 | 20  | should fallback to Date.now/Math.random when crypto is unavailable | generateSecureId fallback      |
 | 21  | should fallback when crypto.randomUUID throws                      | generateSecureId fallback      |
 
-##### 8.1.4.3 dragDrop.test.js (2 tests)
+##### 8.1.5.2 dragDrop.test.js (2 tests)
 
 | #   | Test                                                  | What it verifies               |
 | --- | ----------------------------------------------------- | ------------------------------ |
 | 1   | should allow drops only from the specified group name | vuedraggable put guard correct |
 | 2   | should return false when from group is missing        | DnD defensive error handling   |
 
-##### 8.1.4.4 order.test.js (2 tests)
+##### 8.1.5.3 order.test.js (2 tests)
 
 | #   | Test                                       | What it verifies                     |
 | --- | ------------------------------------------ | ------------------------------------ |
 | 1   | should renumber order based on array index | Reorder based on array index         |
 | 2   | should support custom start offset         | Support insert scenario start offset |
 
-##### 8.1.4.5 positioning.test.js (3 tests)
+##### 8.1.5.4 positioning.test.js (3 tests)
 
 | #   | Test                                                      | What it verifies               |
 | --- | --------------------------------------------------------- | ------------------------------ |
@@ -700,7 +702,7 @@ This project uses three layers to balance speed and reliability.
 | 22  | should emit "move:checklists" when checklists are reordered     | Reorder event       |
 | 23  | should display untitled placeholder for empty checklist name    | Untitled fallback   |
 
-### 8.3 E2E Tests (39 tests)
+### 8.3 E2E Tests (40 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -773,10 +775,11 @@ This project uses three layers to balance speed and reliability.
 | 8   | should toggle item packed status on mobile             | Mobile packing toggle     |
 | 9   | should update progress when items are packed on mobile | Mobile progress update    |
 
-#### 8.3.8 multi-tab-sync.spec.js (3 tests)
+#### 8.3.8 multi-tab-sync.spec.js (4 tests)
 
-| #   | Test                                                                 | What it verifies              |
-| --- | -------------------------------------------------------------------- | ----------------------------- |
-| 1   | should sync checklist create and rename across tabs                  | Cross-tab storage sync        |
-| 2   | should converge to the latest rename when two tabs edit concurrently | Concurrency convergence       |
-| 3   | should converge after rapid alternating cross-tab edits              | Rapid alternating edit safety |
+| #   | Test                                                                     | What it verifies                   |
+| --- | ------------------------------------------------------------------------ | ---------------------------------- |
+| 1   | should sync checklist create and rename across tabs                      | Cross-tab storage sync             |
+| 2   | should converge to the latest rename when two tabs edit concurrently     | Concurrency convergence            |
+| 3   | should converge after rapid alternating cross-tab edits                  | Rapid alternating edit safety      |
+| 4   | should converge to deletion when one tab renames and another tab deletes | Rename+delete conflict convergence |

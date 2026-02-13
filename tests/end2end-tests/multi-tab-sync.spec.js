@@ -39,6 +39,22 @@ async function renameSelectedChecklist(page, name) {
   await input.press('Enter');
 }
 
+/**
+ * Delete currently selected checklist via overflow menu.
+ * @param {import('@playwright/test').Page} page - Active Playwright page.
+ */
+async function deleteSelectedChecklist(page) {
+  page.once('dialog', (dialog) => dialog.accept());
+
+  const overflowButton = page.locator('[aria-haspopup="true"]').first();
+  await expect(overflowButton).toBeVisible();
+  await overflowButton.click();
+
+  const deleteButton = page.locator('[data-testid^="overflow-action-delete-checklist-"]').first();
+  await expect(deleteButton).toBeVisible();
+  await deleteButton.click();
+}
+
 // -----------------------------------------------------------------------------
 // Multi-tab Sync Tests
 // -----------------------------------------------------------------------------
@@ -122,6 +138,36 @@ test.describe('Multi-tab sync', () => {
       // Final writer is tab A; both tabs should match
       await expect(pageA.getByTestId('checklist-name')).toHaveText('A2');
       await expect(pageB.getByTestId('checklist-name')).toHaveText('A2');
+
+      await context.close();
+    });
+
+    // Test Case 4: Rename in one tab and delete in another should converge to deletion
+    test('should converge to deletion when one tab renames and another tab deletes', async ({
+      browser,
+    }) => {
+      const context = await browser.newContext();
+      const pageA = await context.newPage();
+      const pageB = await context.newPage();
+
+      await pageA.goto('/');
+      await pageB.goto('/');
+
+      await createChecklist(pageA);
+      await expect(pageB.getByTestId('sidebar-checklist-item').first()).toBeVisible();
+
+      // Tab A updates name first
+      await renameSelectedChecklist(pageA, 'To Be Deleted');
+      await expect(pageB.getByTestId('checklist-name')).toHaveText('To Be Deleted');
+
+      // Tab B deletes the same checklist later
+      await deleteSelectedChecklist(pageB);
+
+      // Both tabs should converge to empty state (deletion wins as final write)
+      await expect(pageA.getByTestId('sidebar-checklist-item')).toHaveCount(0);
+      await expect(pageB.getByTestId('sidebar-checklist-item')).toHaveCount(0);
+      await expect(pageA.getByTestId('empty-state')).toBeVisible();
+      await expect(pageB.getByTestId('empty-state')).toBeVisible();
 
       await context.close();
     });
