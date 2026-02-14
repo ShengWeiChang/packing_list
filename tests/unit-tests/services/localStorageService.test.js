@@ -162,8 +162,8 @@ describe('LocalStorageService', () => {
 
       const documentsCategory = categories.find((c) => c.name === 'Documents');
       const clothingCategory = categories.find((c) => c.name === 'Clothing');
-      expect(documentsCategory).toBeDefined();
-      expect(clothingCategory).toBeDefined();
+      expect(documentsCategory).toEqual(expect.objectContaining({ name: 'Documents' }));
+      expect(clothingCategory).toEqual(expect.objectContaining({ name: 'Clothing' }));
 
       const passport = items.find((i) => i.name === 'Passport');
       const tshirt = items.find((i) => i.name === 'T-Shirt');
@@ -452,8 +452,8 @@ describe('LocalStorageService', () => {
       const original = before.find((c) => c.id === checklistId);
       const secondBefore = before.find((c) => c.id === second.id);
 
-      expect(original).toBeDefined();
-      expect(secondBefore).toBeDefined();
+      expect(original).toEqual(expect.objectContaining({ id: checklistId }));
+      expect(secondBefore).toEqual(expect.objectContaining({ id: second.id }));
       expect(original.id).toBe(checklistId);
       expect(secondBefore.id).toBe(second.id);
 
@@ -474,9 +474,9 @@ describe('LocalStorageService', () => {
       const duplicatedAfter = after.find((c) => c.id === duplicated.id);
       const secondAfter = after.find((c) => c.id === second.id);
 
-      expect(originalAfter).toBeDefined();
-      expect(duplicatedAfter).toBeDefined();
-      expect(secondAfter).toBeDefined();
+      expect(originalAfter).toEqual(expect.objectContaining({ id: checklistId }));
+      expect(duplicatedAfter).toEqual(expect.objectContaining({ id: duplicated.id }));
+      expect(secondAfter).toEqual(expect.objectContaining({ id: second.id }));
       expect(duplicatedAfter.id).toBe(duplicated.id);
       expect(secondAfter.id).toBe(second.id);
       expect(duplicatedAfter.order).toBe(originalAfter.order + 1);
@@ -1028,7 +1028,7 @@ describe('LocalStorageService', () => {
       const dupItems = dupData.items.filter((i) => i.checklistId === dup.id);
       const dupOrphan = dupItems.find((i) => i.name === 'Orphan');
 
-      expect(dupOrphan).toBeDefined();
+      expect(dupOrphan).toEqual(expect.objectContaining({ name: 'Orphan' }));
       // The orphan's categoryId should fall back to original since it's not in the mapping
       expect(dupOrphan.categoryId).toBe('non-existent-cat');
     });
@@ -1232,8 +1232,8 @@ describe('LocalStorageService', () => {
       const originalB = items.find((i) => i.id === itemB.id);
       const copiedB = items.find((i) => i.id === duplicatedB.id);
 
-      expect(originalB).toBeDefined();
-      expect(copiedB).toBeDefined();
+      expect(originalB).toEqual(expect.objectContaining({ id: itemB.id }));
+      expect(copiedB).toEqual(expect.objectContaining({ id: duplicatedB.id }));
       expect(copiedB.order).toBe(originalB.order + 1);
     });
 

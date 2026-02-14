@@ -40,4 +40,10 @@ describe('order utils', () => {
 
     expect(result.map((x) => x.order)).toEqual([5, 6, 7]);
   });
+
+  // Test Case 3: Renumber should handle null/undefined input gracefully
+  it('should return empty array for null or undefined input', () => {
+    expect(renumberOrder(null)).toEqual([]);
+    expect(renumberOrder(undefined)).toEqual([]);
+  });
 });

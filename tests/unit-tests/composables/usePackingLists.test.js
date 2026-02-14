@@ -256,8 +256,7 @@ describe('usePackingLists', () => {
       await createChecklist({ name: 'First' });
 
       expect(selectedChecklistId.value).not.toBeNull();
-      expect(selectedChecklist.value).toBeDefined();
-      expect(selectedChecklist.value.name).toBe('First');
+      expect(selectedChecklist.value).toEqual(expect.objectContaining({ name: 'First' }));
     });
 
     // Test Case 10: Update should modify checklist data
@@ -357,7 +356,7 @@ describe('usePackingLists', () => {
       await flushPromises();
 
       const categoryId = categories.value[0]?.id;
-      expect(categoryId).toBeDefined();
+      expect(categoryId).toEqual(expect.any(String));
 
       const item = await createItem({ name: 'Passport', categoryId });
 
@@ -376,7 +375,7 @@ describe('usePackingLists', () => {
       await flushPromises();
 
       const categoryId = categories.value[0]?.id;
-      expect(categoryId).toBeDefined();
+      expect(categoryId).toEqual(expect.any(String));
 
       const item = await createItem({ name: 'Test Item', categoryId });
       expect(item.isPacked).toBe(false);
@@ -411,7 +410,7 @@ describe('usePackingLists', () => {
       await flushPromises();
 
       const categoryId = categories.value[0]?.id;
-      expect(categoryId).toBeDefined();
+      expect(categoryId).toEqual(expect.any(String));
 
       const item1 = await createItem({ name: 'Item 1', categoryId });
       await createItem({ name: 'Item 2', categoryId });
@@ -484,7 +483,7 @@ describe('usePackingLists', () => {
       await flushPromises();
 
       const categoryId = categories.value[0]?.id;
-      expect(categoryId).toBeDefined();
+      expect(categoryId).toEqual(expect.any(String));
       const countBefore = categories.value.length;
 
       const duplicated = await duplicateCategory(categoryId);
@@ -504,7 +503,7 @@ describe('usePackingLists', () => {
       await flushPromises();
 
       const categoryId = categories.value[0]?.id;
-      expect(categoryId).toBeDefined();
+      expect(categoryId).toEqual(expect.any(String));
 
       const item = await createItem({ name: 'Shirt', categoryId });
       const countBefore = items.value.length;
@@ -532,7 +531,7 @@ describe('usePackingLists', () => {
       await flushPromises();
 
       const categoryId = categories.value[0]?.id;
-      expect(categoryId).toBeDefined();
+      expect(categoryId).toEqual(expect.any(String));
 
       await createItem({ name: 'Test Item', categoryId });
 
@@ -551,7 +550,7 @@ describe('usePackingLists', () => {
       await flushPromises();
 
       const categoryId = categories.value[0]?.id;
-      expect(categoryId).toBeDefined();
+      expect(categoryId).toEqual(expect.any(String));
 
       const item = await createItem({ name: 'To Remove', categoryId });
       const countBefore = items.value.length;
@@ -649,8 +648,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('service failure paths', () => {
-    // Tests 28-31, 33: Operations requiring a selected checklist should return
-    // null when the underlying service call rejects.
+    // Test Cases 33–37: Operations requiring a selected checklist should
+    // return null when the underlying service call rejects.
     it.each([
       ['createItem', 'createItem', { name: 'Item' }],
       ['duplicateCategory', 'duplicateCategory', 'fake-cat-id'],
@@ -673,7 +672,7 @@ describe('usePackingLists', () => {
       }
     );
 
-    // Tests 32, 34: Operations that don't need a selected checklist should
+    // Test Cases 38–39: Operations that don't need a selected checklist should
     // also return null when the service rejects.
     it.each([
       ['duplicateChecklist', 'duplicateChecklist', 'fake-cl-id'],
@@ -692,7 +691,7 @@ describe('usePackingLists', () => {
       }
     );
 
-    // Tests 35, 38: Should return null when the service resolves with a falsy value.
+    // Test Cases 40–41: Should return null when the service resolves with a falsy value.
     it.each([
       ['updateCategory', 'updateCategory', { id: 'fake', name: 'Updated' }],
       [
@@ -712,7 +711,7 @@ describe('usePackingLists', () => {
       }
     );
 
-    // Test Case 33: Real service throws for non-existent entity
+    // Test Case 42: Real service throws for non-existent entity
     it('should return null when updateCategory throws (real service)', async () => {
       const { updateCategory } = usePackingLists();
 
@@ -726,7 +725,7 @@ describe('usePackingLists', () => {
       expect(result).toBeNull();
     });
 
-    // Test Case 34: updateCategory should refresh and return updated data on success
+    // Test Case 43: updateCategory should refresh and return updated data on success
     it('should refresh categories and return updated category on success', async () => {
       const api = usePackingLists();
       const { initialize, createChecklist, getCategories, categories, updateCategory } = api;
@@ -737,7 +736,7 @@ describe('usePackingLists', () => {
 
       await getCategories();
       const first = categories.value[0];
-      expect(first).toBeDefined();
+      expect(first).toEqual(expect.objectContaining({ id: expect.any(String) }));
 
       const updated = await updateCategory({ ...first, name: 'Updated Category' });
       expect(updated).not.toBeNull();
@@ -750,7 +749,7 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('cross-tab sync', () => {
-    // Test Case 35: Storage event should trigger state refresh
+    // Test Case 44: Storage event should trigger state refresh
     it('should refresh state when storage event updates app data key', async () => {
       vi.useFakeTimers();
 

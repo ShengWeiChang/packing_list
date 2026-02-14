@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 428    |
-| Unit tests         | 190    |
-| Component tests    | 199    |
-| E2E tests          | 40     |
-| Line coverage      | 94.40% |
-| Statement coverage | 93.48% |
-| Branch coverage    | 86.98% |
+| Total tests        | 440    |
+| Unit tests         | 196    |
+| Component tests    | 202    |
+| E2E tests          | 42     |
+| Line coverage      | 98.28% |
+| Statement coverage | 97.52% |
+| Branch coverage    | 89.02% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -29,9 +29,9 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 190   | Pure logic in models, services, composables, utils |
-| Component | Vitest + @vue/test-utils | 199   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 40    | Full user flows in a real browser                  |
+| Unit      | Vitest                   | 196   | Pure logic in models, services, composables, utils |
+| Component | Vitest + @vue/test-utils | 202   | Vue component rendering, events, state             |
+| E2E       | Playwright               | 42    | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -50,28 +50,28 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 190 tests
-│   ├── models/                          # 34  tests
-│   │   ├── Item.test.js                 # 16  tests
-│   │   ├── Category.test.js             #  8  tests
-│   │   └── Checklist.test.js            # 10  tests
+├── unit-tests/                          # 196 tests
+│   ├── models/                          # 37  tests
+│   │   ├── Item.test.js                 # 17  tests
+│   │   ├── Category.test.js             #  9  tests
+│   │   └── Checklist.test.js            # 11  tests
 │   ├── services/                        # 78  tests
 │   │   └── localStorageService.test.js  # 78  tests
-│   ├── composables/                     # 45  tests
-│   │   └── usePackingLists.test.js      # 45  tests
-│   ├── i18n/                            #  5  tests
-│   │   └── index.test.js                #  5  tests
-│   └── utils/                           # 28  tests
+│   ├── composables/                     # 44  tests
+│   │   └── usePackingLists.test.js      # 44  tests
+│   ├── i18n/                            #  8  tests
+│   │   └── index.test.js                #  8  tests
+│   └── utils/                           # 29  tests
 │       ├── helpers.test.js              # 21  tests
 │       ├── positioning.test.js          #  3  tests
-│       ├── order.test.js                #  2  tests
+│       ├── order.test.js                #  3  tests
 │       └── dragDrop.test.js             #  2  tests
 │
-├── component-tests/                     # 199 tests
-│   ├── App.test.js                      # 41  tests
+├── component-tests/                     # 202 tests
+│   ├── App.test.js                      # 42  tests
 │   ├── Checklist.test.js                # 36  tests
 │   ├── Item.test.js                     # 26  tests
-│   ├── Sidebar.test.js                  # 23  tests
+│   ├── Sidebar.test.js                  # 25  tests
 │   ├── Category.test.js                 # 25  tests
 │   ├── OverflowMenu.test.js             # 23  tests
 │   ├── ProgressBar.test.js              #  8  tests
@@ -80,14 +80,14 @@ tests/
 │   ├── PendingItemsCategory.test.js     #  5  tests
 │   └── AddCategoryButton.test.js        #  2  tests
 │
-└── end2end-tests/                       # 40  tests
+└── end2end-tests/                       # 42  tests
     ├── mobile-workflow.spec.js          #  9  tests
     ├── item-packing.spec.js             #  7  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
     ├── checklist-management.spec.js     #  5  tests
     ├── category-crud.spec.js            #  3  tests
-    ├── drag-and-drop.spec.js            #  1  test
+    ├── drag-and-drop.spec.js            #  3  tests
     └── multi-tab-sync.spec.js           #  4  tests
 ```
 
@@ -105,24 +105,24 @@ tests/
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| source/      | 96.93%     | 80.72% | 96.77% |
-| components/  | 95.05%     | 89.40% | 96.73% |
-| composables/ | 88.55%     | 78.44% | 90.39% |
-| models/      | 93.61%     | 93.02% | 93.61% |
-| services/    | 92.18%     | 87.16% | 91.30% |
-| utils/       | 100%       | 95.23% | 100%   |
+| source/      | 100%       | 81.92% | 100%   |
+| components/  | 95.46%     | 89.40% | 97.17% |
+| composables/ | 100%       | 90.51% | 100%   |
+| models/      | 100%       | 100%   | 100%   |
+| services/    | 98.33%     | 87.16% | 98.13% |
+| utils/       | 100%       | 100%   | 100%   |
 
 ### By Component
 
 | Component                | Statements | Lines  | Tests |
 | ------------------------ | ---------- | ------ | ----- |
-| App.vue                  | 96.93%     | 96.77% | 38    |
+| App.vue                  | 100%       | 100%   | 42    |
 | AddCategoryButton.vue    | 100%       | 100%   | 2     |
 | AddItemButton.vue        | 100%       | 100%   | 8     |
 | ProgressBar.vue          | 100%       | 100%   | 8     |
 | Topbar.vue               | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue | 100%       | 100%   | 5     |
-| Sidebar.vue              | 92.85%     | 92.64% | 23    |
+| Sidebar.vue              | 95.71%     | 95.58% | 25    |
 | OverflowMenu.vue         | 97.43%     | 98.66% | 23    |
 | Category.vue             | 96.66%     | 97.61% | 25    |
 | Checklist.vue            | 94.61%     | 99.15% | 36    |
@@ -194,11 +194,11 @@ This project uses three layers to balance speed and reliability.
 
 ## 8. Complete Test Inventory
 
-### 8.1 Unit Tests (190 tests)
+### 8.1 Unit Tests (196 tests)
 
-#### 8.1.1 Models (34 tests)
+#### 8.1.1 Models (37 tests)
 
-##### 8.1.1.1 Item.test.js (16 tests)
+##### 8.1.1.1 Item.test.js (17 tests)
 
 | #   | Test                                             | What it verifies                                              |
 | --- | ------------------------------------------------ | ------------------------------------------------------------- |
@@ -209,17 +209,18 @@ This project uses three layers to balance speed and reliability.
 | 5   | should throw error for empty name                | Validation rejects `name: ""`                                 |
 | 6   | should throw error for name exceeding max length | Validation rejects over-length names                          |
 | 7   | should accept name at max length                 | Boundary: name exactly at limit passes                        |
-| 8   | should throw error for quantity less than 1      | Validation rejects `quantity: 0`                              |
-| 9   | should throw error for negative quantity         | Validation rejects negative values                            |
-| 10  | should accept large quantity                     | Large numbers are valid                                       |
-| 11  | should serialize to JSON correctly               | `toJSON()` output matches expected shape                      |
-| 12  | should deserialize from JSON correctly           | `fromJSON()` reconstructs the instance                        |
-| 13  | should preserve all properties through roundtrip | `fromJSON(toJSON())` is lossless                              |
-| 14  | should toggle isPacked from false to true        | `togglePacked()` flips the flag                               |
-| 15  | should toggle isPacked from true to false        | `togglePacked()` flips back                                   |
-| 16  | should throw error for quantity greater than 999 | Validation rejects `quantity > 999`                           |
+| 8   | should throw error for non-string name           | Validation rejects non-string types (number, null, boolean)   |
+| 9   | should throw error for quantity less than 1      | Validation rejects `quantity: 0`                              |
+| 10  | should throw error for negative quantity         | Validation rejects negative values                            |
+| 11  | should accept large quantity                     | Large numbers are valid                                       |
+| 12  | should serialize to JSON correctly               | `toJSON()` output matches expected shape                      |
+| 13  | should deserialize from JSON correctly           | `fromJSON()` reconstructs the instance                        |
+| 14  | should preserve all properties through roundtrip | `fromJSON(toJSON())` is lossless                              |
+| 15  | should toggle isPacked from false to true        | `togglePacked()` flips the flag                               |
+| 16  | should toggle isPacked from true to false        | `togglePacked()` flips back                                   |
+| 17  | should throw error for quantity greater than 999 | Validation rejects `quantity > 999`                           |
 
-##### 8.1.1.2 Category.test.js (8 tests)
+##### 8.1.1.2 Category.test.js (9 tests)
 
 | #   | Test                                             | What it verifies            |
 | --- | ------------------------------------------------ | --------------------------- |
@@ -229,10 +230,11 @@ This project uses three layers to balance speed and reliability.
 | 4   | should generate ID with correct prefix           | Prefix format               |
 | 5   | should throw error for name exceeding max length | Over-length validation      |
 | 6   | should allow empty name                          | Empty name is permitted     |
-| 7   | should serialize to JSON correctly               | `toJSON()` shape            |
-| 8   | should deserialize from JSON correctly           | `fromJSON()` reconstruction |
+| 7   | should throw error for non-string name           | Rejects non-string types    |
+| 8   | should serialize to JSON correctly               | `toJSON()` shape            |
+| 9   | should deserialize from JSON correctly           | `fromJSON()` reconstruction |
 
-##### 8.1.1.3 Checklist.test.js (10 tests)
+##### 8.1.1.3 Checklist.test.js (11 tests)
 
 | #   | Test                                             | What it verifies                   |
 | --- | ------------------------------------------------ | ---------------------------------- |
@@ -243,9 +245,10 @@ This project uses three layers to balance speed and reliability.
 | 5   | should trim whitespace from name                 | `"  Trip  "` → `"Trip"`            |
 | 6   | should throw error for name exceeding max length | Over-length validation             |
 | 7   | should allow empty name                          | Empty name is permitted (untitled) |
-| 8   | should serialize to JSON correctly               | `toJSON()` shape                   |
-| 9   | should deserialize from JSON correctly           | `fromJSON()` reconstruction        |
-| 10  | should preserve all properties through roundtrip | Lossless serialization             |
+| 8   | should throw error for non-string name           | Rejects non-string types           |
+| 9   | should serialize to JSON correctly               | `toJSON()` shape                   |
+| 10  | should deserialize from JSON correctly           | `fromJSON()` reconstruction        |
+| 11  | should preserve all properties through roundtrip | Lossless serialization             |
 
 #### 8.1.2 Services (78 tests)
 
@@ -332,9 +335,9 @@ This project uses three layers to balance speed and reliability.
 | 77  | should keep default data shape stable across en and zh-TW locales            | Locale stability                  |
 | 78  | should persist final state after rapid sequential stale item updates         | Final-write consistency           |
 
-#### 8.1.3 Composables (45 tests)
+#### 8.1.3 Composables (44 tests)
 
-##### 8.1.3.1 usePackingLists.test.js (45 tests)
+##### 8.1.3.1 usePackingLists.test.js (44 tests)
 
 | #   | Test                                                                          | What it verifies              |
 | --- | ----------------------------------------------------------------------------- | ----------------------------- |
@@ -342,61 +345,63 @@ This project uses three layers to balance speed and reliability.
 | 2   | should have computed properties                                               | Computed refs exist           |
 | 3   | should load data from storage on initialize                                   | Init reads from service       |
 | 4   | should manage loading state during initialization                             | `isLoading` toggles correctly |
-| 5   | should repair missing checklist order and persist it                          | Legacy order repair           |
+| 5   | should repair missing checklist order and persist repaired checklist          | Legacy order repair           |
 | 6   | should fallback selected checklist and reload scoped categories/items         | Selection fallback            |
 | 7   | should set error and clear state when initialize fails unexpectedly           | Init failure recovery         |
 | 8   | should create a new checklist                                                 | Creates and refreshes state   |
 | 9   | should select the first checklist after creation                              | Auto-selection logic          |
 | 10  | should update an existing checklist                                           | Update + refresh              |
 | 11  | should delete a checklist                                                     | Delete + refresh              |
-| 12  | should create a category in the selected checklist                            | Category creation             |
-| 13  | should return null if no checklist is selected                                | Null guard                    |
-| 14  | should create an item in the selected checklist                               | Item creation                 |
-| 15  | should toggle item packed status                                              | Toggle + refresh              |
-| 16  | should calculate progress correctly                                           | Progress computation          |
-| 17  | should return 0 progress for empty checklist                                  | Zero-item edge case           |
-| 18  | should handle storage errors gracefully during initialization                 | Error recovery                |
-| 19  | should duplicate a checklist and refresh state                                | Checklist duplication         |
-| 20  | should duplicate a category and refresh state                                 | Category duplication          |
-| 21  | should duplicate an item and refresh state                                    | Item duplication              |
-| 22  | should delete a category and refresh both categories and items                | Category delete cascade       |
-| 23  | should delete an item and refresh items                                       | Item delete                   |
-| 24  | should update multiple checklists and refresh state                           | Batch update                  |
-| 25  | should return null when creating item without selected checklist              | Null guard                    |
-| 26  | should return null when duplicating item without selected checklist           | Null guard                    |
-| 27  | should return null when updating item without selected checklist              | Null guard                    |
-| 28  | should return empty array when getting categories without selected checklist  | Null guard                    |
-| 29  | should return empty array when getting items without selected checklist       | Null guard                    |
-| 30  | should return early when deleting item without selected checklist             | Null guard                    |
-| 31  | should return null when duplicateChecklist service call fails                 | Service failure path          |
-| 32  | should return null when updateCategory service call fails                     | Service failure path          |
-| 33  | should return null when updateCategory throws (real service)                  | Throw fallback                |
-| 34  | should refresh categories and return updated category on success              | Success path + refresh        |
-| 35  | should return null when updateMultipleChecklists service returns undefined    | Falsy result guard            |
-| 36  | should refresh state when storage event updates app data key                  | Cross-tab sync refresh        |
-| 37  | should return null when createItem service call fails (with checklist)        | Service failure path          |
-| 38  | should return null when duplicateCategory service call fails (with checklist) | Service failure path          |
-| 39  | should return null when updateItem service call fails (with checklist)        | Service failure path          |
-| 40  | should return null when duplicateItem service call fails (with checklist)     | Service failure path          |
-| 41  | should return null when createCategory service call fails (with checklist)    | Service failure path          |
-| 42  | should return null when duplicateChecklist service call fails (no checklist)  | Service failure path          |
-| 43  | should return null when updateCategory service call fails (no checklist)      | Service failure path          |
-| 44  | should return null when updateCategory service returns undefined              | Falsy result guard            |
-| 45  | should return null when updateMultipleChecklists returns undefined            | Falsy result guard            |
+| 12  | should return null when createChecklist service call fails                    | Service failure path          |
+| 13  | should return null when updateChecklist service call fails                    | Service failure path          |
+| 14  | should create a category in the selected checklist                            | Category creation             |
+| 15  | should return null if no checklist is selected                                | Null guard                    |
+| 16  | should create an item in the selected checklist                               | Item creation                 |
+| 17  | should toggle item packed status                                              | Toggle + refresh              |
+| 18  | should calculate progress correctly                                           | Progress computation          |
+| 19  | should return 0 progress for empty checklist                                  | Zero-item edge case           |
+| 20  | should handle storage errors gracefully during initialization                 | Error recovery                |
+| 21  | should duplicate a checklist and refresh state                                | Checklist duplication         |
+| 22  | should duplicate a category and refresh state                                 | Category duplication          |
+| 23  | should duplicate an item and refresh state                                    | Item duplication              |
+| 24  | should delete a category and refresh both categories and items                | Category delete cascade       |
+| 25  | should delete an item and refresh items                                       | Item delete                   |
+| 26  | should update multiple checklists and refresh state                           | Batch update                  |
+| 27  | should return null when creating item without selected checklist              | Null guard                    |
+| 28  | should return null when duplicating item without selected checklist           | Null guard                    |
+| 29  | should return null when updating item without selected checklist              | Null guard                    |
+| 30  | should return empty array when getting categories without selected checklist  | Null guard                    |
+| 31  | should return empty array when getting items without selected checklist       | Null guard                    |
+| 32  | should return early when deleting item without selected checklist             | Null guard                    |
+| 33  | should return null when createItem service call fails (with checklist)        | Service failure path          |
+| 34  | should return null when duplicateCategory service call fails (with checklist) | Service failure path          |
+| 35  | should return null when updateItem service call fails (with checklist)        | Service failure path          |
+| 36  | should return null when duplicateItem service call fails (with checklist)     | Service failure path          |
+| 37  | should return null when createCategory service call fails (with checklist)    | Service failure path          |
+| 38  | should return null when duplicateChecklist service call fails (no checklist)  | Service failure path          |
+| 39  | should return null when updateCategory service call fails (no checklist)      | Service failure path          |
+| 40  | should return null when updateCategory service returns undefined              | Falsy result guard            |
+| 41  | should return null when updateMultipleChecklists service returns undefined    | Falsy result guard            |
+| 42  | should return null when updateCategory throws (real service)                  | Throw fallback                |
+| 43  | should refresh categories and return updated category on success              | Success path + refresh        |
+| 44  | should refresh state when storage event updates app data key                  | Cross-tab sync refresh        |
 
-#### 8.1.4 i18n (5 tests)
+#### 8.1.4 i18n (8 tests)
 
-##### 8.1.4.1 index.test.js (5 tests)
+##### 8.1.4.1 index.test.js (8 tests)
 
 | #   | Test                                                               | What it verifies             |
 | --- | ------------------------------------------------------------------ | ---------------------------- |
 | 1   | should use saved locale when it is supported                       | Saved locale restore         |
 | 2   | should map zh-HK browser language to zh-TW and persist             | Browser locale normalization |
 | 3   | should fallback to en for unsupported browser language             | Unsupported locale fallback  |
-| 4   | should persist locale when setLocale receives a supported value    | Locale persistence           |
-| 5   | should ignore unsupported setLocale values and keep current locale | Setter guard                 |
+| 4   | should ignore invalid saved locale and detect from browser         | Invalid saved locale defense |
+| 5   | should use navigator.language when navigator.languages is empty    | Empty languages fallback     |
+| 6   | should map bare "zh" browser language to zh-TW                     | Bare zh mapping              |
+| 7   | should persist locale when setLocale receives a supported value    | Locale persistence           |
+| 8   | should ignore unsupported setLocale values and keep current locale | Setter guard                 |
 
-#### 8.1.5 Utils (28 tests)
+#### 8.1.5 Utils (29 tests)
 
 ##### 8.1.5.1 helpers.test.js (21 tests)
 
@@ -431,12 +436,13 @@ This project uses three layers to balance speed and reliability.
 | 1   | should allow drops only from the specified group name | vuedraggable put guard correct |
 | 2   | should return false when from group is missing        | DnD defensive error handling   |
 
-##### 8.1.5.3 order.test.js (2 tests)
+##### 8.1.5.3 order.test.js (3 tests)
 
-| #   | Test                                       | What it verifies                     |
-| --- | ------------------------------------------ | ------------------------------------ |
-| 1   | should renumber order based on array index | Reorder based on array index         |
-| 2   | should support custom start offset         | Support insert scenario start offset |
+| #   | Test                                                  | What it verifies                     |
+| --- | ----------------------------------------------------- | ------------------------------------ |
+| 1   | should renumber order based on array index            | Reorder based on array index         |
+| 2   | should support custom start offset                    | Support insert scenario start offset |
+| 3   | should return empty array for null or undefined input | Null/undefined input fallback        |
 
 ##### 8.1.5.4 positioning.test.js (3 tests)
 
@@ -446,9 +452,9 @@ This project uses three layers to balance speed and reliability.
 | 2   | should clamp dropdown left to max when near right edge    | Right max boundary clamp       |
 | 3   | should position dropdown above anchor with gap and zIndex | Fixed position calc (with gap) |
 
-### 8.2 Component Tests (199 tests)
+### 8.2 Component Tests (202 tests)
 
-#### 8.2.1 App.test.js (41 tests)
+#### 8.2.1 App.test.js (42 tests)
 
 | #   | Test                                                                    | What it verifies             |
 | --- | ----------------------------------------------------------------------- | ---------------------------- |
@@ -491,8 +497,9 @@ This project uses three layers to balance speed and reliability.
 | 37  | should display overlay backdrop when sidebar is open on mobile          | Overlay rendering            |
 | 38  | should close sidebar when overlay backdrop is clicked                   | Overlay close                |
 | 39  | should set body overflow hidden when overlay is active                  | Body scroll lock             |
-| 40  | should call initialize on mount                                         | Lifecycle: mount init        |
-| 41  | should clean up resize event listener on unmount                        | Lifecycle: unmount cleanup   |
+| 40  | should set body overflow hidden when sidebar opens on small desktop     | Small desktop scroll lock    |
+| 41  | should call initialize on mount                                         | Lifecycle: mount init        |
+| 42  | should clean up resize event listener on unmount                        | Lifecycle: unmount cleanup   |
 
 #### 8.2.2 Topbar.test.js (2 tests)
 
@@ -674,35 +681,37 @@ This project uses three layers to balance speed and reliability.
 | 35  | should emit "reorder:categories" with renumbered order        | Category reorder event       |
 | 36  | should save when focus leaves all editing inputs              | Global blur-save             |
 
-#### 8.2.11 Sidebar.test.js (23 tests)
+#### 8.2.11 Sidebar.test.js (25 tests)
 
-| #   | Test                                                            | What it verifies    |
-| --- | --------------------------------------------------------------- | ------------------- |
-| 1   | should display checklist names when expanded                    | Name rendering      |
-| 2   | should show the new checklist button                            | Button exists       |
-| 3   | should display the sidebar title                                | Title rendering     |
-| 4   | should render checklist item buttons                            | Button rendering    |
-| 5   | should emit "toggle-sidebar" on hamburger click                 | Toggle event        |
-| 6   | should emit "create-checklist" on new checklist button click    | Create event        |
-| 7   | should emit "select-checklist" with checklist ID on item click  | Select event        |
-| 8   | should emit "copy-checklist" from OverflowMenu                  | Copy event          |
-| 9   | should emit "delete-checklist" from OverflowMenu                | Delete event        |
-| 10  | should emit "edit-checklist" from OverflowMenu                  | Edit event          |
-| 11  | should highlight the selected checklist                         | Active style        |
-| 12  | should not highlight non-selected checklists                    | Inactive style      |
-| 13  | should show first character when collapsed on desktop           | Collapsed display   |
-| 14  | should show language dropdown on language button click          | Menu open           |
-| 15  | should change locale and close menu when a language is selected | Locale change       |
-| 16  | should close language menu when focus leaves                    | Focus-out close     |
-| 17  | should close language menu on window scroll                     | Scroll close        |
-| 18  | should close language menu on outside click                     | Click-outside close |
-| 19  | should set dragging state on drag start                         | Drag state          |
-| 20  | should clear dragging state on drag end                         | Drag cleanup        |
-| 21  | should display checklists sorted by order property              | Sort order          |
-| 22  | should emit "move:checklists" when checklists are reordered     | Reorder event       |
-| 23  | should display untitled placeholder for empty checklist name    | Untitled fallback   |
+| #   | Test                                                            | What it verifies     |
+| --- | --------------------------------------------------------------- | -------------------- |
+| 1   | should display checklist names when expanded                    | Name rendering       |
+| 2   | should show the new checklist button                            | Button exists        |
+| 3   | should display the sidebar title                                | Title rendering      |
+| 4   | should render checklist item buttons                            | Button rendering     |
+| 5   | should emit "toggle-sidebar" on hamburger click                 | Toggle event         |
+| 6   | should emit "create-checklist" on new checklist button click    | Create event         |
+| 7   | should emit "select-checklist" with checklist ID on item click  | Select event         |
+| 8   | should emit "copy-checklist" from OverflowMenu                  | Copy event           |
+| 9   | should emit "delete-checklist" from OverflowMenu                | Delete event         |
+| 10  | should emit "edit-checklist" from OverflowMenu                  | Edit event           |
+| 11  | should highlight the selected checklist                         | Active style         |
+| 12  | should not highlight non-selected checklists                    | Inactive style       |
+| 13  | should show first character when collapsed on desktop           | Collapsed display    |
+| 14  | should show language dropdown on language button click          | Menu open            |
+| 15  | should change locale and close menu when a language is selected | Locale change        |
+| 16  | should close language menu when focus leaves                    | Focus-out close      |
+| 17  | should close language menu on window scroll                     | Scroll close         |
+| 18  | should close language menu on outside click                     | Click-outside close  |
+| 19  | should set dragging state on drag start                         | Drag state           |
+| 20  | should clear dragging state on drag end                         | Drag cleanup         |
+| 21  | should display checklists sorted by order property              | Sort order           |
+| 22  | should emit "move:checklists" when checklists are reordered     | Reorder event        |
+| 23  | should display untitled placeholder for empty checklist name    | Untitled fallback    |
+| 24  | should apply positioning styles when language menu opens        | Dropdown positioning |
+| 25  | should clean up document and window listeners on unmount        | Lifecycle cleanup    |
 
-### 8.3 E2E Tests (40 tests)
+### 8.3 E2E Tests (42 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -732,11 +741,13 @@ This project uses three layers to balance speed and reliability.
 | 2   | should copy a category via overflow menu            | Category duplication     |
 | 3   | should show copy suffix in duplicated category name | Copy suffix localization |
 
-#### 8.3.4 drag-and-drop.spec.js (1 test)
+#### 8.3.4 drag-and-drop.spec.js (3 tests)
 
-| #   | Test                                                  | What it verifies             |
-| --- | ----------------------------------------------------- | ---------------------------- |
-| 1   | should reorder checklists in sidebar by drag-and-drop | Sidebar checklist reordering |
+| #   | Test                                                    | What it verifies                |
+| --- | ------------------------------------------------------- | ------------------------------- |
+| 1   | should reorder checklists in sidebar by drag-and-drop   | Sidebar checklist reordering    |
+| 2   | should reorder categories by drag-and-drop              | Category card reordering        |
+| 3   | should reorder items within a category by drag-and-drop | Item reordering within category |
 
 #### 8.3.5 item-packing.spec.js (7 tests)
 

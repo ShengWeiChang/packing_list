@@ -432,4 +432,44 @@ describe('Sidebar', () => {
       expect(wrapper.text()).toContain('checklist.untitled');
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 10: Language Dropdown Positioning
+  // ---------------------------------------------------------------------------
+
+  describe('language dropdown positioning', () => {
+    // Test Case 24: Should position dropdown above the language button
+    it('should apply positioning styles when language menu opens', async () => {
+      const wrapper = createWrapper({ isExpanded: true });
+
+      const langButton = wrapper.find('[data-testid="sidebar-language-button"]');
+      await langButton.trigger('click');
+      await wrapper.vm.$nextTick();
+
+      // positionDropdownAbove should have been called; verify the dropdown exists
+      // with position: fixed (set by positionDropdownAbove)
+      const dropdown = wrapper.find('[data-testid="sidebar-language-dropdown"]');
+      expect(dropdown.exists()).toBe(true);
+      // The style should contain 'fixed' from positionDropdownAbove
+      expect(dropdown.attributes('style')).toContain('fixed');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 11: Lifecycle Cleanup
+  // ---------------------------------------------------------------------------
+
+  describe('lifecycle', () => {
+    // Test Case 25: Should remove event listeners on unmount
+    it('should clean up document and window listeners on unmount', () => {
+      const docRemoveSpy = vi.spyOn(document, 'removeEventListener');
+      const winRemoveSpy = vi.spyOn(window, 'removeEventListener');
+
+      const wrapper = createWrapper();
+      wrapper.unmount();
+
+      expect(docRemoveSpy).toHaveBeenCalledWith('click', expect.any(Function));
+      expect(winRemoveSpy).toHaveBeenCalledWith('scroll', expect.any(Function), true);
+    });
+  });
 });

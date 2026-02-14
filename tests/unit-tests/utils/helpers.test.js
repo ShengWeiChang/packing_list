@@ -41,7 +41,7 @@ describe('helpers', () => {
       const id = generateSecureId();
 
       // When called without args, prefix is empty string
-      expect(id).toBeDefined();
+      expect(id).toEqual(expect.any(String));
       expect(id.length).toBeGreaterThan(0);
     });
 

@@ -58,8 +58,8 @@ describe('Checklist', () => {
       const cl1 = new Checklist({ name: 'Checklist 1' });
       const cl2 = new Checklist({ name: 'Checklist 2' });
 
-      expect(cl1.id).toBeDefined();
-      expect(cl2.id).toBeDefined();
+      expect(cl1.id).toEqual(expect.any(String));
+      expect(cl2.id).toEqual(expect.any(String));
       expect(cl1.id).not.toBe(cl2.id);
     });
 
@@ -98,6 +98,13 @@ describe('Checklist', () => {
 
       expect(checklist.name).toBe('');
     });
+
+    // Test Case 8: Non-string name should throw error
+    it('should throw error for non-string name', () => {
+      expect(() => new Checklist({ name: 123 })).toThrow('Name must be a string');
+      expect(() => new Checklist({ name: null })).toThrow('Name must be a string');
+      expect(() => new Checklist({ name: true })).toThrow('Name must be a string');
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -105,7 +112,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('serialization', () => {
-    // Test Case 8: toJSON should return plain object
+    // Test Case 9: toJSON should return plain object
     it('should serialize to JSON correctly', () => {
       const checklist = new Checklist({
         name: 'Weekend Trip',
@@ -120,7 +127,7 @@ describe('Checklist', () => {
       expect(json.endDate).toBe('2026-03-03');
     });
 
-    // Test Case 9: fromJSON should recreate Checklist instance
+    // Test Case 10: fromJSON should recreate Checklist instance
     it('should deserialize from JSON correctly', () => {
       const original = new Checklist({ name: 'Business Trip', order: 2 });
       const json = original.toJSON();
@@ -131,7 +138,7 @@ describe('Checklist', () => {
       expect(restored.order).toBe(original.order);
     });
 
-    // Test Case 10: Roundtrip serialization should preserve all data
+    // Test Case 11: Roundtrip serialization should preserve all data
     it('should preserve all properties through roundtrip', () => {
       const original = new Checklist({
         name: 'Vacation',

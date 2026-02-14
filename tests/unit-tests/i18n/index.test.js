@@ -116,11 +116,53 @@ describe('i18n locale selection and persistence', () => {
     expect(getLocale()).toBe('en');
   });
 
+  // Test Case 4: Should ignore invalid saved locale and use browser language
+  it('should ignore invalid saved locale and detect from browser', async () => {
+    mockStorage['user-locale'] = 'xx-INVALID';
+
+    Object.defineProperty(window.navigator, 'languages', {
+      configurable: true,
+      value: ['zh-TW'],
+    });
+
+    const { getLocale } = await loadI18nModule();
+
+    expect(getLocale()).toBe('zh-TW');
+  });
+
+  // Test Case 5: Should fallback to navigator.language when navigator.languages is empty
+  it('should use navigator.language when navigator.languages is empty', async () => {
+    Object.defineProperty(window.navigator, 'languages', {
+      configurable: true,
+      value: [],
+    });
+    Object.defineProperty(window.navigator, 'language', {
+      configurable: true,
+      value: 'zh-MO',
+    });
+
+    const { getLocale } = await loadI18nModule();
+
+    expect(getLocale()).toBe('zh-TW');
+  });
+
+  // Test Case 6: Should map bare "zh" to zh-TW
+  it('should map bare "zh" browser language to zh-TW', async () => {
+    Object.defineProperty(window.navigator, 'languages', {
+      configurable: true,
+      value: ['zh'],
+    });
+
+    const { getLocale } = await loadI18nModule();
+
+    expect(getLocale()).toBe('zh-TW');
+  });
+
   // ---------------------------------------------------------------------------
   // Test Group 2: Locale Update and Guard Behavior
   // ---------------------------------------------------------------------------
 
-  // Test Case 4: Should persist locale when setLocale receives supported value
+  // Test Case 7: Should persist locale when setLocale receives supported value
   it('should persist locale when setLocale receives a supported value', async () => {
     const { getLocale, setLocale } = await loadI18nModule();
 
@@ -130,7 +172,7 @@ describe('i18n locale selection and persistence', () => {
     expect(setItemSpy).toHaveBeenCalledWith('user-locale', 'zh-TW');
   });
 
-  // Test Case 5: Should reject unsupported locale values
+  // Test Case 8: Should reject unsupported locale values
   it('should ignore unsupported setLocale values and keep current locale', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { getLocale, setLocale } = await loadI18nModule();
@@ -138,6 +180,6 @@ describe('i18n locale selection and persistence', () => {
     setLocale('fr');
 
     expect(getLocale()).toBe('en');
-    expect(warnSpy).toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledWith('Unsupported locale: fr');
   });
 });

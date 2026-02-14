@@ -57,8 +57,8 @@ describe('Item', () => {
       const item1 = new Item({ name: 'Item 1' });
       const item2 = new Item({ name: 'Item 2' });
 
-      expect(item1.id).toBeDefined();
-      expect(item2.id).toBeDefined();
+      expect(item1.id).toEqual(expect.any(String));
+      expect(item2.id).toEqual(expect.any(String));
       expect(item1.id).not.toBe(item2.id);
     });
 
@@ -96,6 +96,13 @@ describe('Item', () => {
 
       expect(item.name).toBe(maxName);
     });
+
+    // Test Case 8: Non-string name should throw error
+    it('should throw error for non-string name', () => {
+      expect(() => new Item({ name: 123 })).toThrow('Item name must be a string');
+      expect(() => new Item({ name: null })).toThrow('Item name must be a string');
+      expect(() => new Item({ name: true })).toThrow('Item name must be a string');
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -103,28 +110,28 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('quantity validation', () => {
-    // Test Case 8: Quantity less than 1 should throw error
+    // Test Case 9: Quantity less than 1 should throw error
     it('should throw error for quantity less than 1', () => {
       expect(() => new Item({ name: 'Test', quantity: 0 })).toThrow(
         'Quantity must be an integer between 1 and 999'
       );
     });
 
-    // Test Case 9: Negative quantity should throw error
+    // Test Case 10: Negative quantity should throw error
     it('should throw error for negative quantity', () => {
       expect(() => new Item({ name: 'Test', quantity: -1 })).toThrow(
         'Quantity must be an integer between 1 and 999'
       );
     });
 
-    // Test Case 10: Large quantity should be valid
+    // Test Case 11: Large quantity should be valid
     it('should accept large quantity', () => {
       const item = new Item({ name: 'Test', quantity: 999 });
 
       expect(item.quantity).toBe(999);
     });
 
-    // Test Case 11: Quantity greater than 999 should throw error
+    // Test Case 12: Quantity greater than 999 should throw error
     it('should throw error for quantity greater than 999', () => {
       expect(() => new Item({ name: 'Test', quantity: 1000 })).toThrow(
         'Quantity must be an integer between 1 and 999'
@@ -137,7 +144,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('serialization', () => {
-    // Test Case 12: toJSON should return plain object
+    // Test Case 13: toJSON should return plain object
     it('should serialize to JSON correctly', () => {
       const item = new Item({
         name: 'Passport',
@@ -152,7 +159,7 @@ describe('Item', () => {
       expect(json.isPacked).toBe(true);
     });
 
-    // Test Case 13: fromJSON should recreate Item instance
+    // Test Case 14: fromJSON should recreate Item instance
     it('should deserialize from JSON correctly', () => {
       const original = new Item({ name: 'Laptop', quantity: 2 });
       const json = original.toJSON();
@@ -163,7 +170,7 @@ describe('Item', () => {
       expect(restored.quantity).toBe(original.quantity);
     });
 
-    // Test Case 14: Roundtrip serialization should preserve all data
+    // Test Case 15: Roundtrip serialization should preserve all data
     it('should preserve all properties through roundtrip', () => {
       const original = new Item({
         name: 'Camera',
@@ -192,7 +199,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('togglePacked', () => {
-    // Test Case 15: togglePacked should flip isPacked from false to true
+    // Test Case 16: togglePacked should flip isPacked from false to true
     it('should toggle isPacked from false to true', () => {
       const item = new Item({ name: 'Test', isPacked: false });
       expect(item.isPacked).toBe(false);
@@ -202,7 +209,7 @@ describe('Item', () => {
       expect(item.isPacked).toBe(true);
     });
 
-    // Test Case 16: togglePacked should flip isPacked from true to false
+    // Test Case 17: togglePacked should flip isPacked from true to false
     it('should toggle isPacked from true to false', () => {
       const item = new Item({ name: 'Test', isPacked: true });
       expect(item.isPacked).toBe(true);

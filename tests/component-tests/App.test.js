@@ -455,7 +455,9 @@ describe('App', () => {
       await topbar.vm.$emit('new');
       await wrapper.vm.$nextTick();
 
-      expect(mockCreateChecklist).toHaveBeenCalled();
+      expect(mockCreateChecklist).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'New Checklist' })
+      );
     });
 
     // Test Case 15: handleChecklistEdit should select checklist and mark for edit
@@ -503,7 +505,9 @@ describe('App', () => {
       await sidebar.vm.$emit('delete-checklist', 'cl-1');
       await wrapper.vm.$nextTick();
 
-      expect(window.confirm).toHaveBeenCalled();
+      expect(window.confirm).toHaveBeenCalledWith(
+        'Are you sure you want to delete this checklist?'
+      );
       expect(mockDeleteChecklist).toHaveBeenCalledWith('cl-1');
     });
 
@@ -981,6 +985,38 @@ describe('App', () => {
 
       expect(document.body.style.overflow).toBe('');
     });
+
+    // Test Case 40: Should lock body scroll on small desktop overlay
+    it('should set body overflow hidden when sidebar opens on small desktop', async () => {
+      // Reset body style from previous tests
+      document.body.style.overflow = '';
+
+      // Start at 1280px (wide desktop) where sidebar is open and no overlay
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      dispatchResize();
+      await flushPromises();
+      await wrapper.vm.$nextTick();
+
+      // Body should not be locked on wide desktop
+      expect(document.body.style.overflow).toBe('');
+
+      // Resize to small desktop (800px) → checkScreenSize auto-collapses sidebar
+      setViewportWidth(800);
+      await wrapper.vm.$nextTick();
+
+      // Sidebar is now collapsed, no overlay → body should be free
+      expect(document.body.style.overflow).toBe('');
+
+      // Find the sidebar from overlay (teleported) or inline
+      const sidebar = wrapper.findComponent({ name: 'Sidebar' });
+
+      // Toggle sidebar open on small desktop → overlay active
+      await sidebar.vm.$emit('toggle-sidebar');
+      await wrapper.vm.$nextTick();
+
+      expect(document.body.style.overflow).toBe('hidden');
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -988,14 +1024,14 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('lifecycle', () => {
-    // Test Case 40: Should call initialize on mount
+    // Test Case 41: Should call initialize on mount
     it('should call initialize on mount', () => {
       setInnerWidth(1280);
       createWrapper();
-      expect(mockInitialize).toHaveBeenCalled();
+      expect(mockInitialize).toHaveBeenCalledWith();
     });
 
-    // Test Case 41: Should remove resize listener on unmount
+    // Test Case 42: Should remove resize listener on unmount
     it('should clean up resize event listener on unmount', async () => {
       const removeSpy = vi.spyOn(window, 'removeEventListener');
 

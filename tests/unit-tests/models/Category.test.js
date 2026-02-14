@@ -51,8 +51,8 @@ describe('Category', () => {
       const cat1 = new Category({ name: 'Category 1' });
       const cat2 = new Category({ name: 'Category 2' });
 
-      expect(cat1.id).toBeDefined();
-      expect(cat2.id).toBeDefined();
+      expect(cat1.id).toEqual(expect.any(String));
+      expect(cat2.id).toEqual(expect.any(String));
       expect(cat1.id).not.toBe(cat2.id);
     });
 
@@ -84,6 +84,13 @@ describe('Category', () => {
 
       expect(category.name).toBe('');
     });
+
+    // Test Case 7: Non-string name should throw error
+    it('should throw error for non-string name', () => {
+      expect(() => new Category({ name: 123 })).toThrow('Category name must be a string');
+      expect(() => new Category({ name: null })).toThrow('Category name must be a string');
+      expect(() => new Category({ name: true })).toThrow('Category name must be a string');
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -91,7 +98,7 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('serialization', () => {
-    // Test Case 7: toJSON should return plain object
+    // Test Case 8: toJSON should return plain object
     it('should serialize to JSON correctly', () => {
       const category = new Category({
         name: 'Toiletries',
@@ -104,7 +111,7 @@ describe('Category', () => {
       expect(json.order).toBe(3);
     });
 
-    // Test Case 8: fromJSON should recreate Category instance
+    // Test Case 9: fromJSON should recreate Category instance
     it('should deserialize from JSON correctly', () => {
       const original = new Category({ name: 'Documents', order: 2 });
       const json = original.toJSON();
