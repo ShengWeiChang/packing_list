@@ -127,8 +127,9 @@ describe('helpers', () => {
     it('should handle null date (returns epoch date)', () => {
       const formatted = formatDate(null);
 
-      // Date(null) = epoch = December 31, 1969 in local timezone
-      expect(formatted).toMatch(/December 31, 1969/);
+      // Date(null) = epoch, which may render as Dec 31, 1969 or Jan 1, 1970
+      // depending on the runtime timezone.
+      expect(formatted).toMatch(/(December 31, 1969|January 1, 1970)/);
     });
 
     // Test Case 9: Should handle undefined date (returns Invalid Date)
