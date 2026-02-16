@@ -26,7 +26,43 @@ Authoritative configuration files:
 
 ## 3. Conventions
 
-### 3.1 Prettier Formatting
+### 3.1 File Naming Conventions
+
+Follow industry-standard naming patterns for consistency and IDE compatibility:
+
+**Vue Components** (source/components/)
+
+- Use **PascalCase**: `MyComponent.vue`, `UserProfile.vue`
+- Official Vue.js Style Guide recommendation
+
+**JavaScript Modules**
+
+- **Classes/Models**: PascalCase (e.g., `Category.js`, `User.js`)
+- **Services/Utils**: camelCase (e.g., `dataService.js`, `helpers.js`)
+- **Composables**: camelCase with "use" prefix (e.g., `usePackingLists.js`)
+- **Config files**: kebab-case (e.g., `vite.config.js`, `tailwind.config.js`)
+
+**Test Files**
+
+- **Unit/Component tests**: Match source file + `.test.js`
+  - `MyComponent.vue` → `MyComponent.test.js`
+  - `helpers.js` → `helpers.test.js`
+- **E2E tests**: kebab-case + `.spec.js`
+  - `app-loading.spec.js`, `user-login.spec.js`
+  - Playwright official convention
+
+**Documentation** (docs/)
+
+- Use **kebab-case**: `code-quality.md`, `user-guide.md`
+- Exception: `README.md`, `CONTRIBUTING.md` (uppercase convention)
+
+**Data/Locale Files**
+
+- Use **camelCase** for locale suffixes
+- `defaultItemsEn.js`, `defaultItemsZhTw.js`
+- Avoid underscores or mixed separators
+
+### 3.2 Prettier Formatting
 
 - Quotes: single
 - Semicolons: enabled
@@ -40,7 +76,7 @@ Validation
 - Apply formatting: `npm run format`
 - Check only (no write): `npm run format:check`
 
-### 3.2 Tailwind CSS Conventions
+### 3.3 Tailwind CSS Conventions
 
 - Design system priority: Standard Tailwind classes → Custom config extensions → Arbitrary values (last resort)
 - Spacing scale: Use 4px increments; extend `tailwind.config.js` for non-standard values
@@ -54,7 +90,7 @@ Validation
 - Arbitrary values trigger warnings for review
 - CSS Modules classes trigger ESLint warnings (expected behavior)
 
-### 3.3 ESLint (Vue)
+### 3.4 ESLint (Vue)
 
 - Base: plugin-vue recommended rules
 - Component attributes order: enforced for consistency
@@ -67,7 +103,7 @@ Validation
 - Check: `npm run lint`
 - Auto-fix: `npm run lint:fix`
 
-### 3.4 Imports/Exports Ordering
+### 3.5 Imports/Exports Ordering
 
 Sorted by simple-import-sort default groups:
 
@@ -80,7 +116,7 @@ Validation
 
 - Auto-fix import order: `npm run lint:fix`
 
-### 3.5 Vue Template Attributes Order
+### 3.6 Vue Template Attributes Order
 
 We follow eslint-plugin-vue's default order (vue/attributes-order):
 
@@ -111,7 +147,7 @@ Validation
 
 - Auto-fix most ordering issues: `npm run lint:fix`
 
-### 3.6 Vue Script Section Order
+### 3.7 Vue Script Section Order
 
 Top-to-bottom organization inside `<script setup>` or component scripts:
 
@@ -132,7 +168,7 @@ Validation
 
 - Guideline only (not enforced by ESLint). Import sorting is automatically handled by `simple-import-sort`; section order relies on team practice/code review.
 
-### 3.7 JavaScript File Section Order
+### 3.8 JavaScript File Section Order
 
 JS files should use appropriate grouping based on file type:
 
@@ -157,7 +193,7 @@ Validation
 - Section names use title case (e.g., `Imports`, `State`, `Functions`)
 - Guideline only (not enforced by ESLint); maintained via code review
 
-### 3.8 Comment Style
+### 3.9 Comment Style
 
 We use 4 categories of comments, each with specific purpose and format:
 
@@ -261,7 +297,7 @@ Validation
 - Section dividers: Manually maintained at 80 characters
 - File headers and inline comments: Code review
 
-### 3.9 Accessibility (A11y)
+### 3.10 Accessibility (A11y)
 
 Follow WCAG 2.1 Level AA standards to ensure the application is accessible to all users, including keyboard and screen reader users.
 
@@ -315,3 +351,11 @@ Validation
 
 - Update this document’s summaries when configuration changes
 - Configuration files are the source of truth; this document emphasizes principles and usage
+
+## 9. Future Considerations
+
+- Add if needed (optional):
+  - `eslint-plugin-unicorn` (select curated rules) — when code style needs further improvement
+  - GitHub Actions: lightweight Quality Gate (`eslint --quiet`, `prettier --check`) — when you want automated quality checks on PR/push (multi-contributor or public projects)
+  - `stylelint` (currently minimal CSS, Tailwind-first) — when custom CSS grows significantly (>500 lines) or multiple people manage CSS
+  - `eslint-plugin-i18n-json` (currently only 2 locale files, manual maintenance is sufficient) — when language count >2 or i18n keys >100

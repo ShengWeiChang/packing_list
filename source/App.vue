@@ -111,6 +111,7 @@ Created: 2025-09-19
       <div
         v-else
         class="mt-20 text-center text-secondary"
+        data-testid="empty-state"
       >
         {{ $t('checklist.pleaseCreate') }}
       </div>

@@ -12,8 +12,8 @@ Created: 2025-09-19
 // Imports
 // -----------------------------------------------------------------------------
 
-import { defaultItemsEN } from './defaultItems_en.js';
-import { defaultItemsZhTW } from './defaultItems_zh-TW.js';
+import { defaultItemsEN } from './defaultItemsEn.js';
+import { defaultItemsZhTW } from './defaultItemsZhTw.js';
 
 // -----------------------------------------------------------------------------
 // Functions

@@ -12,6 +12,7 @@ Created: 2025-09-19
 <template>
   <button
     type="button"
+    data-testid="add-category-button"
     class="flex min-h-32 w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border-color-medium bg-white p-4 shadow-md transition-shadow duration-200 hover:border-border-color-dark hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-2"
     @click="$emit('click')"
   >

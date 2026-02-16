@@ -12,6 +12,7 @@ Created: 2025-09-19
 <template>
   <button
     class="flex w-full items-center justify-start rounded-md p-1 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:pl-2"
+    data-testid="add-item-button"
     :class="[categoryCompleted ? 'bg-success-state-bg' : 'bg-white hover:bg-interactive-hover']"
     @click="$emit('click')"
     @mouseenter="isHovered = true"
@@ -23,6 +24,7 @@ Created: 2025-09-19
     <span
       class="mr-2 flex size-9 flex-none items-center justify-center md:mr-3 md:size-6"
       :class="isHovered ? 'text-primary' : 'text-secondary'"
+      data-testid="add-item-button-icon"
     >
       <svg
         class="size-5 md:size-4"

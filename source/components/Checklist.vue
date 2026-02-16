@@ -30,6 +30,7 @@ Created: 2025-09-19
               :name="`checklist-${checklist.id}-name`"
               :placeholder="$t('checklist.name')"
               :aria-label="$t('checklist.name')"
+              data-testid="checklist-name-input"
               class="w-full bg-transparent p-1 text-3xl font-bold text-primary focus:outline-none"
               style="box-shadow: inset 0 -2px 0 0 var(--interactive-focus)"
               @keydown.enter="handleEnterKey"
@@ -42,6 +43,7 @@ Created: 2025-09-19
               class="cursor-pointer break-words rounded p-1 text-3xl font-bold text-primary hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-2"
               role="button"
               tabindex="0"
+              data-testid="checklist-name"
               @click="startEdit"
               @keydown.enter.prevent="startEdit"
               @keydown.space.prevent="startEdit"
@@ -144,10 +146,7 @@ Created: 2025-09-19
         :group="{
           name: 'categories',
           pull: true,
-          put: function (to, from, dragEl, evt) {
-            // Only allow categories to be dropped in the category container
-            return from.options.group.name === 'categories';
-          },
+          put: putOnlyFromGroup('categories'),
         }"
         :animation="200"
         :ghost-class="'ghost-category'"
@@ -196,6 +195,8 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 
+import { putOnlyFromGroup } from '../utils/dragDrop.js';
+import { renumberOrder } from '../utils/order.js';
 import AddCategoryButton from './AddCategoryButton.vue';
 import Category from './Category.vue';
 import OverflowMenu from './OverflowMenu.vue';
@@ -308,10 +309,7 @@ const draggableCategories = computed({
   },
   set(newCategories) {
     // When vuedraggable updates the array, emit the reorder event
-    const categoriesWithNewOrder = newCategories.map((category, index) => ({
-      ...category,
-      order: index,
-    }));
+    const categoriesWithNewOrder = renumberOrder(newCategories);
 
     emit('reorder:categories', categoriesWithNewOrder);
   },

@@ -19,6 +19,8 @@ Created: 2025-09-19
         : 'bg-white hover:bg-interactive-hover',
       isDragging ? 'scale-105 cursor-grabbing opacity-50 shadow-lg' : '',
     ]"
+    data-testid="item-row"
+    :data-item-id="item.id"
     @mouseenter="handleMouseEnter"
     @mouseleave="isHovered = false"
     @focusin="isHovered = true"
@@ -32,6 +34,7 @@ Created: 2025-09-19
         v-model="isItemPacked"
         :name="`item-${item.id}-packed`"
         type="checkbox"
+        data-testid="item-checkbox"
         :aria-label="$t('item.togglePacked')"
         :class="[
           'size-5 flex-none shrink-0 cursor-pointer focus:outline-none md:size-4',
@@ -56,6 +59,7 @@ Created: 2025-09-19
         v-model="editedName"
         :name="`item-${item.id}-name`"
         :aria-label="$t('item.name')"
+        data-testid="item-edit-input"
         :class="[
           'w-full bg-transparent px-1 py-0.5 text-lg leading-snug focus:outline-none md:text-base',
           {
@@ -80,6 +84,7 @@ Created: 2025-09-19
         style="word-break: break-word; overflow-wrap: break-word"
         role="button"
         tabindex="0"
+        data-testid="item-name"
         @click="startEdit"
         @keydown.enter.prevent="startEdit"
         @keydown.space.prevent="startEdit"
@@ -99,6 +104,7 @@ Created: 2025-09-19
         pendingButtonVisibilityClass,
         'focus:pointer-events-auto focus:static focus:opacity-100', // Ensure visible on focus
       ]"
+      data-testid="item-pending-toggle"
       :title="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
       :aria-label="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
       @click.stop="togglePending"
@@ -131,6 +137,7 @@ Created: 2025-09-19
           : 'pointer-events-none absolute opacity-0 md:static',
         'focus-within:pointer-events-auto focus-within:static focus-within:opacity-100', // Ensure visible when children have focus
       ]"
+      data-testid="item-quantity-controls"
       @mouseenter="isQuantityHovered = true"
       @mouseleave="isQuantityHovered = false"
       @focusin="isQuantityHovered = true"
@@ -143,6 +150,7 @@ Created: 2025-09-19
           type="button"
           class="flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-colors hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6"
           :class="buttonVisibilityClass"
+          data-testid="item-quantity-decrement"
           :aria-label="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
           @click.stop="item.quantity === 1 ? handleDelete() : decrementQuantity()"
@@ -185,6 +193,7 @@ Created: 2025-09-19
         <div
           class="flex h-9 w-8 items-center justify-center rounded-lg bg-control-bg px-1 text-xs font-semibold text-secondary transition-colors hover:bg-control-hover md:h-6"
           :class="{ 'bg-transparent': !isHovered && !isEditing && item.quantity > 1 }"
+          data-testid="item-quantity-value"
         >
           <span class="mr-0.5">x</span>
           <span>{{ item.quantity }}</span>
@@ -195,6 +204,7 @@ Created: 2025-09-19
           type="button"
           class="flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-colors hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6"
           :class="buttonVisibilityClass"
+          data-testid="item-quantity-increment"
           :aria-label="$t('item.increaseQuantity')"
           :title="$t('item.increaseQuantity')"
           @click.stop="incrementQuantity"

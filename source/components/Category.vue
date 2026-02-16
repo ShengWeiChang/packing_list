@@ -15,6 +15,10 @@ Created: 2025-09-19
       'group rounded-xl p-3 shadow-md transition-all duration-200 hover:shadow-lg',
       isCompleted ? 'bg-success-state-bg' : 'bg-white',
     ]"
+    data-testid="category-card"
+    :data-category-id="category.id"
+    :data-completed="isCompleted ? 'true' : 'false'"
+    :data-collapsed="isCollapsed ? 'true' : 'false'"
   >
     <!-- Category Header -->
     <div class="relative mb-3 flex items-center justify-between">
@@ -26,6 +30,7 @@ Created: 2025-09-19
           v-model="editedName"
           :name="`category-${category.id}-name`"
           :aria-label="$t('category.name')"
+          data-testid="category-name-input"
           class="w-full bg-transparent p-1 text-2xl font-semibold leading-snug text-primary focus:outline-none md:text-xl"
           style="box-shadow: inset 0 -2px 0 0 var(--interactive-focus)"
           @keydown.enter="handleEnterKey"
@@ -40,6 +45,7 @@ Created: 2025-09-19
           style="word-break: break-word; overflow-wrap: break-word"
           role="button"
           tabindex="0"
+          data-testid="category-name"
           @click="startEdit"
           @keydown.enter.prevent="startEdit"
           @keydown.space.prevent="startEdit"
@@ -58,6 +64,7 @@ Created: 2025-09-19
           :aria-label="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-expanded="!isCollapsed"
           :aria-controls="`category-${category.id}-items`"
+          data-testid="category-collapse-toggle"
           @click.stop="toggleCollapse"
         >
           <!-- Down arrow (Expand) -->
@@ -118,6 +125,7 @@ Created: 2025-09-19
       :id="`category-${category.id}-items`"
       class="grid transition-[grid-template-rows] duration-300 ease-in-out"
       :class="isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
+      data-testid="category-items-container"
     >
       <div
         class="min-h-0 overflow-hidden"
@@ -132,16 +140,15 @@ Created: 2025-09-19
             :group="{
               name: 'items',
               pull: true,
-              put: function (to, from, dragEl, evt) {
-                // Only allow items to be dropped in item containers, not categories
-                return from.options.group.name === 'items';
-              },
+              put: putOnlyFromGroup('items'),
             }"
             :animation="200"
             :ghost-class="'ghost-item'"
             :chosen-class="'chosen-item'"
             :drag-class="'drag-item'"
             class="space-y-1"
+            data-testid="category-items-draggable"
+            :data-category-id="category.id"
             @start="onItemDragStart"
             @end="onItemDragEnd"
             @change="onItemChange"
@@ -183,6 +190,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
 
 import { Category } from '../models/Category';
+import { putOnlyFromGroup } from '../utils/dragDrop.js';
 import AddItemButton from './AddItemButton.vue';
 import Item from './Item.vue';
 import OverflowMenu from './OverflowMenu.vue';
