@@ -1,5 +1,5 @@
 ---
-name: doc-audit
+name: doc-audit-testing-guide
 description: Execute test documentation consistency audit by comparing actual test results, testing-guide (EN/ZH), and test comment numbering; fix inconsistencies directly.
 argument-hint: '[scope/path/extra constraints]'
 ---
