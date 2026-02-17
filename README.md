@@ -1,62 +1,98 @@
 # Packing List
 
-Interactive Packing List web application built with Vue 3, Vite and Tailwind CSS.
+> A modern web application for managing travel packing lists with multi-language support and offline-first architecture.
 
-## Project Overview
+## Features
 
-This project is a minimal viable product (MVP) for managing packing lists. Features include categorized items, progress tracking, and local persistence via browser localStorage.
+- **Multi-checklist management** — Create unlimited checklists with drag-and-drop reordering
+- **Categorized packing** — Organize items by category with quantity tracking
+- **Progress visualization** — Real-time packing progress with visual indicators
+- **i18n support** — English and Traditional Chinese
+- **Responsive design** — Optimized for mobile and desktop devices
+- **Accessible** — WCAG 2.1 Level AA compliant
+- **Offline-first** — Local storage with cross-tab synchronization
 
 ## Quick Start
 
-Prerequisites: Node.js >= 18, npm
+**Prerequisites:** Node.js >= 18
 
 ```bash
+# Clone the repository
 git clone <repo-url>
 cd packing_list
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
 ```
 
-## Available Scripts
+## Tech Stack
 
-- `npm run dev` — Start the Vite development server (with HMR)
-- `npm run build` — Build production assets into `dist/`
-- `npm run serve` — Preview the production build locally
-- `npm run build:css-vars` — Generate CSS variables from `source/utils/constants.js`
-- `npm run lint` — Run ESLint to check code quality
-- `npm run lint:fix` — Auto-fix ESLint issues
-- `npm run format` — Run Prettier to format all files
-- `npm run format:check` — Check if files are properly formatted
-- `npm run validate` — Run both linting and format checking
+- **Frontend:** Vue 3 (Composition API), Vite
+- **Styling:** Tailwind CSS
+- **Testing:** Vitest, Playwright, @vue/test-utils
+- **i18n:** vue-i18n
+- **Storage:** localStorage with cross-tab sync
+
+## Scripts
+
+```bash
+# Development
+npm run dev              # Start dev server
+npm run build            # Build for production
+npm run serve            # Preview production build
+
+# Testing
+npm test                 # Run tests in watch mode
+npm run test:coverage    # Generate coverage report
+npm run test:e2e         # Run E2E tests
+
+# Code Quality
+npm run lint             # Lint code
+npm run format           # Format code
+npm run validate         # Lint + format check
+```
 
 ## Project Structure
 
-- `source/` — application source code
-  - `models/` — data models (Checklist, Category, Item)
-  - `components/` — Vue single-file components (Sidebar, Checklist, Category, Item, ...)
-  - `composables/` — composables (e.g. `usePackingLists.js`) for business logic
-  - `services/` — data services (e.g. `localStorageService.js`)
-  - `utils/` — constants and helper functions
-- `product-spec.md` — product specification and feature list
+```
+packing_list/
+├── docs/                # Documentation
+├── source/              # Application source
+│   ├── components/      # Vue components
+│   ├── composables/     # Composition API hooks
+│   ├── data/            # Default data
+│   ├── i18n/            # i18n configuration
+│   ├── locales/         # Translation files
+│   ├── models/          # Data models
+│   ├── services/        # Business logic
+│   └── utils/           # Utility functions
+└── tests/               # Test suites
+    ├── component-tests/ # Component tests
+    ├── end2end-tests/   # End-to-end tests
+    ├── test-setup/      # Test setup
+    └── unit-tests/      # Unit tests
 
-## Development Notes
-
-- Code formatting: Prettier is configured via `.prettierrc`. Use `npm run format` or enable `formatOnSave` in your editor.
-- Naming conventions: Vue components use PascalCase; composables use `use*` prefix.
-- Data persistence: application data is stored in `localStorage`. To clear data in the browser, open DevTools → Application → Local Storage and remove the key used by the app.
-- Theme colors: All colors are defined in `source/utils/constants.js`. After editing, run `npm run build:css-vars` to regenerate CSS variables in `source/index.css`.
-
-## Build Locally
-
-```bash
-npm run build    # Build to dist/
-npm run serve    # Preview production build at http://localhost:4173
 ```
 
-## Troubleshooting
+## Documentation
 
-- Tailwind not applying? Ensure `tailwind.config.js` `content` includes `source/**/*.vue` and `source/**/*.js`.
-- Install issues? Remove `node_modules` and `package-lock.json`, then run `npm install` again.
+- **[Product Specification](docs/product-spec.md)** — Feature requirements and data models
+- **[Code Quality Guide](docs/code-quality.md)** — Coding standards and best practices
+- **[Testing Guide](docs/testing-guide.md)** — Test architecture and conventions
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/new-feature`)
+3. Run tests (`npm run validate && npm test`)
+4. Commit your changes (follows conventional commits)
+5. Push to the branch (`git push origin feature/new-feature`)
+6. Open a Pull Request
+
+CI/CD pipeline runs automatically on all PRs (linting, tests, build).
 
 ## License
 
