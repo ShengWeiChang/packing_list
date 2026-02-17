@@ -59,15 +59,22 @@ npm run validate         # Lint + format check
 
 ```
 packing_list/
+├── docs/                # Documentation
 ├── source/              # Application source
 │   ├── components/      # Vue components
 │   ├── composables/     # Composition API hooks
+│   ├── data/            # Default data
+│   ├── i18n/            # i18n configuration
+│   ├── locales/         # Translation files
 │   ├── models/          # Data models
 │   ├── services/        # Business logic
-│   └── locales/         # i18n translations
-├── tests/               # Test suites
-├── docs/                # Documentation
-└── .github/             # CI/CD workflows
+│   └── utils/           # Utility functions
+└── tests/               # Test suites
+    ├── component-tests/ # Component tests
+    ├── end2end-tests/   # End-to-end tests
+    ├── test-setup/      # Test setup
+    └── unit-tests/      # Unit tests
+
 ```
 
 ## Documentation
