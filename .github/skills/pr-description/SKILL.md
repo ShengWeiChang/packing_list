@@ -8,9 +8,54 @@ argument-hint: '[PR context/branch/issue number]'
 
 ## Role and Mission
 
-You are the project's PR writing specialist, generating Pull Request descriptions that **exactly match** team conventions.
+You are the project's PR writing specialist, generating Pull Request **titles and descriptions** that **exactly match** team conventions.
 
-## Mandatory Format (Based on PR #10-14 Analysis)
+## PR Title Format (Conventional Commits)
+
+### Title Structure
+
+```
+type: concise description (#issue)
+```
+
+### Type Categories (Based on Historical PR Analysis)
+
+1. **test**: Testing infrastructure or comprehensive test additions
+   - Example: `test: Establish automated testing infrastructure with CI/CD`
+
+2. **feat**: New features or significant enhancements
+   - Example: `feat: Enhance accessibility and keyboard navigation`
+   - Example: `feat: Mobile device UIUX`
+
+3. **fix**: Bug fixes or improvements to existing features
+   - Example: `fix: Refactor color system with semantic naming and improve UI interactions`
+   - Example: `fix: Improve IME input handling for Enter key across edit components`
+
+4. **docs**: Documentation updates (if standalone)
+
+5. **refactor**: Code restructuring without behavior change
+
+6. **chore**: Build, dependency, or configuration updates
+
+### Title Standards
+
+- **Length**: 50-80 characters (GitHub best practice)
+- **Language**: English, sentence case (capitalize first word only)
+- **Style**: Concise but descriptive
+- **Issue link**: Include `(#N)` if PR resolves specific issue
+- **Focus**: Describe primary change, not implementation details
+
+### Title Selection Logic
+
+| Primary Changes                      | Type                              | Example                                            |
+| ------------------------------------ | --------------------------------- | -------------------------------------------------- |
+| Testing infrastructure + CI/CD       | `test`                            | `test: Establish automated testing infrastructure` |
+| New feature or capability            | `feat`                            | `feat: Add agent skills infrastructure`            |
+| Bug fixes or system improvements     | `fix`                             | `fix: Improve IME input handling for Enter key`    |
+| Multiple unrelated changes           | Choose dominant (>60% of changes) |
+| Documentation + minimal code changes | `feat` or `docs`                  | `feat: Update testing documentation`               |
+
+## PR Description Format (Based on PR #10-14 Analysis)
 
 ### Opening Paragraph (1-2 sentences)
 
@@ -173,15 +218,22 @@ After the summary paragraph, **must use** `Key changes:` as the section heading 
    - Package version numbers (from package.json)
    - File change statistics (`git diff --stat`)
 
-4. **Generate PR description**:
+4. **Generate PR title**:
+   - Determine primary change type (test/feat/fix/etc.)
+   - Write concise description focusing on impact
+   - Add issue number if referenced in commits
+
+5. **Generate PR description**:
    - First paragraph: summary + key metrics
    - Key changes: followed by sections
-   - Each section filled with bullet points based on file changes
+   - Each section filled with bullet points based on **actual diff output only**
+   - **CRITICAL**: Do NOT extract bullet points from commit messages - analyze file diffs directly
    - Ensure format matches PR #10-14 exactly
 
-5. **Output format**:
-   - Pure Markdown (can paste directly into GitHub PR body)
-   - No title included (PR title provided separately)
+6. **Output format**:
+   - **Title**: First line, format `type: description (#issue)`
+   - **Blank line**
+   - **Description**: Pure Markdown body (can paste directly into GitHub PR)
    - No \`\`\`markdown markers (output content directly)
 
 ## Example Templates (Select by PR Type)
@@ -235,7 +287,8 @@ Documentation:
 ## Critical Rules (Mandatory)
 
 1. **Never fabricate data**: All numbers, version numbers, file names must come from actual git diff or package.json
-2. **Maintain format consistency**: Strictly follow PR #10-14 format (capitalization, punctuation, section order)
-3. **Dynamic section adjustment**: Select sections based on actual changes, don't force all sections
-4. **Technical details first**: Prioritize specific technical implementation (file names, function names, version numbers) over abstract descriptions
-5. **If information insufficient**: Clearly indicate what additional information is needed (e.g., "Please provide the issue number this PR resolves")
+2. **Use diff output ONLY**: Bullet points describe actual file changes from `git diff` analysis - **NEVER extract descriptions from commit messages** (commit messages may describe intermediate states that don't exist in final diff)
+3. **Maintain format consistency**: Strictly follow PR #10-14 format (capitalization, punctuation, section order)
+4. **Dynamic section adjustment**: Select sections based on actual changes, don't force all sections
+5. **Technical details first**: Prioritize specific technical implementation (file names, function names, version numbers) over abstract descriptions
+6. **If information insufficient**: Clearly indicate what additional information is needed (e.g., "Please provide the issue number this PR resolves")
