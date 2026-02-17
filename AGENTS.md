@@ -1,4 +1,4 @@
-# Copilot Instructions
+# Agent Instructions
 
 ## Tailwind CSS Class Order — DO NOT REORDER
 
