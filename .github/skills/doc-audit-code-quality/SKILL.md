@@ -31,7 +31,7 @@ Ensure the following items are consistent and correct:
 2. **Content Parity**: All technical content, code examples, configuration examples are translated and present in both versions
 3. **Technical Accuracy**: Tool names, commands, file paths, code snippets are identical (not translated)
 4. **Convention Consistency**: File naming rules, code standards, and toolchain descriptions match across languages
-5. **Line Count Proximity**: EN/ZH versions should have similar line counts (±5% tolerance, accounting for language verbosity); do not rely on a fixed historical line count.
+5. **Line Count Proximity**: EN/ZH versions should have similar line counts (±2% tolerance, accounting for language verbosity); do not rely on a fixed historical line count.
 6. **Link Integrity**: Internal references and file paths work in both versions
 
 ---
@@ -93,7 +93,7 @@ Ensure the following items are consistent and correct:
 
 5. **Verify Line Count**:
    - Compare current line counts; do not use a hard-coded historical count
-   - Flag if difference > 5%
+   - Flag if difference > 2%
 
 ---
 

@@ -31,7 +31,7 @@ Ensure the following items are consistent and correct:
 2. **Feature Parity**: All features, requirements, and user stories are present in both versions
 3. **Data Model Consistency**: Entity definitions (Checklist, Category, Item), properties, and examples are identical
 4. **Technical Specifications**: Stack descriptions, API references, storage schemas match across languages
-5. **Line Count Proximity**: EN/ZH versions should have similar line counts (±5% tolerance); do not rely on a fixed historical line count.
+5. **Line Count Proximity**: EN/ZH versions should have similar line counts (±2% tolerance); do not rely on a fixed historical line count.
 6. **User Flow Accuracy**: Interaction descriptions and business logic are accurately translated
 
 ---
@@ -97,7 +97,7 @@ Ensure the following items are consistent and correct:
 
 5. **Verify Line Count**:
    - Compare current line counts; do not use a hard-coded historical count
-   - Flag if difference > 5%
+   - Flag if difference > 2%
 
 ---
 
