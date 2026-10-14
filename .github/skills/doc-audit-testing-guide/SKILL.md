@@ -66,23 +66,20 @@ Ensure the following items are consistent, correct, and fixed:
    - Vitest: Total / Unit / Component
    - Playwright: E2E test total and file count
 
-3. If necessary, write and execute Python verification script, must include at minimum:
-   - Scan `tests/**/*.test.js`, `tests/**/*.spec.js`
-   - Calculate actual case count (including `it.each` / `test.each` expansion)
-   - Check if `Test Group N`, `Test Case N` are sequentially sorted
-   - Check if each file's "last `Test Case` index" equals actual case count
+3. Run `npm run test:inventory`. This script executes Vitest and Playwright, then uses their JSON results to verify actual case counts, parameterized expansion, `Test Case` ranges, and both testing-guide inventories.
+4. Use `npm run test:inventory:sync` only after the executed tests pass and generated count fields need updating. It does not write or renumber test comments.
 
-4. Compare documentation:
+5. Compare documentation:
    - `docs/testing-guide.md`
    - `docs/testing-guide-zh.md`
 
-5. Key verification of section 8:
+6. Key verification of section 8:
    - Layer totals
    - File case counts
    - Table entry count and numbering
    - Unit → Component → E2E heading and subsection order
 
-6. Directly fix all inconsistencies (documentation + comments), then re-run necessary commands and scripts to confirm convergence.
+7. Directly fix all inconsistencies (documentation + comments), then re-run necessary commands and scripts to confirm convergence.
 
 ---
 
@@ -126,4 +123,4 @@ Only output the following content, no lengthy reports needed:
 
 1. If `it.each` comment descriptions (e.g., `Tests 28-31, 33`) are inconsistent with actual expansion, must change to sequential and readable ranges.
 2. If either `docs/testing-guide.md` or `docs/testing-guide-zh.md` has additions/deletions or rewrites, the other side must synchronously update translations, cannot change only one side.
-3. Prefer a repeatable repository script or test-reporter output for inventory counts when the same audit is performed repeatedly. Do not make fragile manual total adjustments without reconciling them to executable results.
+3. `scripts/test-inventory.js` is the authoritative automated check for test-count and inventory drift. Do not manually adjust generated totals or heading counts without following it.

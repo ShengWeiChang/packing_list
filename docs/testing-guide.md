@@ -110,7 +110,7 @@ tests/
 
 Every test file groups related assertions with `Test Group N` dividers and prefixes every `it()` or `test()` case with a sequential `Test Case N` comment. Numbering begins at 1 in each file and must match the executable case count (including expanded parameterized cases). The comment is a concise `Should ...` description of the behavior under test.
 
-Validation: this convention is audited by `.github/skills/doc-audit-testing-guide/SKILL.md`; it is currently a review/audit requirement, not an ESLint or Prettier rule.
+Validation: `npm run test:inventory` executes Vitest and Playwright, then verifies this convention against their reported test counts. Use `npm run test:inventory:sync` to update generated guide totals and file-heading counts after the tests pass; it never rewrites test comments.
 
 ## 4. Coverage Breakdown
 
@@ -189,6 +189,13 @@ npx playwright test tests/end2end-tests/app-loading.spec.js --headed
 npm run test:coverage # Vitest code coverage only: outputs terminal summary + coverage/index.html; focuses on source line/branch coverage, not Playwright E2E flow coverage（不含 Playwright E2E）
 ```
 
+### Test Inventory Audit
+
+```bash
+npm run test:inventory      # Execute Vitest + Playwright and verify comments and both guides
+npm run test:inventory:sync # After passing, synchronize generated guide counts
+```
+
 ## 6. Testing Layers and Responsibilities
 
 This project uses three layers to balance speed and reliability.
@@ -201,12 +208,12 @@ This project uses three layers to balance speed and reliability.
 
 ## 7. CI/CD Execution Stages
 
-| Stage               | Trigger              | Test scope executed            | Purpose                                  |
-| ------------------- | -------------------- | ------------------------------ | ---------------------------------------- |
-| Development process | Manual               | Manually selected by developer | Fast local checks during implementation  |
-| Commit              | `git commit`         | Unit + Component               | Block obvious regressions before push    |
-| CI on push          | `push` event         | Unit + Component + E2E         | Validate full suite after push to remote |
-| CI on pull request  | `pull_request` event | Unit + Component + E2E         | Validate merge readiness with full suite |
+| Stage               | Trigger              | Test scope executed                      | Purpose                                                              |
+| ------------------- | -------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
+| Development process | Manual               | Manually selected by developer           | Fast local checks during implementation                              |
+| Commit              | `git commit`         | Unit + Component                         | Block obvious regressions before push                                |
+| CI on push          | `push` event         | Unit + Component + E2E + inventory audit | Validate full suite and generated test metadata after push to remote |
+| CI on pull request  | `pull_request` event | Unit + Component + E2E + inventory audit | Validate merge readiness and generated test metadata                 |
 
 ## 8. Complete Test Inventory
 
