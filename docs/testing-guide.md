@@ -110,7 +110,7 @@ tests/
 
 Every test file groups related assertions with `Test Group N` dividers and prefixes every `it()` or `test()` case with a sequential `Test Case N` comment. Numbering begins at 1 in each file and must match the executable case count (including expanded parameterized cases). The comment is a concise `Should ...` description of the behavior under test.
 
-Validation: `npm run test:inventory` executes Vitest and Playwright, then verifies this convention against their reported test counts and rejects inventory sections that are out of Unit → Component → E2E order. It always audits the tracked English guide and also audits the Chinese guide when it is available locally. Use `npm run test:inventory:sync` to update generated guide totals and file-heading counts after the tests pass; it never rewrites test comments.
+Validation: Local `npm run test:inventory` executes Vitest and Playwright, then verifies this convention against their reported test counts and rejects inventory sections that are out of Unit → Component → E2E order. CI runs each test runner once, writes their JSON reports to `test-inventory-reports/`, then uses `npm run test:inventory:ci` to audit those reports without rerunning either suite. Both modes always audit the tracked English guide and also audit the Chinese guide when it is available locally. Use `npm run test:inventory:sync` to update generated guide totals and file-heading counts after the tests pass; it never rewrites test comments.
 
 ## 4. Coverage Breakdown
 
@@ -208,12 +208,12 @@ This project uses three layers to balance speed and reliability.
 
 ## 7. CI/CD Execution Stages
 
-| Stage               | Trigger              | Test scope executed                      | Purpose                                                              |
-| ------------------- | -------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
-| Development process | Manual               | Manually selected by developer           | Fast local checks during implementation                              |
-| Commit              | `git commit`         | Unit + Component                         | Block obvious regressions before push                                |
-| CI on push          | `push` event         | Unit + Component + E2E + inventory audit | Validate full suite and generated test metadata after push to remote |
-| CI on pull request  | `pull_request` event | Unit + Component + E2E + inventory audit | Validate merge readiness and generated test metadata                 |
+| Stage               | Trigger              | Test scope executed                      | Purpose                                                         |
+| ------------------- | -------------------- | ---------------------------------------- | --------------------------------------------------------------- |
+| Development process | Manual               | Manually selected by developer           | Fast local checks during implementation                         |
+| Commit              | `git commit`         | Unit + Component                         | Block obvious regressions before push                           |
+| CI on push          | `push` event         | Unit + Component + E2E + inventory audit | Run each suite once, then validate generated test metadata      |
+| CI on pull request  | `pull_request` event | Unit + Component + E2E + inventory audit | Run each suite once, then validate merge readiness and metadata |
 
 ## 8. Complete Test Inventory
 

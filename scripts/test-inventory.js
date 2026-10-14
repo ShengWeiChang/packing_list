@@ -1,8 +1,8 @@
 /*
 ================================================================================
 File: scripts/test-inventory.js
-Description: Execute Vitest and Playwright, then verify test comments and guide
-             inventory against their real results. Use --write to sync counts.
+Description: Verify test comments and guide inventory against Vitest and
+             Playwright results. Use --write to sync counts.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
 Created: 2026-10-13
@@ -27,7 +27,10 @@ const PROJECT_ROOT = resolve(import.meta.dirname, '..');
 const TEMP_PREFIX = join(tmpdir(), 'packing-list-test-inventory-');
 const REQUIRED_TEST_GUIDE = 'docs/testing-guide.md';
 const OPTIONAL_TEST_GUIDES = ['docs/testing-guide-zh.md'];
+const VITEST_REPORT_PATH = 'test-inventory-reports/vitest.json';
+const PLAYWRIGHT_REPORT_PATH = 'test-inventory-reports/playwright.json';
 const WRITE_MODE = process.argv.includes('--write');
+const READ_REPORTS_MODE = process.argv.includes('--from-reports');
 
 // -----------------------------------------------------------------------------
 // Test Execution
@@ -79,6 +82,24 @@ function runPlaywright() {
   const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
   const output = runCommand(npxCommand, ['playwright', 'test', '--reporter=json']);
   return JSON.parse(output);
+}
+
+/**
+ * Read a JSON test report created by a prior test command.
+ * @param {string} reportPath - Project-relative report path.
+ * @param {string} runnerName - Test runner name for error output.
+ * @returns {object} Parsed test report.
+ */
+function readTestReport(reportPath, runnerName) {
+  const pathOnDisk = join(PROJECT_ROOT, reportPath);
+
+  if (!existsSync(pathOnDisk)) {
+    throw new Error(
+      `${runnerName} report is missing: ${reportPath}. Run the test command that creates it first.`
+    );
+  }
+
+  return JSON.parse(readFileSync(pathOnDisk, 'utf8'));
 }
 
 /**
@@ -425,12 +446,16 @@ function updateGuideCounts(guide, records) {
  * @returns {number} Process exit code.
  */
 function main() {
-  const reportDirectory = mkdtempSync(TEMP_PREFIX);
+  const reportDirectory = READ_REPORTS_MODE ? null : mkdtempSync(TEMP_PREFIX);
 
   try {
     const testGuides = getTestGuides();
-    const vitestReport = runVitest(reportDirectory);
-    const playwrightReport = runPlaywright();
+    const vitestReport = READ_REPORTS_MODE
+      ? readTestReport(VITEST_REPORT_PATH, 'Vitest')
+      : runVitest(reportDirectory);
+    const playwrightReport = READ_REPORTS_MODE
+      ? readTestReport(PLAYWRIGHT_REPORT_PATH, 'Playwright')
+      : runPlaywright();
     const records = [
       ...collectVitestRecords(vitestReport),
       ...collectPlaywrightRecords(playwrightReport),
@@ -461,7 +486,9 @@ function main() {
     );
     return 0;
   } finally {
-    rmSync(reportDirectory, { force: true, recursive: true });
+    if (reportDirectory) {
+      rmSync(reportDirectory, { force: true, recursive: true });
+    }
   }
 }
 

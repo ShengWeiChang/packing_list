@@ -17,7 +17,7 @@ jobs:
       - run: npm ci
       - run: npm run validate
 
-  unit-test:
+  vitest-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,17 +26,22 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npm run test:run
-      - run: npm run test:coverage
+      - run: mkdir -p test-inventory-reports
+      - run: npx vitest run --coverage --reporter=json --outputFile=test-inventory-reports/vitest.json
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/
+      - name: Upload Vitest report
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-report
+          path: test-inventory-reports/vitest.json
 
   e2e-test:
     runs-on: ubuntu-latest
-    needs: [lint, unit-test]
+    needs: [lint, vitest-test]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,11 +50,17 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:inventory
+      - name: Download Vitest report
+        uses: actions/download-artifact@v4
+        with:
+          name: vitest-report
+          path: test-inventory-reports
+      - run: npx playwright test --reporter=json > test-inventory-reports/playwright.json
+      - run: npm run test:inventory:ci
 
   build:
     runs-on: ubuntu-latest
-    needs: [lint, unit-test, e2e-test]
+    needs: [lint, vitest-test, e2e-test]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
