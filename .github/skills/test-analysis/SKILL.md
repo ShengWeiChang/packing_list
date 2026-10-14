@@ -78,6 +78,19 @@ If commands fail, must preserve in report:
 - Error summary
 - Impact scope on conclusions
 
+### Feature-Change Review
+
+When the scope includes a new or changed user-facing feature, inspect the changed source paths and map each material risk to the smallest useful test layer:
+
+- persistence, parsing, transformations, and recovery paths → unit tests
+- composable/service state and error propagation → unit or component tests
+- dialogs, menus, responsive interactions, and focus behavior → component tests
+- primary user workflows across UI and persistence → Playwright E2E tests
+
+Do not require every layer when it adds no independent protection; explain deliberate omissions. Compare coverage to a baseline only when it used the same configuration and comparable source scope. Treat aggregate coverage movement as a signal to inspect changed modules, never as a standalone pass/fail threshold.
+
+For changed interactive UI, verify runtime keyboard/focus behavior and both locales where applicable. `npm run lint` and i18n key-parity tests are useful static/structural checks, not substitutes for those behavior checks.
+
 ---
 
 ## 5. Analysis Dimensions and Weights

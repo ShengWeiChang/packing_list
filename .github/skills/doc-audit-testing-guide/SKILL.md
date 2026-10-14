@@ -34,6 +34,7 @@ Ensure the following items are consistent, correct, and fixed:
 4. Each test file's `Test Group` / `Test Case` numbering is sequential, no gaps, matches actual execution count
 5. `it.each` / `test.each` expanded cases are correctly reflected in comments and documentation
 6. `docs/testing-guide.md` and `docs/testing-guide-zh.md` must match content, be mutual translations (same structure, same statistics, same inventory)
+7. Test-inventory sections must follow the documented layer order: Unit, Component, then E2E. Do not append a new layer subsection after a later layer merely to minimize an edit.
 
 ---
 
@@ -54,6 +55,7 @@ Ensure the following items are consistent, correct, and fixed:
 5. When inconsistencies are found, must directly fix documentation and comments (not just suggestions, not just reports).
 6. `docs/testing-guide.md` and `docs/testing-guide-zh.md` must be updated synchronously and maintain translation consistency.
 7. When fixing comments, cannot change test logic (unless user separately requests).
+8. If a paired Chinese document is intentionally ignored by Git, still verify and update it in the working tree; report that it is absent from `git status` rather than treating its absence as proof it was not changed.
 
 ---
 
@@ -78,6 +80,7 @@ Ensure the following items are consistent, correct, and fixed:
    - Layer totals
    - File case counts
    - Table entry count and numbering
+   - Unit → Component → E2E heading and subsection order
 
 6. Directly fix all inconsistencies (documentation + comments), then re-run necessary commands and scripts to confirm convergence.
 
@@ -123,3 +126,4 @@ Only output the following content, no lengthy reports needed:
 
 1. If `it.each` comment descriptions (e.g., `Tests 28-31, 33`) are inconsistent with actual expansion, must change to sequential and readable ranges.
 2. If either `docs/testing-guide.md` or `docs/testing-guide-zh.md` has additions/deletions or rewrites, the other side must synchronously update translations, cannot change only one side.
+3. Prefer a repeatable repository script or test-reporter output for inventory counts when the same audit is performed repeatedly. Do not make fragile manual total adjustments without reconciling them to executable results.

@@ -31,7 +31,7 @@ Ensure the following items are consistent and correct:
 2. **Feature Parity**: All features, requirements, and user stories are present in both versions
 3. **Data Model Consistency**: Entity definitions (Checklist, Category, Item), properties, and examples are identical
 4. **Technical Specifications**: Stack descriptions, API references, storage schemas match across languages
-5. **Line Count Proximity**: EN/ZH versions should have similar line counts (±5% tolerance)
+5. **Line Count Proximity**: EN/ZH versions should have similar line counts (±5% tolerance); do not rely on a fixed historical line count.
 6. **User Flow Accuracy**: Interaction descriptions and business logic are accurately translated
 
 ---
@@ -55,7 +55,7 @@ Ensure the following items are consistent and correct:
    - Business logic must be accurately conveyed
    - Keep same structure and depth
 
-5. **Synchronous Updates**: If one version is updated, the other must be updated in the same commit
+5. **Synchronous Updates**: If one version is updated, update the other in the same change set. When a Chinese file is intentionally ignored by Git, verify it in the working tree and report that it will not appear in `git status`.
 
 ---
 
@@ -96,7 +96,7 @@ Ensure the following items are consistent and correct:
    - Update outdated technical specs
 
 5. **Verify Line Count**:
-   - Expect near-identical line counts (486 lines for both as of current state)
+   - Compare current line counts; do not use a hard-coded historical count
    - Flag if difference > 5%
 
 ---
