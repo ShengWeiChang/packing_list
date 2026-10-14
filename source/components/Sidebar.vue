@@ -327,6 +327,11 @@ Created: 2025-09-19
               />
             </svg>
           </div>
+          <span
+            v-if="isExpanded || isMobile"
+            class="truncate text-sm text-secondary"
+            >{{ $t('language.select') }}</span
+          >
         </button>
 
         <!-- Language Dropdown Menu -->
@@ -376,7 +381,6 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 
-import { renumberOrder } from '../utils/order.js';
 import OverflowMenu from './OverflowMenu.vue';
 
 // ------------------------------------------------------------------------------
@@ -467,9 +471,9 @@ const currentLocale = computed({
   },
 });
 
-// Sorted checklists for display (sorted by order)
+// Sorted checklists for display (newest first)
 const sortedChecklists = computed(() => {
-  return [...props.checklists].sort((a, b) => (a.order || 0) - (b.order || 0));
+  return [...props.checklists].sort((a, b) => (b.order || 0) - (a.order || 0));
 });
 
 // Sorted templates for display (sorted by order)
@@ -483,8 +487,11 @@ const draggableChecklists = computed({
     return sortedChecklists.value;
   },
   set(newChecklists) {
-    // When vuedraggable updates the array, emit the reorder event
-    const checklistsWithNewOrder = renumberOrder(newChecklists);
+    // Keep the first visible checklist newest after a drag-and-drop reorder.
+    const checklistsWithNewOrder = newChecklists.map((checklist, index) => ({
+      ...checklist,
+      order: newChecklists.length - index - 1,
+    }));
 
     emit('move:checklists', checklistsWithNewOrder);
   },

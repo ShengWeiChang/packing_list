@@ -241,7 +241,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 
 - Purpose: Provide a multi-language interface so users can switch languages with immediate effect, and persist their preference.
 - Key features:
-  - Language switcher: Located in the Sidebar as a globe icon button with a dropdown menu.
+  - Language switcher: Located in the Sidebar as a globe icon and visible label button with a dropdown menu.
   - Supported languages: English (`en`), Traditional Chinese (`zh-TW`).
   - Initial detection and fallback: Prefer the saved localStorage setting first; otherwise infer from the browser’s language; default fallback is English (`en`).
   - Traditional Chinese variants mapping: Common variants (`zh`, `zh-Hant`, `zh-TW`, `zh-HK`, `zh-MO`) are normalized to `zh-TW`.

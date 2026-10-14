@@ -10,7 +10,7 @@ Created: 2025-10-18
 
 export const defaultItemsZhTW = [
   // 夏季服裝
-  { name: 'T恤', category: '夏季服裝', quantity: 1 },
+  { name: '短袖上衣', category: '夏季服裝', quantity: 1 },
   { name: '襯衫', category: '夏季服裝', quantity: 1 },
   { name: '輕便外套', category: '夏季服裝', quantity: 1 },
   { name: '短褲', category: '夏季服裝', quantity: 1 },
@@ -18,7 +18,7 @@ export const defaultItemsZhTW = [
   // 冬季服裝
   { name: '發熱衣', category: '冬季服裝', quantity: 1 },
   { name: '長袖上衣', category: '冬季服裝', quantity: 1 },
-  { name: '帽T', category: '冬季服裝', quantity: 1 },
+  { name: '連帽上衣', category: '冬季服裝', quantity: 1 },
   { name: '外套', category: '冬季服裝', quantity: 1 },
   { name: '羽絨外套', category: '冬季服裝', quantity: 1 },
   { name: '防風外套', category: '冬季服裝', quantity: 1 },

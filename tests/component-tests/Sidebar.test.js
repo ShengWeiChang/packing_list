@@ -52,6 +52,7 @@ const i18n = createI18n({
         untitled: 'Untitled Checklist',
       },
       language: {
+        select: 'Language',
         switchLanguage: 'Switch Language',
       },
     },
@@ -174,7 +175,7 @@ describe('Sidebar', () => {
       await checklistBtns[1].trigger('click');
 
       expect(wrapper.emitted('select-checklist')).toHaveLength(1);
-      expect(wrapper.emitted('select-checklist')[0][0]).toBe('cl-2');
+      expect(wrapper.emitted('select-checklist')[0][0]).toBe('cl-1');
     });
 
     // Test Case 8: Should emit copy-checklist from OverflowMenu
@@ -186,7 +187,7 @@ describe('Sidebar', () => {
       await menus[0].vm.$emit('copy');
 
       expect(wrapper.emitted('copy-checklist')).toHaveLength(1);
-      expect(wrapper.emitted('copy-checklist')[0][0]).toBe('cl-1');
+      expect(wrapper.emitted('copy-checklist')[0][0]).toBe('cl-2');
     });
 
     // Test Case 9: Should emit delete-checklist from OverflowMenu
@@ -197,7 +198,7 @@ describe('Sidebar', () => {
       await menus[0].vm.$emit('delete');
 
       expect(wrapper.emitted('delete-checklist')).toHaveLength(1);
-      expect(wrapper.emitted('delete-checklist')[0][0]).toBe('cl-1');
+      expect(wrapper.emitted('delete-checklist')[0][0]).toBe('cl-2');
     });
 
     // Test Case 10: Should emit edit-checklist from OverflowMenu
@@ -208,7 +209,7 @@ describe('Sidebar', () => {
       await menus[0].vm.$emit('edit');
 
       expect(wrapper.emitted('edit-checklist')).toHaveLength(1);
-      expect(wrapper.emitted('edit-checklist')[0][0]).toBe('cl-1');
+      expect(wrapper.emitted('edit-checklist')[0][0]).toBe('cl-2');
     });
   });
 
@@ -221,15 +222,15 @@ describe('Sidebar', () => {
     it('should highlight the selected checklist', () => {
       const wrapper = createWrapper({ selectedChecklistId: 'cl-1' });
       const listItems = wrapper.findAll('[data-testid="sidebar-checklist-item"]');
-      // First checklist button should have aria-current="page"
-      expect(listItems[0].attributes('aria-current')).toBe('page');
+      // The selected checklist remains active after newest-first sorting.
+      expect(listItems[1].attributes('aria-current')).toBe('page');
     });
 
     // Test Case 12: Non-selected checklist should not have aria-current
     it('should not highlight non-selected checklists', () => {
       const wrapper = createWrapper({ selectedChecklistId: 'cl-1' });
       const listItems = wrapper.findAll('[data-testid="sidebar-checklist-item"]');
-      expect(listItems[1].attributes('aria-current')).toBeUndefined();
+      expect(listItems[0].attributes('aria-current')).toBeUndefined();
     });
   });
 
@@ -257,6 +258,7 @@ describe('Sidebar', () => {
       const wrapper = createWrapper();
       // Find the language button by its aria-label
       const langBtn = wrapper.get('[data-testid="sidebar-language-button"]');
+      expect(langBtn.text()).toContain('language.select');
 
       await langBtn.trigger('click');
       await wrapper.vm.$nextTick();
@@ -341,7 +343,7 @@ describe('Sidebar', () => {
   // ---------------------------------------------------------------------------
 
   describe('checklist reorder', () => {
-    // Test Case 19: Should emit move:checklists with renumbered order when draggable updates
+    // Test Case 19: Should retain newest-first order when draggable updates
     it('should emit "move:checklists" with updated order when v-model changes', async () => {
       const wrapper = createWrapper();
       const draggableComp = wrapper.findComponent({ name: 'draggable' });
@@ -357,6 +359,8 @@ describe('Sidebar', () => {
       expect(emitted[0][0]).toHaveLength(2);
       expect(emitted[0][0][0].id).toBe('cl-2');
       expect(emitted[0][0][1].id).toBe('cl-1');
+      expect(emitted[0][0][0].order).toBe(1);
+      expect(emitted[0][0][1].order).toBe(0);
     });
   });
 
@@ -378,7 +382,7 @@ describe('Sidebar', () => {
       await wrapper.vm.$nextTick();
       // Verify drag state is applied via cursor-grabbing class
       const buttons = wrapper.findAll('[data-testid="sidebar-checklist-item"]');
-      expect(buttons[0].classes()).toContain('cursor-grabbing');
+      expect(buttons[1].classes()).toContain('cursor-grabbing');
     });
 
     // Test Case 21: Should clear dragging state on drag end
@@ -407,8 +411,8 @@ describe('Sidebar', () => {
   // ---------------------------------------------------------------------------
 
   describe('sorted checklists', () => {
-    // Test Case 22: Should display checklists sorted by order
-    it('should display checklists sorted by order property', () => {
+    // Test Case 22: Should display newest checklists first
+    it('should display checklists in descending order property order', () => {
       const checklists = [
         { id: 'cl-b', name: 'Beta', startDate: '2026-01-01', endDate: '2026-01-10', order: 2 },
         { id: 'cl-a', name: 'Alpha', startDate: '2026-01-01', endDate: '2026-01-10', order: 0 },
@@ -416,9 +420,9 @@ describe('Sidebar', () => {
       ];
       const wrapper = createWrapper({ checklists });
       const items = wrapper.findAll('[data-testid="sidebar-checklist-item"]');
-      expect(items[0].text()).toContain('Alpha');
+      expect(items[0].text()).toContain('Beta');
       expect(items[1].text()).toContain('Charlie');
-      expect(items[2].text()).toContain('Beta');
+      expect(items[2].text()).toContain('Alpha');
     });
   });
 
