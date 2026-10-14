@@ -112,6 +112,7 @@ const i18n = createI18n({
       },
       category: { defaultName: 'New Category' },
       item: { defaultName: 'New Item' },
+      template: { deleteConfirm: 'Are you sure you want to delete this template?' },
     },
   },
 });
@@ -1124,6 +1125,233 @@ describe('App', () => {
       expect(mockUpdateTemplate).toHaveBeenCalledWith(template);
       expect(mockUpdateChecklist).not.toHaveBeenCalled();
       expect(mockCreateChecklist).not.toHaveBeenCalled();
+    });
+
+    // Test Case 45: Should save a selected checklist through the named template dialog
+    it('opens the named template dialog and saves its selected checklist', async () => {
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await wrapper.vm.$nextTick();
+
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('save-as-template', 'cl-1');
+      await wrapper.vm.$nextTick();
+      await wrapper.findComponent({ name: 'SaveTemplateDialog' }).vm.$emit('save', 'Trip Template');
+
+      expect(mockSaveAsTemplate).toHaveBeenCalledWith('cl-1', 'Trip Template');
+    });
+
+    // Test Case 46: Should create a checklist from a selected personal template
+    it('creates a checklist from a selected personal template', async () => {
+      mockTemplates.value = [
+        { id: 'template-1', name: 'Weekend', order: 0, categories: [], items: [] },
+      ];
+      mockApplyTemplate.mockReturnValue({ categories: [{ id: 'cat-new' }], items: [] });
+      mockCreateChecklist.mockResolvedValue({ id: 'cl-template' });
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await wrapper.vm.$nextTick();
+
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('create-checklist');
+      await wrapper.vm.$nextTick();
+      await wrapper
+        .findComponent({ name: 'NewChecklistDialog' })
+        .vm.$emit('select', { source: 'template', templateId: 'template-1' });
+
+      expect(mockApplyTemplate).toHaveBeenCalledWith(
+        'template-1',
+        expect.stringMatching(/^checklist-/)
+      );
+      expect(mockCreateChecklist).toHaveBeenCalledWith(
+        expect.objectContaining({ id: expect.stringMatching(/^checklist-/) }),
+        expect.objectContaining({
+          source: 'template',
+          templateData: { categories: [{ id: 'cat-new' }], items: [] },
+        })
+      );
+    });
+
+    // Test Case 47: Should delete the active template and leave the editor
+    it('deletes the active template and leaves the editor', async () => {
+      const template = {
+        id: 'template-1',
+        name: 'Weekend',
+        order: 0,
+        categories: [],
+        items: [],
+      };
+      mockTemplates.value = [template];
+      mockDeleteTemplate.mockReturnValue(true);
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('edit-template', template.id);
+      await wrapper.vm.$nextTick();
+
+      await wrapper.findComponent({ name: 'TemplateEditor' }).vm.$emit('delete', template.id);
+
+      expect(mockDeleteTemplate).toHaveBeenCalledWith(template.id);
+      expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(false);
+    });
+
+    // Test Case 48: Should create an explicitly empty checklist
+    it('creates an explicitly empty checklist', async () => {
+      mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
+      mockCreateChecklist.mockResolvedValue({ id: 'cl-empty' });
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('create-checklist');
+      await wrapper
+        .findComponent({ name: 'NewChecklistDialog' })
+        .vm.$emit('select', { source: 'empty' });
+
+      expect(mockCreateChecklist).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'New Checklist', order: 2 }),
+        { source: 'empty' }
+      );
+    });
+
+    // Test Case 49: Should stop template creation when applying the template fails
+    it('stops template creation when applying the template fails', async () => {
+      mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
+      mockApplyTemplate.mockReturnValue(null);
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('create-checklist');
+      await wrapper
+        .findComponent({ name: 'NewChecklistDialog' })
+        .vm.$emit('select', { source: 'template', templateId: 'template-1' });
+
+      expect(mockCreateChecklist).not.toHaveBeenCalled();
+    });
+
+    // Test Case 50: Should ignore requests to edit a missing template
+    it('ignores requests to edit a missing template', async () => {
+      mockTemplates.value = [];
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('edit-template', 'missing');
+
+      expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(false);
+    });
+
+    // Test Case 51: Should keep the editor open when saving a template fails
+    it('keeps the editor open when saving a template fails', async () => {
+      const template = { id: 'template-1', name: 'Weekend', categories: [], items: [] };
+      mockTemplates.value = [template];
+      mockUpdateTemplate.mockReturnValue(null);
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('edit-template', template.id);
+      await wrapper.vm.$nextTick();
+
+      await wrapper.findComponent({ name: 'TemplateEditor' }).vm.$emit('save', template);
+
+      expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(true);
+    });
+
+    // Test Case 52: Should discard a template draft when editing is canceled
+    it('discards a template draft when editing is canceled', async () => {
+      const template = { id: 'template-1', name: 'Weekend', categories: [], items: [] };
+      mockTemplates.value = [template];
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('edit-template', template.id);
+      await wrapper.vm.$nextTick();
+
+      await wrapper.findComponent({ name: 'TemplateEditor' }).vm.$emit('cancel');
+
+      expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(false);
+      expect(mockUpdateTemplate).not.toHaveBeenCalled();
+    });
+
+    // Test Case 53: Should preserve a template when deletion is canceled
+    it('preserves a template when deletion is canceled', async () => {
+      const template = { id: 'template-1', name: 'Weekend', categories: [], items: [] };
+      mockTemplates.value = [template];
+      vi.spyOn(window, 'confirm').mockReturnValue(false);
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('edit-template', template.id);
+      await wrapper.vm.$nextTick();
+
+      await wrapper.findComponent({ name: 'TemplateEditor' }).vm.$emit('delete', template.id);
+
+      expect(mockDeleteTemplate).not.toHaveBeenCalled();
+      expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(true);
+    });
+
+    // Test Case 54: Should close both template dialogs without performing an operation
+    it('closes both template dialogs without performing an operation', async () => {
+      mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('create-checklist');
+      await wrapper.findComponent({ name: 'NewChecklistDialog' }).vm.$emit('close');
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('save-as-template', 'cl-1');
+      await wrapper.findComponent({ name: 'SaveTemplateDialog' }).vm.$emit('close');
+
+      expect(mockCreateChecklist).not.toHaveBeenCalled();
+      expect(mockSaveAsTemplate).not.toHaveBeenCalled();
+    });
+
+    // Test Case 55: Should leave checklist state unchanged when empty creation fails
+    it('leaves checklist state unchanged when empty creation fails', async () => {
+      mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
+      mockCreateChecklist.mockResolvedValue(null);
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('create-checklist');
+      await wrapper
+        .findComponent({ name: 'NewChecklistDialog' })
+        .vm.$emit('select', { source: 'empty' });
+
+      expect(mockCreateChecklist).toHaveBeenCalledWith(expect.any(Object), { source: 'empty' });
+      expect(mockSelectedChecklistId.value).toBe('cl-1');
+    });
+
+    // Test Case 56: Should keep the editor open when template deletion fails
+    it('keeps the editor open when template deletion fails', async () => {
+      const template = { id: 'template-1', name: 'Weekend', categories: [], items: [] };
+      mockTemplates.value = [template];
+      mockDeleteTemplate.mockReturnValue(false);
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('edit-template', template.id);
+      await wrapper.vm.$nextTick();
+
+      await wrapper.findComponent({ name: 'TemplateEditor' }).vm.$emit('delete', template.id);
+
+      expect(mockDeleteTemplate).toHaveBeenCalledWith(template.id);
+      expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(true);
+    });
+
+    // Test Case 57: Should use an empty initial name for an unknown checklist
+    it('uses an empty initial name for an unknown checklist', async () => {
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('save-as-template', 'missing');
+
+      expect(wrapper.findComponent({ name: 'SaveTemplateDialog' }).props('initialName')).toBe('');
+    });
+
+    // Test Case 58: Should ignore duplicate template save events after source state is cleared
+    it('ignores duplicate template save events after source state is cleared', async () => {
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('save-as-template', 'cl-1');
+      const dialog = wrapper.findComponent({ name: 'SaveTemplateDialog' });
+
+      await dialog.vm.$emit('save', 'Trip Template');
+      await dialog.vm.$emit('save', 'Trip Template');
+
+      expect(mockSaveAsTemplate).toHaveBeenCalledTimes(1);
     });
   });
 });

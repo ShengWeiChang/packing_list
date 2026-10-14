@@ -532,5 +532,57 @@ describe('Sidebar', () => {
       expect(templateMenus).toHaveLength(0);
       expect(wrapper.get('[data-testid="sidebar-template-use-template-1"]').exists()).toBe(true);
     });
+
+    // Test Case 30: Should render templates by order and highlight the active template
+    it('renders templates by order and highlights the active template', async () => {
+      const wrapper = createWrapper({
+        selectedTemplateId: 'template-first',
+        templates: [
+          { id: 'template-later', name: 'Later', order: 2, categories: [], items: [] },
+          { id: 'template-first', name: 'First', order: 0, categories: [], items: [] },
+        ],
+      });
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+      const templateButtons = wrapper.findAll('[data-testid^="sidebar-template-use-"]');
+
+      expect(templateButtons.map((button) => button.text())).toEqual(['First', 'Later']);
+      expect(templateButtons[0].element.parentElement.className).toContain(
+        'bg-interactive-hover-light'
+      );
+    });
+
+    // Test Case 31: Should display the empty state when no personal templates exist
+    it('displays the empty state when no personal templates exist', async () => {
+      const wrapper = createWrapper({ templates: [] });
+
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+
+      expect(wrapper.get('[data-testid="sidebar-templates-dropdown"]').text()).toContain(
+        'template.noTemplates'
+      );
+    });
+
+    // Test Case 32: Should close the template menu when Escape is pressed
+    it('closes the template menu when Escape is pressed', async () => {
+      const wrapper = createWrapper({ templates: createMockTemplates() });
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.find('[data-testid="sidebar-templates-dropdown"]').exists()).toBe(false);
+    });
+
+    // Test Case 33: Should forward save-as-template from a checklist overflow menu
+    it('forwards save-as-template from a checklist overflow menu', async () => {
+      const wrapper = createWrapper();
+      const checklistMenu = wrapper
+        .findAllComponents({ name: 'OverflowMenu' })
+        .find((menu) => menu.props('menuType') === 'checklist');
+
+      await checklistMenu.vm.$emit('save-as-template');
+
+      expect(wrapper.emitted('save-as-template')).toEqual([['cl-2']]);
+    });
   });
 });

@@ -127,4 +127,37 @@ test.describe('Template Management', () => {
     await expect(page.getByTestId('sidebar-template-use-template-1')).toBeVisible();
     await expect(page.locator('[data-testid^="overflow-menu-template-"]')).toHaveCount(0);
   });
+
+  // Test Case 6: Should save a checklist as a named template without changing checklist data
+  test('should save a checklist as a named template without changing checklist data', async ({
+    page,
+  }) => {
+    const checklistCountBefore = await page.getByTestId('sidebar-checklist-item').count();
+    const appDataBefore = await page.evaluate(() => localStorage.getItem('packingListApp'));
+
+    const checklistOverflow = page
+      .getByRole('main')
+      .getByTestId('overflow-trigger-checklist-checklist-1');
+    await checklistOverflow.click();
+    await page
+      .getByRole('main')
+      .getByTestId('overflow-action-save-template-checklist-checklist-1')
+      .click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByTestId('save-template-name').fill('Saved Trip');
+    await page.getByTestId('save-template-confirm').click();
+
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByTestId('sidebar-checklist-item')).toHaveCount(checklistCountBefore);
+    const persisted = await page.evaluate(() => ({
+      appData: localStorage.getItem('packingListApp'),
+      templates: JSON.parse(localStorage.getItem('packingListTemplates')),
+    }));
+    expect(persisted.appData).toBe(appDataBefore);
+    expect(persisted.templates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Saved Trip', categories: [], items: [] }),
+      ])
+    );
+  });
 });

@@ -108,16 +108,16 @@ test.describe('Drag & Drop', () => {
       const items = page.getByTestId('sidebar-checklist-item');
       await expect(items).toHaveCount(2);
 
-      // Ensure initial order is A then B
-      await expect(items.nth(0)).toContainText('List A');
-      await expect(items.nth(1)).toContainText('List B');
+      // Newer checklists appear first in the sidebar.
+      await expect(items.nth(0)).toContainText('List B');
+      await expect(items.nth(1)).toContainText('List A');
 
-      // Drag B above A
+      // Drag the older checklist above the newer checklist.
       await items.nth(1).dragTo(items.nth(0));
 
       // Verify order swapped
-      await expect(items.nth(0)).toContainText('List B');
-      await expect(items.nth(1)).toContainText('List A');
+      await expect(items.nth(0)).toContainText('List A');
+      await expect(items.nth(1)).toContainText('List B');
     });
   });
 

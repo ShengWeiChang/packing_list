@@ -113,4 +113,147 @@ describe('TemplateService', () => {
 
     expect(() => service.createTemplate({ name: 'Weekend' })).toThrow('Quota exceeded');
   });
+
+  // Test Case 6: Should return templates in ascending persisted order
+  it('returns templates in ascending persisted order', () => {
+    storage.set(
+      STORAGE_KEYS.TEMPLATES,
+      JSON.stringify([
+        { id: 'template-later', name: 'Later', order: 2 },
+        { id: 'template-first', name: 'First', order: 0 },
+      ])
+    );
+
+    expect(service.getTemplates().map((template) => template.id)).toEqual([
+      'template-first',
+      'template-later',
+    ]);
+    expect(service.getTemplateById('missing-template')).toBeNull();
+  });
+
+  // Test Case 7: Should update and delete an existing template
+  it('updates and deletes an existing template', () => {
+    const original = service.createTemplate({ name: 'Weekend', categories: [], items: [] });
+    const updated = service.updateTemplate({ ...original, name: 'Beach Weekend' });
+
+    expect(updated.name).toBe('Beach Weekend');
+    service.deleteTemplate(original.id);
+    expect(service.getTemplates()).toEqual([]);
+  });
+
+  // Test Case 8: Should reject updates and deletes for missing templates
+  it('rejects updates and deletes for missing templates', () => {
+    expect(() => service.updateTemplate({ id: 'missing-template', name: 'Missing' })).toThrow(
+      'Template with id missing-template not found'
+    );
+    expect(() => service.deleteTemplate('missing-template')).toThrow(
+      'Template with id missing-template not found'
+    );
+  });
+
+  // Test Case 9: Should reorder requested templates and append unspecified templates
+  it('reorders requested templates and appends unspecified templates', () => {
+    const first = service.createTemplate({ name: 'First', order: 0 });
+    const second = service.createTemplate({ name: 'Second', order: 1 });
+    const third = service.createTemplate({ name: 'Third', order: 2 });
+
+    service.reorderTemplates([third.id, first.id, 'missing-template']);
+
+    expect(service.getTemplates().map(({ id, order }) => ({ id, order }))).toEqual([
+      { id: third.id, order: 0 },
+      { id: first.id, order: 1 },
+      { id: second.id, order: 2 },
+    ]);
+  });
+
+  // Test Case 10: Should snapshot persisted checklist data when UI data is partial
+  it('snapshots persisted checklist data when UI data is partial', () => {
+    storage.set(
+      STORAGE_KEYS.APP_DATA,
+      JSON.stringify({
+        categories: [{ id: 'category-1', name: 'Clothes', checklistId: 'checklist-1', order: 0 }],
+        items: [
+          {
+            id: 'item-1',
+            name: 'Shirt',
+            quantity: 1,
+            categoryId: 'category-1',
+            checklistId: 'checklist-1',
+            order: 0,
+          },
+        ],
+      })
+    );
+
+    const template = service.createFromChecklist('checklist-1', 'Weekend', {});
+
+    expect(template.categories).toEqual([{ id: 'category-1', name: 'Clothes', order: 0 }]);
+    expect(template.items).toEqual([
+      { name: 'Shirt', quantity: 1, categoryId: 'category-1', order: 0 },
+    ]);
+  });
+
+  // Test Case 11: Should recover from malformed persisted application data
+  it('recovers from malformed persisted application data', () => {
+    storage.set(STORAGE_KEYS.APP_DATA, '{not-json');
+
+    const template = service.createFromChecklist('checklist-1', 'Weekend', {});
+
+    expect(template.categories).toEqual([]);
+    expect(template.items).toEqual([]);
+  });
+
+  // Test Case 12: Should reject applying a missing template
+  it('rejects applying a missing template', () => {
+    expect(() => service.applyToNewChecklist('missing-template', 'checklist-1')).toThrow(
+      'Template with id missing-template not found'
+    );
+  });
+
+  // Test Case 13: Should append checklist snapshots after existing templates
+  it('appends checklist snapshots after existing templates', () => {
+    service.createTemplate({ name: 'First', order: 3 });
+
+    const created = service.createFromChecklist('checklist-1', 'Second', {
+      categories: [],
+      items: [],
+    });
+
+    expect(created.order).toBe(4);
+  });
+
+  // Test Case 14: Should reload externally changed template storage after cache invalidation
+  it('reloads externally changed template storage after cache invalidation', () => {
+    expect(service.getTemplates()).toEqual([]);
+    storage.set(
+      STORAGE_KEYS.TEMPLATES,
+      JSON.stringify([{ id: 'template-external', name: 'External', order: 0 }])
+    );
+
+    service.clearCache();
+
+    expect(service.getTemplates()).toEqual([
+      expect.objectContaining({ id: 'template-external', name: 'External' }),
+    ]);
+  });
+
+  // Test Case 15: Should preserve orphan category references and apply item defaults
+  it('preserves orphan category references and applies item defaults', () => {
+    const template = service.createTemplate({
+      name: 'Minimal',
+      categories: [],
+      items: [{ name: 'Passport', categoryId: 'missing-category' }],
+    });
+
+    const applied = service.applyToNewChecklist(template.id, 'checklist-1');
+
+    expect(applied.items[0]).toMatchObject({
+      name: 'Passport',
+      quantity: 1,
+      categoryId: 'missing-category',
+      checklistId: 'checklist-1',
+      order: 0,
+      isPacked: false,
+    });
+  });
 });
