@@ -102,6 +102,29 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Reorder: Drag checklists in sidebar to reorder; `order` values update continuously from 0; persists after reload.
   - Switch: Categories/items load sorted by `order`; progress bar reflects the current checklist.
 
+#### Personal Template Management
+
+- Purpose: Let users reuse their own category and item structures without mixing templates with active checklists.
+- Key features:
+  - Save as template: The checklist overflow menu opens a naming dialog and creates a new template snapshot.
+  - Create checklist: When templates exist, the creation dialog offers default items, a personal template, or an empty checklist.
+  - Manage templates: The Sidebar template menu opens the selected template in the editor, where users rename or delete it.
+  - Edit template: Opens an isolated in-memory editor for the template's name, categories, items, quantities, and order.
+  - Save changes: Only the explicit `Save changes to template` action updates template storage; cancel leaves the stored template unchanged.
+  - Copy-on-use: Creating a checklist from a template generates new checklist, category, and item IDs and resets runtime packed/pending state.
+- Persistence:
+  - Templates use the independent localStorage key `packingListTemplates`.
+  - Active checklists remain under `packingListApp`; opening or editing a template does not add an active checklist.
+  - Template snapshots contain `name`, `order`, categories, and items, but omit checklist runtime fields such as `checklistId`, `isPacked`, and `isPending`.
+- Interaction rules:
+  - `Save as Template` always creates a new template; updating an existing template is performed through the template editor.
+  - The template and language menus share the same Sidebar dropdown dimensions and relative positioning and close on outside click.
+  - Template edit mode hides checklist dates and checklist-level overflow actions to avoid ambiguous destructive actions.
+- Validation:
+  - Saving, renaming, editing, and deleting persist after reload.
+  - Applying one template multiple times produces independent IDs and does not mutate the source template.
+  - Opening, canceling, or saving template edits does not modify `packingListApp`.
+
 #### Category Management
 
 - Purpose: Organize items within a checklist to improve browsing and management.
@@ -218,7 +241,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 
 - Purpose: Provide a multi-language interface so users can switch languages with immediate effect, and persist their preference.
 - Key features:
-  - Language switcher: Located in the Sidebar as a globe icon button with a dropdown menu.
+  - Language switcher: Located in the Sidebar as a globe icon and visible label button with a dropdown menu.
   - Supported languages: English (`en`), Traditional Chinese (`zh-TW`).
   - Initial detection and fallback: Prefer the saved localStorage setting first; otherwise infer from the browser’s language; default fallback is English (`en`).
   - Traditional Chinese variants mapping: Common variants (`zh`, `zh-Hant`, `zh-TW`, `zh-HK`, `zh-MO`) are normalized to `zh-TW`.
@@ -336,11 +359,15 @@ packing-list/
     │   ├── Checklist.vue             # Main checklist view
     │   ├── Item.vue                  # Item row/card
     │   ├── OverflowMenu.vue          # Overflow actions menu
+    │   ├── NewChecklistDialog.vue    # Checklist source selection dialog
     │   ├── ProgressBar.vue           # Progress bar component
+    │   ├── SaveTemplateDialog.vue    # New template naming dialog
     │   ├── Sidebar.vue               # Sidebar navigation
+    │   ├── TemplateEditor.vue        # Isolated personal template editor
     │   └── Topbar.vue                # Top bar for mobile
     ├── composables/                  # Vue composables (state + logic)
-    │   └── usePackingLists.js        # Core state and CRUD logic
+    │   ├── usePackingLists.js        # Core state and CRUD logic
+    │   └── useTemplates.js           # Template state and CRUD logic
     ├── i18n/                         # i18n initialization and locale detection/persistence
     │   └── index.js                  # create vue-i18n, locale mapping, localStorage read/write
     ├── locales/                      # Translation files
@@ -353,10 +380,12 @@ packing-list/
     ├── models/                       # Domain models
     │   ├── Category.js               # Category model
     │   ├── Checklist.js              # Checklist model
-    │   └── Item.js                   # Item model
+    │   ├── Item.js                   # Item model
+    │   └── Template.js               # Personal template model
     ├── services/                     # Data access layer
     │   ├── dataService.js            # Abstract data service interface
-    │   └── localStorageService.js    # LocalStorage implementation
+    │   ├── localStorageService.js    # Checklist localStorage implementation
+    │   └── templateService.js        # Template localStorage implementation
     └── utils/                        # Utilities
         ├── constants.js              # App constants (color definitions in THEME_COLORS)
         └── helpers.js                # Helper functions (e.g., ID generation)
@@ -434,16 +463,19 @@ The application uses a centralized color management system with semantic naming:
 
 ### Component Specifications
 
-| Component            | Description                         | Interactions                                                                                                 |
-| -------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Sidebar              | Checklist navigation and management | Responsive collapse/expand; checklist selection; drag and drop for checklist reordering; edit/copy/delete    |
-| Topbar               | Mobile navigation bar               | Hamburger menu; quick add checklist                                                                          |
-| Checklist            | Main content area                   | Shows categories and items for the selected checklist; drag and drop for category reordering; masonry layout |
-| PendingItemsCategory | Virtual category for pending items  | Orange theme; multi-column grid; displays items marked as pending (to-buy/to-do)                             |
-| Category             | Category card                       | Lists items; shows progress; edit actions; drag and drop for item reordering and movement                    |
-| Item                 | Item row/card                       | Toggle packed/pending; inline edit; delete; draggable within/between categories                              |
-| ProgressBar          | Progress visualization              | Displays completion percentage                                                                               |
-| OverflowMenu         | Overflow actions                    | Edit/copy/delete and other actions                                                                           |
+| Component            | Description                        | Interactions                                                                                                 |
+| -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Sidebar              | Checklist and template navigation  | Responsive collapse/expand; checklist selection/reordering; template menu opens the template editor          |
+| Topbar               | Mobile navigation bar              | Hamburger menu; quick add checklist                                                                          |
+| Checklist            | Main content area                  | Shows categories and items for the selected checklist; drag and drop for category reordering; masonry layout |
+| PendingItemsCategory | Virtual category for pending items | Orange theme; multi-column grid; displays items marked as pending (to-buy/to-do)                             |
+| Category             | Category card                      | Lists items; shows progress; edit actions; drag and drop for item reordering and movement                    |
+| Item                 | Item row/card                      | Toggle packed/pending; inline edit; delete; draggable within/between categories                              |
+| ProgressBar          | Progress visualization             | Displays completion percentage                                                                               |
+| OverflowMenu         | Overflow actions                   | Edit/copy/delete and other actions                                                                           |
+| NewChecklistDialog   | Checklist source selection         | Choose default items, a personal template, or an empty checklist                                             |
+| SaveTemplateDialog   | New template naming                | Validate a name before saving a new template snapshot                                                        |
+| TemplateEditor       | Isolated template editing          | Edit template content; explicitly save, cancel, or delete without creating a checklist                       |
 
 ## 7. Data Models
 
@@ -482,5 +514,17 @@ The application uses a centralized color management system with semantic naming:
   isPending: boolean,   // Pending (to-buy / to-do) status
   checklistId: string,  // Owning checklist ID
   order: number         // Display order (default: 0)
+}
+```
+
+### Template Model
+
+```javascript
+{
+  id: string,           // Unique identifier
+  name: string,         // Template name
+  order: number,        // Display order
+  categories: Array,    // Category snapshots: id, name, order
+  items: Array          // Item snapshots: name, quantity, categoryId, order
 }
 ```

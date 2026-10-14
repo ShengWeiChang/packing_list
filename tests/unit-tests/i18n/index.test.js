@@ -14,6 +14,9 @@ Created: 2026-02-12
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import en from '../../../source/locales/en.json';
+import zhTW from '../../../source/locales/zh-TW.json';
+
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
@@ -25,6 +28,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 async function loadI18nModule() {
   vi.resetModules();
   return import('../../../source/i18n/index.js');
+}
+
+/**
+ * Collect leaf translation keys from a locale object.
+ * @param {object} messages - Locale messages
+ * @param {string} [prefix] - Parent key path
+ * @returns {Array<string>} Sorted leaf key paths
+ */
+function getTranslationKeys(messages, prefix = '') {
+  return Object.entries(messages)
+    .flatMap(([key, value]) => {
+      const path = prefix ? `${prefix}.${key}` : key;
+      return value && typeof value === 'object' ? getTranslationKeys(value, path) : path;
+    })
+    .sort();
 }
 
 // -----------------------------------------------------------------------------
@@ -181,5 +199,16 @@ describe('i18n locale selection and persistence', () => {
 
     expect(getLocale()).toBe('en');
     expect(warnSpy).toHaveBeenCalledWith('Unsupported locale: fr');
+  });
+});
+
+describe('locale message parity', () => {
+  // ---------------------------------------------------------------------------
+  // Test Group 3: Translation Parity
+  // ---------------------------------------------------------------------------
+
+  // Test Case 9: Should keep English and Traditional Chinese translation keys aligned
+  it('should keep English and Traditional Chinese translation keys aligned', () => {
+    expect(getTranslationKeys(zhTW)).toEqual(getTranslationKeys(en));
   });
 });

@@ -31,7 +31,7 @@ Ensure the following items are consistent and correct:
 2. **Content Parity**: All technical content, code examples, configuration examples are translated and present in both versions
 3. **Technical Accuracy**: Tool names, commands, file paths, code snippets are identical (not translated)
 4. **Convention Consistency**: File naming rules, code standards, and toolchain descriptions match across languages
-5. **Line Count Proximity**: EN/ZH versions should have similar line counts (±5% tolerance, accounting for language verbosity)
+5. **Line Count Proximity**: EN/ZH versions should have similar line counts (±2% tolerance, accounting for language verbosity); do not rely on a fixed historical line count.
 6. **Link Integrity**: Internal references and file paths work in both versions
 
 ---
@@ -53,7 +53,7 @@ Ensure the following items are consistent and correct:
    - Examples and descriptions must be translated
    - Keep same structure and depth
 
-5. **Synchronous Updates**: If one version is updated, the other must be updated in the same commit
+5. **Synchronous Updates**: If one version is updated, update the other in the same change set. When a Chinese file is intentionally ignored by Git, verify it in the working tree and report that it will not appear in `git status`.
 
 ---
 
@@ -92,8 +92,8 @@ Ensure the following items are consistent and correct:
    - Update outdated references
 
 5. **Verify Line Count**:
-   - Expect near-identical line counts (361 lines for both as of current state)
-   - Flag if difference > 5%
+   - Compare current line counts; do not use a hard-coded historical count
+   - Flag if difference > 2%
 
 ---
 
@@ -153,7 +153,7 @@ Only output the following content:
 
 ## 6. Additional Requirements
 
-1. **Version Check**: If tools or dependencies have been updated in `package.json`, ensure both documents reflect the latest versions
+1. **Version Check**: If tools or dependencies have been updated in `package.json`, ensure both documents reflect the latest versions. Verify that a11y/i18n guidance distinguishes automated checks from required runtime or manual checks.
 2. **Cross-Reference**: Check if references to other documents (`testing-guide.md`, `product-spec.md`) exist and are consistent
 3. **Examples Alignment**: All code examples, file names, and commands must be byte-identical in both versions
 4. **Preserve Formatting**: Maintain Markdown formatting, code fencing (`bash, `javascript), and table structures

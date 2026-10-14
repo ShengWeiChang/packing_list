@@ -187,11 +187,15 @@ export class LocalStorageService extends DataService {
   // ---------------------------------------------------------------------------
 
   /**
-   * Create a new checklist with default categories and items
+   * Create a new checklist with optional data source
    * @param {object} checklist - Checklist to create
+   * @param {object} [options] - Creation options
+   * @param {string} [options.source='default'] - Data source: 'default', 'empty', or 'template'
+   * @param {object} [options.templateData] - Pre-generated { categories, items } from TemplateService.applyToNewChecklist
    * @returns {Promise<object>} Created checklist
    */
-  async createChecklist(checklist) {
+  async createChecklist(checklist, options = {}) {
+    const { source = 'default', templateData = null } = options;
     const data = await this.getData();
     const checklists = data.checklists || [];
 
@@ -200,12 +204,25 @@ export class LocalStorageService extends DataService {
 
     checklists.push(newChecklist.toJSON());
 
-    // Generate default categories and items for this checklist
-    const { categories: newCategories, items: newItems } = this._createDefaultData(newChecklist.id);
-
-    // Add categories and items to storage
-    data.categories = [...(data.categories || []), ...newCategories.map((c) => c.toJSON())];
-    data.items = [...(data.items || []), ...newItems.map((i) => i.toJSON())];
+    if (source === 'template' && templateData) {
+      // Use pre-generated template data (categories and items already have new IDs)
+      data.categories = [
+        ...(data.categories || []),
+        ...templateData.categories.map((c) => (typeof c.toJSON === 'function' ? c.toJSON() : c)),
+      ];
+      data.items = [
+        ...(data.items || []),
+        ...templateData.items.map((i) => (typeof i.toJSON === 'function' ? i.toJSON() : i)),
+      ];
+    } else if (source !== 'empty') {
+      // Default: generate default categories and items for this checklist
+      const { categories: newCategories, items: newItems } = this._createDefaultData(
+        newChecklist.id
+      );
+      data.categories = [...(data.categories || []), ...newCategories.map((c) => c.toJSON())];
+      data.items = [...(data.items || []), ...newItems.map((i) => i.toJSON())];
+    }
+    // source === 'empty': no categories or items added
 
     data.checklists = checklists;
     this._saveData(data);

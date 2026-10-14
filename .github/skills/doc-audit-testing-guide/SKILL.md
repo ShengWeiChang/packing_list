@@ -34,6 +34,7 @@ Ensure the following items are consistent, correct, and fixed:
 4. Each test file's `Test Group` / `Test Case` numbering is sequential, no gaps, matches actual execution count
 5. `it.each` / `test.each` expanded cases are correctly reflected in comments and documentation
 6. `docs/testing-guide.md` and `docs/testing-guide-zh.md` must match content, be mutual translations (same structure, same statistics, same inventory)
+7. Test-inventory sections must follow the documented layer order: Unit, Component, then E2E. Do not append a new layer subsection after a later layer merely to minimize an edit.
 
 ---
 
@@ -54,6 +55,7 @@ Ensure the following items are consistent, correct, and fixed:
 5. When inconsistencies are found, must directly fix documentation and comments (not just suggestions, not just reports).
 6. `docs/testing-guide.md` and `docs/testing-guide-zh.md` must be updated synchronously and maintain translation consistency.
 7. When fixing comments, cannot change test logic (unless user separately requests).
+8. If a paired Chinese document is intentionally ignored by Git, still verify and update it in the working tree; report that it is absent from `git status` rather than treating its absence as proof it was not changed.
 
 ---
 
@@ -64,22 +66,20 @@ Ensure the following items are consistent, correct, and fixed:
    - Vitest: Total / Unit / Component
    - Playwright: E2E test total and file count
 
-3. If necessary, write and execute Python verification script, must include at minimum:
-   - Scan `tests/**/*.test.js`, `tests/**/*.spec.js`
-   - Calculate actual case count (including `it.each` / `test.each` expansion)
-   - Check if `Test Group N`, `Test Case N` are sequentially sorted
-   - Check if each file's "last `Test Case` index" equals actual case count
+3. Run `npm run test:inventory`. This local script executes Vitest and Playwright, then uses their JSON results to verify actual case counts, parameterized expansion, `Test Case` ranges, the tracked English testing-guide inventory, and the Chinese inventory when it is available locally. CI uses `npm run test:inventory:ci` only after its single Vitest and Playwright executions have written `test-inventory-reports/vitest.json` and `test-inventory-reports/playwright.json`; it audits those reports without rerunning either suite.
+4. Use `npm run test:inventory:sync` only after the executed tests pass and generated count fields need updating. It does not write or renumber test comments.
 
-4. Compare documentation:
+5. Compare documentation:
    - `docs/testing-guide.md`
    - `docs/testing-guide-zh.md`
 
-5. Key verification of section 8:
+6. Key verification of section 8:
    - Layer totals
    - File case counts
    - Table entry count and numbering
+   - Unit → Component → E2E heading and subsection order
 
-6. Directly fix all inconsistencies (documentation + comments), then re-run necessary commands and scripts to confirm convergence.
+7. Directly fix all inconsistencies (documentation + comments), then re-run necessary commands and scripts to confirm convergence.
 
 ---
 
@@ -123,3 +123,4 @@ Only output the following content, no lengthy reports needed:
 
 1. If `it.each` comment descriptions (e.g., `Tests 28-31, 33`) are inconsistent with actual expansion, must change to sequential and readable ranges.
 2. If either `docs/testing-guide.md` or `docs/testing-guide-zh.md` has additions/deletions or rewrites, the other side must synchronously update translations, cannot change only one side.
+3. `scripts/test-inventory.js` is the authoritative automated check for test-count and inventory drift. Do not manually adjust generated totals or heading counts without following it.

@@ -66,11 +66,12 @@ git branch --show-current
 git log --oneline -10
 git diff main...HEAD --stat
 
-npm ci || npm install
 npm run test:run
 npm run test:coverage
 npm run test:e2e
 ```
+
+Install dependencies only when the user authorizes it and the repository cannot otherwise run the required checks.
 
 If commands fail, must preserve in report:
 

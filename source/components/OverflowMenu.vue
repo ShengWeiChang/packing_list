@@ -100,6 +100,7 @@ Created: 2025-09-19
       </button>
 
       <button
+        v-if="props.menuType !== 'template'"
         class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
         :data-testid="`overflow-action-copy-${props.menuType}-${props.itemId}`"
         @click="handleCopy"
@@ -118,6 +119,29 @@ Created: 2025-09-19
           />
         </svg>
         {{ $t('common.copy') }}
+      </button>
+
+      <!-- Save as Template (checklist only) -->
+      <button
+        v-if="props.menuType === 'checklist'"
+        class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
+        :data-testid="`overflow-action-save-template-${props.menuType}-${props.itemId}`"
+        @click="handleSaveAsTemplate"
+      >
+        <svg
+          class="mr-2 size-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+          />
+        </svg>
+        {{ $t('template.saveAsTemplate') }}
       </button>
 
       <button
@@ -164,7 +188,7 @@ const props = defineProps({
   menuType: {
     type: String,
     required: true,
-    validator: (value) => ['item', 'category', 'checklist'].includes(value),
+    validator: (value) => ['item', 'category', 'checklist', 'template'].includes(value),
   },
   alignment: {
     type: String,
@@ -186,7 +210,7 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits(['edit', 'copy', 'delete', 'confirm-edit']);
+const emit = defineEmits(['edit', 'copy', 'save-as-template', 'delete', 'confirm-edit']);
 
 // ------------------------------------------------------------------------------
 // States
@@ -320,6 +344,14 @@ function handleEdit() {
 function handleCopy() {
   showMenu.value = false;
   emit('copy');
+}
+
+/**
+ * Emit save-as-template event and close the menu
+ */
+function handleSaveAsTemplate() {
+  showMenu.value = false;
+  emit('save-as-template');
 }
 
 /**

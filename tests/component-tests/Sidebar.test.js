@@ -30,6 +30,10 @@ const createMockChecklists = () => [
   { id: 'cl-2', name: 'Europe Tour', startDate: '2026-06-01', endDate: '2026-06-20', order: 1 },
 ];
 
+const createMockTemplates = () => [
+  { id: 'template-1', name: 'Weekend', order: 0, categories: [], items: [] },
+];
+
 // -----------------------------------------------------------------------------
 // i18n Setup
 // -----------------------------------------------------------------------------
@@ -48,6 +52,7 @@ const i18n = createI18n({
         untitled: 'Untitled Checklist',
       },
       language: {
+        select: 'Language',
         switchLanguage: 'Switch Language',
       },
     },
@@ -170,7 +175,7 @@ describe('Sidebar', () => {
       await checklistBtns[1].trigger('click');
 
       expect(wrapper.emitted('select-checklist')).toHaveLength(1);
-      expect(wrapper.emitted('select-checklist')[0][0]).toBe('cl-2');
+      expect(wrapper.emitted('select-checklist')[0][0]).toBe('cl-1');
     });
 
     // Test Case 8: Should emit copy-checklist from OverflowMenu
@@ -182,7 +187,7 @@ describe('Sidebar', () => {
       await menus[0].vm.$emit('copy');
 
       expect(wrapper.emitted('copy-checklist')).toHaveLength(1);
-      expect(wrapper.emitted('copy-checklist')[0][0]).toBe('cl-1');
+      expect(wrapper.emitted('copy-checklist')[0][0]).toBe('cl-2');
     });
 
     // Test Case 9: Should emit delete-checklist from OverflowMenu
@@ -193,7 +198,7 @@ describe('Sidebar', () => {
       await menus[0].vm.$emit('delete');
 
       expect(wrapper.emitted('delete-checklist')).toHaveLength(1);
-      expect(wrapper.emitted('delete-checklist')[0][0]).toBe('cl-1');
+      expect(wrapper.emitted('delete-checklist')[0][0]).toBe('cl-2');
     });
 
     // Test Case 10: Should emit edit-checklist from OverflowMenu
@@ -204,7 +209,7 @@ describe('Sidebar', () => {
       await menus[0].vm.$emit('edit');
 
       expect(wrapper.emitted('edit-checklist')).toHaveLength(1);
-      expect(wrapper.emitted('edit-checklist')[0][0]).toBe('cl-1');
+      expect(wrapper.emitted('edit-checklist')[0][0]).toBe('cl-2');
     });
   });
 
@@ -217,15 +222,15 @@ describe('Sidebar', () => {
     it('should highlight the selected checklist', () => {
       const wrapper = createWrapper({ selectedChecklistId: 'cl-1' });
       const listItems = wrapper.findAll('[data-testid="sidebar-checklist-item"]');
-      // First checklist button should have aria-current="page"
-      expect(listItems[0].attributes('aria-current')).toBe('page');
+      // The selected checklist remains active after newest-first sorting.
+      expect(listItems[1].attributes('aria-current')).toBe('page');
     });
 
     // Test Case 12: Non-selected checklist should not have aria-current
     it('should not highlight non-selected checklists', () => {
       const wrapper = createWrapper({ selectedChecklistId: 'cl-1' });
       const listItems = wrapper.findAll('[data-testid="sidebar-checklist-item"]');
-      expect(listItems[1].attributes('aria-current')).toBeUndefined();
+      expect(listItems[0].attributes('aria-current')).toBeUndefined();
     });
   });
 
@@ -253,6 +258,7 @@ describe('Sidebar', () => {
       const wrapper = createWrapper();
       // Find the language button by its aria-label
       const langBtn = wrapper.get('[data-testid="sidebar-language-button"]');
+      expect(langBtn.text()).toContain('language.select');
 
       await langBtn.trigger('click');
       await wrapper.vm.$nextTick();
@@ -337,7 +343,7 @@ describe('Sidebar', () => {
   // ---------------------------------------------------------------------------
 
   describe('checklist reorder', () => {
-    // Test Case 19: Should emit move:checklists with renumbered order when draggable updates
+    // Test Case 19: Should retain newest-first order when draggable updates
     it('should emit "move:checklists" with updated order when v-model changes', async () => {
       const wrapper = createWrapper();
       const draggableComp = wrapper.findComponent({ name: 'draggable' });
@@ -353,6 +359,8 @@ describe('Sidebar', () => {
       expect(emitted[0][0]).toHaveLength(2);
       expect(emitted[0][0][0].id).toBe('cl-2');
       expect(emitted[0][0][1].id).toBe('cl-1');
+      expect(emitted[0][0][0].order).toBe(1);
+      expect(emitted[0][0][1].order).toBe(0);
     });
   });
 
@@ -374,7 +382,7 @@ describe('Sidebar', () => {
       await wrapper.vm.$nextTick();
       // Verify drag state is applied via cursor-grabbing class
       const buttons = wrapper.findAll('[data-testid="sidebar-checklist-item"]');
-      expect(buttons[0].classes()).toContain('cursor-grabbing');
+      expect(buttons[1].classes()).toContain('cursor-grabbing');
     });
 
     // Test Case 21: Should clear dragging state on drag end
@@ -403,8 +411,8 @@ describe('Sidebar', () => {
   // ---------------------------------------------------------------------------
 
   describe('sorted checklists', () => {
-    // Test Case 22: Should display checklists sorted by order
-    it('should display checklists sorted by order property', () => {
+    // Test Case 22: Should display newest checklists first
+    it('should display checklists in descending order property order', () => {
       const checklists = [
         { id: 'cl-b', name: 'Beta', startDate: '2026-01-01', endDate: '2026-01-10', order: 2 },
         { id: 'cl-a', name: 'Alpha', startDate: '2026-01-01', endDate: '2026-01-10', order: 0 },
@@ -412,9 +420,9 @@ describe('Sidebar', () => {
       ];
       const wrapper = createWrapper({ checklists });
       const items = wrapper.findAll('[data-testid="sidebar-checklist-item"]');
-      expect(items[0].text()).toContain('Alpha');
+      expect(items[0].text()).toContain('Beta');
       expect(items[1].text()).toContain('Charlie');
-      expect(items[2].text()).toContain('Beta');
+      expect(items[2].text()).toContain('Alpha');
     });
   });
 
@@ -434,24 +442,34 @@ describe('Sidebar', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 10: Language Dropdown Positioning
+  // Test Group 10: Settings Dropdown Layout
   // ---------------------------------------------------------------------------
 
-  describe('language dropdown positioning', () => {
-    // Test Case 24: Should position dropdown above the language button
-    it('should apply positioning styles when language menu opens', async () => {
+  describe('settings dropdown layout', () => {
+    // Test Case 24: Should position dropdown above and match the button width
+    it('should position the language dropdown relative to its button', async () => {
       const wrapper = createWrapper({ isExpanded: true });
 
       const langButton = wrapper.find('[data-testid="sidebar-language-button"]');
       await langButton.trigger('click');
       await wrapper.vm.$nextTick();
 
-      // positionDropdownAbove should have been called; verify the dropdown exists
-      // with position: fixed (set by positionDropdownAbove)
       const dropdown = wrapper.find('[data-testid="sidebar-language-dropdown"]');
       expect(dropdown.exists()).toBe(true);
-      // The style should contain 'fixed' from positionDropdownAbove
-      expect(dropdown.attributes('style')).toContain('fixed');
+      expect(dropdown.classes()).toContain('absolute');
+      expect(dropdown.classes()).toContain('bottom-full');
+      expect(dropdown.classes()).toContain('w-full');
+    });
+
+    // Test Case 25: Should use the same layout for language and template dropdowns
+    it('should use the same layout for language and template dropdowns', async () => {
+      const wrapper = createWrapper({ isExpanded: true, templates: createMockTemplates() });
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+      const templateClasses = wrapper.get('[data-testid="sidebar-templates-dropdown"]').classes();
+      await wrapper.get('[data-testid="sidebar-language-button"]').trigger('click');
+      const languageClasses = wrapper.get('[data-testid="sidebar-language-dropdown"]').classes();
+
+      expect(templateClasses).toEqual(languageClasses);
     });
   });
 
@@ -460,7 +478,7 @@ describe('Sidebar', () => {
   // ---------------------------------------------------------------------------
 
   describe('lifecycle', () => {
-    // Test Case 25: Should remove event listeners on unmount
+    // Test Case 26: Should remove event listeners on unmount
     it('should clean up document and window listeners on unmount', () => {
       const docRemoveSpy = vi.spyOn(document, 'removeEventListener');
       const winRemoveSpy = vi.spyOn(window, 'removeEventListener');
@@ -470,6 +488,101 @@ describe('Sidebar', () => {
 
       expect(docRemoveSpy).toHaveBeenCalledWith('click', expect.any(Function));
       expect(winRemoveSpy).toHaveBeenCalledWith('scroll', expect.any(Function), true);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 12: Templates Menu
+  // ---------------------------------------------------------------------------
+
+  describe('templates menu', () => {
+    // Test Case 27: Should close when clicking outside the settings area
+    it('should close when clicking outside the settings area', async () => {
+      const wrapper = createWrapper({ templates: createMockTemplates() });
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+      expect(wrapper.find('[data-testid="sidebar-templates-dropdown"]').exists()).toBe(true);
+
+      document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.find('[data-testid="sidebar-templates-dropdown"]').exists()).toBe(false);
+    });
+
+    // Test Case 28: Should close and emit edit-template when a template is selected
+    it('should close and emit edit-template when a template is selected', async () => {
+      const wrapper = createWrapper({ templates: createMockTemplates() });
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+      await wrapper.get('[data-testid="sidebar-template-use-template-1"]').trigger('click');
+
+      expect(wrapper.emitted('edit-template')).toEqual([['template-1']]);
+      expect(wrapper.find('[data-testid="sidebar-templates-dropdown"]').exists()).toBe(false);
+    });
+
+    // Test Case 29: Should not render a template overflow menu on narrow screens
+    it('should not render a template overflow menu on narrow screens', async () => {
+      const wrapper = createWrapper({
+        isMobile: true,
+        templates: createMockTemplates(),
+      });
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+
+      const templateMenus = wrapper
+        .findAllComponents({ name: 'OverflowMenu' })
+        .filter((menu) => menu.props('menuType') === 'template');
+      expect(templateMenus).toHaveLength(0);
+      expect(wrapper.get('[data-testid="sidebar-template-use-template-1"]').exists()).toBe(true);
+    });
+
+    // Test Case 30: Should render templates by order and highlight the active template
+    it('renders templates by order and highlights the active template', async () => {
+      const wrapper = createWrapper({
+        selectedTemplateId: 'template-first',
+        templates: [
+          { id: 'template-later', name: 'Later', order: 2, categories: [], items: [] },
+          { id: 'template-first', name: 'First', order: 0, categories: [], items: [] },
+        ],
+      });
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+      const templateButtons = wrapper.findAll('[data-testid^="sidebar-template-use-"]');
+
+      expect(templateButtons.map((button) => button.text())).toEqual(['First', 'Later']);
+      expect(templateButtons[0].element.parentElement.className).toContain(
+        'bg-interactive-hover-light'
+      );
+    });
+
+    // Test Case 31: Should display the empty state when no personal templates exist
+    it('displays the empty state when no personal templates exist', async () => {
+      const wrapper = createWrapper({ templates: [] });
+
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+
+      expect(wrapper.get('[data-testid="sidebar-templates-dropdown"]').text()).toContain(
+        'template.noTemplates'
+      );
+    });
+
+    // Test Case 32: Should close the template menu when Escape is pressed
+    it('closes the template menu when Escape is pressed', async () => {
+      const wrapper = createWrapper({ templates: createMockTemplates() });
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.find('[data-testid="sidebar-templates-dropdown"]').exists()).toBe(false);
+    });
+
+    // Test Case 33: Should forward save-as-template from a checklist overflow menu
+    it('forwards save-as-template from a checklist overflow menu', async () => {
+      const wrapper = createWrapper();
+      const checklistMenu = wrapper
+        .findAllComponents({ name: 'OverflowMenu' })
+        .find((menu) => menu.props('menuType') === 'checklist');
+
+      await checklistMenu.vm.$emit('save-as-template');
+
+      expect(wrapper.emitted('save-as-template')).toEqual([['cl-2']]);
     });
   });
 });
