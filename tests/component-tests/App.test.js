@@ -46,6 +46,12 @@ const mockGetItems = vi.fn();
 const mockUpdateItem = vi.fn();
 const mockDeleteItem = vi.fn();
 const mockDuplicateItem = vi.fn();
+const mockTemplates = ref([]);
+const mockLoadTemplates = vi.fn();
+const mockSaveAsTemplate = vi.fn();
+const mockApplyTemplate = vi.fn();
+const mockDeleteTemplate = vi.fn();
+const mockUpdateTemplate = vi.fn();
 
 vi.mock('../../source/composables/usePackingLists', () => ({
   usePackingLists: () => ({
@@ -74,6 +80,17 @@ vi.mock('../../source/composables/usePackingLists', () => ({
     updateItem: mockUpdateItem,
     deleteItem: mockDeleteItem,
     duplicateItem: mockDuplicateItem,
+  }),
+}));
+
+vi.mock('../../source/composables/useTemplates', () => ({
+  useTemplates: () => ({
+    templates: mockTemplates,
+    loadTemplates: mockLoadTemplates,
+    saveAsTemplate: mockSaveAsTemplate,
+    applyTemplate: mockApplyTemplate,
+    deleteTemplate: mockDeleteTemplate,
+    updateTemplate: mockUpdateTemplate,
   }),
 }));
 
@@ -124,6 +141,7 @@ describe('App', () => {
       { id: 'item-2', name: 'Pants', categoryId: 'cat-1', isPacked: true, order: 1, quantity: 1 },
     ];
     mockSelectedChecklistId.value = 'cl-1';
+    mockTemplates.value = [];
 
     // Reset all mocks
     vi.clearAllMocks();
@@ -180,7 +198,15 @@ describe('App', () => {
           Sidebar: {
             name: 'Sidebar',
             template: '<aside><slot /></aside>',
-            props: ['isExpanded', 'isMobile', 'isNarrow', 'checklists', 'selectedChecklistId'],
+            props: [
+              'isExpanded',
+              'isMobile',
+              'isNarrow',
+              'checklists',
+              'templates',
+              'selectedChecklistId',
+              'selectedTemplateId',
+            ],
             emits: [
               'toggle-sidebar',
               'create-checklist',
@@ -189,6 +215,9 @@ describe('App', () => {
               'copy-checklist',
               'delete-checklist',
               'move:checklists',
+              'save-as-template',
+              'edit-template',
+              'delete-template',
             ],
           },
           ChecklistComponent: {
@@ -223,6 +252,12 @@ describe('App', () => {
             template: '<header><slot /></header>',
             props: ['title'],
             emits: ['toggle', 'new'],
+          },
+          TemplateEditor: {
+            name: 'TemplateEditor',
+            template: '<section class="template-editor-stub" />',
+            props: ['template'],
+            emits: ['cancel', 'delete', 'save'],
           },
           teleport: { template: '<div><slot /></div>' },
         },
@@ -424,7 +459,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('checklist handlers', () => {
-    // Test Case 13: Should create a checklist via handleChecklistCreate
+    // Test Case 13: Should create a default checklist when no templates exist
     it('should create a new checklist and set newlyCreatedChecklistId', async () => {
       mockCreateChecklist.mockResolvedValue({ id: 'cl-new', name: 'New Checklist', order: 2 });
 
@@ -442,7 +477,7 @@ describe('App', () => {
       );
     });
 
-    // Test Case 14: Should create checklist from Topbar on mobile
+    // Test Case 14: Should create checklist from Topbar when no templates exist
     it('should create checklist from Topbar on mobile', async () => {
       mockCreateChecklist.mockResolvedValue({ id: 'cl-new', name: 'New Checklist', order: 0 });
 
@@ -1042,6 +1077,53 @@ describe('App', () => {
       wrapper.unmount();
 
       expect(removeSpy).toHaveBeenCalledWith('resize', expect.any(Function));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 11: Template Editing
+  // ---------------------------------------------------------------------------
+
+  describe('template editing', () => {
+    // Test Case 43: Should open an isolated editor without creating a checklist
+    it('should open an isolated editor without creating a checklist', async () => {
+      mockTemplates.value = [
+        { id: 'template-1', name: 'Weekend', order: 0, categories: [], items: [] },
+      ];
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await wrapper.vm.$nextTick();
+
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('edit-template', 'template-1');
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.findComponent({ name: 'TemplateEditor' }).props('template')).toEqual(
+        mockTemplates.value[0]
+      );
+      expect(mockCreateChecklist).not.toHaveBeenCalled();
+      expect(mockDeleteChecklist).not.toHaveBeenCalled();
+    });
+
+    // Test Case 44: Should save only through the templates composable
+    it('should save only through the templates composable', async () => {
+      const template = {
+        id: 'template-1',
+        name: 'Weekend',
+        order: 0,
+        categories: [],
+        items: [],
+      };
+      mockTemplates.value = [template];
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await wrapper.vm.$nextTick();
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('edit-template', template.id);
+      await wrapper.vm.$nextTick();
+      await wrapper.findComponent({ name: 'TemplateEditor' }).vm.$emit('save', template);
+
+      expect(mockUpdateTemplate).toHaveBeenCalledWith(template);
+      expect(mockUpdateChecklist).not.toHaveBeenCalled();
+      expect(mockCreateChecklist).not.toHaveBeenCalled();
     });
   });
 });

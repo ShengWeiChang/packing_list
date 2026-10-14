@@ -193,13 +193,14 @@ export function usePackingLists() {
   // -----------------------------------------------------------------------------
 
   /**
-   * Create a new checklist with default categories and items
+   * Create a new checklist with optional data source
    * @param {object} checklistData - Checklist data to create
+   * @param {object} [options] - Creation options { source: 'default'|'empty'|'template', templateData }
    * @returns {Promise<object|null>} Created checklist object or null on error
    */
-  async function createChecklist(checklistData) {
+  async function createChecklist(checklistData, options = {}) {
     const result = await loadData(
-      () => dataService.createChecklist(checklistData),
+      () => dataService.createChecklist(checklistData, options),
       'Error creating checklist'
     );
     if (result) {

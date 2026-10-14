@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 440    |
-| Unit tests         | 196    |
-| Component tests    | 202    |
-| E2E tests          | 42     |
-| Line coverage      | 98.28% |
-| Statement coverage | 97.52% |
-| Branch coverage    | 89.02% |
+| Total tests        | 470    |
+| Unit tests         | 205    |
+| Component tests    | 218    |
+| E2E tests          | 47     |
+| Line coverage      | 87.39% |
+| Statement coverage | 85.58% |
+| Branch coverage    | 77.63% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -29,9 +29,9 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 196   | Pure logic in models, services, composables, utils |
-| Component | Vitest + @vue/test-utils | 202   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 42    | Full user flows in a real browser                  |
+| Unit      | Vitest                   | 205   | Pure logic in models, services, composables, utils |
+| Component | Vitest + @vue/test-utils | 218   | Vue component rendering, events, state             |
+| E2E       | Playwright               | 47    | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -50,37 +50,41 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 196 tests
-│   ├── models/                          # 37  tests
+├── unit-tests/                          # 205 tests
+│   ├── models/                          # 40  tests
 │   │   ├── Item.test.js                 # 17  tests
 │   │   ├── Category.test.js             #  9  tests
 │   │   └── Checklist.test.js            # 11  tests
-│   ├── services/                        # 78  tests
-│   │   └── localStorageService.test.js  # 78  tests
+│   │   └── Template.test.js             #  3  tests
+│   ├── services/                        # 83  tests
+│   │   ├── localStorageService.test.js  # 78  tests
+│   │   └── templateService.test.js      #  5  tests
 │   ├── composables/                     # 44  tests
 │   │   └── usePackingLists.test.js      # 44  tests
-│   ├── i18n/                            #  8  tests
-│   │   └── index.test.js                #  8  tests
+│   ├── i18n/                            #  9  tests
+│   │   └── index.test.js                #  9  tests
 │   └── utils/                           # 29  tests
 │       ├── helpers.test.js              # 21  tests
 │       ├── positioning.test.js          #  3  tests
 │       ├── order.test.js                #  3  tests
 │       └── dragDrop.test.js             #  2  tests
 │
-├── component-tests/                     # 202 tests
-│   ├── App.test.js                      # 42  tests
-│   ├── Checklist.test.js                # 36  tests
+├── component-tests/                     # 218 tests
+│   ├── App.test.js                      # 44  tests
+│   ├── Checklist.test.js                # 37  tests
 │   ├── Item.test.js                     # 26  tests
-│   ├── Sidebar.test.js                  # 25  tests
+│   ├── Sidebar.test.js                  # 29  tests
 │   ├── Category.test.js                 # 25  tests
 │   ├── OverflowMenu.test.js             # 23  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
 │   ├── Topbar.test.js                   #  2  tests
 │   ├── PendingItemsCategory.test.js     #  5  tests
-│   └── AddCategoryButton.test.js        #  2  tests
+│   ├── AddCategoryButton.test.js        #  2  tests
+│   ├── NewChecklistDialog.test.js       #  5  tests
+│   └── TemplateEditor.test.js           #  4  tests
 │
-└── end2end-tests/                       # 42  tests
+└── end2end-tests/                       # 47  tests
     ├── mobile-workflow.spec.js          #  9  tests
     ├── item-packing.spec.js             #  7  tests
     ├── language-switch.spec.js          #  6  tests
@@ -88,7 +92,8 @@ tests/
     ├── checklist-management.spec.js     #  5  tests
     ├── category-crud.spec.js            #  3  tests
     ├── drag-and-drop.spec.js            #  3  tests
-    └── multi-tab-sync.spec.js           #  4  tests
+    ├── multi-tab-sync.spec.js           #  4  tests
+    └── template-management.spec.js      #  5  tests
 ```
 
 ### Naming Conventions
@@ -99,34 +104,43 @@ tests/
 - **E2E tests** (`.spec.js`): Use kebab-case to describe user workflows
   - `item-packing.spec.js`, `checklist-management.spec.js`
 
+### Test Comment Conventions
+
+Every test file groups related assertions with `Test Group N` dividers and prefixes every `it()` or `test()` case with a sequential `Test Case N` comment. Numbering begins at 1 in each file and must match the executable case count (including expanded parameterized cases). The comment is a concise `Should ...` description of the behavior under test.
+
+Validation: this convention is audited by `.github/skills/doc-audit-testing-guide/SKILL.md`; it is currently a review/audit requirement, not an ESLint or Prettier rule.
+
 ## 4. Coverage Breakdown
 
 ### By Module
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| source/      | 100%       | 81.92% | 100%   |
-| components/  | 95.46%     | 89.40% | 97.17% |
-| composables/ | 100%       | 90.51% | 100%   |
+| source/      | 78.00%     | 69.67% | 79.85% |
+| components/  | 79.97%     | 76.70% | 83.41% |
+| composables/ | 100%       | 90.59% | 100%   |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 98.33%     | 87.16% | 98.13% |
+| services/    | 87.20%     | 69.29% | 87.29% |
 | utils/       | 100%       | 100%   | 100%   |
 
 ### By Component
 
 | Component                | Statements | Lines  | Tests |
 | ------------------------ | ---------- | ------ | ----- |
-| App.vue                  | 100%       | 100%   | 42    |
+| App.vue                  | 78.00%     | 79.85% | 44    |
 | AddCategoryButton.vue    | 100%       | 100%   | 2     |
 | AddItemButton.vue        | 100%       | 100%   | 8     |
 | ProgressBar.vue          | 100%       | 100%   | 8     |
 | Topbar.vue               | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue | 100%       | 100%   | 5     |
-| Sidebar.vue              | 95.71%     | 95.58% | 25    |
-| OverflowMenu.vue         | 97.43%     | 98.66% | 23    |
+| Sidebar.vue              | 92.20%     | 94.59% | 29    |
+| OverflowMenu.vue         | 95.00%     | 96.10% | 23    |
 | Category.vue             | 96.66%     | 97.61% | 25    |
-| Checklist.vue            | 94.61%     | 99.15% | 36    |
+| Checklist.vue            | 93.84%     | 98.31% | 37    |
 | Item.vue                 | 90.66%     | 91.89% | 26    |
+| NewChecklistDialog.vue   | 69.49%     | 73.58% | 5     |
+| SaveTemplateDialog.vue   | 4.08%      | 4.54%  | 0     |
+| TemplateEditor.vue       | 46.34%     | 52.94% | 4     |
 
 ### Coverage Metrics Explained
 
@@ -194,9 +208,9 @@ This project uses three layers to balance speed and reliability.
 
 ## 8. Complete Test Inventory
 
-### 8.1 Unit Tests (196 tests)
+### 8.1 Unit Tests (205 tests)
 
-#### 8.1.1 Models (37 tests)
+#### 8.1.1 Models (40 tests)
 
 ##### 8.1.1.1 Item.test.js (17 tests)
 
@@ -250,7 +264,7 @@ This project uses three layers to balance speed and reliability.
 | 10  | should deserialize from JSON correctly           | `fromJSON()` reconstruction        |
 | 11  | should preserve all properties through roundtrip | Lossless serialization             |
 
-#### 8.1.2 Services (78 tests)
+#### 8.1.2 Services (83 tests)
 
 ##### 8.1.2.1 localStorageService.test.js (78 tests)
 
@@ -386,20 +400,21 @@ This project uses three layers to balance speed and reliability.
 | 43  | should refresh categories and return updated category on success              | Success path + refresh        |
 | 44  | should refresh state when storage event updates app data key                  | Cross-tab sync refresh        |
 
-#### 8.1.4 i18n (8 tests)
+#### 8.1.4 i18n (9 tests)
 
-##### 8.1.4.1 index.test.js (8 tests)
+##### 8.1.4.1 index.test.js (9 tests)
 
-| #   | Test                                                               | What it verifies             |
-| --- | ------------------------------------------------------------------ | ---------------------------- |
-| 1   | should use saved locale when it is supported                       | Saved locale restore         |
-| 2   | should map zh-HK browser language to zh-TW and persist             | Browser locale normalization |
-| 3   | should fallback to en for unsupported browser language             | Unsupported locale fallback  |
-| 4   | should ignore invalid saved locale and detect from browser         | Invalid saved locale defense |
-| 5   | should use navigator.language when navigator.languages is empty    | Empty languages fallback     |
-| 6   | should map bare "zh" browser language to zh-TW                     | Bare zh mapping              |
-| 7   | should persist locale when setLocale receives a supported value    | Locale persistence           |
-| 8   | should ignore unsupported setLocale values and keep current locale | Setter guard                 |
+| #   | Test                                                                 | What it verifies             |
+| --- | -------------------------------------------------------------------- | ---------------------------- |
+| 1   | should use saved locale when it is supported                         | Saved locale restore         |
+| 2   | should map zh-HK browser language to zh-TW and persist               | Browser locale normalization |
+| 3   | should fallback to en for unsupported browser language               | Unsupported locale fallback  |
+| 4   | should ignore invalid saved locale and detect from browser           | Invalid saved locale defense |
+| 5   | should use navigator.language when navigator.languages is empty      | Empty languages fallback     |
+| 6   | should map bare "zh" browser language to zh-TW                       | Bare zh mapping              |
+| 7   | should persist locale when setLocale receives a supported value      | Locale persistence           |
+| 8   | should ignore unsupported setLocale values and keep current locale   | Setter guard                 |
+| 9   | should keep English and Traditional Chinese translation keys aligned | Translation key parity       |
 
 #### 8.1.5 Utils (29 tests)
 
@@ -452,9 +467,9 @@ This project uses three layers to balance speed and reliability.
 | 2   | should clamp dropdown left to max when near right edge    | Right max boundary clamp       |
 | 3   | should position dropdown above anchor with gap and zIndex | Fixed position calc (with gap) |
 
-### 8.2 Component Tests (202 tests)
+### 8.2 Component Tests (218 tests)
 
-#### 8.2.1 App.test.js (42 tests)
+#### 8.2.1 App.test.js (44 tests)
 
 | #   | Test                                                                    | What it verifies             |
 | --- | ----------------------------------------------------------------------- | ---------------------------- |
@@ -640,7 +655,7 @@ This project uses three layers to balance speed and reliability.
 | 24  | should not enter edit mode when newlyCreatedCategoryId does not match               | No false trigger       |
 | 25  | should not save during IME composition                                              | IME guard              |
 
-#### 8.2.10 Checklist.test.js (36 tests)
+#### 8.2.10 Checklist.test.js (37 tests)
 
 | #   | Test                                                          | What it verifies             |
 | --- | ------------------------------------------------------------- | ---------------------------- |
@@ -681,7 +696,7 @@ This project uses three layers to balance speed and reliability.
 | 35  | should emit "reorder:categories" with renumbered order        | Category reorder event       |
 | 36  | should save when focus leaves all editing inputs              | Global blur-save             |
 
-#### 8.2.11 Sidebar.test.js (25 tests)
+#### 8.2.11 Sidebar.test.js (29 tests)
 
 | #   | Test                                                            | What it verifies     |
 | --- | --------------------------------------------------------------- | -------------------- |
@@ -711,7 +726,7 @@ This project uses three layers to balance speed and reliability.
 | 24  | should apply positioning styles when language menu opens        | Dropdown positioning |
 | 25  | should clean up document and window listeners on unmount        | Lifecycle cleanup    |
 
-### 8.3 E2E Tests (42 tests)
+### 8.3 E2E Tests (47 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -794,3 +809,50 @@ This project uses three layers to balance speed and reliability.
 | 2   | should converge to the latest rename when two tabs edit concurrently     | Concurrency convergence            |
 | 3   | should converge after rapid alternating cross-tab edits                  | Rapid alternating edit safety      |
 | 4   | should converge to deletion when one tab renames and another tab deletes | Rename+delete conflict convergence |
+
+#### 8.3.9 template-management.spec.js (5 tests)
+
+| #   | Test                                                 | What it verifies         |
+| --- | ---------------------------------------------------- | ------------------------ |
+| 1   | closes the templates menu after an outside click     | Outside-click dismissal  |
+| 2   | distinguishes Back from canceling checklist creation | Dialog-step semantics    |
+| 3   | edits a template without creating a checklist        | Isolated editing         |
+| 4   | deletes the active template from the editor          | Template deletion        |
+| 5   | keeps narrow template rows free of overflow menus    | Narrow responsive layout |
+
+#### 8.2.12 NewChecklistDialog.test.js (5 tests)
+
+| #   | Test                                                | What it verifies          |
+| --- | --------------------------------------------------- | ------------------------- |
+| 1   | emits the selected default source                   | Default source            |
+| 2   | selects a template after opening the template list  | Template source selection |
+| 3   | labels the previous step as Back and restores focus | Focus management          |
+| 4   | closes the dialog when Escape is pressed            | Keyboard dismissal        |
+| 5   | disables template selection when no templates exist | Empty-state guard         |
+
+#### 8.2.13 TemplateEditor.test.js (4 tests)
+
+| #   | Test                                                | What it verifies    |
+| --- | --------------------------------------------------- | ------------------- |
+| 1   | configures Checklist without dates or overflow menu | Editor rendering    |
+| 2   | emits a storage-safe edited template snapshot       | Persistence payload |
+| 3   | emits delete without saving the draft               | Delete action       |
+| 4   | discards the draft when cancel is selected          | Cancel action       |
+
+#### 8.1.1.4 Template.test.js (3 tests)
+
+| #   | Test                                             | What it verifies     |
+| --- | ------------------------------------------------ | -------------------- |
+| 1   | creates a template with generated ID and content | Constructor defaults |
+| 2   | trims its name and round-trips snapshot content  | Serialization        |
+| 3   | rejects a non-string or too-long name            | Name validation      |
+
+#### 8.1.2.2 templateService.test.js (5 tests)
+
+| #   | Test                                              | What it verifies      |
+| --- | ------------------------------------------------- | --------------------- |
+| 1   | creates a storage-safe checklist snapshot         | Template creation     |
+| 2   | applies a template with fresh IDs and reset state | Template application  |
+| 3   | updates only the template storage key             | Storage isolation     |
+| 4   | recovers from malformed template storage          | Corrupt-data recovery |
+| 5   | propagates localStorage write failures            | Error propagation     |

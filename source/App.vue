@@ -26,7 +26,7 @@ Created: 2025-09-19
     <!-- Mobile Topbar -->
     <Topbar
       v-if="isMobileViewport"
-      :title="selectedChecklist ? selectedChecklist.name : 'Packing List'"
+      :title="templateEditing?.name || selectedChecklist?.name || 'Packing List'"
       @toggle="toggleSidebar"
       @new="handleChecklistCreate"
     />
@@ -43,7 +43,9 @@ Created: 2025-09-19
           :is-mobile="isMobileViewport"
           :is-narrow="isSmallDesktop"
           :checklists="checklists"
+          :templates="templates"
           :selected-checklist-id="selectedChecklistId"
+          :selected-template-id="templateEditing?.id || null"
           @toggle-sidebar="toggleSidebar"
           @create-checklist="handleChecklistCreate"
           @select-checklist="selectedChecklistId = $event"
@@ -51,6 +53,9 @@ Created: 2025-09-19
           @copy-checklist="handleChecklistCopy"
           @delete-checklist="handleChecklistDelete"
           @move:checklists="handleChecklistMove"
+          @save-as-template="handleSaveAsTemplate"
+          @edit-template="handleTemplateEdit"
+          @delete-template="handleTemplateDelete"
         />
       </div>
     </teleport>
@@ -65,7 +70,9 @@ Created: 2025-09-19
         :is-mobile="isMobileViewport"
         :is-narrow="isSmallDesktop"
         :checklists="checklists"
+        :templates="templates"
         :selected-checklist-id="selectedChecklistId"
+        :selected-template-id="templateEditing?.id || null"
         @toggle-sidebar="toggleSidebar"
         @create-checklist="handleChecklistCreate"
         @select-checklist="selectedChecklistId = $event"
@@ -73,6 +80,9 @@ Created: 2025-09-19
         @copy-checklist="handleChecklistCopy"
         @delete-checklist="handleChecklistDelete"
         @move:checklists="handleChecklistMove"
+        @save-as-template="handleSaveAsTemplate"
+        @edit-template="handleTemplateEdit"
+        @delete-template="handleTemplateDelete"
       />
     </div>
 
@@ -85,7 +95,14 @@ Created: 2025-09-19
         },
       ]"
     >
-      <div v-if="selectedChecklist">
+      <TemplateEditor
+        v-if="templateEditing"
+        :template="templateEditing"
+        @cancel="handleTemplateEditCancel"
+        @delete="handleTemplateEditDelete"
+        @save="handleTemplateEditSave"
+      />
+      <div v-else-if="selectedChecklist">
         <ChecklistComponent
           :checklist="selectedChecklist"
           :categories="categories"
@@ -106,6 +123,7 @@ Created: 2025-09-19
           @delete:category="handleCategoryDelete"
           @reorder:categories="handleCategoryReorder"
           @move:item="handleItemMove"
+          @save-as-template="handleSaveAsTemplate"
         />
       </div>
       <div
@@ -116,6 +134,20 @@ Created: 2025-09-19
         {{ $t('checklist.pleaseCreate') }}
       </div>
     </main>
+
+    <!-- New Checklist Dialog -->
+    <NewChecklistDialog
+      :visible="showNewChecklistDialog"
+      :templates="templates"
+      @close="showNewChecklistDialog = false"
+      @select="handleNewChecklistSelect"
+    />
+    <SaveTemplateDialog
+      :initial-name="templateChecklistName"
+      :visible="showSaveTemplateDialog"
+      @close="showSaveTemplateDialog = false"
+      @save="handleTemplateSave"
+    />
   </div>
 </template>
 
@@ -128,9 +160,14 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import ChecklistComponent from './components/Checklist.vue';
+import NewChecklistDialog from './components/NewChecklistDialog.vue';
+import SaveTemplateDialog from './components/SaveTemplateDialog.vue';
 import Sidebar from './components/Sidebar.vue';
+import TemplateEditor from './components/TemplateEditor.vue';
 import Topbar from './components/Topbar.vue';
 import { usePackingLists } from './composables/usePackingLists';
+import { useTemplates } from './composables/useTemplates';
+import { generateSecureId } from './utils/helpers.js';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
@@ -180,6 +217,10 @@ const {
   duplicateItem,
 } = usePackingLists();
 
+// Initialize templates composable
+const { templates, loadTemplates, saveAsTemplate, applyTemplate, deleteTemplate, updateTemplate } =
+  useTemplates();
+
 // ------------------------------------------------------------------------------
 // States
 // ------------------------------------------------------------------------------
@@ -188,6 +229,11 @@ const {
 const isSidebarOpen = ref(true);
 const isMobileViewport = ref(false);
 const isSmallDesktop = ref(false);
+const showNewChecklistDialog = ref(false);
+const showSaveTemplateDialog = ref(false);
+const templateChecklistId = ref(null);
+const templateChecklistName = ref('');
+const templateEditing = ref(null);
 
 // Newly created item tracking for auto-edit
 const newlyCreatedItemId = ref(null);
@@ -408,9 +454,25 @@ async function handleCategoryReorder(reorderedCategories) {
 // ---------- Checklist Handlers ----------
 
 /**
- * Create a new checklist with default values
+ * Open the new checklist dialog to let user choose source
  */
-async function handleChecklistCreate() {
+function handleChecklistCreate() {
+  // Preserve the original one-click flow until the user has a personal template.
+  // Once templates exist, let them choose Default, Template, or Empty.
+  if (templates.value.length === 0) {
+    void handleNewChecklistSelect({ source: 'default' });
+    return;
+  }
+  showNewChecklistDialog.value = true;
+}
+
+/**
+ * Handle user's selection from the new checklist dialog
+ * @param {object} selection - { source: 'default'|'template'|'empty', templateId?: string }
+ */
+async function handleNewChecklistSelect(selection) {
+  showNewChecklistDialog.value = false;
+
   // Find the highest order among all checklists
   const maxOrder =
     checklists.value.length > 0 ? Math.max(...checklists.value.map((cl) => cl.order || 0)) : -1;
@@ -419,9 +481,35 @@ async function handleChecklistCreate() {
     name: t('checklist.defaultName'),
     order: maxOrder + 1,
   };
-  const newChecklist = await handleAsyncAction(createChecklist, newChecklistData);
-  if (newChecklist) {
-    newlyCreatedChecklistId.value = newChecklist.id;
+
+  if (selection.source === 'template' && selection.templateId) {
+    const checklistId = generateSecureId('checklist-');
+
+    // Apply template: generate categories/items with new IDs
+    const templateData = applyTemplate(selection.templateId, checklistId);
+    if (!templateData) return;
+
+    const checklistWithId = {
+      ...newChecklistData,
+      id: checklistId,
+    };
+    const options = { source: 'template', templateData };
+    const newChecklist = await handleAsyncAction(createChecklist, checklistWithId, options);
+    if (newChecklist) {
+      newlyCreatedChecklistId.value = newChecklist.id;
+    }
+  } else if (selection.source === 'empty') {
+    const options = { source: 'empty' };
+    const newChecklist = await handleAsyncAction(createChecklist, newChecklistData, options);
+    if (newChecklist) {
+      newlyCreatedChecklistId.value = newChecklist.id;
+    }
+  } else {
+    // Default behavior
+    const newChecklist = await handleAsyncAction(createChecklist, newChecklistData);
+    if (newChecklist) {
+      newlyCreatedChecklistId.value = newChecklist.id;
+    }
   }
 }
 
@@ -483,6 +571,74 @@ async function handleChecklistMove(reorderedChecklists) {
   await handleAsyncAction(updateMultipleChecklists, reorderedChecklists);
 }
 
+// ---------- Template Handlers ----------
+
+/**
+ * Open the dialog to save a checklist as a personal template.
+ * @param {string} checklistId - Checklist ID to snapshot
+ */
+function handleSaveAsTemplate(checklistId) {
+  const checklist = checklists.value.find((item) => item.id === checklistId);
+  templateChecklistId.value = checklistId;
+  templateChecklistName.value = checklist?.name || '';
+  showSaveTemplateDialog.value = true;
+}
+
+/**
+ * Persist the named template snapshot and clear the dialog source state.
+ * @param {string} templateName - User-supplied template name
+ */
+function handleTemplateSave(templateName) {
+  if (templateChecklistId.value) {
+    saveAsTemplate(templateChecklistId.value, templateName);
+    templateChecklistId.value = null;
+  }
+  showSaveTemplateDialog.value = false;
+}
+
+/**
+ * Open a template in its isolated, in-memory editor.
+ * @param {string} templateId - Template ID to edit
+ */
+function handleTemplateEdit(templateId) {
+  const template = templates.value.find((item) => item.id === templateId);
+  if (!template) return;
+  templateEditing.value = template;
+}
+
+/**
+ * Save the isolated editor snapshot to the active template.
+ * @param {object} template - Complete template snapshot from the editor
+ */
+function handleTemplateEditSave(template) {
+  const updated = updateTemplate(template);
+  if (updated) templateEditing.value = null;
+}
+
+/** Discard the in-memory template draft. */
+function handleTemplateEditCancel() {
+  templateEditing.value = null;
+}
+
+/**
+ * Delete the active template from the editor after confirmation.
+ * @param {string} templateId - Active template ID
+ */
+function handleTemplateEditDelete(templateId) {
+  handleTemplateDelete(templateId);
+}
+
+/**
+ * Delete a personal template after confirmation.
+ * @param {string} templateId - Template ID to delete
+ */
+function handleTemplateDelete(templateId) {
+  if (confirm(t('template.deleteConfirm'))) {
+    const deleted = deleteTemplate(templateId);
+    if (deleted && templateEditing.value?.id === templateId) templateEditing.value = null;
+  }
+}
+
 // ------------------------------------------------------------------------------
 // Lifecycle Hooks
 // ------------------------------------------------------------------------------
@@ -490,6 +646,7 @@ async function handleChecklistMove(reorderedChecklists) {
 // Initialize app and set up responsive behavior
 onMounted(async () => {
   await initialize();
+  loadTemplates();
 
   // Set up responsive behavior
   checkScreenSize();

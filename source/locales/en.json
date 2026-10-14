@@ -4,6 +4,7 @@
     "copy": "Copy",
     "delete": "Delete",
     "cancel": "Cancel",
+    "back": "Back",
     "save": "Save",
     "confirm": "Confirm",
     "copySuffix": " (Copy)",
@@ -51,6 +52,25 @@
   "progress": {
     "label": "{completed} / {total}",
     "percentage": "{percent}%"
+  },
+  "template": {
+    "saveAsTemplate": "Save as Template",
+    "myTemplates": "My Templates",
+    "newChecklistFrom": "New Checklist From",
+    "useDefault": "Default Items",
+    "useTemplate": "From Template",
+    "useEmpty": "Empty Checklist",
+    "selectTemplate": "Select a template",
+    "templateName": "Template Name",
+    "categoryCount": "{count} category | {count} categories",
+    "nameRequired": "Enter a template name.",
+    "editingTemplate": "Editing template: {name}",
+    "saveChanges": "Save changes to template",
+    "deleteTemplate": "Delete template",
+    "saveTemplateConfirm": "Save as template",
+    "deleteConfirm": "Are you sure you want to delete this template?",
+    "noTemplates": "No templates yet",
+    "rename": "Rename"
   },
   "language": {
     "select": "Language",

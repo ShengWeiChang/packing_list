@@ -30,6 +30,10 @@ const createMockChecklists = () => [
   { id: 'cl-2', name: 'Europe Tour', startDate: '2026-06-01', endDate: '2026-06-20', order: 1 },
 ];
 
+const createMockTemplates = () => [
+  { id: 'template-1', name: 'Weekend', order: 0, categories: [], items: [] },
+];
+
 // -----------------------------------------------------------------------------
 // i18n Setup
 // -----------------------------------------------------------------------------
@@ -434,24 +438,34 @@ describe('Sidebar', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 10: Language Dropdown Positioning
+  // Test Group 10: Settings Dropdown Layout
   // ---------------------------------------------------------------------------
 
-  describe('language dropdown positioning', () => {
-    // Test Case 24: Should position dropdown above the language button
-    it('should apply positioning styles when language menu opens', async () => {
+  describe('settings dropdown layout', () => {
+    // Test Case 24: Should position dropdown above and match the button width
+    it('should position the language dropdown relative to its button', async () => {
       const wrapper = createWrapper({ isExpanded: true });
 
       const langButton = wrapper.find('[data-testid="sidebar-language-button"]');
       await langButton.trigger('click');
       await wrapper.vm.$nextTick();
 
-      // positionDropdownAbove should have been called; verify the dropdown exists
-      // with position: fixed (set by positionDropdownAbove)
       const dropdown = wrapper.find('[data-testid="sidebar-language-dropdown"]');
       expect(dropdown.exists()).toBe(true);
-      // The style should contain 'fixed' from positionDropdownAbove
-      expect(dropdown.attributes('style')).toContain('fixed');
+      expect(dropdown.classes()).toContain('absolute');
+      expect(dropdown.classes()).toContain('bottom-full');
+      expect(dropdown.classes()).toContain('w-full');
+    });
+
+    // Test Case 25: Should use the same layout for language and template dropdowns
+    it('should use the same layout for language and template dropdowns', async () => {
+      const wrapper = createWrapper({ isExpanded: true, templates: createMockTemplates() });
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+      const templateClasses = wrapper.get('[data-testid="sidebar-templates-dropdown"]').classes();
+      await wrapper.get('[data-testid="sidebar-language-button"]').trigger('click');
+      const languageClasses = wrapper.get('[data-testid="sidebar-language-dropdown"]').classes();
+
+      expect(templateClasses).toEqual(languageClasses);
     });
   });
 
@@ -460,7 +474,7 @@ describe('Sidebar', () => {
   // ---------------------------------------------------------------------------
 
   describe('lifecycle', () => {
-    // Test Case 25: Should remove event listeners on unmount
+    // Test Case 26: Should remove event listeners on unmount
     it('should clean up document and window listeners on unmount', () => {
       const docRemoveSpy = vi.spyOn(document, 'removeEventListener');
       const winRemoveSpy = vi.spyOn(window, 'removeEventListener');
@@ -470,6 +484,49 @@ describe('Sidebar', () => {
 
       expect(docRemoveSpy).toHaveBeenCalledWith('click', expect.any(Function));
       expect(winRemoveSpy).toHaveBeenCalledWith('scroll', expect.any(Function), true);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 12: Templates Menu
+  // ---------------------------------------------------------------------------
+
+  describe('templates menu', () => {
+    // Test Case 27: Should close when clicking outside the settings area
+    it('should close when clicking outside the settings area', async () => {
+      const wrapper = createWrapper({ templates: createMockTemplates() });
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+      expect(wrapper.find('[data-testid="sidebar-templates-dropdown"]').exists()).toBe(true);
+
+      document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.find('[data-testid="sidebar-templates-dropdown"]').exists()).toBe(false);
+    });
+
+    // Test Case 28: Should close and emit edit-template when a template is selected
+    it('should close and emit edit-template when a template is selected', async () => {
+      const wrapper = createWrapper({ templates: createMockTemplates() });
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+      await wrapper.get('[data-testid="sidebar-template-use-template-1"]').trigger('click');
+
+      expect(wrapper.emitted('edit-template')).toEqual([['template-1']]);
+      expect(wrapper.find('[data-testid="sidebar-templates-dropdown"]').exists()).toBe(false);
+    });
+
+    // Test Case 29: Should not render a template overflow menu on narrow screens
+    it('should not render a template overflow menu on narrow screens', async () => {
+      const wrapper = createWrapper({
+        isMobile: true,
+        templates: createMockTemplates(),
+      });
+      await wrapper.get('[data-testid="sidebar-templates-button"]').trigger('click');
+
+      const templateMenus = wrapper
+        .findAllComponents({ name: 'OverflowMenu' })
+        .filter((menu) => menu.props('menuType') === 'template');
+      expect(templateMenus).toHaveLength(0);
+      expect(wrapper.get('[data-testid="sidebar-template-use-template-1"]').exists()).toBe(true);
     });
   });
 });

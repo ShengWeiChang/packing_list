@@ -4,6 +4,7 @@
     "copy": "複製",
     "delete": "刪除",
     "cancel": "取消",
+    "back": "上一步",
     "save": "儲存",
     "confirm": "確認",
     "copySuffix": " (複製)",
@@ -51,6 +52,25 @@
   "progress": {
     "label": "{completed} / {total}",
     "percentage": "{percent}%"
+  },
+  "template": {
+    "saveAsTemplate": "儲存為模板",
+    "myTemplates": "我的模板",
+    "newChecklistFrom": "建立新清單",
+    "useDefault": "預設項目",
+    "useTemplate": "從模板建立",
+    "useEmpty": "空白清單",
+    "selectTemplate": "選擇模板",
+    "templateName": "模板名稱",
+    "categoryCount": "{count} 個分類",
+    "nameRequired": "請輸入模板名稱。",
+    "editingTemplate": "正在編輯模板：{name}",
+    "saveChanges": "儲存模板變更",
+    "deleteTemplate": "刪除模板",
+    "saveTemplateConfirm": "儲存為模板",
+    "deleteConfirm": "確定要刪除這個模板嗎？",
+    "noTemplates": "尚無模板",
+    "rename": "重新命名"
   },
   "language": {
     "select": "語言",

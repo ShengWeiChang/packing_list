@@ -54,6 +54,7 @@ Created: 2025-09-19
 
           <!-- Editable dates -->
           <div
+            v-if="showDates"
             class="flex min-h-12 shrink-0 items-center gap-2"
             @blur="handleEditBlur"
             @focusout="handleEditBlur"
@@ -102,7 +103,10 @@ Created: 2025-09-19
         </div>
 
         <!-- Overflow menu -->
-        <div class="shrink-0">
+        <div
+          v-if="showOverflowMenu"
+          class="shrink-0"
+        >
           <OverflowMenu
             :item-id="checklist.id"
             :force-visible="true"
@@ -113,6 +117,7 @@ Created: 2025-09-19
             @edit="startEdit"
             @copy="$emit('copy:checklist', checklist.id)"
             @delete="handleDelete"
+            @save-as-template="$emit('save-as-template', checklist.id)"
           />
         </div>
       </div>
@@ -250,6 +255,14 @@ const props = defineProps({
     type: String,
     default: null,
   },
+  showDates: {
+    type: Boolean,
+    default: true,
+  },
+  showOverflowMenu: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 // Emits
@@ -267,6 +280,7 @@ const emit = defineEmits([
   'create:category',
   'reorder:categories',
   'move:item',
+  'save-as-template',
 ]);
 
 // ------------------------------------------------------------------------------

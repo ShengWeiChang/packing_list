@@ -181,6 +181,7 @@ Created: 2025-09-19
                     :use-group-hover="true"
                     @edit="$emit('edit-checklist', checklist.id)"
                     @copy="$emit('copy-checklist', checklist.id)"
+                    @save-as-template="$emit('save-as-template', checklist.id)"
                     @delete="$emit('delete-checklist', checklist.id)"
                   />
                 </div>
@@ -196,110 +197,171 @@ Created: 2025-09-19
       ref="settingsRoot"
       class="relative mt-auto pt-4"
       data-testid="sidebar-language-settings"
-      @focusout="handleLanguageFocusOut"
+      @focusout="handleSettingsFocusOut"
     >
-      <button
-        ref="languageButtonRef"
-        class="flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg transition-colors duration-200 hover:bg-interactive-hover"
-        :class="[isExpanded || isMobile ? 'pr-4' : '']"
-        :aria-label="$t('language.switchLanguage')"
-        :title="$t('language.switchLanguage')"
-        data-testid="sidebar-language-button"
-        @click="toggleLanguageMenu"
-      >
-        <div class="shrink-0 p-3">
-          <svg
-            class="size-6 text-secondary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <!-- Outer circle -->
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              stroke-width="2"
-            />
-
-            <!-- Parallels (latitude-like curves): top, middle (straight), bottom -->
-            <path
-              d="M4  6 c4  2 8  2 16 0"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M2 12 h20"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M4 18 c4 -2 8 -2 16 0"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-
-            <!-- Meridians (longitude-like curves): left, center (straight), right -->
-            <path
-              d="M12 2 C 6 6  6 18 12 22"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M12 2 v20"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M12 2 C18 6 18 18 12 22"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </div>
-      </button>
-
-      <!-- Language Dropdown Menu -->
-      <div
-        v-if="showLanguageMenu"
-        ref="languageDropdownRef"
-        class="z-50 min-w-40 rounded-md border border-border-color-light bg-white py-1 shadow-lg"
-        :style="languageDropdownStyle"
-        data-testid="sidebar-language-dropdown"
-      >
+      <div class="relative">
         <button
-          v-for="lang in availableLanguages"
-          :key="lang.code"
-          class="flex w-full items-center px-4 py-2 text-base transition-colors duration-150 hover:bg-interactive-hover md:text-sm"
-          :class="
-            currentLocale === lang.code
-              ? 'bg-interactive-hover-light font-medium text-primary'
-              : 'text-secondary'
-          "
-          :data-testid="`sidebar-language-option-${lang.code}`"
-          @click="selectLanguage(lang.code)"
+          class="flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg transition-colors duration-200 hover:bg-interactive-hover"
+          :class="[isExpanded || isMobile ? 'pr-4' : '']"
+          :aria-expanded="showTemplatesMenu"
+          :aria-label="$t('template.myTemplates')"
+          aria-haspopup="true"
+          data-testid="sidebar-templates-button"
+          @click="toggleTemplatesMenu"
         >
-          <span>{{ lang.label }}</span>
-          <svg
-            v-if="currentLocale === lang.code"
-            class="ml-auto size-4 text-primary"
-            fill="currentColor"
-            viewBox="0 0 20 20"
+          <span class="shrink-0 p-3 text-secondary">
+            <svg
+              class="size-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 01-1 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+              />
+            </svg>
+          </span>
+          <span
+            v-if="isExpanded || isMobile"
+            class="truncate text-sm text-secondary"
+            >{{ $t('template.myTemplates') }}</span
           >
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-            />
-          </svg>
         </button>
+        <div
+          v-if="showTemplatesMenu"
+          class="absolute bottom-full left-0 z-50 mb-2 w-full rounded-md border border-border-color-light bg-white py-1 shadow-lg"
+          data-testid="sidebar-templates-dropdown"
+        >
+          <p
+            v-if="sortedTemplates.length === 0"
+            class="px-4 py-2 text-sm text-secondary"
+          >
+            {{ $t('template.noTemplates') }}
+          </p>
+          <div
+            v-for="template in sortedTemplates"
+            :key="template.id"
+            class="flex items-center px-4 py-2 transition-colors duration-150 hover:bg-interactive-hover"
+            :class="{ 'bg-interactive-hover-light': selectedTemplateId === template.id }"
+          >
+            <button
+              class="min-w-0 grow truncate text-left text-sm text-primary"
+              :title="template.name"
+              :data-testid="`sidebar-template-use-${template.id}`"
+              @click="openTemplateEditor(template.id)"
+            >
+              {{ template.name }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="relative">
+        <button
+          class="flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg transition-colors duration-200 hover:bg-interactive-hover"
+          :class="[isExpanded || isMobile ? 'pr-4' : '']"
+          :aria-label="$t('language.switchLanguage')"
+          :title="$t('language.switchLanguage')"
+          :aria-expanded="showLanguageMenu"
+          aria-haspopup="true"
+          data-testid="sidebar-language-button"
+          @click="toggleLanguageMenu"
+        >
+          <div class="shrink-0 p-3">
+            <svg
+              class="size-6 text-secondary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <!-- Outer circle -->
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke-width="2"
+              />
+
+              <!-- Parallels (latitude-like curves): top, middle (straight), bottom -->
+              <path
+                d="M4  6 c4  2 8  2 16 0"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M2 12 h20"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M4 18 c4 -2 8 -2 16 0"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+
+              <!-- Meridians (longitude-like curves): left, center (straight), right -->
+              <path
+                d="M12 2 C 6 6  6 18 12 22"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12 2 v20"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12 2 C18 6 18 18 12 22"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+        </button>
+
+        <!-- Language Dropdown Menu -->
+        <div
+          v-if="showLanguageMenu"
+          class="absolute bottom-full left-0 z-50 mb-2 w-full rounded-md border border-border-color-light bg-white py-1 shadow-lg"
+          data-testid="sidebar-language-dropdown"
+        >
+          <button
+            v-for="lang in availableLanguages"
+            :key="lang.code"
+            class="flex w-full items-center px-4 py-2 text-base transition-colors duration-150 hover:bg-interactive-hover md:text-sm"
+            :class="
+              currentLocale === lang.code
+                ? 'bg-interactive-hover-light font-medium text-primary'
+                : 'text-secondary'
+            "
+            :data-testid="`sidebar-language-option-${lang.code}`"
+            @click="selectLanguage(lang.code)"
+          >
+            <span>{{ lang.label }}</span>
+            <svg
+              v-if="currentLocale === lang.code"
+              class="ml-auto size-4 text-primary"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </aside>
@@ -315,7 +377,6 @@ import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 
 import { renumberOrder } from '../utils/order.js';
-import { positionDropdownAbove } from '../utils/positioning.js';
 import OverflowMenu from './OverflowMenu.vue';
 
 // ------------------------------------------------------------------------------
@@ -353,7 +414,15 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  templates: {
+    type: Array,
+    default: () => [],
+  },
   selectedChecklistId: {
+    type: String,
+    default: null,
+  },
+  selectedTemplateId: {
     type: String,
     default: null,
   },
@@ -368,17 +437,18 @@ const emit = defineEmits([
   'copy-checklist',
   'delete-checklist',
   'move:checklists',
+  'save-as-template',
+  'edit-template',
+  'delete-template',
 ]);
 
 // ------------------------------------------------------------------------------
 // States
 // ------------------------------------------------------------------------------
 
-// Language menu state
+// Settings menu state
 const showLanguageMenu = ref(false);
-const languageDropdownStyle = ref({});
-const languageDropdownRef = ref(null);
-const languageButtonRef = ref(null);
+const showTemplatesMenu = ref(false);
 const settingsRoot = ref(null);
 
 // Drag state
@@ -402,6 +472,11 @@ const sortedChecklists = computed(() => {
   return [...props.checklists].sort((a, b) => (a.order || 0) - (b.order || 0));
 });
 
+// Sorted templates for display (sorted by order)
+const sortedTemplates = computed(() => {
+  return [...props.templates].sort((a, b) => (a.order || 0) - (b.order || 0));
+});
+
 // Draggable checklists (two-way binding with vuedraggable)
 const draggableChecklists = computed({
   get() {
@@ -421,46 +496,14 @@ const draggableChecklists = computed({
 // Functions
 // ------------------------------------------------------------------------------
 
-// ---------- Language Menu Handlers ----------
+// ---------- Settings Menu Handlers ----------
 
 /**
  * Toggle language dropdown menu visibility
  */
 function toggleLanguageMenu() {
-  const willOpen = !showLanguageMenu.value;
-  showLanguageMenu.value = willOpen;
-
-  if (willOpen) {
-    // Position dropdown off-screen first to measure
-    languageDropdownStyle.value = {
-      position: 'fixed',
-      left: '-9999px',
-      top: '-9999px',
-      zIndex: 9999,
-    };
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        positionLanguageDropdown();
-      });
-    });
-  }
-}
-
-/**
- * Calculate and apply language dropdown position
- */
-function positionLanguageDropdown() {
-  if (!languageButtonRef.value || !languageDropdownRef.value) return;
-  const btnRect = languageButtonRef.value.getBoundingClientRect();
-  const ddRect = languageDropdownRef.value.getBoundingClientRect();
-
-  languageDropdownStyle.value = positionDropdownAbove(
-    btnRect,
-    ddRect,
-    { width: window.innerWidth },
-    { gap: 8 }
-  );
+  showLanguageMenu.value = !showLanguageMenu.value;
+  showTemplatesMenu.value = false;
 }
 
 /**
@@ -476,14 +519,13 @@ function selectLanguage(langCode) {
  * Close language menu when user clicks outside
  * @param {Event} event - The click event
  */
-function closeLanguageMenu(event) {
+function closeSettingsMenusOnClick(event) {
   const target = event.target;
   const clickedInsideRoot = settingsRoot.value && settingsRoot.value.contains(target);
-  const clickedInsideDropdown =
-    languageDropdownRef.value && languageDropdownRef.value.contains(target);
 
-  if (!clickedInsideRoot && !clickedInsideDropdown) {
+  if (!clickedInsideRoot) {
     showLanguageMenu.value = false;
+    showTemplatesMenu.value = false;
   }
 }
 
@@ -491,26 +533,57 @@ function closeLanguageMenu(event) {
  * Handle focus out event to close menu when tabbing away
  * @param {FocusEvent} event - The focus event
  */
-function handleLanguageFocusOut(event) {
+function handleSettingsFocusOut(event) {
   // Check if the new focus target is still within the settings component or dropdown
   const newFocus = event.relatedTarget;
   const isFocusInRoot = settingsRoot.value && settingsRoot.value.contains(newFocus);
-  const isFocusInDropdown =
-    languageDropdownRef.value && languageDropdownRef.value.contains(newFocus);
 
-  if (!isFocusInRoot && !isFocusInDropdown) {
+  if (!isFocusInRoot) {
     showLanguageMenu.value = false;
+    showTemplatesMenu.value = false;
   }
 }
 
 /**
  * Close language menu when user scrolls the page
  */
-function closeLanguageMenuOnScroll() {
+function closeSettingsMenusOnScroll() {
+  showLanguageMenu.value = false;
+  showTemplatesMenu.value = false;
+}
+
+/** Close both Sidebar settings menus from the keyboard. */
+function closeSettingsMenus() {
+  showLanguageMenu.value = false;
+  showTemplatesMenu.value = false;
+}
+
+/**
+ * Close settings menus when Escape is pressed.
+ * @param {KeyboardEvent} event - Document keyboard event
+ */
+function handleSettingsKeydown(event) {
+  if (event.key === 'Escape') closeSettingsMenus();
+}
+
+// ---------- Template Menu Handlers ----------
+
+/** Toggle the templates menu and close the language menu. */
+function toggleTemplatesMenu() {
+  showTemplatesMenu.value = !showTemplatesMenu.value;
   showLanguageMenu.value = false;
 }
 
-// --- Drag and Drop Handlers ---
+/**
+ * Open a template in the editor and close the templates menu.
+ * @param {string} templateId - Template ID to edit
+ */
+function openTemplateEditor(templateId) {
+  showTemplatesMenu.value = false;
+  emit('edit-template', templateId);
+}
+
+// ---------- Drag and Drop Handlers ----------
 
 /**
  * Set dragging checklist ID when drag starts
@@ -535,16 +608,18 @@ function onChecklistDragEnd(_event) {
 // Lifecycle Hooks
 // ------------------------------------------------------------------------------
 
-// Set up event listeners for language menu
+// Set up event listeners for settings menus
 onMounted(() => {
-  document.addEventListener('click', closeLanguageMenu);
-  window.addEventListener('scroll', closeLanguageMenuOnScroll, true);
+  document.addEventListener('click', closeSettingsMenusOnClick);
+  document.addEventListener('keydown', handleSettingsKeydown);
+  window.addEventListener('scroll', closeSettingsMenusOnScroll, true);
 });
 
 // Clean up event listeners
 onUnmounted(() => {
-  document.removeEventListener('click', closeLanguageMenu);
-  window.removeEventListener('scroll', closeLanguageMenuOnScroll, true);
+  document.removeEventListener('click', closeSettingsMenusOnClick);
+  document.removeEventListener('keydown', handleSettingsKeydown);
+  window.removeEventListener('scroll', closeSettingsMenusOnScroll, true);
 });
 </script>
 
