@@ -25,7 +25,8 @@ import process from 'node:process';
 
 const PROJECT_ROOT = resolve(import.meta.dirname, '..');
 const TEMP_PREFIX = join(tmpdir(), 'packing-list-test-inventory-');
-const TEST_GUIDES = ['docs/testing-guide.md', 'docs/testing-guide-zh.md'];
+const REQUIRED_TEST_GUIDE = 'docs/testing-guide.md';
+const OPTIONAL_TEST_GUIDES = ['docs/testing-guide-zh.md'];
 const WRITE_MODE = process.argv.includes('--write');
 
 // -----------------------------------------------------------------------------
@@ -78,6 +79,21 @@ function runPlaywright() {
   const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
   const output = runCommand(npxCommand, ['playwright', 'test', '--reporter=json']);
   return JSON.parse(output);
+}
+
+/**
+ * Return the testing guides available in this checkout.
+ * @returns {string[]} Project-relative testing-guide paths.
+ */
+function getTestGuides() {
+  if (!existsSync(join(PROJECT_ROOT, REQUIRED_TEST_GUIDE))) {
+    throw new Error(`Required testing guide is missing: ${REQUIRED_TEST_GUIDE}`);
+  }
+
+  return [
+    REQUIRED_TEST_GUIDE,
+    ...OPTIONAL_TEST_GUIDES.filter((guidePath) => existsSync(join(PROJECT_ROOT, guidePath))),
+  ];
 }
 
 // -----------------------------------------------------------------------------
@@ -161,13 +177,66 @@ function collectPlaywrightSuite(suite, records, testRoot) {
 }
 
 /**
+ * Describe failed or retried Playwright test attempts for CI diagnostics.
+ * @param {object} report - Playwright JSON report.
+ * @returns {string[]} Human-readable failure details.
+ */
+function getPlaywrightFailureDetails(report) {
+  const details = (report.errors ?? []).map((error) => error.message ?? JSON.stringify(error));
+
+  /**
+   * Collect non-passing attempts from one suite and its descendants.
+   * @param {object} suite - Playwright JSON suite.
+   * @param {string[]} parentTitles - Ancestor suite titles.
+   * @returns {void}
+   */
+  function collectSuiteDetails(suite, parentTitles = []) {
+    const suiteTitles = suite.title ? [...parentTitles, suite.title] : parentTitles;
+
+    for (const spec of suite.specs ?? []) {
+      for (const test of spec.tests ?? []) {
+        for (const result of test.results ?? []) {
+          if (result.status === 'passed' || result.status === 'skipped') continue;
+
+          const testTitle = [...suiteTitles, spec.title].join(' › ');
+          const messages = (result.errors ?? [])
+            .map((error) => error.message ?? JSON.stringify(error))
+            .join('\n');
+          details.push(
+            `${testTitle} (attempt ${result.retry + 1}, ${result.status})${
+              messages ? `:\n${messages}` : ''
+            }`
+          );
+        }
+      }
+    }
+
+    for (const nestedSuite of suite.suites ?? []) {
+      collectSuiteDetails(nestedSuite, suiteTitles);
+    }
+  }
+
+  for (const suite of report.suites ?? []) {
+    collectSuiteDetails(suite);
+  }
+
+  return details;
+}
+
+/**
  * Convert Playwright results into one combined record per test file.
  * @param {object} report - Playwright JSON report.
  * @returns {Array<{filePath: string, layer: string, count: number}>} File records.
  */
 function collectPlaywrightRecords(report) {
   if (report.errors.length > 0 || report.stats.unexpected > 0 || report.stats.flaky > 0) {
-    throw new Error('Playwright reported failed, flaky, or infrastructure-error tests.');
+    const details = getPlaywrightFailureDetails(report);
+    const summary = `unexpected=${report.stats.unexpected}, flaky=${report.stats.flaky}, errors=${report.errors.length}`;
+    throw new Error(
+      `Playwright reported failed, flaky, or infrastructure-error tests (${summary}).${
+        details.length > 0 ? `\n${details.join('\n')}` : ''
+      }`
+    );
   }
 
   const specRecords = [];
@@ -359,6 +428,7 @@ function main() {
   const reportDirectory = mkdtempSync(TEMP_PREFIX);
 
   try {
+    const testGuides = getTestGuides();
     const vitestReport = runVitest(reportDirectory);
     const playwrightReport = runPlaywright();
     const records = [
@@ -368,14 +438,14 @@ function main() {
     const errors = records.flatMap(getCommentErrors);
 
     if (WRITE_MODE && errors.length === 0) {
-      for (const guidePath of TEST_GUIDES) {
+      for (const guidePath of testGuides) {
         const guidePathOnDisk = join(PROJECT_ROOT, guidePath);
         const updatedGuide = updateGuideCounts(readFileSync(guidePathOnDisk, 'utf8'), records);
         writeFileSync(guidePathOnDisk, updatedGuide);
       }
     }
 
-    for (const guidePath of TEST_GUIDES) {
+    for (const guidePath of testGuides) {
       errors.push(...getGuideErrors(guidePath, records));
     }
 

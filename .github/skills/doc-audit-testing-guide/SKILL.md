@@ -66,7 +66,7 @@ Ensure the following items are consistent, correct, and fixed:
    - Vitest: Total / Unit / Component
    - Playwright: E2E test total and file count
 
-3. Run `npm run test:inventory`. This script executes Vitest and Playwright, then uses their JSON results to verify actual case counts, parameterized expansion, `Test Case` ranges, and both testing-guide inventories.
+3. Run `npm run test:inventory`. This script executes Vitest and Playwright, then uses their JSON results to verify actual case counts, parameterized expansion, `Test Case` ranges, the tracked English testing-guide inventory, and the Chinese inventory when it is available locally.
 4. Use `npm run test:inventory:sync` only after the executed tests pass and generated count fields need updating. It does not write or renumber test comments.
 
 5. Compare documentation:
