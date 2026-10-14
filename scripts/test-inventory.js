@@ -86,11 +86,11 @@ function runPlaywright() {
 
 /**
  * Determine the documentation layer for a test file.
- * @param {string} filePath - Absolute test file path.
+ * @param {string} filePath - Absolute or project-relative test file path.
  * @returns {'unit' | 'component' | 'e2e'} Test layer.
  */
 function getLayer(filePath) {
-  const normalizedPath = filePath.replaceAll('\\', '/');
+  const normalizedPath = `/${filePath.replaceAll('\\', '/').replace(/^\/+/, '')}`;
 
   if (normalizedPath.includes('/tests/unit-tests/')) return 'unit';
   if (normalizedPath.includes('/tests/component-tests/')) return 'component';
@@ -130,11 +130,15 @@ function collectVitestRecords(report) {
     throw new Error('Vitest reported one or more failed tests.');
   }
 
-  return report.testResults.map((result) => ({
-    filePath: toProjectRelativePath(result.name),
-    layer: getLayer(result.name),
-    count: result.assertionResults.length,
-  }));
+  return report.testResults.map((result) => {
+    const filePath = toProjectRelativePath(result.name);
+
+    return {
+      filePath,
+      layer: getLayer(filePath),
+      count: result.assertionResults.length,
+    };
+  });
 }
 
 /**
