@@ -108,7 +108,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Key features:
   - Save as template: The checklist overflow menu opens a naming dialog and creates a new template snapshot.
   - Create checklist: When templates exist, the creation dialog offers default items, a personal template, or an empty checklist.
-  - Manage templates: The Sidebar template menu supports opening, inline renaming, and deleting templates.
+  - Manage templates: The Sidebar template menu opens the selected template in the editor, where users rename or delete it.
   - Edit template: Opens an isolated in-memory editor for the template's name, categories, items, quantities, and order.
   - Save changes: Only the explicit `Save changes to template` action updates template storage; cancel leaves the stored template unchanged.
   - Copy-on-use: Creating a checklist from a template generates new checklist, category, and item IDs and resets runtime packed/pending state.
@@ -465,7 +465,7 @@ The application uses a centralized color management system with semantic naming:
 
 | Component            | Description                        | Interactions                                                                                                 |
 | -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Sidebar              | Checklist and template navigation  | Responsive collapse/expand; checklist selection/reordering; template menu and inline rename                  |
+| Sidebar              | Checklist and template navigation  | Responsive collapse/expand; checklist selection/reordering; template menu opens the template editor          |
 | Topbar               | Mobile navigation bar              | Hamburger menu; quick add checklist                                                                          |
 | Checklist            | Main content area                  | Shows categories and items for the selected checklist; drag and drop for category reordering; masonry layout |
 | PendingItemsCategory | Virtual category for pending items | Orange theme; multi-column grid; displays items marked as pending (to-buy/to-do)                             |

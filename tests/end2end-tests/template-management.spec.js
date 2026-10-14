@@ -160,4 +160,41 @@ test.describe('Template Management', () => {
       ])
     );
   });
+
+  // Test Case 7: Should create an isolated checklist from a selected template
+  test('should create an isolated checklist from a selected template', async ({ page }) => {
+    const templateSnapshot = await page.evaluate(() =>
+      localStorage.getItem('packingListTemplates')
+    );
+
+    await page.getByTestId('sidebar-new-checklist').click();
+    await page.getByTestId('new-checklist-option-template').click();
+    await page.getByTestId('new-checklist-template-template-1').click();
+
+    await expect(page.getByTestId('sidebar-checklist-item')).toHaveCount(2);
+
+    const persisted = await page.evaluate(() => ({
+      appData: JSON.parse(localStorage.getItem('packingListApp')),
+      templates: localStorage.getItem('packingListTemplates'),
+    }));
+    const createdChecklist = persisted.appData.checklists.find(
+      (checklist) => checklist.id !== 'checklist-1'
+    );
+    const createdCategory = persisted.appData.categories.find(
+      (category) => category.checklistId === createdChecklist.id
+    );
+    const createdItem = persisted.appData.items.find(
+      (item) => item.checklistId === createdChecklist.id
+    );
+
+    expect(createdChecklist).toEqual(expect.objectContaining({ name: 'New Checklist' }));
+    expect(createdCategory).toEqual(
+      expect.objectContaining({ name: 'Clothes', checklistId: createdChecklist.id })
+    );
+    expect(createdCategory.id).not.toBe('category-1');
+    expect(createdItem).toEqual(
+      expect.objectContaining({ name: 'Shirt', categoryId: createdCategory.id, isPacked: false })
+    );
+    expect(persisted.templates).toBe(templateSnapshot);
+  });
 });

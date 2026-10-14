@@ -14,10 +14,10 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 538    |
+| Total tests        | 539    |
 | Unit tests         | 229    |
 | Component tests    | 261    |
-| E2E tests          | 48     |
+| E2E tests          | 49     |
 | Line coverage      | 98.43% |
 | Statement coverage | 97.58% |
 | Branch coverage    | 87.77% |
@@ -31,7 +31,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
 | Unit      | Vitest                   | 229   | Pure logic in models, services, composables, utils |
 | Component | Vitest + @vue/test-utils | 261   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 48    | Full user flows in a real browser                  |
+| E2E       | Playwright               | 49    | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -86,7 +86,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 13  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 48  tests
+└── end2end-tests/                       # 49  tests
     ├── mobile-workflow.spec.js          #  9  tests
     ├── item-packing.spec.js             #  7  tests
     ├── language-switch.spec.js          #  6  tests
@@ -95,7 +95,7 @@ tests/
     ├── category-crud.spec.js            #  3  tests
     ├── drag-and-drop.spec.js            #  3  tests
     ├── multi-tab-sync.spec.js           #  4  tests
-    └── template-management.spec.js      #  6  tests
+    └── template-management.spec.js      #  7  tests
 ```
 
 ### Naming Conventions
@@ -110,7 +110,7 @@ tests/
 
 Every test file groups related assertions with `Test Group N` dividers and prefixes every `it()` or `test()` case with a sequential `Test Case N` comment. Numbering begins at 1 in each file and must match the executable case count (including expanded parameterized cases). The comment is a concise `Should ...` description of the behavior under test.
 
-Validation: `npm run test:inventory` executes Vitest and Playwright, then verifies this convention against their reported test counts. Use `npm run test:inventory:sync` to update generated guide totals and file-heading counts after the tests pass; it never rewrites test comments.
+Validation: `npm run test:inventory` executes Vitest and Playwright, then verifies this convention against their reported test counts and rejects inventory sections that are out of Unit → Component → E2E order. Use `npm run test:inventory:sync` to update generated guide totals and file-heading counts after the tests pass; it never rewrites test comments.
 
 ## 4. Coverage Breakdown
 
@@ -273,6 +273,14 @@ This project uses three layers to balance speed and reliability.
 | 10  | should deserialize from JSON correctly           | `fromJSON()` reconstruction        |
 | 11  | should preserve all properties through roundtrip | Lossless serialization             |
 
+##### 8.1.1.4 Template.test.js (3 tests)
+
+| #   | Test                                             | What it verifies     |
+| --- | ------------------------------------------------ | -------------------- |
+| 1   | creates a template with generated ID and content | Constructor defaults |
+| 2   | trims its name and round-trips snapshot content  | Serialization        |
+| 3   | rejects a non-string or too-long name            | Name validation      |
+
 #### 8.1.2 Services (93 tests)
 
 ##### 8.1.2.1 localStorageService.test.js (78 tests)
@@ -357,6 +365,26 @@ This project uses three layers to balance speed and reliability.
 | 76  | should preserve relative order semantics after duplicate and delete          | Order consistency                 |
 | 77  | should keep default data shape stable across en and zh-TW locales            | Locale stability                  |
 | 78  | should persist final state after rapid sequential stale item updates         | Final-write consistency           |
+
+##### 8.1.2.2 templateService.test.js (15 tests)
+
+| #   | Test                                                           | What it verifies      |
+| --- | -------------------------------------------------------------- | --------------------- |
+| 1   | creates a storage-safe checklist snapshot                      | Template creation     |
+| 2   | applies a template with fresh IDs and reset state              | Template application  |
+| 3   | updates only the template storage key                          | Storage isolation     |
+| 4   | recovers from malformed template storage                       | Corrupt-data recovery |
+| 5   | propagates localStorage write failures                         | Error propagation     |
+| 6   | returns templates in ascending persisted order                 | Read sorting          |
+| 7   | updates and deletes an existing template                       | CRUD success paths    |
+| 8   | rejects updates and deletes for missing templates              | CRUD error paths      |
+| 9   | reorders requested templates and appends unspecified templates | Reorder integrity     |
+| 10  | snapshots persisted checklist data when UI data is partial     | Storage fallback      |
+| 11  | recovers from malformed persisted application data             | App-data recovery     |
+| 12  | rejects applying a missing template                            | Apply error path      |
+| 13  | appends snapshots after existing templates                     | Snapshot ordering     |
+| 14  | reloads external storage after cache invalidation              | Cache refresh         |
+| 15  | preserves orphan references and applies item defaults          | Defensive application |
 
 #### 8.1.3 Composables (58 tests)
 
@@ -779,7 +807,56 @@ This project uses three layers to balance speed and reliability.
 | 32  | should close the template menu with Escape                      | Keyboard dismissal   |
 | 33  | should forward save-as-template from checklist overflow         | Event forwarding     |
 
-### 8.3 E2E Tests (48 tests)
+#### 8.2.12 NewChecklistDialog.test.js (11 tests)
+
+| #   | Test                                                 | What it verifies          |
+| --- | ---------------------------------------------------- | ------------------------- |
+| 1   | emits the selected default source                    | Default source            |
+| 2   | selects a template after opening the template list   | Template source selection |
+| 3   | labels the previous step as Back and restores focus  | Focus management          |
+| 4   | closes the dialog when Escape is pressed             | Keyboard dismissal        |
+| 5   | disables template selection when no templates exist  | Empty-state guard         |
+| 6   | emits the selected empty source                      | Empty source selection    |
+| 7   | closes from the backdrop and Cancel button           | Pointer dismissal         |
+| 8   | focuses the first choice and restores prior focus    | Focus lifecycle           |
+| 9   | traps forward and reverse Tab navigation             | Keyboard focus trap       |
+| 10  | resets the template step whenever the dialog reopens | Dialog state reset        |
+| 11  | ignores keyboard handling while hidden               | Hidden-state guard        |
+
+#### 8.2.13 TemplateEditor.test.js (13 tests)
+
+| #   | Test                                                          | What it verifies         |
+| --- | ------------------------------------------------------------- | ------------------------ |
+| 1   | configures Checklist without dates or overflow menu           | Editor rendering         |
+| 2   | emits a storage-safe edited template snapshot                 | Persistence payload      |
+| 3   | emits delete without saving the draft                         | Delete action            |
+| 4   | discards the draft when cancel is selected                    | Cancel action            |
+| 5   | creates draft items and categories without persisting them    | Draft-only creation      |
+| 6   | copies and deletes categories with their draft items          | Category draft lifecycle |
+| 7   | updates, copies, moves and deletes draft items in memory      | Item draft lifecycle     |
+| 8   | resets the in-memory draft when the selected template changes | Template switch reset    |
+| 9   | finishes auto-edit state after updating new entries           | Auto-edit cleanup        |
+| 10  | applies same-category item reorder payloads                   | Item reorder             |
+| 11  | ignores copy requests for missing draft entries               | Missing-entry guards     |
+| 12  | moves an item without optional reordered items                | Optional move payload    |
+| 13  | assigns zero order to the first category and item             | Empty draft ordering     |
+
+#### 8.2.14 SaveTemplateDialog.test.js (10 tests)
+
+| #   | Test                                            | What it verifies         |
+| --- | ----------------------------------------------- | ------------------------ |
+| 1   | renders an accessible dialog with its name      | Dialog semantics         |
+| 2   | focuses the template name input                 | Initial focus            |
+| 3   | emits a trimmed template name                   | Valid submission         |
+| 4   | rejects an empty template name                  | Required-name validation |
+| 5   | closes with Escape                              | Keyboard dismissal       |
+| 6   | closes from the backdrop and Cancel button      | Pointer dismissal        |
+| 7   | resets validation and name whenever it reopens  | Dialog state reset       |
+| 8   | restores focus to the previously active element | Focus restoration        |
+| 9   | traps forward and reverse Tab navigation        | Keyboard focus trap      |
+| 10  | ignores keyboard handling while hidden          | Hidden-state guard       |
+
+### 8.3 E2E Tests (49 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -863,7 +940,7 @@ This project uses three layers to balance speed and reliability.
 | 3   | should converge after rapid alternating cross-tab edits                  | Rapid alternating edit safety      |
 | 4   | should converge to deletion when one tab renames and another tab deletes | Rename+delete conflict convergence |
 
-#### 8.3.9 template-management.spec.js (6 tests)
+#### 8.3.9 template-management.spec.js (7 tests)
 
 | #   | Test                                                                  | What it verifies         |
 | --- | --------------------------------------------------------------------- | ------------------------ |
@@ -873,80 +950,4 @@ This project uses three layers to balance speed and reliability.
 | 4   | deletes the active template from the editor                           | Template deletion        |
 | 5   | keeps narrow template rows free of overflow menus                     | Narrow responsive layout |
 | 6   | saves a checklist as a named template without changing checklist data | Snapshot isolation       |
-
-#### 8.2.12 NewChecklistDialog.test.js (11 tests)
-
-| #   | Test                                                 | What it verifies          |
-| --- | ---------------------------------------------------- | ------------------------- |
-| 1   | emits the selected default source                    | Default source            |
-| 2   | selects a template after opening the template list   | Template source selection |
-| 3   | labels the previous step as Back and restores focus  | Focus management          |
-| 4   | closes the dialog when Escape is pressed             | Keyboard dismissal        |
-| 5   | disables template selection when no templates exist  | Empty-state guard         |
-| 6   | emits the selected empty source                      | Empty source selection    |
-| 7   | closes from the backdrop and Cancel button           | Pointer dismissal         |
-| 8   | focuses the first choice and restores prior focus    | Focus lifecycle           |
-| 9   | traps forward and reverse Tab navigation             | Keyboard focus trap       |
-| 10  | resets the template step whenever the dialog reopens | Dialog state reset        |
-| 11  | ignores keyboard handling while hidden               | Hidden-state guard        |
-
-#### 8.2.13 TemplateEditor.test.js (13 tests)
-
-| #   | Test                                                          | What it verifies         |
-| --- | ------------------------------------------------------------- | ------------------------ |
-| 1   | configures Checklist without dates or overflow menu           | Editor rendering         |
-| 2   | emits a storage-safe edited template snapshot                 | Persistence payload      |
-| 3   | emits delete without saving the draft                         | Delete action            |
-| 4   | discards the draft when cancel is selected                    | Cancel action            |
-| 5   | creates draft items and categories without persisting them    | Draft-only creation      |
-| 6   | copies and deletes categories with their draft items          | Category draft lifecycle |
-| 7   | updates, copies, moves and deletes draft items in memory      | Item draft lifecycle     |
-| 8   | resets the in-memory draft when the selected template changes | Template switch reset    |
-| 9   | finishes auto-edit state after updating new entries           | Auto-edit cleanup        |
-| 10  | applies same-category item reorder payloads                   | Item reorder             |
-| 11  | ignores copy requests for missing draft entries               | Missing-entry guards     |
-| 12  | moves an item without optional reordered items                | Optional move payload    |
-| 13  | assigns zero order to the first category and item             | Empty draft ordering     |
-
-#### 8.2.14 SaveTemplateDialog.test.js (10 tests)
-
-| #   | Test                                            | What it verifies         |
-| --- | ----------------------------------------------- | ------------------------ |
-| 1   | renders an accessible dialog with its name      | Dialog semantics         |
-| 2   | focuses the template name input                 | Initial focus            |
-| 3   | emits a trimmed template name                   | Valid submission         |
-| 4   | rejects an empty template name                  | Required-name validation |
-| 5   | closes with Escape                              | Keyboard dismissal       |
-| 6   | closes from the backdrop and Cancel button      | Pointer dismissal        |
-| 7   | resets validation and name whenever it reopens  | Dialog state reset       |
-| 8   | restores focus to the previously active element | Focus restoration        |
-| 9   | traps forward and reverse Tab navigation        | Keyboard focus trap      |
-| 10  | ignores keyboard handling while hidden          | Hidden-state guard       |
-
-#### 8.1.1.4 Template.test.js (3 tests)
-
-| #   | Test                                             | What it verifies     |
-| --- | ------------------------------------------------ | -------------------- |
-| 1   | creates a template with generated ID and content | Constructor defaults |
-| 2   | trims its name and round-trips snapshot content  | Serialization        |
-| 3   | rejects a non-string or too-long name            | Name validation      |
-
-#### 8.1.2.2 templateService.test.js (15 tests)
-
-| #   | Test                                                           | What it verifies      |
-| --- | -------------------------------------------------------------- | --------------------- |
-| 1   | creates a storage-safe checklist snapshot                      | Template creation     |
-| 2   | applies a template with fresh IDs and reset state              | Template application  |
-| 3   | updates only the template storage key                          | Storage isolation     |
-| 4   | recovers from malformed template storage                       | Corrupt-data recovery |
-| 5   | propagates localStorage write failures                         | Error propagation     |
-| 6   | returns templates in ascending persisted order                 | Read sorting          |
-| 7   | updates and deletes an existing template                       | CRUD success paths    |
-| 8   | rejects updates and deletes for missing templates              | CRUD error paths      |
-| 9   | reorders requested templates and appends unspecified templates | Reorder integrity     |
-| 10  | snapshots persisted checklist data when UI data is partial     | Storage fallback      |
-| 11  | recovers from malformed persisted application data             | App-data recovery     |
-| 12  | rejects applying a missing template                            | Apply error path      |
-| 13  | appends snapshots after existing templates                     | Snapshot ordering     |
-| 14  | reloads external storage after cache invalidation              | Cache refresh         |
-| 15  | preserves orphan references and applies item defaults          | Defensive application |
+| 7   | creates an isolated checklist from a selected template                | Fresh IDs and storage    |

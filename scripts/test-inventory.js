@@ -284,6 +284,16 @@ function getGuideErrors(guidePath, records) {
     .sort();
   const errors = [];
 
+  const layerOrder = { unit: 1, component: 2, e2e: 3 };
+  const hasOutOfOrderLayer = headings.some(
+    (heading, index) =>
+      index > 0 && layerOrder[heading.layer] < layerOrder[headings[index - 1].layer]
+  );
+
+  if (hasOutOfOrderLayer) {
+    errors.push(`${guidePath}: inventory sections must be ordered Unit → Component → E2E.`);
+  }
+
   if (actualKeys.join('|') !== documentedKeys.join('|')) {
     errors.push(`${guidePath}: inventory file headings or counts differ from executed tests.`);
   }
