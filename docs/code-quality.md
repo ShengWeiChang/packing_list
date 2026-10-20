@@ -59,7 +59,7 @@ Follow industry-standard naming patterns for consistency and IDE compatibility:
 **Data/Locale Files**
 
 - Use **camelCase** for locale suffixes
-- `defaultItemsEn.js`, `defaultItemsZhTw.js`
+- `recommendedListContentEn.js`, `recommendedListContentZhTw.js`
 - Avoid underscores or mixed separators
 
 ### 3.2 Prettier Formatting

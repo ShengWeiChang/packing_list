@@ -195,7 +195,7 @@ export function usePackingLists() {
   /**
    * Create a new checklist with optional data source
    * @param {object} checklistData - Checklist data to create
-   * @param {object} [options] - Creation options { source: 'default'|'empty'|'template', templateData }
+   * @param {object} [options] - Creation options { source: 'recommended'|'empty'|'template', seedData }
    * @returns {Promise<object|null>} Created checklist object or null on error
    */
   async function createChecklist(checklistData, options = {}) {

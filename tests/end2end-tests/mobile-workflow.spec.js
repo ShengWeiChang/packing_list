@@ -16,6 +16,8 @@ Created: 2026-02-11
 
 import { expect, test } from '@playwright/test';
 
+import { selectGeneralRecommendedList } from './checklistHelpers.js';
+
 // -----------------------------------------------------------------------------
 // Mobile Workflow Tests
 // -----------------------------------------------------------------------------
@@ -76,6 +78,7 @@ test.describe('Mobile Workflow (375px)', () => {
       // Click the plus/new button (second button in header)
       const newBtn = page.locator('header button').last();
       await newBtn.click();
+      await selectGeneralRecommendedList(page);
 
       // The checklist name input should appear
       const nameInput = page.getByTestId('checklist-name-input');
@@ -95,6 +98,7 @@ test.describe('Mobile Workflow (375px)', () => {
 
       // Click new checklist button in sidebar
       await page.getByTestId('sidebar-new-checklist').click();
+      await selectGeneralRecommendedList(page);
 
       // Confirm the name
       const nameInput = page.getByTestId('checklist-name-input');
@@ -114,6 +118,7 @@ test.describe('Mobile Workflow (375px)', () => {
       // Create a checklist first via topbar
       const newBtn = page.locator('header button').last();
       await newBtn.click();
+      await selectGeneralRecommendedList(page);
       const nameInput = page.getByTestId('checklist-name-input');
       await expect(nameInput).toBeVisible();
       await nameInput.press('Enter');

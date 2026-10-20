@@ -33,9 +33,10 @@ export class DataService {
   /**
    * Create a new checklist
    * @param {object} _checklist - Checklist data to create
+   * @param {object} [_options] - Optional source and seeded category/item data
    * @returns {Promise<object>} Created checklist
    */
-  async createChecklist(_checklist) {
+  async createChecklist(_checklist, _options) {
     throw new Error('Not implemented');
   }
 

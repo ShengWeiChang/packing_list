@@ -16,7 +16,6 @@ Created: 2026-02-05
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as defaultItemsModule from '../../../source/data/defaultItems';
 import { LocalStorageService } from '../../../source/services/localStorageService';
 
 // -----------------------------------------------------------------------------
@@ -137,8 +136,8 @@ describe('LocalStorageService', () => {
       expect(checklist.id).toMatch(/^checklist-/);
     });
 
-    // Test Case 7: New checklist should have default categories and items
-    it('should create default categories and items for new checklist', async () => {
+    // Test Case 7: New checklist should use the general recommended list by default
+    it('should create general recommended list data for a new checklist by default', async () => {
       const checklist = await service.createChecklist({ name: 'Trip' });
       const categories = await service.getCategories(checklist.id);
       const items = await service.getItems(checklist.id);
@@ -147,28 +146,37 @@ describe('LocalStorageService', () => {
       expect(items.length).toBeGreaterThan(0);
     });
 
-    // Test Case 8: Default data initialization should map items into created categories
-    it('should map default items into generated categories when creating a checklist', async () => {
-      vi.spyOn(defaultItemsModule, 'getDefaultItems').mockReturnValue([
-        { category: 'Documents', name: 'Passport', quantity: 1 },
-        { category: 'Clothing', name: 'T-Shirt', quantity: 2 },
-      ]);
-
-      const checklist = await service.createChecklist({ name: 'Trip' });
+    // Test Case 8: Seeded creation should persist supplied category and item data
+    it('should persist supplied seed data when creating a checklist', async () => {
+      const checklist = await service.createChecklist(
+        { id: 'checklist-seeded', name: 'Trip' },
+        {
+          source: 'recommended',
+          seedData: {
+            categories: [
+              { id: 'category-documents', name: 'Documents', checklistId: 'checklist-seeded' },
+            ],
+            items: [
+              {
+                id: 'item-passport',
+                name: 'Passport',
+                quantity: 1,
+                categoryId: 'category-documents',
+                checklistId: 'checklist-seeded',
+              },
+            ],
+          },
+        }
+      );
       const categories = await service.getCategories(checklist.id);
       const items = await service.getItems(checklist.id);
 
-      expect(items).toHaveLength(2);
-
-      const documentsCategory = categories.find((c) => c.name === 'Documents');
-      const clothingCategory = categories.find((c) => c.name === 'Clothing');
-      expect(documentsCategory).toEqual(expect.objectContaining({ name: 'Documents' }));
-      expect(clothingCategory).toEqual(expect.objectContaining({ name: 'Clothing' }));
-
-      const passport = items.find((i) => i.name === 'Passport');
-      const tshirt = items.find((i) => i.name === 'T-Shirt');
-      expect(passport.categoryId).toBe(documentsCategory.id);
-      expect(tshirt.categoryId).toBe(clothingCategory.id);
+      expect(categories).toEqual([
+        expect.objectContaining({ id: 'category-documents', checklistId: checklist.id }),
+      ]);
+      expect(items).toEqual([
+        expect.objectContaining({ id: 'item-passport', categoryId: 'category-documents' }),
+      ]);
     });
 
     // Test Case 9: getChecklistById should return correct checklist
@@ -980,7 +988,7 @@ describe('LocalStorageService', () => {
       const cl1 = await service.createChecklist({ name: 'Trip 1' });
       const cl2 = await service.createChecklist({ name: 'Trip 2' });
 
-      // Each checklist has default categories, plus add one custom each
+      // Each checklist has recommended-list categories, plus one custom category each.
       await service.createCategory(cl1.id, { name: 'Custom A' });
       await service.createCategory(cl2.id, { name: 'Custom B' });
 
@@ -1237,8 +1245,8 @@ describe('LocalStorageService', () => {
       expect(copiedB.order).toBe(originalB.order + 1);
     });
 
-    // Test Case 77: default data shape should remain stable across locales
-    it('should keep default data shape stable across en and zh-TW locales', async () => {
+    // Test Case 77: General recommended list shape should remain stable across locales
+    it('should keep general recommended list shape stable across en and zh-TW locales', async () => {
       mockStorage['user-locale'] = 'en';
       const enChecklist = await service.createChecklist({ name: 'EN' });
       const enCategories = await service.getCategories(enChecklist.id);

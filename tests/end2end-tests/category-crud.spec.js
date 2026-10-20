@@ -15,6 +15,8 @@ Created: 2026-02-11
 
 import { expect, test } from '@playwright/test';
 
+import { selectGeneralRecommendedList } from './checklistHelpers.js';
+
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
@@ -26,6 +28,7 @@ import { expect, test } from '@playwright/test';
  */
 async function createAndConfirmChecklist(page, name) {
   await page.getByTestId('sidebar-new-checklist').click();
+  await selectGeneralRecommendedList(page);
   const nameInput = page.getByTestId('checklist-name-input');
   await expect(nameInput).toBeVisible();
   if (name) {

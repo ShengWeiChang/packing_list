@@ -52,6 +52,16 @@ const mockSaveAsTemplate = vi.fn();
 const mockApplyTemplate = vi.fn();
 const mockDeleteTemplate = vi.fn();
 const mockUpdateTemplate = vi.fn();
+const mockApplyRecommendedList = vi.fn();
+const mockRecommendedLists = [
+  {
+    id: 'general',
+    name: 'General Travel',
+    description: 'A balanced starting point.',
+    categories: [{ id: 'documents', name: 'Documents', order: 0 }],
+    items: [],
+  },
+];
 
 vi.mock('../../source/composables/usePackingLists', () => ({
   usePackingLists: () => ({
@@ -92,6 +102,23 @@ vi.mock('../../source/composables/useTemplates', () => ({
     deleteTemplate: mockDeleteTemplate,
     updateTemplate: mockUpdateTemplate,
   }),
+}));
+
+vi.mock('../../source/services/recommendedListService.js', () => ({
+  RecommendedListService: class {
+    /** @returns {Array<object>} Mocked recommended lists. */
+    getRecommendedLists() {
+      return mockRecommendedLists;
+    }
+
+    /**
+     * @param {...unknown} args - Forwarded service arguments.
+     * @returns {object|null} Mocked applied recommended-list data.
+     */
+    applyToNewChecklist(...args) {
+      return mockApplyRecommendedList(...args);
+    }
+  },
 }));
 
 import App from '../../source/App.vue';
@@ -460,10 +487,8 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('checklist handlers', () => {
-    // Test Case 13: Should create a default checklist when no templates exist
-    it('should create a new checklist and set newlyCreatedChecklistId', async () => {
-      mockCreateChecklist.mockResolvedValue({ id: 'cl-new', name: 'New Checklist', order: 2 });
-
+    // Test Case 13: Should open source selection from Sidebar without creating immediately
+    it('should open source selection from Sidebar without creating immediately', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
       dispatchResize();
@@ -473,15 +498,12 @@ describe('App', () => {
       await sidebar.vm.$emit('create-checklist');
       await wrapper.vm.$nextTick();
 
-      expect(mockCreateChecklist).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'New Checklist' })
-      );
+      expect(wrapper.findComponent({ name: 'NewChecklistDialog' }).props('visible')).toBe(true);
+      expect(mockCreateChecklist).not.toHaveBeenCalled();
     });
 
-    // Test Case 14: Should create checklist from Topbar when no templates exist
-    it('should create checklist from Topbar on mobile', async () => {
-      mockCreateChecklist.mockResolvedValue({ id: 'cl-new', name: 'New Checklist', order: 0 });
-
+    // Test Case 14: Should open source selection from Topbar on mobile
+    it('should open source selection from Topbar on mobile', async () => {
       setInnerWidth(375);
       const wrapper = createWrapper();
       await flushPromises();
@@ -491,9 +513,8 @@ describe('App', () => {
       await topbar.vm.$emit('new');
       await wrapper.vm.$nextTick();
 
-      expect(mockCreateChecklist).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'New Checklist' })
-      );
+      expect(wrapper.findComponent({ name: 'NewChecklistDialog' }).props('visible')).toBe(true);
+      expect(mockCreateChecklist).not.toHaveBeenCalled();
     });
 
     // Test Case 15: handleChecklistEdit should select checklist and mark for edit
@@ -1165,7 +1186,7 @@ describe('App', () => {
         expect.objectContaining({ id: expect.stringMatching(/^checklist-/) }),
         expect.objectContaining({
           source: 'template',
-          templateData: { categories: [{ id: 'cat-new' }], items: [] },
+          seedData: { categories: [{ id: 'cat-new' }], items: [] },
         })
       );
     });
@@ -1352,6 +1373,30 @@ describe('App', () => {
       await dialog.vm.$emit('save', 'Trip Template');
 
       expect(mockSaveAsTemplate).toHaveBeenCalledTimes(1);
+    });
+
+    // Test Case 59: Should create a checklist from a selected recommended list
+    it('creates a checklist from a selected recommended list', async () => {
+      const seedData = { categories: [{ id: 'category-new' }], items: [] };
+      mockApplyRecommendedList.mockReturnValue(seedData);
+      mockCreateChecklist.mockResolvedValue({ id: 'checklist-recommended' });
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('create-checklist');
+      await wrapper
+        .findComponent({ name: 'NewChecklistDialog' })
+        .vm.$emit('select', { source: 'recommended', recommendedListId: 'general' });
+
+      expect(mockApplyRecommendedList).toHaveBeenCalledWith(
+        'general',
+        expect.stringMatching(/^checklist-/),
+        'en'
+      );
+      expect(mockCreateChecklist).toHaveBeenCalledWith(
+        expect.objectContaining({ id: expect.stringMatching(/^checklist-/) }),
+        { source: 'recommended', seedData }
+      );
     });
   });
 });

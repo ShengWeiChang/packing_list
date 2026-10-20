@@ -15,6 +15,8 @@ Created: 2026-02-06
 
 import { expect, test } from '@playwright/test';
 
+import { selectGeneralRecommendedList } from './checklistHelpers.js';
+
 // -----------------------------------------------------------------------------
 // App Loading Tests
 // -----------------------------------------------------------------------------
@@ -54,6 +56,7 @@ test.describe('App Loading', () => {
 
       // Create a checklist via sidebar
       await page.getByTestId('sidebar-new-checklist').click();
+      await selectGeneralRecommendedList(page);
 
       // Confirm the default name by pressing Enter on the auto-focused input
       const nameInput = page.getByTestId('checklist-name-input');

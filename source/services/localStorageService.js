@@ -13,15 +13,14 @@ Created: 2025-09-19
 // Imports
 // -----------------------------------------------------------------------------
 
-import { getDefaultItems } from '../data/defaultItems';
 import en from '../locales/en.json';
 import zhTW from '../locales/zh-TW.json';
 import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';
 import { Item } from '../models/Item';
 import { STORAGE_KEYS, VALIDATION } from '../utils/constants.js';
-import { generateSecureId } from '../utils/helpers.js';
 import { DataService } from './dataService';
+import { RecommendedListService } from './recommendedListService.js';
 
 // -----------------------------------------------------------------------------
 // Class definition
@@ -55,7 +54,7 @@ export class LocalStorageService extends DataService {
   }
 
   /**
-   * Initialize storage with default data if empty
+   * Initialize storage with an empty application data shape when missing
    */
   initializeStorage() {
     // Only initialize storage when there is no existing app data.
@@ -69,7 +68,7 @@ export class LocalStorageService extends DataService {
     }
 
     const initialData = {
-      // Start empty. Default categories/items are generated per-checklist
+      // Start empty. General recommended-list data is generated per checklist.
       // when a checklist is created (see createChecklist).
       checklists: [],
       categories: [],
@@ -107,46 +106,13 @@ export class LocalStorageService extends DataService {
   }
 
   /**
-   * Create default categories and items for a new checklist
+   * Create general recommended-list categories and items for a new checklist
    * @param {string} checklistId - The checklist ID
    * @returns {object} Object containing { categories: Array, items: Array }
    */
-  _createDefaultData(checklistId) {
-    // Get user's locale preference for default items
+  _createRecommendedListData(checklistId) {
     const userLocale = localStorage.getItem('user-locale') || 'en';
-    const defaultItems = getDefaultItems(userLocale);
-
-    // Extract unique category names from default items
-    const categoryNames = [...new Set(defaultItems.map((item) => item.category))];
-
-    // Create Category objects with order
-    const categories = categoryNames.map(
-      (name, index) =>
-        new Category({
-          name,
-          checklistId,
-          order: index,
-        })
-    );
-
-    // Create a mapping from category name to category ID
-    const categoryMap = Object.fromEntries(categories.map((cat) => [cat.name, cat.id]));
-
-    // Create Item objects mapped to the correct categories with order
-    const items = defaultItems.map(
-      (item, index) =>
-        new Item({
-          id: generateSecureId('item-'),
-          name: item.name,
-          quantity: item.quantity,
-          categoryId: categoryMap[item.category],
-          isPacked: false,
-          checklistId: checklistId,
-          order: index,
-        })
-    );
-
-    return { categories, items };
+    return new RecommendedListService().applyGeneralToNewChecklist(checklistId, userLocale);
   }
 
   // ---------------------------------------------------------------------------
@@ -190,12 +156,12 @@ export class LocalStorageService extends DataService {
    * Create a new checklist with optional data source
    * @param {object} checklist - Checklist to create
    * @param {object} [options] - Creation options
-   * @param {string} [options.source='default'] - Data source: 'default', 'empty', or 'template'
-   * @param {object} [options.templateData] - Pre-generated { categories, items } from TemplateService.applyToNewChecklist
+   * @param {string} [options.source='recommended'] - Data source: 'recommended', 'empty', or 'template'
+   * @param {object} [options.seedData] - Pre-generated { categories, items } from a selected source
    * @returns {Promise<object>} Created checklist
    */
   async createChecklist(checklist, options = {}) {
-    const { source = 'default', templateData = null } = options;
+    const { source = 'recommended', seedData = null } = options;
     const data = await this.getData();
     const checklists = data.checklists || [];
 
@@ -204,19 +170,19 @@ export class LocalStorageService extends DataService {
 
     checklists.push(newChecklist.toJSON());
 
-    if (source === 'template' && templateData) {
-      // Use pre-generated template data (categories and items already have new IDs)
+    if (seedData) {
+      // Use pre-generated source data (categories and items already have new IDs)
       data.categories = [
         ...(data.categories || []),
-        ...templateData.categories.map((c) => (typeof c.toJSON === 'function' ? c.toJSON() : c)),
+        ...seedData.categories.map((c) => (typeof c.toJSON === 'function' ? c.toJSON() : c)),
       ];
       data.items = [
         ...(data.items || []),
-        ...templateData.items.map((i) => (typeof i.toJSON === 'function' ? i.toJSON() : i)),
+        ...seedData.items.map((i) => (typeof i.toJSON === 'function' ? i.toJSON() : i)),
       ];
     } else if (source !== 'empty') {
-      // Default: generate default categories and items for this checklist
-      const { categories: newCategories, items: newItems } = this._createDefaultData(
+      // Generate the general recommended list when no explicit seed data was supplied.
+      const { categories: newCategories, items: newItems } = this._createRecommendedListData(
         newChecklist.id
       );
       data.categories = [...(data.categories || []), ...newCategories.map((c) => c.toJSON())];

@@ -15,12 +15,15 @@ Created: 2026-02-11
 
 import { expect, test } from '@playwright/test';
 
+import { selectGeneralRecommendedList } from './checklistHelpers.js';
+
 /**
  * Create a checklist and confirm edit input appears.
  * @param {import('@playwright/test').Page} page - Active Playwright page.
  */
 async function createChecklist(page) {
   await page.getByTestId('sidebar-new-checklist').click();
+  await selectGeneralRecommendedList(page);
   const input = page.getByTestId('checklist-name-input');
   await expect(input).toBeVisible();
   await input.press('Enter');
@@ -77,6 +80,7 @@ test.describe('Multi-tab sync', () => {
 
       // Create a new checklist in tab A
       await pageA.getByTestId('sidebar-new-checklist').click();
+      await selectGeneralRecommendedList(pageA);
 
       // The new checklist should appear in tab B without reload
       await expect(pageB.getByTestId('sidebar-checklist-item').first()).toBeVisible();

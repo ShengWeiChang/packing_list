@@ -1,6 +1,6 @@
 ---
 name: feature-completion
-description: Review and verify a completed user-facing feature across implementation, tests, accessibility, internationalization, documentation, and scoped validation. Use before handoff for meaningful behavior changes, not routine formatting or documentation-only edits.
+description: Review and verify a completed user-facing feature across implementation, tests, accessibility, internationalization, documentation, repository hygiene, and scoped validation. Use before handoff for meaningful behavior changes, not routine formatting or documentation-only edits.
 argument-hint: '[feature scope/path/acceptance criteria]'
 ---
 
@@ -23,6 +23,7 @@ Use the smallest applicable set of reviews; do not repeat their work here.
 | Source-code correctness, state/data flow, and scoped implementation risks | `code-review`                |
 | Independent test architecture, effectiveness, and missing-risk review     | `test-analysis`              |
 | Bilingual product, code-quality, or test-documentation parity             | Relevant `doc-audit-*` Skill |
+| Separate concept-learning guide after successful validation               | `feature-learning`           |
 
 For source behavior changes, run `npm run test:coverage` and compare with a baseline only when it used the same configuration and comparable source scope. Coverage movement is a signal to investigate changed modules, never a standalone pass/fail condition.
 
@@ -44,6 +45,19 @@ For new or changed interactive UI, verify as applicable:
 3. Follow `AGENTS.md` for Vue attribute order, Tailwind class order, naming, and paired documentation rules.
 4. Do not broaden the diff with unrelated cleanup or create feature-specific Skills unless the workflow is genuinely reusable across the project.
 
+### Final Residue Audit
+
+Before declaring the feature ready, perform a final pass specifically for traces left by implementation churn:
+
+- Review tracked changes, untracked files, deletions, and relevant ignored files; identify scratch data, generated output, screenshots, review matrices, temporary migrations, or duplicate files that are not intended deliverables.
+- When a concept was renamed, search for both the old and new terms across source, tests, selectors/test IDs, fixtures, comments, documentation, and filenames. Treat inconsistent terminology or identifiers as incomplete migration, even when runtime behavior still works.
+- Verify that code and filenames cited in translated documentation exactly match the repository. Translate prose, but never translate or independently rename code identifiers, test names, paths, storage keys, or selectors.
+- Trace new production files and exported symbols to real callers, and confirm deleted modules have no remaining imports. Distinguish dead code from intentional compatibility paths before reporting or removing it.
+- Check test fixtures, mock IDs, fallback values, and internal option names for obsolete domain terminology; these commonly preserve discarded designs and later cause test or maintenance failures.
+- Report every unresolved untracked or ignored in-scope artifact in the handoff. If its purpose is unclear, request confirmation instead of silently including or deleting it.
+
+Use targeted repository searches rather than broad cleanup. A clean lint result is not evidence that this residue audit passed because linters usually do not detect stale selectors, unreferenced artifacts, cross-file terminology drift, or translated filenames.
+
 ## 5. Validation and Handoff
 
 Run only the checks relevant to the scope, normally choosing from:
@@ -56,4 +70,10 @@ npm run test:inventory
 npx playwright test
 ```
 
-Run `npm run test:inventory` after changing test files or `testing-guide*.md`; use `npm run test:inventory:sync` only when executed results should update generated guide counts. Report commands run, outcomes, intentional omissions, coverage comparison (if available), manual test steps, and remaining risks. Do not install dependencies, alter Git state, or create commits unless the user explicitly authorizes it.
+Run `npm run test:inventory` after changing test files or `testing-guide*.md`; use `npm run test:inventory:sync` only when executed results should update generated guide counts. Run the final residue audit after implementation and documentation have reached their intended names, then report its outcome alongside commands run, validation results, intentional omissions, coverage comparison (if available), manual test steps, remaining risks, and unresolved artifacts. Do not install dependencies, alter Git state, or create commits unless the user explicitly authorizes it.
+
+If Playwright's web server fails with `listen EPERM` inside a restricted execution sandbox, rerun the same test command with the narrow approval needed to bind its localhost port. Treat a repeated test assertion failure outside the sandbox as a product/test failure; do not report the initial port restriction as evidence that validation is unavailable.
+
+## 6. Learning Handoff
+
+After a meaningful feature receives a `ready` verdict, invoke `feature-learning` as a separate learning handoff. Pass it the verified feature scope, then let it teach the architecture and software-engineering concepts through repository examples and progressive exercises. Keep readiness evidence in this Skill's handoff; the learning guide must not become a second completion review or a line-by-line walkthrough.
