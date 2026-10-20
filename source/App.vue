@@ -139,6 +139,7 @@ Created: 2025-09-19
     <NewChecklistDialog
       :visible="showNewChecklistDialog"
       :templates="templates"
+      :recommended-lists="recommendedLists"
       @close="showNewChecklistDialog = false"
       @select="handleNewChecklistSelect"
     />
@@ -167,13 +168,14 @@ import TemplateEditor from './components/TemplateEditor.vue';
 import Topbar from './components/Topbar.vue';
 import { usePackingLists } from './composables/usePackingLists';
 import { useTemplates } from './composables/useTemplates';
+import { RecommendedListService } from './services/recommendedListService.js';
 import { generateSecureId } from './utils/helpers.js';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
 // ------------------------------------------------------------------------------
 
-const { t } = useI18n();
+const { locale, t } = useI18n();
 
 // ------------------------------------------------------------------------------
 // Constants
@@ -220,6 +222,7 @@ const {
 // Initialize templates composable
 const { templates, loadTemplates, saveAsTemplate, applyTemplate, deleteTemplate, updateTemplate } =
   useTemplates();
+const recommendedListService = new RecommendedListService();
 
 // ------------------------------------------------------------------------------
 // States
@@ -249,6 +252,7 @@ const isOverlayVisible = computed(
   () =>
     (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value)) && isSidebarOpen.value
 );
+const recommendedLists = computed(() => recommendedListService.getRecommendedLists(locale.value));
 
 // ------------------------------------------------------------------------------
 // Functions
@@ -457,18 +461,12 @@ async function handleCategoryReorder(reorderedCategories) {
  * Open the new checklist dialog to let user choose source
  */
 function handleChecklistCreate() {
-  // Preserve the original one-click flow until the user has a personal template.
-  // Once templates exist, let them choose Default, Template, or Empty.
-  if (templates.value.length === 0) {
-    void handleNewChecklistSelect({ source: 'default' });
-    return;
-  }
   showNewChecklistDialog.value = true;
 }
 
 /**
  * Handle user's selection from the new checklist dialog
- * @param {object} selection - { source: 'default'|'template'|'empty', templateId?: string }
+ * @param {object} selection - Selected source and optional template/list ID.
  */
 async function handleNewChecklistSelect(selection) {
   showNewChecklistDialog.value = false;
@@ -482,18 +480,33 @@ async function handleNewChecklistSelect(selection) {
     order: maxOrder + 1,
   };
 
-  if (selection.source === 'template' && selection.templateId) {
+  if (
+    (selection.source === 'template' && selection.templateId) ||
+    (selection.source === 'recommended' && selection.recommendedListId)
+  ) {
     const checklistId = generateSecureId('checklist-');
+    let seedData = null;
 
-    // Apply template: generate categories/items with new IDs
-    const templateData = applyTemplate(selection.templateId, checklistId);
-    if (!templateData) return;
+    if (selection.source === 'template') {
+      seedData = applyTemplate(selection.templateId, checklistId);
+    } else {
+      try {
+        seedData = recommendedListService.applyToNewChecklist(
+          selection.recommendedListId,
+          checklistId,
+          locale.value
+        );
+      } catch {
+        return;
+      }
+    }
+    if (!seedData) return;
 
     const checklistWithId = {
       ...newChecklistData,
       id: checklistId,
     };
-    const options = { source: 'template', templateData };
+    const options = { source: selection.source, seedData };
     const newChecklist = await handleAsyncAction(createChecklist, checklistWithId, options);
     if (newChecklist) {
       newlyCreatedChecklistId.value = newChecklist.id;
@@ -501,12 +514,6 @@ async function handleNewChecklistSelect(selection) {
   } else if (selection.source === 'empty') {
     const options = { source: 'empty' };
     const newChecklist = await handleAsyncAction(createChecklist, newChecklistData, options);
-    if (newChecklist) {
-      newlyCreatedChecklistId.value = newChecklist.id;
-    }
-  } else {
-    // Default behavior
-    const newChecklist = await handleAsyncAction(createChecklist, newChecklistData);
     if (newChecklist) {
       newlyCreatedChecklistId.value = newChecklist.id;
     }

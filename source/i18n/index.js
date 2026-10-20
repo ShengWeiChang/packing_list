@@ -31,7 +31,7 @@ const SUPPORTED_LOCALES = ['en', 'zh-TW'];
 // - Update SUPPORTED_LOCALES array
 // - Add corresponding locale JSON files in ../locales/
 // - Update mapToSupportedLocale() to handle new language mappings
-// - Create defaultItems.{locale}.js files for new languages
+// - Add recommended-list content for the new locale
 
 // -----------------------------------------------------------------------------
 // Functions

@@ -16,6 +16,8 @@ Created: 2026-02-10
 
 import { expect, test } from '@playwright/test';
 
+import { selectGeneralRecommendedList } from './checklistHelpers.js';
+
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
@@ -27,6 +29,7 @@ import { expect, test } from '@playwright/test';
  */
 async function createAndConfirmChecklist(page, name) {
   await page.getByTestId('sidebar-new-checklist').click();
+  await selectGeneralRecommendedList(page);
   const nameInput = page.getByTestId('checklist-name-input');
   await expect(nameInput).toBeVisible();
   if (name) {
@@ -49,7 +52,7 @@ test.describe('Item Packing Workflow', () => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/');
 
-    // Create a checklist with default categories and items
+    // Create a checklist from the general recommended list.
     await createAndConfirmChecklist(page);
   });
 

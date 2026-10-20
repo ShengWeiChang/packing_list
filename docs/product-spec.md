@@ -78,9 +78,9 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 
 - Purpose: Let users manage multiple packing lists and create a new list for each trip.
 - Key features:
-  - Create checklist: Auto-seed default categories and items from `source/data/defaultItems.js`.
-    - Categories: Built from default data by removing duplicate category names; assign `order` based on creation sequence (starting at 0).
-    - Items: Created one by one with the correct `categoryId`, `isPacked=false`, and sequential `order` (starting at 0).
+  - Create checklist: Always open a source dialog offering an empty checklist, a personal template, or a recommended list.
+    - Empty source: Create only the checklist without categories or items.
+    - Seeded sources: Generate fresh category/item IDs, remap item `categoryId`, and reset packed/pending state.
   - Edit checklist: Edit `name`.
   - Date Editing:
     - Uses native HTML5 date input for reliability.
@@ -93,8 +93,8 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Create checklist → add categories/items → edit info → copy/delete → reorder → switch checklists.
 - Validation:
   - After create:
-    - Categories count equals the number of distinct category names in default data; each `checklistId` equals the new checklist ID; `order` is continuous from 0.
-    - Items count equals default total; each has `isPacked=false`, correct `categoryId`, and `order` continuous from 0.
+    - Empty checklists contain no categories or items; seeded checklists contain isolated source snapshots.
+    - Each generated category/item belongs to the new checklist; item category references are valid and runtime state is reset.
     - localStorage (key: `packingListApp`) contains the new data; persists after reload.
   - Edit: UI updates immediately and persists; dates are `YYYY-MM-DD`.
   - Copy: Duplicated checklist appears right after the original with " (Copy)" suffix; all categories and items are duplicated with new IDs.
@@ -107,7 +107,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Purpose: Let users reuse their own category and item structures without mixing templates with active checklists.
 - Key features:
   - Save as template: The checklist overflow menu opens a naming dialog and creates a new template snapshot.
-  - Create checklist: When templates exist, the creation dialog offers default items, a personal template, or an empty checklist.
+  - Create checklist: The personal-template source remains visible and disabled with an empty-state message when no templates exist.
   - Manage templates: The Sidebar template menu opens the selected template in the editor, where users rename or delete it.
   - Edit template: Opens an isolated in-memory editor for the template's name, categories, items, quantities, and order.
   - Save changes: Only the explicit `Save changes to template` action updates template storage; cancel leaves the stored template unchanged.
@@ -124,6 +124,26 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Saving, renaming, editing, and deleting persist after reload.
   - Applying one template multiple times produces independent IDs and does not mutate the source template.
   - Opening, canceling, or saving template edits does not modify `packingListApp`.
+
+#### Recommended Lists
+
+- Purpose: Provide curated, read-only starting lists for common trip types without mixing them with personal templates.
+- Included recommended lists: General Travel, Business Trip, Warm-Climate Travel, and Cold-Climate Travel.
+- Data design:
+  - Locale-independent definitions contain stable recommended list/category/item IDs and membership.
+  - English and Traditional Chinese content files contain display names and descriptions only.
+  - Reused item IDs allow multiple recommended lists to reference one translated item without duplicating membership rules.
+  - Every recommended list covers documents, payment, core clothing, personal care, health, electronics, and travel essentials; it then adds purpose- or climate-specific items instead of activity-specific equipment.
+- Interaction rules:
+  - Recommended lists appear only in the new-checklist dialog and cannot be renamed, edited, deleted, or reordered.
+  - Selecting a recommended list creates an ordinary editable checklist; later edits never change the bundled source.
+  - Switching locale changes recommended list choices in the dialog but does not translate already-created checklist snapshots.
+- Persistence:
+  - Recommended Lists ship with the application and use no localStorage key.
+  - Only the resulting checklist snapshot is written to `packingListApp`.
+- Validation:
+  - Every recommended list resolves localized categories/items with valid references.
+  - Repeated application produces independent runtime IDs and resets packed/pending state.
 
 #### Category Management
 
@@ -374,9 +394,10 @@ packing-list/
     │   ├── en.json                   # English strings
     │   └── zh-TW.json                # Traditional Chinese strings
     ├── data/                         # Static data
-    │   ├── defaultItems.js           # Default items loader (locale-aware)
-    │   ├── defaultItems_en.js        # English default items
-    │   └── defaultItems_zh-TW.js     # Traditional Chinese default items
+    │   ├── recommendedListContentEn.js  # English recommended list content
+    │   ├── recommendedListContentZhTw.js # Traditional Chinese recommended list content
+    │   ├── recommendedListDefinitions.js # Locale-independent recommended list membership
+    │   └── recommendedLists.js          # Locale-aware recommended list resolver
     ├── models/                       # Domain models
     │   ├── Category.js               # Category model
     │   ├── Checklist.js              # Checklist model
@@ -385,9 +406,11 @@ packing-list/
     ├── services/                     # Data access layer
     │   ├── dataService.js            # Abstract data service interface
     │   ├── localStorageService.js    # Checklist localStorage implementation
-    │   └── templateService.js        # Template localStorage implementation
+    │   ├── recommendedListService.js    # Built-in recommended list application
+    │   └── templateService.js        # Personal template localStorage implementation
     └── utils/                        # Utilities
         ├── constants.js              # App constants (color definitions in THEME_COLORS)
+        ├── instantiateTemplate.js    # Shared template-shaped data materialization
         └── helpers.js                # Helper functions (e.g., ID generation)
 ```
 
@@ -473,7 +496,7 @@ The application uses a centralized color management system with semantic naming:
 | Item                 | Item row/card                      | Toggle packed/pending; inline edit; delete; draggable within/between categories                              |
 | ProgressBar          | Progress visualization             | Displays completion percentage                                                                               |
 | OverflowMenu         | Overflow actions                   | Edit/copy/delete and other actions                                                                           |
-| NewChecklistDialog   | Checklist source selection         | Choose default items, a personal template, or an empty checklist                                             |
+| NewChecklistDialog   | Checklist source selection         | Choose an empty checklist, a personal template, or a read-only recommended list                              |
 | SaveTemplateDialog   | New template naming                | Validate a name before saving a new template snapshot                                                        |
 | TemplateEditor       | Isolated template editing          | Edit template content; explicitly save, cancel, or delete without creating a checklist                       |
 

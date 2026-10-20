@@ -16,6 +16,8 @@ Created: 2026-02-12
 
 import { expect, test } from '@playwright/test';
 
+import { selectGeneralRecommendedList } from './checklistHelpers.js';
+
 /**
  * Yield until the next browser paint.
  * Keeps drag steps paced without fixed millisecond sleeps.
@@ -42,6 +44,7 @@ async function waitForNextAnimationFrame(page) {
  */
 async function createAndConfirmChecklist(page, name) {
   await page.getByTestId('sidebar-new-checklist').click();
+  await selectGeneralRecommendedList(page);
   const nameInput = page.getByTestId('checklist-name-input');
   await expect(nameInput).toBeVisible();
   if (name) {
@@ -128,7 +131,7 @@ test.describe('Drag & Drop', () => {
   test.describe('category reorder within checklist', () => {
     // Test Case 2: Should reorder categories by drag-and-drop
     test('should reorder categories by drag-and-drop', async ({ page }) => {
-      // Create a checklist (comes with default categories)
+      // Create a checklist from the general recommended list.
       await createAndConfirmChecklist(page);
 
       // Collapse all categories so each card is short and both are
@@ -184,7 +187,7 @@ test.describe('Drag & Drop', () => {
   test.describe('item reorder within category', () => {
     // Test Case 3: Should reorder items within a category by drag-and-drop
     test('should reorder items within a category by drag-and-drop', async ({ page }) => {
-      // Create a checklist with default items
+      // Create a checklist from the general recommended list.
       await createAndConfirmChecklist(page);
 
       // Work with items inside the first category

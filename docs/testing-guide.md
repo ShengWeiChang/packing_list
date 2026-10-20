@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 539    |
-| Unit tests         | 229    |
-| Component tests    | 261    |
-| E2E tests          | 49     |
-| Line coverage      | 98.43% |
-| Statement coverage | 97.58% |
-| Branch coverage    | 87.77% |
+| Total tests        | 550    |
+| Unit tests         | 237    |
+| Component tests    | 263    |
+| E2E tests          | 50     |
+| Line coverage      | 98.66% |
+| Statement coverage | 97.80% |
+| Branch coverage    | 88.54% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -29,9 +29,9 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 229   | Pure logic in models, services, composables, utils |
-| Component | Vitest + @vue/test-utils | 261   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 49    | Full user flows in a real browser                  |
+| Unit      | Vitest                   | 237   | Pure logic in models, services, composables, utils |
+| Component | Vitest + @vue/test-utils | 263   | Vue component rendering, events, state             |
+| E2E       | Playwright               | 50    | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -50,15 +50,18 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 229 tests
+├── unit-tests/                          # 237 tests
+│   ├── data/                            #  4  tests
+│   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
 │   │   ├── Item.test.js                 # 17  tests
 │   │   ├── Category.test.js             #  9  tests
 │   │   └── Checklist.test.js            # 11  tests
 │   │   └── Template.test.js             #  3  tests
-│   ├── services/                        # 93  tests
+│   ├── services/                        # 97  tests
 │   │   ├── localStorageService.test.js  # 78  tests
-│   │   └── templateService.test.js      # 15  tests
+│   │   ├── templateService.test.js      # 15  tests
+│   │   └── recommendedListService.test.js  #  4  tests
 │   ├── composables/                     # 58  tests
 │   │   └── usePackingLists.test.js      # 44  tests
 │   │   └── useTemplates.test.js         # 14  tests
@@ -70,8 +73,8 @@ tests/
 │       ├── order.test.js                #  3  tests
 │       └── dragDrop.test.js             #  2  tests
 │
-├── component-tests/                     # 261 tests
-│   ├── App.test.js                      # 58  tests
+├── component-tests/                     # 263 tests
+│   ├── App.test.js                      # 59  tests
 │   ├── Checklist.test.js                # 37  tests
 │   ├── Item.test.js                     # 26  tests
 │   ├── Sidebar.test.js                  # 33  tests
@@ -82,11 +85,11 @@ tests/
 │   ├── Topbar.test.js                   #  2  tests
 │   ├── PendingItemsCategory.test.js     #  5  tests
 │   ├── AddCategoryButton.test.js        #  2  tests
-│   ├── NewChecklistDialog.test.js       # 11  tests
+│   ├── NewChecklistDialog.test.js       # 12  tests
 │   ├── TemplateEditor.test.js           # 13  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 49  tests
+└── end2end-tests/                       # 50  tests
     ├── mobile-workflow.spec.js          #  9  tests
     ├── item-packing.spec.js             #  7  tests
     ├── language-switch.spec.js          #  6  tests
@@ -95,7 +98,8 @@ tests/
     ├── category-crud.spec.js            #  3  tests
     ├── drag-and-drop.spec.js            #  3  tests
     ├── multi-tab-sync.spec.js           #  4  tests
-    └── template-management.spec.js      #  7  tests
+    ├── template-management.spec.js      #  7  tests
+    └── recommended-lists.spec.js           #  1  test
 ```
 
 ### Naming Conventions
@@ -118,18 +122,18 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| source/      | 99.33%     | 86.06% | 100%   |
-| components/  | 96.20%     | 88.25% | 97.94% |
+| source/      | 98.68%     | 86.06% | 99.28% |
+| components/  | 96.29%     | 88.67% | 98.00% |
 | composables/ | 100%       | 90.75% | 100%   |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 97.61%     | 82.45% | 97.32% |
-| utils/       | 100%       | 100%   | 100%   |
+| services/    | 98.77%     | 85.84% | 98.62% |
+| utils/       | 100%       | 90.90% | 100%   |
 
 ### By Component
 
 | Component                | Statements | Lines  | Tests |
 | ------------------------ | ---------- | ------ | ----- |
-| App.vue                  | 99.33%     | 100%   | 58    |
+| App.vue                  | 98.68%     | 99.28% | 59    |
 | AddCategoryButton.vue    | 100%       | 100%   | 2     |
 | AddItemButton.vue        | 100%       | 100%   | 8     |
 | ProgressBar.vue          | 100%       | 100%   | 8     |
@@ -140,7 +144,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | Category.vue             | 96.66%     | 97.61% | 25    |
 | Checklist.vue            | 93.84%     | 98.31% | 37    |
 | Item.vue                 | 90.66%     | 91.89% | 26    |
-| NewChecklistDialog.vue   | 96.61%     | 100%   | 11    |
+| NewChecklistDialog.vue   | 97.36%     | 100%   | 12    |
 | SaveTemplateDialog.vue   | 97.95%     | 100%   | 10    |
 | TemplateEditor.vue       | 98.78%     | 100%   | 13    |
 
@@ -217,7 +221,7 @@ This project uses three layers to balance speed and reliability.
 
 ## 8. Complete Test Inventory
 
-### 8.1 Unit Tests (229 tests)
+### 8.1 Unit Tests (237 tests)
 
 #### 8.1.1 Models (40 tests)
 
@@ -281,90 +285,90 @@ This project uses three layers to balance speed and reliability.
 | 2   | trims its name and round-trips snapshot content  | Serialization        |
 | 3   | rejects a non-string or too-long name            | Name validation      |
 
-#### 8.1.2 Services (93 tests)
+#### 8.1.2 Services (97 tests)
 
 ##### 8.1.2.1 localStorageService.test.js (78 tests)
 
-| #   | Test                                                                         | What it verifies                  |
-| --- | ---------------------------------------------------------------------------- | --------------------------------- |
-| 1   | should initialize with empty data when localStorage is empty                 | Fresh start state                 |
-| 2   | should not overwrite data on repeated initialization                         | Idempotent init                   |
-| 3   | should not overwrite when app data key already exists                        | initializeStorage early return    |
-| 4   | should handle corrupted localStorage data gracefully                         | Malformed JSON recovery           |
-| 5   | should normalize data shape when stored JSON has invalid types               | Type defense + fallback           |
-| 6   | should create a new checklist                                                | Create + persist                  |
-| 7   | should create default categories and items for new checklist                 | Seeding from default data         |
-| 8   | should map default items into generated categories when creating a checklist | Default seed mapping              |
-| 9   | should get checklist by ID                                                   | Single-entity retrieval           |
-| 10  | should return null for non-existent checklist                                | Missing entity returns null       |
-| 11  | should update an existing checklist                                          | Mutation + persist                |
-| 12  | should throw error when updating non-existent checklist                      | Update guard                      |
-| 13  | should delete a checklist and its associated data                            | Cascade delete                    |
-| 14  | should create a new category                                                 | Create + persist                  |
-| 15  | should get categories for a checklist                                        | Filtered retrieval                |
-| 16  | should update a category                                                     | Mutation + persist                |
-| 17  | should delete a category and its items                                       | Cascade delete                    |
-| 18  | should get a category by ID                                                  | Get category by ID                |
-| 19  | should return null for non-existent category by ID                           | Missing category returns null     |
-| 20  | should create a new item                                                     | Create + persist                  |
-| 21  | should update an item                                                        | Mutation + persist                |
-| 22  | should throw error when updating non-existent item in checklist              | Update non-existent throws        |
-| 23  | should delete an item                                                        | Remove + persist                  |
-| 24  | should get item by ID within a checklist                                     | Get item by ID                    |
-| 25  | should return null when item is not found within a checklist                 | Missing item returns null         |
-| 26  | should toggle item packed status                                             | Toggle + persist                  |
-| 27  | should use cache on subsequent getData calls                                 | Cache hit                         |
-| 28  | should update cache after save operation                                     | Cache invalidation                |
-| 29  | should duplicate a checklist with all categories and items                   | Deep copy with new IDs            |
-| 30  | should reorder other checklists when duplicating in the middle               | Insert duplicate + reorder        |
-| 31  | should throw error when duplicating non-existent checklist                   | Duplicate guard                   |
-| 32  | should duplicate a category with all its items                               | Category-level copy               |
-| 33  | should throw error when duplicating non-existent category                    | Duplicate guard                   |
-| 34  | should duplicate an item within the same category                            | Single item copy                  |
-| 35  | should throw error when duplicating non-existent item                        | Duplicate guard                   |
-| 36  | should update multiple checklists at once                                    | Batch update                      |
-| 37  | should return English copy suffix by default                                 | Locale-aware suffix               |
-| 38  | should return Chinese copy suffix for zh-TW locale                           | zh-TW suffix                      |
-| 39  | should return fallback copy suffix for unknown locale                        | Unknown locale fallback           |
-| 40  | should dispose resources and clear cache                                     | Cleanup                           |
-| 41  | should handle deleting non-existent category gracefully                      | No-op delete                      |
-| 42  | should handle deleting non-existent item gracefully                          | No-op delete                      |
-| 43  | should propagate errors when storage save fails                              | Error propagation                 |
-| 44  | should truncate duplicate name when original name is at max length           | Boundary: name truncation         |
-| 45  | should invalidate cache when storage event fires with matching key           | Cross-tab cache invalidation      |
-| 46  | should reset \_initialized when storage key is removed in another tab        | Cross-tab removal handling        |
-| 47  | should ignore storage events for unrelated keys                              | Event key filtering               |
-| 48  | should throw Storage operation failed when setItem throws                    | QuotaExceeded error path          |
-| 49  | should throw when updating non-existent category                             | Non-existent update guard         |
-| 50  | should truncate duplicate category name when at max length                   | Category name truncation          |
-| 51  | should truncate duplicate item name when at max length                       | Item name truncation              |
-| 52  | should read user-locale from localStorage when no locale provided            | Read locale from storage          |
-| 53  | should default to English suffix when no locale in storage                   | Locale fallback                   |
-| 54  | should handle multiple dispose calls gracefully                              | dispose idempotency               |
-| 55  | should store and retrieve emoji in checklist name                            | Unicode emoji support             |
-| 56  | should store and retrieve CJK characters in category name                    | CJK character support             |
-| 57  | should store HTML-like strings as plain text                                 | XSS-safe storage                  |
-| 58  | should handle special characters in item names                               | Special character encoding        |
-| 59  | should handle gracefully when getItem throws on getData                      | localStorage disabled/unavailable |
-| 60  | should normalize missing arrays from storage payload                         | Sparse payload fallback           |
-| 61  | should handle missing checklists array in cache                              | Cache shape fallback              |
-| 62  | should handle missing categories array in cache                              | Cache shape fallback              |
-| 63  | should handle missing items array in cache                                   | Cache shape fallback              |
-| 64  | should allow create operations with sparse cache shape                       | Sparse cache create path          |
-| 65  | should skip checklists that do not exist in storage                          | Batch skip path                   |
-| 66  | should return all categories across all checklists                           | Unfiltered categories path        |
-| 67  | should use original categoryId for items whose category was not found        | Orphan item fallback              |
-| 68  | should duplicate checklist when cache categories and items are undefined     | Duplicate fallback path           |
-| 69  | should duplicate category when cache items is undefined                      | Duplicate fallback path           |
-| 70  | should duplicate item when cache data has items but no reorder targets       | Duplicate fallback path           |
-| 71  | should apply last-write-wins semantics for concurrent checklist updates      | Concurrency consistency           |
-| 72  | should invalidate cache after storage event from another tab                 | Cross-tab invalidation            |
-| 73  | should handle high data volume (50+) without losing correctness              | Scale correctness                 |
-| 74  | should cascade delete categories and items when deleting checklist           | Cascade integrity                 |
-| 75  | should cascade delete all items in a deleted category                        | Cascade integrity                 |
-| 76  | should preserve relative order semantics after duplicate and delete          | Order consistency                 |
-| 77  | should keep default data shape stable across en and zh-TW locales            | Locale stability                  |
-| 78  | should persist final state after rapid sequential stale item updates         | Final-write consistency           |
+| #   | Test                                                                          | What it verifies                  |
+| --- | ----------------------------------------------------------------------------- | --------------------------------- |
+| 1   | should initialize with empty data when localStorage is empty                  | Fresh start state                 |
+| 2   | should not overwrite data on repeated initialization                          | Idempotent init                   |
+| 3   | should not overwrite when app data key already exists                         | initializeStorage early return    |
+| 4   | should handle corrupted localStorage data gracefully                          | Malformed JSON recovery           |
+| 5   | should normalize data shape when stored JSON has invalid types                | Type defense + fallback           |
+| 6   | should create a new checklist                                                 | Create + persist                  |
+| 7   | should create general recommended list data for a new checklist by default    | General recommended list fallback |
+| 8   | should persist supplied seed data when creating a checklist                   | Generic seeded creation           |
+| 9   | should get checklist by ID                                                    | Single-entity retrieval           |
+| 10  | should return null for non-existent checklist                                 | Missing entity returns null       |
+| 11  | should update an existing checklist                                           | Mutation + persist                |
+| 12  | should throw error when updating non-existent checklist                       | Update guard                      |
+| 13  | should delete a checklist and its associated data                             | Cascade delete                    |
+| 14  | should create a new category                                                  | Create + persist                  |
+| 15  | should get categories for a checklist                                         | Filtered retrieval                |
+| 16  | should update a category                                                      | Mutation + persist                |
+| 17  | should delete a category and its items                                        | Cascade delete                    |
+| 18  | should get a category by ID                                                   | Get category by ID                |
+| 19  | should return null for non-existent category by ID                            | Missing category returns null     |
+| 20  | should create a new item                                                      | Create + persist                  |
+| 21  | should update an item                                                         | Mutation + persist                |
+| 22  | should throw error when updating non-existent item in checklist               | Update non-existent throws        |
+| 23  | should delete an item                                                         | Remove + persist                  |
+| 24  | should get item by ID within a checklist                                      | Get item by ID                    |
+| 25  | should return null when item is not found within a checklist                  | Missing item returns null         |
+| 26  | should toggle item packed status                                              | Toggle + persist                  |
+| 27  | should use cache on subsequent getData calls                                  | Cache hit                         |
+| 28  | should update cache after save operation                                      | Cache invalidation                |
+| 29  | should duplicate a checklist with all categories and items                    | Deep copy with new IDs            |
+| 30  | should reorder other checklists when duplicating in the middle                | Insert duplicate + reorder        |
+| 31  | should throw error when duplicating non-existent checklist                    | Duplicate guard                   |
+| 32  | should duplicate a category with all its items                                | Category-level copy               |
+| 33  | should throw error when duplicating non-existent category                     | Duplicate guard                   |
+| 34  | should duplicate an item within the same category                             | Single item copy                  |
+| 35  | should throw error when duplicating non-existent item                         | Duplicate guard                   |
+| 36  | should update multiple checklists at once                                     | Batch update                      |
+| 37  | should return English copy suffix by default                                  | Locale-aware suffix               |
+| 38  | should return Chinese copy suffix for zh-TW locale                            | zh-TW suffix                      |
+| 39  | should return fallback copy suffix for unknown locale                         | Unknown locale fallback           |
+| 40  | should dispose resources and clear cache                                      | Cleanup                           |
+| 41  | should handle deleting non-existent category gracefully                       | No-op delete                      |
+| 42  | should handle deleting non-existent item gracefully                           | No-op delete                      |
+| 43  | should propagate errors when storage save fails                               | Error propagation                 |
+| 44  | should truncate duplicate name when original name is at max length            | Boundary: name truncation         |
+| 45  | should invalidate cache when storage event fires with matching key            | Cross-tab cache invalidation      |
+| 46  | should reset \_initialized when storage key is removed in another tab         | Cross-tab removal handling        |
+| 47  | should ignore storage events for unrelated keys                               | Event key filtering               |
+| 48  | should throw Storage operation failed when setItem throws                     | QuotaExceeded error path          |
+| 49  | should throw when updating non-existent category                              | Non-existent update guard         |
+| 50  | should truncate duplicate category name when at max length                    | Category name truncation          |
+| 51  | should truncate duplicate item name when at max length                        | Item name truncation              |
+| 52  | should read user-locale from localStorage when no locale provided             | Read locale from storage          |
+| 53  | should default to English suffix when no locale in storage                    | Locale fallback                   |
+| 54  | should handle multiple dispose calls gracefully                               | dispose idempotency               |
+| 55  | should store and retrieve emoji in checklist name                             | Unicode emoji support             |
+| 56  | should store and retrieve CJK characters in category name                     | CJK character support             |
+| 57  | should store HTML-like strings as plain text                                  | XSS-safe storage                  |
+| 58  | should handle special characters in item names                                | Special character encoding        |
+| 59  | should handle gracefully when getItem throws on getData                       | localStorage disabled/unavailable |
+| 60  | should normalize missing arrays from storage payload                          | Sparse payload fallback           |
+| 61  | should handle missing checklists array in cache                               | Cache shape fallback              |
+| 62  | should handle missing categories array in cache                               | Cache shape fallback              |
+| 63  | should handle missing items array in cache                                    | Cache shape fallback              |
+| 64  | should allow create operations with sparse cache shape                        | Sparse cache create path          |
+| 65  | should skip checklists that do not exist in storage                           | Batch skip path                   |
+| 66  | should return all categories across all checklists                            | Unfiltered categories path        |
+| 67  | should use original categoryId for items whose category was not found         | Orphan item fallback              |
+| 68  | should duplicate checklist when cache categories and items are undefined      | Duplicate fallback path           |
+| 69  | should duplicate category when cache items is undefined                       | Duplicate fallback path           |
+| 70  | should duplicate item when cache data has items but no reorder targets        | Duplicate fallback path           |
+| 71  | should apply last-write-wins semantics for concurrent checklist updates       | Concurrency consistency           |
+| 72  | should invalidate cache after storage event from another tab                  | Cross-tab invalidation            |
+| 73  | should handle high data volume (50+) without losing correctness               | Scale correctness                 |
+| 74  | should cascade delete categories and items when deleting checklist            | Cascade integrity                 |
+| 75  | should cascade delete all items in a deleted category                         | Cascade integrity                 |
+| 76  | should preserve relative order semantics after duplicate and delete           | Order consistency                 |
+| 77  | should keep general recommended list shape stable across en and zh-TW locales | Locale stability                  |
+| 78  | should persist final state after rapid sequential stale item updates          | Final-write consistency           |
 
 ##### 8.1.2.2 templateService.test.js (15 tests)
 
@@ -385,6 +389,15 @@ This project uses three layers to balance speed and reliability.
 | 13  | appends snapshots after existing templates                     | Snapshot ordering     |
 | 14  | reloads external storage after cache invalidation              | Cache refresh         |
 | 15  | preserves orphan references and applies item defaults          | Defensive application |
+
+##### 8.1.2.3 recommendedListService.test.js (4 tests)
+
+| #   | Test                                                                 | What it verifies                  |
+| --- | -------------------------------------------------------------------- | --------------------------------- |
+| 1   | materializes every recommended list with fresh runtime relationships | Valid IDs and references          |
+| 2   | isolates repeated applications from each other and the source        | Independent mutable copies        |
+| 3   | rejects missing recommended lists                                    | Missing recommended-list guard    |
+| 4   | applies the localized general recommended list                       | General list and locale selection |
 
 #### 8.1.3 Composables (58 tests)
 
@@ -523,9 +536,20 @@ This project uses three layers to balance speed and reliability.
 | 2   | should clamp dropdown left to max when near right edge    | Right max boundary clamp       |
 | 3   | should position dropdown above anchor with gap and zIndex | Fixed position calc (with gap) |
 
-### 8.2 Component Tests (261 tests)
+#### 8.1.6 Data (4 tests)
 
-#### 8.2.1 App.test.js (58 tests)
+##### 8.1.6.1 recommendedLists.test.js (4 tests)
+
+| #   | Test                                                                         | What it verifies          |
+| --- | ---------------------------------------------------------------------------- | ------------------------- |
+| 1   | resolves complete localized recommended lists with valid category references | Localized data integrity  |
+| 2   | includes core clothing in every recommended list                             | Core wardrobe coverage    |
+| 3   | falls back to English for unsupported locales                                | Locale fallback           |
+| 4   | returns isolated resolved data                                               | Resolver output isolation |
+
+### 8.2 Component Tests (263 tests)
+
+#### 8.2.1 App.test.js (59 tests)
 
 | #   | Test                                                                    | What it verifies             |
 | --- | ----------------------------------------------------------------------- | ---------------------------- |
@@ -541,8 +565,8 @@ This project uses three layers to balance speed and reliability.
 | 10  | should persist sidebar collapse to localStorage on desktop              | Collapse persistence         |
 | 11  | should remove collapsed key from localStorage when sidebar re-opened    | Expand cleanup               |
 | 12  | should toggle sidebar from Topbar on mobile                             | Topbar toggle event          |
-| 13  | should create a new checklist and set newlyCreatedChecklistId           | Checklist creation           |
-| 14  | should create checklist from Topbar on mobile                           | Topbar creation event        |
+| 13  | should open source selection from Sidebar without creating immediately  | Sidebar source dialog        |
+| 14  | should open source selection from Topbar on mobile                      | Topbar source dialog         |
 | 15  | should select and mark checklist for editing on handleChecklistEdit     | Edit mode trigger            |
 | 16  | should duplicate checklist and select the copy on handleChecklistCopy   | Checklist duplication        |
 | 17  | should delete checklist after user confirms the dialog                  | Confirmed deletion           |
@@ -587,6 +611,7 @@ This project uses three layers to balance speed and reliability.
 | 56  | should keep the editor open when template deletion fails                | Delete failure state         |
 | 57  | should use an empty initial name for an unknown checklist               | Missing checklist fallback   |
 | 58  | should ignore duplicate save events after source state clears           | Duplicate save guard         |
+| 59  | should create a checklist from a selected recommended list              | recommended list flow        |
 
 #### 8.2.2 Topbar.test.js (2 tests)
 
@@ -807,21 +832,22 @@ This project uses three layers to balance speed and reliability.
 | 32  | should close the template menu with Escape                      | Keyboard dismissal   |
 | 33  | should forward save-as-template from checklist overflow         | Event forwarding     |
 
-#### 8.2.12 NewChecklistDialog.test.js (11 tests)
+#### 8.2.12 NewChecklistDialog.test.js (12 tests)
 
-| #   | Test                                                 | What it verifies          |
-| --- | ---------------------------------------------------- | ------------------------- |
-| 1   | emits the selected default source                    | Default source            |
-| 2   | selects a template after opening the template list   | Template source selection |
-| 3   | labels the previous step as Back and restores focus  | Focus management          |
-| 4   | closes the dialog when Escape is pressed             | Keyboard dismissal        |
-| 5   | disables template selection when no templates exist  | Empty-state guard         |
-| 6   | emits the selected empty source                      | Empty source selection    |
-| 7   | closes from the backdrop and Cancel button           | Pointer dismissal         |
-| 8   | focuses the first choice and restores prior focus    | Focus lifecycle           |
-| 9   | traps forward and reverse Tab navigation             | Keyboard focus trap       |
-| 10  | resets the template step whenever the dialog reopens | Dialog state reset        |
-| 11  | ignores keyboard handling while hidden               | Hidden-state guard        |
+| #   | Test                                                                           | What it verifies              |
+| --- | ------------------------------------------------------------------------------ | ----------------------------- |
+| 1   | emits the selected empty source                                                | Empty source selection        |
+| 2   | selects a personal template from its source list                               | Personal template selection   |
+| 3   | selects a recommended list from its source list                                | recommended list selection    |
+| 4   | keeps all sources visible and only disables personal templates when none exist | Source availability           |
+| 5   | restores focus to the personal-template source after Back                      | Personal-list focus return    |
+| 6   | restores focus to the recommended-list source after Back                       | Recommended-list focus return |
+| 7   | closes the dialog when Escape is pressed                                       | Keyboard dismissal            |
+| 8   | closes from the backdrop and Cancel button                                     | Pointer dismissal             |
+| 9   | focuses the first source and restores prior focus after closing                | Focus lifecycle               |
+| 10  | traps forward and reverse Tab navigation inside the dialog                     | Keyboard focus trap           |
+| 11  | resets the nested source step whenever the dialog reopens                      | Dialog state reset            |
+| 12  | ignores keyboard dismissal while hidden and unrelated keys while visible       | Keyboard guard                |
 
 #### 8.2.13 TemplateEditor.test.js (13 tests)
 
@@ -856,7 +882,7 @@ This project uses three layers to balance speed and reliability.
 | 9   | traps forward and reverse Tab navigation        | Keyboard focus trap      |
 | 10  | ignores keyboard handling while hidden          | Hidden-state guard       |
 
-### 8.3 E2E Tests (49 tests)
+### 8.3 E2E Tests (50 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -951,3 +977,9 @@ This project uses three layers to balance speed and reliability.
 | 5   | keeps narrow template rows free of overflow menus                     | Narrow responsive layout |
 | 6   | saves a checklist as a named template without changing checklist data | Snapshot isolation       |
 | 7   | creates an isolated checklist from a selected template                | Fresh IDs and storage    |
+
+#### 8.3.10 recommended-lists.spec.js (1 tests)
+
+| #   | Test                                                          | What it verifies                      |
+| --- | ------------------------------------------------------------- | ------------------------------------- |
+| 1   | should create and persist a checklist from a recommended list | Recommended List selection and reload |

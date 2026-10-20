@@ -68,7 +68,7 @@ test.describe('Template Management', () => {
     await page.getByTestId('new-checklist-option-template').click();
 
     await expect(page.getByTestId('new-checklist-back')).toHaveText('Back');
-    await expect(page.getByText('Select a template')).toHaveCount(0);
+    await expect(page.getByText('Select a template')).toBeVisible();
     await expect(page.getByTestId('new-checklist-template-template-1')).toContainText('1 category');
     await page.getByTestId('new-checklist-back').click();
     await expect(page.getByTestId('new-checklist-option-template')).toBeFocused();

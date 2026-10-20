@@ -14,11 +14,9 @@ Created: 2026-10-13
 // Imports
 // -----------------------------------------------------------------------------
 
-import { Category } from '../models/Category';
-import { Item } from '../models/Item';
 import { Template } from '../models/Template';
 import { STORAGE_KEYS } from '../utils/constants.js';
-import { generateSecureId } from '../utils/helpers.js';
+import { instantiateTemplateContent } from '../utils/instantiateTemplate.js';
 
 // -----------------------------------------------------------------------------
 // Class definition
@@ -259,36 +257,7 @@ export class TemplateService {
     if (!template) {
       throw new Error(`Template with id ${templateId} not found`);
     }
-
-    // Build old→new category ID mapping
-    const categoryIdMap = {};
-    const newCategories = (template.categories || []).map((cat) => {
-      const newCat = new Category({
-        name: cat.name,
-        checklistId,
-        order: cat.order ?? 0,
-      });
-      categoryIdMap[cat.id] = newCat.id;
-      return newCat;
-    });
-
-    // Create items with new IDs and remapped categoryId
-    const newItems = (template.items || []).map((item) => {
-      return new Item({
-        id: generateSecureId('item-'),
-        name: item.name,
-        quantity: item.quantity ?? 1,
-        checklistId,
-        categoryId: categoryIdMap[item.categoryId] || item.categoryId,
-        order: item.order ?? 0,
-        isPacked: false,
-      });
-    });
-
-    return {
-      categories: newCategories,
-      items: newItems,
-    };
+    return instantiateTemplateContent(template, checklistId);
   }
 
   /**

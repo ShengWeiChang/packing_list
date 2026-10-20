@@ -15,6 +15,8 @@ Created: 2026-02-10
 
 import { expect, test } from '@playwright/test';
 
+import { selectGeneralRecommendedList } from './checklistHelpers.js';
+
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
@@ -26,6 +28,7 @@ import { expect, test } from '@playwright/test';
  */
 async function createAndConfirmChecklist(page, name) {
   await page.getByTestId('sidebar-new-checklist').click();
+  await selectGeneralRecommendedList(page);
   const nameInput = page.getByTestId('checklist-name-input');
   await expect(nameInput).toBeVisible();
   if (name) {
@@ -60,6 +63,7 @@ test.describe('Checklist Management', () => {
       const initialCount = await sidebarItems.count();
 
       await page.getByTestId('sidebar-new-checklist').click();
+      await selectGeneralRecommendedList(page);
 
       await expect(sidebarItems).toHaveCount(initialCount + 1);
     });
@@ -67,6 +71,7 @@ test.describe('Checklist Management', () => {
     // Test Case 2: New checklist should be auto-selected and in edit mode
     test('should auto-select and enter edit mode for new checklist', async ({ page }) => {
       await page.getByTestId('sidebar-new-checklist').click();
+      await selectGeneralRecommendedList(page);
 
       // The checklist name input should be visible (edit mode)
       const nameInput = page.getByTestId('checklist-name-input');
@@ -108,6 +113,7 @@ test.describe('Checklist Management', () => {
 
       // Create a second checklist
       await page.getByTestId('sidebar-new-checklist').click();
+      await selectGeneralRecommendedList(page);
       const nameInput = page.getByTestId('checklist-name-input');
       await expect(nameInput).toBeVisible();
       await nameInput.press('Enter');

@@ -1,7 +1,7 @@
 /*
 ================================================================================
 File: tests/component-tests/NewChecklistDialog.test.js
-Description: Component tests for template-aware checklist creation choices.
+Description: Component tests for checklist source and recommended-list selection.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
 Created: 2026-10-13
@@ -20,21 +20,28 @@ describe('NewChecklistDialog', () => {
     categories: [{ id: 'category-1', name: 'Clothes', order: 0 }],
     items: [],
   };
+  const recommendedList = {
+    id: 'general',
+    name: 'General Travel',
+    description: 'A balanced starting point.',
+    categories: [{ id: 'documents', name: 'Documents', order: 0 }],
+    items: [{ id: 'passport', name: 'Passport', categoryId: 'documents', order: 0 }],
+  };
 
   // ---------------------------------------------------------------------------
   // Test Group 1: Source Selection
   // ---------------------------------------------------------------------------
 
-  // Test Case 1: Should emit the selected default source
-  it('emits the selected default source', async () => {
+  // Test Case 1: Should emit the selected empty source
+  it('emits the selected empty source', async () => {
     const wrapper = mount(NewChecklistDialog, { props: { visible: true } });
-    await wrapper.get('[data-testid="new-checklist-option-default"]').trigger('click');
+    await wrapper.get('[data-testid="new-checklist-option-empty"]').trigger('click');
 
-    expect(wrapper.emitted('select')).toEqual([[{ source: 'default' }]]);
+    expect(wrapper.emitted('select')).toEqual([[{ source: 'empty' }]]);
   });
 
-  // Test Case 2: Should select a template after opening the template list
-  it('selects a template after opening the template list', async () => {
+  // Test Case 2: Should select a personal template from its source list
+  it('selects a personal template from its source list', async () => {
     const wrapper = mount(NewChecklistDialog, {
       props: { visible: true, templates: [template] },
     });
@@ -42,35 +49,78 @@ describe('NewChecklistDialog', () => {
     await wrapper.get('[data-testid="new-checklist-template-template-1"]').trigger('click');
 
     expect(wrapper.emitted('select')).toEqual([[{ source: 'template', templateId: 'template-1' }]]);
-    expect(wrapper.text()).toContain('template.categoryCount');
   });
 
-  // Test Case 3: Should label the previous step as Back and restore focus
-  it('labels the previous step as Back and restores focus', async () => {
+  // Test Case 3: Should select a recommended list from its source list
+  it('selects a recommended list from its source list', async () => {
+    const wrapper = mount(NewChecklistDialog, {
+      props: { visible: true, recommendedLists: [recommendedList] },
+    });
+    await wrapper.get('[data-testid="new-checklist-option-recommended"]').trigger('click');
+    await wrapper.get('[data-testid="new-checklist-recommended-general"]').trigger('click');
+
+    expect(wrapper.emitted('select')).toEqual([
+      [{ source: 'recommended', recommendedListId: 'general' }],
+    ]);
+    expect(wrapper.text()).toContain('A balanced starting point.');
+  });
+
+  // Test Case 4: Should keep all sources visible without personal templates
+  it('keeps all sources visible and only disables personal templates when none exist', () => {
+    const wrapper = mount(NewChecklistDialog, {
+      props: { visible: true, recommendedLists: [recommendedList] },
+    });
+
+    expect(wrapper.get('[data-testid="new-checklist-option-empty"]').exists()).toBe(true);
+    expect(
+      wrapper.get('[data-testid="new-checklist-option-template"]').attributes('disabled')
+    ).toBe('');
+    expect(
+      wrapper.get('[data-testid="new-checklist-option-recommended"]').attributes('disabled')
+    ).toBe(undefined);
+  });
+
+  // Test Case 5: Should restore focus to the personal-template source after Back
+  it('restores focus to the personal-template source after Back', async () => {
     const wrapper = mount(NewChecklistDialog, {
       attachTo: document.body,
       props: { visible: true, templates: [template] },
     });
-    const templateOption = wrapper.get('[data-testid="new-checklist-option-template"]');
-    await templateOption.trigger('click');
+    await wrapper.get('[data-testid="new-checklist-option-template"]').trigger('click');
     expect(document.activeElement).toBe(
       wrapper.get('[data-testid="new-checklist-template-template-1"]').element
     );
 
-    const back = wrapper.get('[data-testid="new-checklist-back"]');
-    expect(back.text()).toBe('common.back');
-    await back.trigger('click');
+    await wrapper.get('[data-testid="new-checklist-back"]').trigger('click');
     expect(document.activeElement).toBe(
       wrapper.get('[data-testid="new-checklist-option-template"]').element
     );
     wrapper.unmount();
   });
 
+  // Test Case 6: Should restore focus to the recommended-list source after Back
+  it('restores focus to the recommended-list source after Back', async () => {
+    const wrapper = mount(NewChecklistDialog, {
+      attachTo: document.body,
+      props: { visible: true, recommendedLists: [recommendedList] },
+    });
+    await wrapper.get('[data-testid="new-checklist-option-recommended"]').trigger('click');
+    expect(document.activeElement).toBe(
+      wrapper.get('[data-testid="new-checklist-recommended-general"]').element
+    );
+
+    await wrapper.get('[data-testid="new-checklist-back"]').trigger('click');
+    expect(document.activeElement).toBe(
+      wrapper.get('[data-testid="new-checklist-option-recommended"]').element
+    );
+    wrapper.unmount();
+  });
+
   // ---------------------------------------------------------------------------
-  // Test Group 2: Accessibility and Empty State
+  // Test Group 2: Accessibility and Dialog Lifecycle
   // ---------------------------------------------------------------------------
 
-  // Test Case 4: Should close the dialog when Escape is pressed
+  // Test Case 7: Should close the dialog when Escape is pressed
   it('closes the dialog when Escape is pressed', async () => {
     const wrapper = mount(NewChecklistDialog, { props: { visible: true } });
 
@@ -80,25 +130,7 @@ describe('NewChecklistDialog', () => {
     expect(wrapper.emitted('close')).toHaveLength(1);
   });
 
-  // Test Case 5: Should disable template selection when no templates exist
-  it('disables template selection when no templates exist', () => {
-    const wrapper = mount(NewChecklistDialog, { props: { visible: true } });
-
-    expect(
-      wrapper.get('[data-testid="new-checklist-option-template"]').attributes('disabled')
-    ).toBe('');
-  });
-
-  // Test Case 6: Should emit the selected empty source
-  it('emits the selected empty source', async () => {
-    const wrapper = mount(NewChecklistDialog, { props: { visible: true } });
-
-    await wrapper.get('[data-testid="new-checklist-option-empty"]').trigger('click');
-
-    expect(wrapper.emitted('select')).toEqual([[{ source: 'empty' }]]);
-  });
-
-  // Test Case 7: Should close from the backdrop and Cancel button
+  // Test Case 8: Should close from the backdrop and Cancel button
   it('closes from the backdrop and Cancel button', async () => {
     const wrapper = mount(NewChecklistDialog, { props: { visible: true } });
 
@@ -108,19 +140,19 @@ describe('NewChecklistDialog', () => {
     expect(wrapper.emitted('close')).toHaveLength(2);
   });
 
-  // Test Case 8: Should focus the first choice and restore prior focus after closing
-  it('focuses the first choice and restores prior focus after closing', async () => {
+  // Test Case 9: Should focus the first source and restore prior focus after closing
+  it('focuses the first source and restores prior focus after closing', async () => {
     const previousButton = document.createElement('button');
     document.body.appendChild(previousButton);
     previousButton.focus();
     const wrapper = mount(NewChecklistDialog, {
       attachTo: document.body,
-      props: { visible: true, templates: [template] },
+      props: { visible: true },
     });
     await wrapper.vm.$nextTick();
 
     expect(document.activeElement).toBe(
-      wrapper.get('[data-testid="new-checklist-option-default"]').element
+      wrapper.get('[data-testid="new-checklist-option-empty"]').element
     );
 
     await wrapper.setProps({ visible: false });
@@ -130,14 +162,14 @@ describe('NewChecklistDialog', () => {
     previousButton.remove();
   });
 
-  // Test Case 9: Should trap forward and reverse Tab navigation inside the dialog
+  // Test Case 10: Should trap forward and reverse Tab navigation inside the dialog
   it('traps forward and reverse Tab navigation inside the dialog', async () => {
     const wrapper = mount(NewChecklistDialog, {
       attachTo: document.body,
-      props: { visible: true, templates: [template] },
+      props: { visible: true },
     });
     await wrapper.vm.$nextTick();
-    const first = wrapper.get('[data-testid="new-checklist-option-default"]').element;
+    const first = wrapper.get('[data-testid="new-checklist-option-empty"]').element;
     const last = wrapper.get('[data-testid="new-checklist-cancel"]').element;
 
     last.focus();
@@ -153,22 +185,22 @@ describe('NewChecklistDialog', () => {
     wrapper.unmount();
   });
 
-  // Test Case 10: Should reset the template step whenever the dialog reopens
-  it('resets the template step whenever the dialog reopens', async () => {
+  // Test Case 11: Should reset the nested source step whenever the dialog reopens
+  it('resets the nested source step whenever the dialog reopens', async () => {
     const wrapper = mount(NewChecklistDialog, {
-      props: { visible: true, templates: [template] },
+      props: { visible: true, recommendedLists: [recommendedList] },
     });
-    await wrapper.get('[data-testid="new-checklist-option-template"]').trigger('click');
+    await wrapper.get('[data-testid="new-checklist-option-recommended"]').trigger('click');
     expect(wrapper.find('[data-testid="new-checklist-back"]').exists()).toBe(true);
 
     await wrapper.setProps({ visible: false });
     await wrapper.setProps({ visible: true });
 
     expect(wrapper.find('[data-testid="new-checklist-back"]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid="new-checklist-option-default"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="new-checklist-option-recommended"]').exists()).toBe(true);
   });
 
-  // Test Case 11: Should ignore keyboard dismissal while hidden and unrelated keys while visible
+  // Test Case 12: Should ignore keyboard dismissal while hidden and unrelated keys while visible
   it('ignores keyboard dismissal while hidden and unrelated keys while visible', async () => {
     const wrapper = mount(NewChecklistDialog, { props: { visible: false } });
 
