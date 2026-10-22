@@ -45,6 +45,19 @@ When creating new files, follow these naming patterns:
 
 Never use underscores in JavaScript file names.
 
+## Temporary Planning Drafts
+
+When the user asks for a temporary planning document, create it in `plans/`.
+This directory is Git-ignored and is for local discussion drafts only; do not
+add its contents to commits. Only version-control the approved implementation
+artifacts that result from a plan.
+
+## Personal Learning Notes
+
+When the user asks for personal learning material, create it in `learning/`.
+This Git-ignored directory is not product documentation and its contents do
+not require translation, review, or commits.
+
 ## Bilingual Documentation — ALWAYS UPDATE BOTH VERSIONS
 
 **CRITICAL**: This project maintains paired English/Chinese documentation.
@@ -63,3 +76,10 @@ When editing ANY document in `docs/`, you MUST update BOTH versions.
 1. **Always edit both files together** — never update only one version
 2. **Content must match exactly** — they are mutual translations
 3. **Structure must be identical** — same sections, headings, code blocks, number of lines, etc.
+4. **Track both files in Git** — do not add paired documentation to `.gitignore`
+
+## Project Skill Language
+
+Each project skill has one English canonical `SKILL.md`. Do not create or
+maintain a parallel `SKILL-zh.md`; put human-facing Chinese explanations in
+the paired documentation when they are needed.

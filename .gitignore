@@ -37,10 +37,6 @@ yarn-error.log*
 # ESLint cache
 .eslintcache
 
-# Reference documentation
-docs/**-zh.md
-.github/skills/**/SKILL-zh.md
-
 # OS generated files
 .DS_Store
 Thumbs.db
@@ -57,6 +53,8 @@ playwright/.cache/
 
 # Cache / temp files
 .cache/
+plans/
+learning/
 *.swp
 *~
 
