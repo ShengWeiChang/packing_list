@@ -8,7 +8,9 @@
     "save": "Save",
     "confirm": "Confirm",
     "copySuffix": " (Copy)",
-    "moreOptions": "More options"
+    "moreOptions": "More options",
+    "packingUpdated": "Packing status updated",
+    "undo": "Undo"
   },
   "sidebar": {
     "title": "Checklists",
@@ -36,7 +38,9 @@
     "shoppingList": "To Buy / To Do",
     "itemsLeft": "items left",
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "packAll": "Pack all items in this category",
+    "unpackAll": "Unpack all items in this category"
   },
   "item": {
     "name": "Item Name",

@@ -178,6 +178,7 @@ Created: 2025-09-19
               @update:category="$emit('update:category', $event)"
               @copy:category="$emit('copy:category', $event)"
               @delete:category="$emit('delete:category', $event)"
+              @set-category-packed="$emit('set-category-packed', $event)"
               @move:item="handleItemMove"
             />
           </div>
@@ -282,6 +283,7 @@ const emit = defineEmits([
   'reorder:categories',
   'move:item',
   'save-as-template',
+  'set-category-packed',
 ]);
 
 // ------------------------------------------------------------------------------

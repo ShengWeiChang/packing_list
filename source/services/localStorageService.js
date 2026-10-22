@@ -574,6 +574,40 @@ export class LocalStorageService extends DataService {
   }
 
   /**
+   * Update multiple existing items within a checklist in one storage write
+   * @param {string} checklistId - Checklist ID
+   * @param {Array<object>} itemsToUpdate - Items to update (each must include id)
+   * @returns {Promise<Array<object>>} Updated Item objects
+   */
+  async updateMultipleItems(checklistId, itemsToUpdate) {
+    const currentData = await this.getData();
+    const data = {
+      ...currentData,
+      items: (currentData.items || []).map((item) => ({ ...item })),
+    };
+    const items = data.items;
+    const updatedItems = itemsToUpdate.map((item) => new Item({ ...item, checklistId }));
+    const indexes = updatedItems.map((item) =>
+      items.findIndex(
+        (storedItem) => storedItem.id === item.id && storedItem.checklistId === checklistId
+      )
+    );
+
+    const missingItemIndex = indexes.findIndex((index) => index === -1);
+    if (missingItemIndex !== -1) {
+      const missingItem = updatedItems[missingItemIndex];
+      throw new Error(`Item with id ${missingItem.id} not found in checklist ${checklistId}`);
+    }
+
+    updatedItems.forEach((item, index) => {
+      items[indexes[index]] = item.toJSON();
+    });
+    data.items = items;
+    this._saveData(data);
+    return updatedItems.map((item) => item.toJSON());
+  }
+
+  /**
    * Delete an item from a checklist
    * @param {string} checklistId - Checklist ID
    * @param {string} itemId - Item ID to delete

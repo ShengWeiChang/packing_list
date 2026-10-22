@@ -367,8 +367,15 @@ describe('usePackingLists', () => {
 
     // Test Case 17: Toggle should flip isPacked state
     it('should toggle item packed status', async () => {
-      const { initialize, createChecklist, categories, createItem, toggleItemPacked, items } =
-        usePackingLists();
+      const {
+        initialize,
+        createChecklist,
+        categories,
+        createItem,
+        toggleItemPacked,
+        items,
+        canUndoPackingChange,
+      } = usePackingLists();
 
       await initialize();
       await createChecklist({ name: 'Trip' });
@@ -384,6 +391,7 @@ describe('usePackingLists', () => {
 
       const updated = items.value.find((i) => i.id === item.id);
       expect(updated.isPacked).toBe(true);
+      expect(canUndoPackingChange.value).toBe(false);
     });
   });
 
@@ -795,6 +803,141 @@ describe('usePackingLists', () => {
       expect(removeSpy).toHaveBeenCalledWith('storage', handler);
 
       vi.useRealTimers();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 14: Packing History
+  // ---------------------------------------------------------------------------
+
+  describe('packing history', () => {
+    // Test Case 45: Category pack-all should be one undoable mixed-state action
+    it('should treat a category pack-all as one undoable action and restore mixed state', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      await flushPromises();
+      const category = await api.createCategory({ name: 'Clothing' });
+      const unpackedPending = await api.createItem({
+        name: 'Buy sunscreen',
+        categoryId: category.id,
+        isPacked: false,
+        isPending: true,
+      });
+      const packed = await api.createItem({
+        name: 'Hat',
+        categoryId: category.id,
+        isPacked: true,
+        isPending: false,
+      });
+      const batchSpy = vi.spyOn(LocalStorageService.prototype, 'updateMultipleItems');
+
+      await api.setCategoryPacked(category.id, true);
+
+      expect(batchSpy).toHaveBeenCalledTimes(1);
+      expect(api.items.value).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: unpackedPending.id, isPacked: true, isPending: false }),
+          expect.objectContaining({ id: packed.id, isPacked: true, isPending: false }),
+        ])
+      );
+      expect(api.canUndoPackingChange.value).toBe(true);
+
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: unpackedPending.id, isPacked: false, isPending: true }),
+          expect.objectContaining({ id: packed.id, isPacked: true, isPending: false }),
+        ])
+      );
+      expect(api.canRedoPackingChange.value).toBe(true);
+
+      expect(await api.redoPackingChange()).toBe(true);
+      expect(api.items.value.every((item) => item.isPacked && !item.isPending)).toBe(true);
+
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.canRedoPackingChange.value).toBe(true);
+      const currentPackedItem = api.items.value.find((item) => item.id === packed.id);
+      await api.updateItem({ ...currentPackedItem, isPacked: false, isPending: true });
+      expect(api.canUndoPackingChange.value).toBe(false);
+      expect(api.canRedoPackingChange.value).toBe(false);
+      expect(await api.undoPackingChange()).toBe(false);
+      expect(api.items.value).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: packed.id, isPacked: false, isPending: true }),
+        ])
+      );
+    });
+
+    // Test Case 46: Switching checklists should clear packing history
+    it('should clear packing history when switching checklists', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'First' }, { source: 'empty' });
+      await flushPromises();
+      const firstChecklistId = api.selectedChecklistId.value;
+      const category = await api.createCategory({ name: 'Clothing' });
+      const item = await api.createItem({ name: 'Hat', categoryId: category.id });
+      await api.setCategoryPacked(category.id, true);
+      expect(api.canUndoPackingChange.value).toBe(true);
+
+      await api.deleteItem(item.id);
+      expect(api.canUndoPackingChange.value).toBe(false);
+      const replacement = await api.createItem({ name: 'Coat', categoryId: category.id });
+      await api.setCategoryPacked(category.id, true);
+      expect(api.canUndoPackingChange.value).toBe(true);
+
+      await api.createChecklist({ name: 'Second' }, { source: 'empty' });
+      await flushPromises();
+      const secondChecklistId = api.selectedChecklistId.value;
+
+      expect(api.selectedChecklistId.value).not.toBe(firstChecklistId);
+      expect(api.canUndoPackingChange.value).toBe(false);
+
+      api.selectedChecklistId.value = firstChecklistId;
+      await flushPromises();
+      const firstChecklistItem = api.items.value.find(
+        (storedItem) => storedItem.id === replacement.id
+      );
+      await api.setCategoryPacked(category.id, false);
+      expect(api.canUndoPackingChange.value).toBe(true);
+
+      let resolveUndo;
+      const batchUpdateSpy = vi
+        .spyOn(LocalStorageService.prototype, 'updateMultipleItems')
+        .mockReturnValue(
+          new Promise((resolve) => {
+            resolveUndo = resolve;
+          })
+        );
+      const inFlightUndo = api.undoPackingChange();
+      api.selectedChecklistId.value = secondChecklistId;
+      await flushPromises();
+      api.selectedChecklistId.value = firstChecklistId;
+      await flushPromises();
+      resolveUndo([{ ...firstChecklistItem, isPacked: true }]);
+      expect(await inFlightUndo).toBe(false);
+      expect(api.canRedoPackingChange.value).toBe(false);
+      batchUpdateSpy.mockRestore();
+
+      const itemBeforeUpdateRace = api.items.value.find(
+        (storedItem) => storedItem.id === replacement.id
+      );
+      let resolveUpdate;
+      vi.spyOn(LocalStorageService.prototype, 'updateItem').mockReturnValue(
+        new Promise((resolve) => {
+          resolveUpdate = resolve;
+        })
+      );
+      const inFlightUpdate = api.updateItem({ ...itemBeforeUpdateRace, isPacked: true });
+      api.selectedChecklistId.value = secondChecklistId;
+      await flushPromises();
+      api.selectedChecklistId.value = firstChecklistId;
+      await flushPromises();
+      resolveUpdate({ ...itemBeforeUpdateRace, isPacked: true });
+      await inFlightUpdate;
+
+      expect(api.canUndoPackingChange.value).toBe(false);
     });
   });
 });

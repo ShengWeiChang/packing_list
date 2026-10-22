@@ -22,6 +22,8 @@ import { LocalStorageService } from '../services/localStorageService';
 import { STORAGE_KEYS } from '../utils/constants.js';
 import { debounce } from '../utils/helpers.js';
 
+const PACKING_HISTORY_LIMIT = 50;
+
 /**
  * Composable for managing packing list state and operations
  * @returns {object} Packing list management API with state, computed properties and CRUD operations
@@ -37,13 +39,21 @@ export function usePackingLists() {
   // Cross-tab sync (storage event)
   // ---------------------------------------------------------------------------
 
-  const handleStorageEvent = debounce((e) => {
+  const refreshFromStorage = debounce(() => {
+    // Refresh in-memory state after a short burst of cross-tab writes settles.
+    void initialize();
+  }, 50);
+
+  const handleStorageEvent = (e) => {
     // Only react to app data changes coming from other tabs/windows.
     if (!e || e.key !== STORAGE_KEYS.APP_DATA) return;
 
-    // Refresh in-memory state to prevent stale UI and reduce overwrite risk.
-    void initialize();
-  }, 50);
+    // History becomes unsafe immediately, even while the refresh is debounced.
+    clearPackingHistory();
+    itemsRequestRevision += 1;
+    categoriesRequestRevision += 1;
+    refreshFromStorage();
+  };
 
   // Register lifecycle hooks only when used within a component `setup()`.
   // (Unit tests may call this composable directly without an active instance.)
@@ -71,6 +81,13 @@ export function usePackingLists() {
   const selectedChecklistId = ref(null);
   const isLoading = ref(false);
   const error = ref(null);
+  const packingUndoStack = ref([]);
+  const packingRedoStack = ref([]);
+  let isApplyingPackingHistory = false;
+  let packingHistoryRevision = 0;
+  let selectionRevision = 0;
+  let itemsRequestRevision = 0;
+  let categoriesRequestRevision = 0;
 
   // ---------------------------------------------------------------------------
   // Computed properties
@@ -85,6 +102,8 @@ export function usePackingLists() {
     if (totalItems.value === 0) return 0;
     return Math.round((packedItems.value / totalItems.value) * 100);
   });
+  const canUndoPackingChange = computed(() => packingUndoStack.value.length > 0);
+  const canRedoPackingChange = computed(() => packingRedoStack.value.length > 0);
 
   // ---------------------------------------------------------------------------
   // Functions
@@ -107,6 +126,147 @@ export function usePackingLists() {
       return null;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /**
+   * Clear packing-only undo and redo history.
+   * History is intentionally scoped to the current checklist and browser tab.
+   */
+  function clearPackingHistory() {
+    packingHistoryRevision += 1;
+    packingUndoStack.value = [];
+    packingRedoStack.value = [];
+  }
+
+  /**
+   * Record one logical category-wide packing status change.
+   * @param {Array<object>} beforeItems - Items before the operation
+   * @param {Array<object>} afterItems - Items after the operation
+   * @param {string|null} [checklistId=selectedChecklistId.value] - Checklist owning the change
+   */
+  function recordPackingBatchChange(
+    beforeItems,
+    afterItems,
+    checklistId = selectedChecklistId.value
+  ) {
+    const changes = afterItems
+      .map((afterItem) => {
+        const beforeItem = beforeItems.find((item) => item.id === afterItem.id);
+        if (!beforeItem) return null;
+
+        const before = {
+          isPacked: beforeItem.isPacked,
+          isPending: beforeItem.isPending,
+        };
+        const after = {
+          isPacked: afterItem.isPacked,
+          isPending: afterItem.isPending,
+        };
+
+        if (before.isPacked === after.isPacked && before.isPending === after.isPending) {
+          return null;
+        }
+
+        return { itemId: afterItem.id, before, after };
+      })
+      .filter(Boolean);
+
+    if (changes.length === 0 || !checklistId) return;
+
+    packingHistoryRevision += 1;
+    packingUndoStack.value = [...packingUndoStack.value, { checklistId, changes }].slice(
+      -PACKING_HISTORY_LIMIT
+    );
+    packingRedoStack.value = [];
+  }
+
+  /**
+   * Invalidate redo when an individual item changes packing state.
+   * Individual item actions stay outside the category-level undo history.
+   * @param {object|undefined} beforeItem - Item before the update
+   * @param {object} afterItem - Item after the update
+   */
+  function invalidatePackingRedo(beforeItem, afterItem) {
+    if (
+      !beforeItem ||
+      (beforeItem.isPacked === afterItem.isPacked && beforeItem.isPending === afterItem.isPending)
+    ) {
+      return;
+    }
+
+    packingHistoryRevision += 1;
+    packingRedoStack.value = [];
+  }
+
+  /**
+   * Apply one stored history entry against the latest in-memory item data.
+   * Only packing fields are changed so later edits to names or quantities survive.
+   * @param {object} entry - Packing history entry
+   * @param {'before'|'after'} direction - State snapshot to apply
+   * @returns {Promise<boolean>} Whether the entry was applied
+   */
+  async function applyPackingHistoryEntry(entry, direction) {
+    if (!entry || entry.checklistId !== selectedChecklistId.value) return false;
+
+    const updates = entry.changes
+      .map((change) => {
+        const currentItem = items.value.find((item) => item.id === change.itemId);
+        if (!currentItem) return null;
+        return new Item({ ...currentItem, ...change[direction] });
+      })
+      .filter(Boolean);
+
+    if (updates.length === 0) return false;
+    const result = await updateMultipleItems(updates, { recordHistory: false });
+    return Boolean(result && entry.checklistId === selectedChecklistId.value);
+  }
+
+  /**
+   * Undo the latest category-wide packing status change.
+   * @returns {Promise<boolean>} Whether a change was undone
+   */
+  async function undoPackingChange() {
+    if (isApplyingPackingHistory) return false;
+    isApplyingPackingHistory = true;
+    try {
+      const entry = packingUndoStack.value.at(-1);
+      const revision = packingHistoryRevision;
+      if (!(await applyPackingHistoryEntry(entry, 'before'))) return false;
+      if (packingHistoryRevision !== revision || packingUndoStack.value.at(-1) !== entry) {
+        return false;
+      }
+
+      packingHistoryRevision += 1;
+      packingUndoStack.value = packingUndoStack.value.slice(0, -1);
+      packingRedoStack.value = [...packingRedoStack.value, entry].slice(-PACKING_HISTORY_LIMIT);
+      return true;
+    } finally {
+      isApplyingPackingHistory = false;
+    }
+  }
+
+  /**
+   * Redo the latest undone category-wide packing status change.
+   * @returns {Promise<boolean>} Whether a change was redone
+   */
+  async function redoPackingChange() {
+    if (isApplyingPackingHistory) return false;
+    isApplyingPackingHistory = true;
+    try {
+      const entry = packingRedoStack.value.at(-1);
+      const revision = packingHistoryRevision;
+      if (!(await applyPackingHistoryEntry(entry, 'after'))) return false;
+      if (packingHistoryRevision !== revision || packingRedoStack.value.at(-1) !== entry) {
+        return false;
+      }
+
+      packingHistoryRevision += 1;
+      packingRedoStack.value = packingRedoStack.value.slice(0, -1);
+      packingUndoStack.value = [...packingUndoStack.value, entry].slice(-PACKING_HISTORY_LIMIT);
+      return true;
+    } finally {
+      isApplyingPackingHistory = false;
     }
   }
 
@@ -316,14 +476,24 @@ export function usePackingLists() {
    * @returns {Promise<Array>} Array of category objects sorted by order
    */
   async function getCategories() {
-    if (!selectedChecklistId.value) {
+    const checklistId = selectedChecklistId.value;
+    const selectionAtStart = selectionRevision;
+    const requestRevision = ++categoriesRequestRevision;
+    if (!checklistId) {
       categories.value = [];
       return [];
     }
     const result = await loadData(
-      () => dataService.getCategories(selectedChecklistId.value),
+      () => dataService.getCategories(checklistId),
       'Error getting categories'
     );
+    if (
+      selectedChecklistId.value !== checklistId ||
+      selectionRevision !== selectionAtStart ||
+      categoriesRequestRevision !== requestRevision
+    ) {
+      return categories.value;
+    }
     categories.value = (result || []).sort((a, b) => (a.order || 0) - (b.order || 0));
     return categories.value;
   }
@@ -351,6 +521,7 @@ export function usePackingLists() {
    * @returns {Promise<void>}
    */
   async function deleteCategory(categoryId) {
+    clearPackingHistory();
     await loadData(() => dataService.deleteCategory(categoryId), 'Error deleting category');
     await Promise.all([getCategories(), getItems()]);
   }
@@ -399,14 +570,21 @@ export function usePackingLists() {
    * @returns {Promise<Array>} Array of item objects
    */
   async function getItems() {
-    if (!selectedChecklistId.value) {
+    const checklistId = selectedChecklistId.value;
+    const selectionAtStart = selectionRevision;
+    const requestRevision = ++itemsRequestRevision;
+    if (!checklistId) {
       items.value = [];
       return [];
     }
-    const result = await loadData(
-      () => dataService.getItems(selectedChecklistId.value),
-      'Error getting items'
-    );
+    const result = await loadData(() => dataService.getItems(checklistId), 'Error getting items');
+    if (
+      selectedChecklistId.value !== checklistId ||
+      selectionRevision !== selectionAtStart ||
+      itemsRequestRevision !== requestRevision
+    ) {
+      return items.value;
+    }
     items.value = (result || []).sort((a, b) => {
       // First sort by category order, then by item order within category
       const catA = categories.value.find((c) => c.id === a.categoryId);
@@ -428,16 +606,82 @@ export function usePackingLists() {
    * @returns {Promise<object|null>} Updated item or null on error
    */
   async function updateItem(itemData) {
-    if (!selectedChecklistId.value) return null;
+    const checklistId = selectedChecklistId.value;
+    const selectionAtStart = selectionRevision;
+    if (!checklistId) return null;
+    const previousItem = items.value.find((item) => item.id === itemData.id);
     const result = await loadData(
-      () => dataService.updateItem(selectedChecklistId.value, itemData),
+      () => dataService.updateItem(checklistId, itemData),
       'Error updating item'
     );
     if (result) {
+      if (selectedChecklistId.value !== checklistId || selectionRevision !== selectionAtStart) {
+        return result;
+      }
       await getItems();
+      if (selectedChecklistId.value !== checklistId || selectionRevision !== selectionAtStart) {
+        return result;
+      }
+      invalidatePackingRedo(previousItem, result);
       return result;
     }
     return null;
+  }
+
+  /**
+   * Update multiple existing items as one operation.
+   * @param {Array<object>} itemData - Updated items
+   * @param {object} [options] - Update behavior
+   * @param {boolean} [options.recordHistory=false] - Whether to record one category packing change
+   * @returns {Promise<Array<object>|null>} Updated items or null on error
+   */
+  async function updateMultipleItems(itemData, { recordHistory = false } = {}) {
+    const checklistId = selectedChecklistId.value;
+    const selectionAtStart = selectionRevision;
+    if (!checklistId || itemData.length === 0) return [];
+    const itemIds = new Set(itemData.map((item) => item.id));
+    const previousItems = items.value.filter((item) => itemIds.has(item.id));
+    const result = await loadData(
+      () => dataService.updateMultipleItems(checklistId, itemData),
+      'Error updating items'
+    );
+    if (result) {
+      if (selectedChecklistId.value !== checklistId || selectionRevision !== selectionAtStart) {
+        return null;
+      }
+      await getItems();
+      if (selectedChecklistId.value !== checklistId || selectionRevision !== selectionAtStart) {
+        return null;
+      }
+      if (recordHistory) {
+        recordPackingBatchChange(previousItems, result, checklistId);
+      }
+      return result;
+    }
+    return null;
+  }
+
+  /**
+   * Pack or unpack every item in a category as one undoable action.
+   * @param {string} categoryId - Category ID
+   * @param {boolean} isPacked - Target packed state
+   * @returns {Promise<Array<object>|null>} Updated items or null on error
+   */
+  async function setCategoryPacked(categoryId, isPacked) {
+    const categoryItems = items.value
+      .filter((item) => item.categoryId === categoryId)
+      .filter((item) => item.isPacked !== isPacked || (isPacked && item.isPending))
+      .map(
+        (item) =>
+          new Item({
+            ...item,
+            isPacked,
+            isPending: isPacked ? false : item.isPending,
+          })
+      );
+
+    if (categoryItems.length === 0) return [];
+    return updateMultipleItems(categoryItems, { recordHistory: true });
   }
 
   /**
@@ -447,6 +691,7 @@ export function usePackingLists() {
    */
   async function deleteItem(itemId) {
     if (!selectedChecklistId.value) return;
+    clearPackingHistory();
     await loadData(
       () => dataService.deleteItem(selectedChecklistId.value, itemId),
       'Error deleting item'
@@ -475,6 +720,18 @@ export function usePackingLists() {
   // -----------------------------------------------------------------------------
   // Watchers
   // -----------------------------------------------------------------------------
+
+  // Watch for checklist changes to load relevant items
+  watch(
+    selectedChecklistId,
+    (newId, oldId) => {
+      if (newId !== oldId) {
+        selectionRevision += 1;
+        clearPackingHistory();
+      }
+    },
+    { flush: 'sync' }
+  );
 
   // Watch for checklist changes to load relevant items
   watch(selectedChecklistId, (newId) => {
@@ -508,6 +765,8 @@ export function usePackingLists() {
     totalItems,
     packedItems,
     progress,
+    canUndoPackingChange,
+    canRedoPackingChange,
 
     // System
     initialize,
@@ -531,10 +790,14 @@ export function usePackingLists() {
     createItem,
     getItems,
     updateItem,
+    updateMultipleItems,
     deleteItem,
     duplicateItem,
 
     // Item utilities
     toggleItemPacked,
+    setCategoryPacked,
+    undoPackingChange,
+    redoPackingChange,
   };
 }

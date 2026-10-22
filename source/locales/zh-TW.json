@@ -8,7 +8,9 @@
     "save": "儲存",
     "confirm": "確認",
     "copySuffix": " (複製)",
-    "moreOptions": "更多選項"
+    "moreOptions": "更多選項",
+    "packingUpdated": "打包狀態已更新",
+    "undo": "復原"
   },
   "sidebar": {
     "title": "清單列表",
@@ -36,7 +38,9 @@
     "shoppingList": "待買/待辦",
     "itemsLeft": "項待處理",
     "expand": "展開",
-    "collapse": "收合"
+    "collapse": "收合",
+    "packAll": "打包此分類的所有物品",
+    "unpackAll": "取消打包此分類的所有物品"
   },
   "item": {
     "name": "物品名稱",
