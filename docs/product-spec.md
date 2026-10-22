@@ -81,10 +81,12 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Create checklist: Always open a source dialog offering an empty checklist, a personal template, or a recommended list.
     - Empty source: Create only the checklist without categories or items.
     - Seeded sources: Generate fresh category/item IDs, remap item `categoryId`, and reset packed/pending state.
+    - Source-aware name: Default to `New Checklist (Empty)`, `New Checklist (Template: {name})`, or `New Checklist (Recommended: {name})`; truncate the source name to keep the complete name within 100 characters.
   - Edit checklist: Edit `name`.
   - Date Editing:
     - Uses native HTML5 date input for reliability.
     - Bidirectional protection: Changing start date updates end date if end < start. Changing end date updates it to start date if end < start.
+    - Date display includes the year once for a same-year range and on both endpoints for a cross-year range (for example, `Nov 26, 2025 - Jan 5, 2026`).
   - Copy checklist: Duplicate an existing checklist with all its categories and items.
   - Delete checklist: Cascade delete all categories and items under the checklist.
   - Reorder checklists: Drag to update `order` (starting at 0); persists and remains after reload.
@@ -95,6 +97,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - After create:
     - Empty checklists contain no categories or items; seeded checklists contain isolated source snapshots.
     - Each generated category/item belongs to the new checklist; item category references are valid and runtime state is reset.
+    - The default name identifies the selected source so an accidental selection remains recognizable.
     - localStorage (key: `packingListApp`) contains the new data; persists after reload.
   - Edit: UI updates immediately and persists; dates are `YYYY-MM-DD`.
   - Copy: Duplicated checklist appears right after the original with " (Copy)" suffix; all categories and items are duplicated with new IDs.
@@ -134,6 +137,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - English and Traditional Chinese content files contain display names and descriptions only.
   - Reused item IDs allow multiple recommended lists to reference one translated item without duplicating membership rules.
   - Every recommended list covers documents, payment, core clothing, personal care, health, electronics, and travel essentials; it then adds purpose- or climate-specific items instead of activity-specific equipment.
+  - The Warm-Climate Travel description explicitly includes island and beach destinations in addition to heat, humidity, and strong sun.
 - Interaction rules:
   - Recommended lists appear only in the new-checklist dialog and cannot be renamed, edited, deleted, or reordered.
   - Selecting a recommended list creates an ordinary editable checklist; later edits never change the bundled source.
@@ -154,6 +158,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Delete category: Cascade delete all items under it.
   - Reorder categories: Drag to update `order` (starting at 0); persists and remains after reload.
   - Progress display: Calculate completion percentage based on `isPacked` of items within the category.
+  - Pack/unpack all: A checkbox to the left of the category title reflects unchecked, mixed, and checked states and updates every item in one atomic storage operation.
   - Category Collapse: Click the arrow button next to the category title to collapse/expand the item list. Title and progress bar remain visible when collapsed to improve browsing efficiency for long lists.
 - Flow:
   - Add → rename → delete → drag to reorder → collapse/expand.
@@ -162,6 +167,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - After delete: Its items disappear from UI and localStorage.
   - After drag: Each category `order` is continuous from 0; order persists after reload.
   - Progress: Completed/total syncs with item check/uncheck.
+  - Pack/unpack all: Empty categories disable the checkbox; a mixed category packs all on the next check; one undo restores each item's prior packed/pending state.
   - Collapse functionality: Item list expands/collapses smoothly on click; title and progress bar remain visible in collapsed state.
 
 #### Item Management
@@ -173,6 +179,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Edit Mode:
     - Uses `box-shadow` instead of `border-bottom` to avoid layout shifts.
     - Input field styling matches display text exactly (font size, line height, padding) to ensure seamless toggle.
+    - Entering edit mode focuses with scroll prevention and selects the full name; a newly created item enters this state automatically. Scrolling occurs only when the input is outside the visible viewport and uses nearest, non-animated alignment.
   - UI Improvements:
     - Interactive elements (buttons, menus) unified sizing: `size-9` on mobile, `size-6` on desktop for visual consistency.
   - Toggle status: Toggling `isPacked` immediately updates category and checklist progress; preserves `order`.
@@ -221,6 +228,19 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Persistence: Packing status saved in localStorage; progress matches UI after reload.
   - Cross-category moves: Source/target category completion updates correctly; checklist total progress stays correct.
 
+#### Packing Undo and Redo
+
+- Purpose: Recover category-wide packing mistakes without rolling back unrelated content edits.
+- Key features:
+  - Each category-wide pack/unpack action creates one history entry containing only `isPacked` and `isPending` changes.
+  - Individual item packed/pending changes are not recorded; making one after an undo clears the redo entry so it cannot overwrite the newer choice.
+  - `Ctrl+Z` / `Cmd+Z` undoes and `Ctrl+Shift+Z` / `Cmd+Shift+Z` redoes when focus is outside editable controls; text inputs retain native browser undo.
+  - Category-wide changes show a five-second status notice with an Undo button. `Escape` continues to cancel inline name editing without saving.
+  - History is limited to 50 entries, stays in memory for the current tab, and clears when switching checklists, deleting items/categories, or receiving external storage changes.
+- Validation:
+  - Undoing a category-wide change restores the previous mixed packed/pending state in one action; redo reapplies it.
+  - Undo changes only packing fields, preserving later name, quantity, order, and category edits on items that still exist.
+
 #### Responsive Design
 
 - Purpose: Provide a natural and smooth navigation and operation experience across different devices and window widths, specifically optimized for mobile touch interactions.
@@ -233,7 +253,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Interaction Optimization:
       - Long Press Drag: To prevent accidental touches, dragging on mobile requires a 200ms long press (configured in `vuedraggable`).
       - Touch Targets: Buttons and interactive elements have a minimum size of 44x44px, complying with accessibility standards.
-      - Keyboard Avoidance: Automatically scrolls to view when editing inputs (`scrollIntoView`) to prevent occlusion by the virtual keyboard.
+      - Keyboard Avoidance: Focus editing inputs with scroll prevention; after the mobile viewport settles, scroll only an occluded input to the nearest visible position without animation.
       - Hover Handling: Uses `matchMedia('(hover: hover)')` to distinguish between touch and mouse devices, hiding hover styles on mobile.
     - Visual Optimization:
       - Interface Simplification: Mobile version hides some edit buttons, switching to "click text to edit" mode; Overflow Menu (`...`) is always visible.
