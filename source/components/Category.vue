@@ -186,11 +186,12 @@ Created: 2025-09-19
 // Imports
 // ------------------------------------------------------------------------------
 
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
 
 import { Category } from '../models/Category';
 import { putOnlyFromGroup } from '../utils/dragDrop.js';
+import { focusEditingInput } from '../utils/focusEditingInput.js';
 import AddItemButton from './AddItemButton.vue';
 import Item from './Item.vue';
 import OverflowMenu from './OverflowMenu.vue';
@@ -250,6 +251,7 @@ const isEditing = ref(false);
 const editedName = ref('');
 const editInput = ref(null);
 const isComposing = ref(false);
+let cleanupEditingFocus = () => {};
 
 // Drag state
 const draggingItemId = ref(null);
@@ -350,24 +352,19 @@ function handleBlur() {
  * Enter edit mode and focus on the category name input
  */
 async function startEdit() {
+  cleanupEditingFocus();
   isEditing.value = true;
   editedName.value = props.category.name;
 
   await nextTick();
-  if (editInput.value) {
-    editInput.value.focus();
-    editInput.value.select();
-    // Scroll the input into view to prevent keyboard from covering it on mobile
-    setTimeout(() => {
-      editInput.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300);
-  }
+  cleanupEditingFocus = focusEditingInput(editInput.value);
 }
 
 /**
  * Save the edited category name if changed
  */
 function saveEdit() {
+  cleanupEditingFocus();
   const hasNameChanged = editedName.value.trim() && editedName.value !== props.category.name;
 
   if (hasNameChanged) {
@@ -384,6 +381,7 @@ function saveEdit() {
  * Cancel editing and restore original category name
  */
 function cancelEdit() {
+  cleanupEditingFocus();
   isEditing.value = false;
   editedName.value = props.category.name;
 }
@@ -503,6 +501,8 @@ watch(
     }
   }
 );
+
+onUnmounted(() => cleanupEditingFocus());
 </script>
 
 <style scoped>

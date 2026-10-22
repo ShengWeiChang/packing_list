@@ -130,8 +130,14 @@ test.describe('Mobile Workflow (375px)', () => {
       const addItemBtn = page.getByTestId('add-item-button').first();
       await addItemBtn.click();
 
-      const itemInput = page.getByTestId('item-edit-input');
-      await expect(itemInput.first()).toBeVisible();
+      const itemInput = page.getByTestId('item-edit-input').first();
+      await expect(itemInput).toBeFocused();
+      await expect
+        .poll(() => itemInput.evaluate((input) => [input.selectionStart, input.selectionEnd]))
+        .toEqual([0, 'New Item'.length]);
+      await page.keyboard.type('Beach Towel');
+      await itemInput.press('Enter');
+      await expect(page.getByTestId('item-name').filter({ hasText: 'Beach Towel' })).toBeVisible();
     });
 
     // Test Case 7: Should edit an item name on mobile

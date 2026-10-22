@@ -180,7 +180,11 @@ describe('Item', () => {
       const nameSpan = w.get('span[role="button"]');
       await nameSpan.trigger('click');
 
-      expect(w.get('[data-testid="item-edit-input"]').element.value).toBe('Passport');
+      const input = w.get('[data-testid="item-edit-input"]');
+      expect(input.element.value).toBe('Passport');
+      expect(document.activeElement).toBe(input.element);
+      expect(input.element.selectionStart).toBe(0);
+      expect(input.element.selectionEnd).toBe('Passport'.length);
     });
 
     // Test Case 9: Should save edited name on Enter key
@@ -459,9 +463,10 @@ describe('Item', () => {
       await w.vm.$nextTick();
       await w.vm.$nextTick();
 
-      expect(w.get('[data-testid="item-edit-input"]').attributes('data-testid')).toBe(
-        'item-edit-input'
-      );
+      const input = w.get('[data-testid="item-edit-input"]');
+      expect(document.activeElement).toBe(input.element);
+      expect(input.element.selectionStart).toBe(0);
+      expect(input.element.selectionEnd).toBe('Passport'.length);
     });
 
     // Test Case 24: Should not start edit for non-matching item ID

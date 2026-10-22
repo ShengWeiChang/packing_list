@@ -91,9 +91,15 @@ test.describe('Item Packing Workflow', () => {
       const addItemBtn = page.getByTestId('add-item-button').first();
       await addItemBtn.click();
 
-      // The new item should be in edit mode (input visible)
-      const itemInput = page.getByTestId('item-edit-input');
-      await expect(itemInput.first()).toBeVisible();
+      // The new item should be ready for immediate typing without another click.
+      const itemInput = page.getByTestId('item-edit-input').first();
+      await expect(itemInput).toBeFocused();
+      await expect
+        .poll(() => itemInput.evaluate((input) => [input.selectionStart, input.selectionEnd]))
+        .toEqual([0, 'New Item'.length]);
+      await page.keyboard.type('Beach Towel');
+      await itemInput.press('Enter');
+      await expect(page.getByTestId('item-name').filter({ hasText: 'Beach Towel' })).toBeVisible();
     });
 
     // Test Case 3: Should edit an item name
@@ -107,7 +113,29 @@ test.describe('Item Packing Workflow', () => {
       await itemInput.press('Enter');
 
       // Verify the item name is displayed
-      await expect(page.locator('text=Sunscreen SPF 50')).toBeVisible();
+      const itemName = page.getByTestId('item-name').filter({ hasText: 'Sunscreen SPF 50' });
+      await expect(itemName).toBeVisible();
+
+      // Entering edit mode must not trigger the former delayed center-scroll jump.
+      const itemNames = page.getByTestId('item-name');
+      const scrollTarget = itemNames.nth(Math.floor((await itemNames.count()) / 2));
+      await scrollTarget.evaluate((element) => {
+        const targetTop = element.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo(0, targetTop - 100);
+      });
+      const scrollMetricsBeforeEdit = await page.evaluate(() => ({
+        top: window.scrollY,
+        max: document.documentElement.scrollHeight - window.innerHeight,
+      }));
+      expect(scrollMetricsBeforeEdit.top).toBeGreaterThan(0);
+      expect(scrollMetricsBeforeEdit.top).toBeLessThan(scrollMetricsBeforeEdit.max);
+      await expect(scrollTarget).toBeInViewport();
+      await scrollTarget.click();
+      await expect(page.getByTestId('item-edit-input').first()).toBeFocused();
+      await page.waitForTimeout(400);
+      await expect
+        .poll(() => page.evaluate(() => window.scrollY))
+        .toBe(scrollMetricsBeforeEdit.top);
     });
 
     // Test Case 4: Should toggle item packed status via checkbox

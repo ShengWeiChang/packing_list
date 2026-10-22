@@ -196,11 +196,12 @@ Created: 2025-09-19
 // Imports
 // ------------------------------------------------------------------------------
 
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 
 import { putOnlyFromGroup } from '../utils/dragDrop.js';
+import { focusEditingInput } from '../utils/focusEditingInput.js';
 import { renumberOrder } from '../utils/order.js';
 import AddCategoryButton from './AddCategoryButton.vue';
 import Category from './Category.vue';
@@ -297,6 +298,7 @@ const startDateInput = ref(null);
 const endDateInput = ref(null);
 const isComposing = ref(false);
 const isAdjustingDates = ref(false); // Guard flag to prevent watcher infinite loops
+let cleanupEditingFocus = () => {};
 
 // Drag state
 const draggingCategoryId = ref(null);
@@ -389,26 +391,21 @@ function handleEditBlur(_event) {
  * Enter edit mode and focus on name input
  */
 async function startEdit() {
+  cleanupEditingFocus();
   isEditing.value = true;
   editedName.value = props.checklist.name;
   editedStartDate.value = props.checklist.startDate;
   editedEndDate.value = props.checklist.endDate;
 
   await nextTick();
-  if (nameInput.value) {
-    nameInput.value.focus();
-    nameInput.value.select();
-    // Scroll the input into view to prevent keyboard from covering it on mobile
-    setTimeout(() => {
-      nameInput.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300);
-  }
+  cleanupEditingFocus = focusEditingInput(nameInput.value);
 }
 
 /**
  * Save changes to checklist if any values were modified
  */
 function saveEdit() {
+  cleanupEditingFocus();
   const hasNameChanged = editedName.value.trim() !== props.checklist.name;
   const hasStartDateChanged = editedStartDate.value !== props.checklist.startDate;
   const hasEndDateChanged = editedEndDate.value !== props.checklist.endDate;
@@ -429,6 +426,7 @@ function saveEdit() {
  * Cancel editing and restore original values
  */
 function cancelEdit() {
+  cleanupEditingFocus();
   isEditing.value = false;
   editedName.value = props.checklist.name;
   editedStartDate.value = props.checklist.startDate;
@@ -578,6 +576,8 @@ watch(editedEndDate, (newEndDate) => {
     });
   }
 });
+
+onUnmounted(() => cleanupEditingFocus());
 </script>
 
 <style scoped>
