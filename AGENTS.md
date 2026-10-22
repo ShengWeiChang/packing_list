@@ -80,6 +80,17 @@ When editing ANY document in `docs/`, you MUST update BOTH versions.
 
 ## Project Skill Language
 
-Each project skill has one English canonical `SKILL.md`. Do not create or
-maintain a parallel `SKILL-zh.md`; put human-facing Chinese explanations in
-the paired documentation when they are needed.
+Project skills live in `.agents/skills/` and each has one English canonical
+`SKILL.md`. Do not create or maintain a parallel `SKILL-zh.md`; put
+human-facing Chinese explanations in the paired documentation when they are
+needed. This layout is the portable source for supported agents; do not create
+provider-specific copies unless a future host demonstrably requires one.
+
+## Project Skill Routing
+
+- Before handing off a meaningful user-visible behavior change, use
+  `$feature-completion`.
+- For an implementation-diff review, use `$code-review`.
+- For a test-design, coverage-risk, or test-quality review, use
+  `$test-analysis`.
+- When modifying a paired document, use its matching `$doc-audit-*` skill.

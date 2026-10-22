@@ -50,9 +50,10 @@ type: description
 
 ## Execution Workflow
 
-1. **Collect commits**:
-   - Read all commits in current branch: `git log main..HEAD --oneline`
-   - Count changed files: `git diff main...HEAD --stat`
+1. **Determine the comparison base and collect commits**:
+   - Use the merge target when supplied; otherwise inspect repository metadata and state the assumed base branch rather than hard-coding `main`.
+   - Read branch commits: `git log <base>..HEAD --oneline`
+   - Count changed files from the merge-base diff: `git diff <base>...HEAD --stat`
 
 2. **Analyze theme**:
    - Identify primary change type (feat / fix / test / docs)

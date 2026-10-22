@@ -41,7 +41,7 @@ For new or changed interactive UI, verify as applicable:
 ## 4. Documentation and Repository Hygiene
 
 1. Update `docs/product-spec*.md`, `docs/code-quality*.md`, or `docs/testing-guide*.md` only when the feature changes the contract, convention, or documented inventory.
-2. Keep paired English and Traditional Chinese documents structurally aligned. Some `*-zh.md` files are intentionally ignored by Git in this repository; still update and verify them in the working tree, and explicitly report that they will not appear in `git status`.
+2. Keep paired English and Traditional Chinese documents structurally aligned, with equivalent content and the same line count. Both files must be included in the Git diff.
 3. Follow `AGENTS.md` for Vue attribute order, Tailwind class order, naming, and paired documentation rules.
 4. Do not broaden the diff with unrelated cleanup or create feature-specific Skills unless the workflow is genuinely reusable across the project.
 
