@@ -121,6 +121,7 @@ Created: 2025-09-19
           @update:category="handleCategoryUpdate"
           @copy:category="handleCategoryCopy"
           @delete:category="handleCategoryDelete"
+          @set-category-packed="handleCategoryPacked"
           @reorder:categories="handleCategoryReorder"
           @move:item="handleItemMove"
           @save-as-template="handleSaveAsTemplate"
@@ -149,6 +150,22 @@ Created: 2025-09-19
       @close="showSaveTemplateDialog = false"
       @save="handleTemplateSave"
     />
+
+    <div
+      v-if="showPackingUndo && canUndoPackingChange"
+      class="fixed bottom-4 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-4 rounded-lg bg-primary px-4 py-3 text-white shadow-lg"
+      role="status"
+      data-testid="packing-undo-toast"
+    >
+      <span>{{ $t('common.packingUpdated') }}</span>
+      <button
+        type="button"
+        class="font-semibold text-white underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        @click="handleUndoPackingChange"
+      >
+        {{ $t('common.undo') }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -169,6 +186,7 @@ import Topbar from './components/Topbar.vue';
 import { usePackingLists } from './composables/usePackingLists';
 import { useTemplates } from './composables/useTemplates';
 import { RecommendedListService } from './services/recommendedListService.js';
+import { VALIDATION } from './utils/constants.js';
 import { generateSecureId } from './utils/helpers.js';
 
 // ------------------------------------------------------------------------------
@@ -217,6 +235,11 @@ const {
   updateItem,
   deleteItem,
   duplicateItem,
+  setCategoryPacked,
+  canUndoPackingChange,
+  canRedoPackingChange,
+  undoPackingChange,
+  redoPackingChange,
 } = usePackingLists();
 
 // Initialize templates composable
@@ -237,6 +260,8 @@ const showSaveTemplateDialog = ref(false);
 const templateChecklistId = ref(null);
 const templateChecklistName = ref('');
 const templateEditing = ref(null);
+const showPackingUndo = ref(false);
+let packingUndoTimer = null;
 
 // Newly created item tracking for auto-edit
 const newlyCreatedItemId = ref(null);
@@ -442,6 +467,81 @@ async function handleCategoryDelete(categoryId) {
 }
 
 /**
+ * Pack or unpack all items in a category and offer a short-lived undo action.
+ * @param {object} change - Category packing intent
+ * @param {string} change.categoryId - Category ID
+ * @param {boolean} change.isPacked - Target packed state
+ */
+async function handleCategoryPacked({ categoryId, isPacked }) {
+  const checklistId = selectedChecklistId.value;
+  const updatedItems = await handleAsyncAction(setCategoryPacked, categoryId, isPacked);
+  if (
+    !updatedItems?.length ||
+    selectedChecklistId.value !== checklistId ||
+    !canUndoPackingChange.value
+  ) {
+    return;
+  }
+
+  showPackingUndo.value = true;
+  window.clearTimeout(packingUndoTimer);
+  packingUndoTimer = window.setTimeout(() => {
+    showPackingUndo.value = false;
+  }, 5000);
+}
+
+/**
+ * Undo the most recent category-wide packing status change.
+ */
+async function handleUndoPackingChange() {
+  if (await undoPackingChange()) {
+    showPackingUndo.value = false;
+    window.clearTimeout(packingUndoTimer);
+  }
+}
+
+/**
+ * Return whether a keyboard event originated in an editable control.
+ * @param {EventTarget|null} target - Keyboard event target
+ * @returns {boolean} Whether native text editing should retain the shortcut
+ */
+function isEditableTarget(target) {
+  if (!(target instanceof HTMLElement)) return false;
+  return (
+    target.isContentEditable ||
+    target.tagName === 'INPUT' ||
+    target.tagName === 'TEXTAREA' ||
+    target.tagName === 'SELECT'
+  );
+}
+
+/**
+ * Handle global undo/redo shortcuts for category-wide packing status changes.
+ * @param {KeyboardEvent} event - Window keydown event
+ */
+function handlePackingHistoryKeydown(event) {
+  if (
+    event.repeat ||
+    event.altKey ||
+    (!event.ctrlKey && !event.metaKey) ||
+    event.key.toLowerCase() !== 'z' ||
+    isEditableTarget(event.target)
+  ) {
+    return;
+  }
+
+  if (event.shiftKey) {
+    if (!canRedoPackingChange.value) return;
+    event.preventDefault();
+    void redoPackingChange();
+  } else {
+    if (!canUndoPackingChange.value) return;
+    event.preventDefault();
+    void handleUndoPackingChange();
+  }
+}
+
+/**
  * Handle category drag-and-drop reordering
  * @param {Array<object>} reorderedCategories - Array of categories with updated order properties
  */
@@ -456,6 +556,22 @@ async function handleCategoryReorder(reorderedCategories) {
 }
 
 // ---------- Checklist Handlers ----------
+
+/**
+ * Build a default checklist name that identifies how it was created.
+ * Source names are truncated so the generated value still satisfies model limits.
+ * @param {'empty'|'template'|'recommended'} source - Creation source
+ * @param {string} [sourceName=''] - Localized template or recommended-list name
+ * @returns {string} Source-aware checklist name
+ */
+function buildSourceAwareChecklistName(source, sourceName = '') {
+  const key = `checklist.defaultNameFrom${source[0].toUpperCase()}${source.slice(1)}`;
+  if (source === 'empty') return t(key);
+
+  const wrapperLength = t(key, { name: '' }).length;
+  const availableNameLength = Math.max(0, VALIDATION.NAME_MAX_LENGTH - wrapperLength);
+  return t(key, { name: sourceName.slice(0, availableNameLength) });
+}
 
 /**
  * Open the new checklist dialog to let user choose source
@@ -475,21 +591,27 @@ async function handleNewChecklistSelect(selection) {
   const maxOrder =
     checklists.value.length > 0 ? Math.max(...checklists.value.map((cl) => cl.order || 0)) : -1;
 
-  const newChecklistData = {
-    name: t('checklist.defaultName'),
-    order: maxOrder + 1,
-  };
-
   if (
     (selection.source === 'template' && selection.templateId) ||
     (selection.source === 'recommended' && selection.recommendedListId)
   ) {
     const checklistId = generateSecureId('checklist-');
     let seedData = null;
+    let sourceName = '';
 
     if (selection.source === 'template') {
+      const selectedTemplate = templates.value.find(
+        (template) => template.id === selection.templateId
+      );
+      if (!selectedTemplate) return;
+      sourceName = selectedTemplate.name;
       seedData = applyTemplate(selection.templateId, checklistId);
     } else {
+      const selectedRecommendedList = recommendedLists.value.find(
+        (list) => list.id === selection.recommendedListId
+      );
+      if (!selectedRecommendedList) return;
+      sourceName = selectedRecommendedList.name;
       try {
         seedData = recommendedListService.applyToNewChecklist(
           selection.recommendedListId,
@@ -503,8 +625,9 @@ async function handleNewChecklistSelect(selection) {
     if (!seedData) return;
 
     const checklistWithId = {
-      ...newChecklistData,
       id: checklistId,
+      name: buildSourceAwareChecklistName(selection.source, sourceName),
+      order: maxOrder + 1,
     };
     const options = { source: selection.source, seedData };
     const newChecklist = await handleAsyncAction(createChecklist, checklistWithId, options);
@@ -512,6 +635,10 @@ async function handleNewChecklistSelect(selection) {
       newlyCreatedChecklistId.value = newChecklist.id;
     }
   } else if (selection.source === 'empty') {
+    const newChecklistData = {
+      name: buildSourceAwareChecklistName('empty'),
+      order: maxOrder + 1,
+    };
     const options = { source: 'empty' };
     const newChecklist = await handleAsyncAction(createChecklist, newChecklistData, options);
     if (newChecklist) {
@@ -658,11 +785,14 @@ onMounted(async () => {
   // Set up responsive behavior
   checkScreenSize();
   window.addEventListener('resize', handleResize);
+  window.addEventListener('keydown', handlePackingHistoryKeydown);
 });
 
 // Clean up event listeners
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
+  window.removeEventListener('keydown', handlePackingHistoryKeydown);
+  window.clearTimeout(packingUndoTimer);
 });
 
 // ------------------------------------------------------------------------------
@@ -679,6 +809,12 @@ watch([isSidebarOpen, isMobileViewport, isSmallDesktop], () => {
   } else {
     document.body.style.overflow = '';
   }
+});
+
+watch(canUndoPackingChange, (canUndo) => {
+  if (canUndo) return;
+  showPackingUndo.value = false;
+  window.clearTimeout(packingUndoTimer);
 });
 </script>
 

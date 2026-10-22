@@ -15,7 +15,7 @@ Created: 2026-02-06
 // -----------------------------------------------------------------------------
 
 import { shallowMount } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import Category from '../../source/components/Category.vue';
 import ProgressBar from '../../source/components/ProgressBar.vue';
@@ -503,6 +503,54 @@ describe('Category', () => {
 
       // NOW it should emit
       expect(wrapper.emitted('update:category')).toHaveLength(1);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 11: Category Packing Checkbox
+  // ---------------------------------------------------------------------------
+
+  describe('category packing checkbox', () => {
+    // Test Case 26: Should expose mixed state and request packing all items
+    it('should expose a mixed category checkbox and request packing all items', async () => {
+      const wrapper = createWrapper();
+      const checkbox = wrapper.get('[data-testid="category-checkbox"]');
+
+      expect(checkbox.element.indeterminate).toBe(true);
+      expect(checkbox.attributes('aria-checked')).toBe('mixed');
+
+      const bubbledMouseDown = vi.fn();
+      wrapper.element.addEventListener('mousedown', bubbledMouseDown);
+      await checkbox.trigger('mousedown');
+      expect(bubbledMouseDown).not.toHaveBeenCalled();
+
+      checkbox.element.checked = true;
+      await checkbox.trigger('change');
+
+      expect(wrapper.emitted('set-category-packed')).toEqual([
+        [{ categoryId: 'cat-1', isPacked: true }],
+      ]);
+    });
+
+    // Test Case 27: Should expose checked, unchecked, and disabled states
+    it('should expose checked, unchecked, and disabled category checkbox states', async () => {
+      const wrapper = createWrapper({ items: [] });
+      const checkbox = wrapper.get('[data-testid="category-checkbox"]');
+      expect(checkbox.attributes('disabled')).toBeDefined();
+
+      const packedItems = createMockItems().map((item) => ({
+        ...item,
+        isPacked: item.categoryId === 'cat-1' ? true : item.isPacked,
+      }));
+      await wrapper.setProps({ items: packedItems });
+      expect(checkbox.element.checked).toBe(true);
+      expect(checkbox.attributes('aria-checked')).toBe('true');
+
+      await wrapper.setProps({
+        items: packedItems.map((item) => ({ ...item, isPacked: false })),
+      });
+      expect(checkbox.element.checked).toBe(false);
+      expect(checkbox.attributes('aria-checked')).toBe('false');
     });
   });
 });

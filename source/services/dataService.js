@@ -169,6 +169,16 @@ export class DataService {
   }
 
   /**
+   * Update multiple existing items within a checklist
+   * @param {string} _checklistId - Checklist ID
+   * @param {Array<object>} _items - Items to update (each must include id)
+   * @returns {Promise<Array<object>>} Updated Item objects
+   */
+  async updateMultipleItems(_checklistId, _items) {
+    throw new Error('Not implemented');
+  }
+
+  /**
    * Delete an item
    * @param {string} _checklistId - Checklist ID
    * @param {string} _itemId - Item ID to delete

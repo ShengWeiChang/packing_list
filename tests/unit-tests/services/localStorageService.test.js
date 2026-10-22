@@ -1296,4 +1296,66 @@ describe('LocalStorageService', () => {
       });
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 11: Batch Item Updates
+  // ---------------------------------------------------------------------------
+
+  describe('batch item updates', () => {
+    // Test Case 79: Multiple item updates should use one storage write
+    it('should update multiple items atomically with one storage write', async () => {
+      const checklist = await service.createChecklist({ name: 'Batch' }, { source: 'empty' });
+      const category = await service.createCategory(checklist.id, { name: 'Clothing' });
+      const first = await service.createItem(checklist.id, {
+        name: 'First',
+        categoryId: category.id,
+      });
+      const second = await service.createItem(checklist.id, {
+        name: 'Second',
+        categoryId: category.id,
+      });
+      const saveSpy = vi.spyOn(service, '_saveData');
+
+      const updated = await service.updateMultipleItems(checklist.id, [
+        { ...first, isPacked: true },
+        { ...second, isPacked: true },
+      ]);
+
+      expect(updated.every((item) => item.isPacked)).toBe(true);
+      expect(saveSpy).toHaveBeenCalledTimes(1);
+    });
+
+    // Test Case 80: Failed batches should preserve both storage and cache state
+    it('should keep the original state when validation or storage fails', async () => {
+      const checklist = await service.createChecklist({ name: 'Batch' }, { source: 'empty' });
+      const category = await service.createCategory(checklist.id, { name: 'Clothing' });
+      const existing = await service.createItem(checklist.id, {
+        name: 'Existing',
+        categoryId: category.id,
+      });
+      const saveSpy = vi.spyOn(service, '_saveData');
+
+      await expect(
+        service.updateMultipleItems(checklist.id, [
+          { ...existing, isPacked: true },
+          { ...existing, id: 'missing', isPacked: true },
+        ])
+      ).rejects.toThrow('not found');
+
+      expect(saveSpy).not.toHaveBeenCalled();
+      expect(await service.getItemById(checklist.id, existing.id)).toEqual(
+        expect.objectContaining({ isPacked: false })
+      );
+
+      saveSpy.mockImplementationOnce(() => {
+        throw new Error('Storage operation failed: quota exceeded');
+      });
+      await expect(
+        service.updateMultipleItems(checklist.id, [{ ...existing, isPacked: true }])
+      ).rejects.toThrow('quota exceeded');
+      expect(await service.getItemById(checklist.id, existing.id)).toEqual(
+        expect.objectContaining({ isPacked: false })
+      );
+    });
+  });
 });

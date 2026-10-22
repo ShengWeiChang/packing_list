@@ -12,19 +12,20 @@ export const recommendedListContentEn = {
   recommendedLists: {
     general: {
       name: 'General Travel',
-      description: 'A balanced starting point for most trips.',
+      description: 'For most trips, with practical everyday essentials.',
     },
     business: {
       name: 'Business Trip',
-      description: 'Work essentials, business clothing, and everyday travel basics.',
+      description: 'For business trips, with work essentials and professional attire.',
     },
     warm: {
       name: 'Warm-Climate Travel',
-      description: 'Lightweight layers, sun protection, and essentials for warm or humid trips.',
+      description:
+        'For trips to hot, humid, sun-drenched destinations, including island and beach getaways.',
     },
     cold: {
       name: 'Cold-Climate Travel',
-      description: 'Warm layers, weather protection, and comfort essentials for colder trips.',
+      description: 'For trips to low-temperature, windy, or snowy destinations.',
     },
   },
   categories: {

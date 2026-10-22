@@ -22,36 +22,64 @@ Created: 2025-09-19
   >
     <!-- Category Header -->
     <div class="relative mb-3 flex items-center justify-between">
-      <div class="grow">
-        <input
-          v-if="isEditing"
-          :id="`category-${category.id}-name`"
-          ref="editInput"
-          v-model="editedName"
-          :name="`category-${category.id}-name`"
-          :aria-label="$t('category.name')"
-          data-testid="category-name-input"
-          class="w-full bg-transparent p-1 text-2xl font-semibold leading-snug text-primary focus:outline-none md:text-xl"
-          style="box-shadow: inset 0 -2px 0 0 var(--interactive-focus)"
-          @keydown.enter="handleEnterKey"
-          @keyup.escape="cancelEdit"
-          @blur="handleBlur"
-          @compositionstart="handleCompositionStart"
-          @compositionend="handleCompositionEnd"
-        />
-        <h3
-          v-else
-          class="cursor-pointer rounded p-1 text-2xl font-semibold leading-snug text-primary hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus md:text-xl"
-          style="word-break: break-word; overflow-wrap: break-word"
-          role="button"
-          tabindex="0"
-          data-testid="category-name"
-          @click="startEdit"
-          @keydown.enter.prevent="startEdit"
-          @keydown.space.prevent="startEdit"
+      <div class="flex min-w-0 grow items-center">
+        <div
+          class="mr-1 flex size-9 flex-none items-center justify-center rounded-lg focus-within:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-interactive-focus has-[:focus-visible]:ring-offset-1 md:mr-2 md:size-6"
         >
-          {{ category.name }}
-        </h3>
+          <input
+            :id="`category-${category.id}-packed`"
+            :checked="isCompleted"
+            :disabled="sortedItems.length === 0"
+            :indeterminate="isPartiallyCompleted"
+            :name="`category-${category.id}-packed`"
+            type="checkbox"
+            :aria-label="isCompleted ? $t('category.unpackAll') : $t('category.packAll')"
+            :aria-checked="isPartiallyCompleted ? 'mixed' : isCompleted ? 'true' : 'false'"
+            data-testid="category-checkbox"
+            :class="[
+              'size-5 flex-none shrink-0 cursor-pointer focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:size-4',
+              isCompleted
+                ? 'border-success-state-border accent-success-state-accent'
+                : 'border-border-color-medium accent-control-accent',
+            ]"
+            :style="isCompleted ? { accentColor: 'var(--theme-primary)' } : {}"
+            @change="toggleCategoryPacked"
+            @click.stop
+            @mousedown.stop
+            @touchstart.stop
+          />
+        </div>
+        <div class="min-w-0 grow">
+          <input
+            v-if="isEditing"
+            :id="`category-${category.id}-name`"
+            ref="editInput"
+            v-model="editedName"
+            :name="`category-${category.id}-name`"
+            :aria-label="$t('category.name')"
+            data-testid="category-name-input"
+            class="w-full bg-transparent p-1 text-2xl font-semibold leading-snug text-primary focus:outline-none md:text-xl"
+            style="box-shadow: inset 0 -2px 0 0 var(--interactive-focus)"
+            @keydown.enter="handleEnterKey"
+            @keyup.escape="cancelEdit"
+            @blur="handleBlur"
+            @compositionstart="handleCompositionStart"
+            @compositionend="handleCompositionEnd"
+          />
+          <h3
+            v-else
+            class="cursor-pointer rounded p-1 text-2xl font-semibold leading-snug text-primary hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus md:text-xl"
+            style="word-break: break-word; overflow-wrap: break-word"
+            role="button"
+            tabindex="0"
+            data-testid="category-name"
+            @click="startEdit"
+            @keydown.enter.prevent="startEdit"
+            @keydown.space.prevent="startEdit"
+          >
+            {{ category.name }}
+          </h3>
+        </div>
       </div>
 
       <!-- Overflow menu -->
@@ -186,11 +214,12 @@ Created: 2025-09-19
 // Imports
 // ------------------------------------------------------------------------------
 
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
 
 import { Category } from '../models/Category';
 import { putOnlyFromGroup } from '../utils/dragDrop.js';
+import { focusEditingInput } from '../utils/focusEditingInput.js';
 import AddItemButton from './AddItemButton.vue';
 import Item from './Item.vue';
 import OverflowMenu from './OverflowMenu.vue';
@@ -239,6 +268,7 @@ const emit = defineEmits([
   'copy:category',
   'delete:category',
   'move:item',
+  'set-category-packed',
 ]);
 
 // ------------------------------------------------------------------------------
@@ -250,6 +280,7 @@ const isEditing = ref(false);
 const editedName = ref('');
 const editInput = ref(null);
 const isComposing = ref(false);
+let cleanupEditingFocus = () => {};
 
 // Drag state
 const draggingItemId = ref(null);
@@ -292,6 +323,12 @@ const isCompleted = computed(() => {
   return items.every((i) => i.isPacked);
 });
 
+const isPartiallyCompleted = computed(() => {
+  const items = sortedItems.value;
+  if (!items.length) return false;
+  return items.some((item) => item.isPacked) && !items.every((item) => item.isPacked);
+});
+
 // ------------------------------------------------------------------------------
 // Functions
 // ------------------------------------------------------------------------------
@@ -303,6 +340,17 @@ const isCompleted = computed(() => {
  */
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value;
+}
+
+/**
+ * Request one atomic packed-state change for all items in this category.
+ * @param {Event} event - Checkbox change event
+ */
+function toggleCategoryPacked(event) {
+  emit('set-category-packed', {
+    categoryId: props.category.id,
+    isPacked: event.target.checked,
+  });
 }
 
 // ---------- Editing Functions ----------
@@ -350,24 +398,19 @@ function handleBlur() {
  * Enter edit mode and focus on the category name input
  */
 async function startEdit() {
+  cleanupEditingFocus();
   isEditing.value = true;
   editedName.value = props.category.name;
 
   await nextTick();
-  if (editInput.value) {
-    editInput.value.focus();
-    editInput.value.select();
-    // Scroll the input into view to prevent keyboard from covering it on mobile
-    setTimeout(() => {
-      editInput.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300);
-  }
+  cleanupEditingFocus = focusEditingInput(editInput.value);
 }
 
 /**
  * Save the edited category name if changed
  */
 function saveEdit() {
+  cleanupEditingFocus();
   const hasNameChanged = editedName.value.trim() && editedName.value !== props.category.name;
 
   if (hasNameChanged) {
@@ -384,6 +427,7 @@ function saveEdit() {
  * Cancel editing and restore original category name
  */
 function cancelEdit() {
+  cleanupEditingFocus();
   isEditing.value = false;
   editedName.value = props.category.name;
 }
@@ -503,6 +547,8 @@ watch(
     }
   }
 );
+
+onUnmounted(() => cleanupEditingFocus());
 </script>
 
 <style scoped>

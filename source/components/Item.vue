@@ -249,9 +249,10 @@ Created: 2025-09-19
 // Imports
 // ------------------------------------------------------------------------------
 
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 
 import { Item } from '../models/Item';
+import { focusEditingInput } from '../utils/focusEditingInput.js';
 import OverflowMenu from './OverflowMenu.vue';
 
 // ------------------------------------------------------------------------------
@@ -304,6 +305,7 @@ const isQuantityHovered = ref(false);
 const editedName = ref('');
 const editInput = ref(null);
 const isComposing = ref(false);
+let cleanupEditingFocus = () => {};
 
 // ------------------------------------------------------------------------------
 // Computed
@@ -415,24 +417,19 @@ function handleEditBlur(_event) {
  * Enter edit mode and focus on item name input
  */
 async function startEdit() {
+  cleanupEditingFocus();
   isEditing.value = true;
   editedName.value = props.item.name;
 
   await nextTick();
-  if (editInput.value) {
-    editInput.value.focus();
-    editInput.value.select();
-    // Scroll the input into view to prevent keyboard from covering it on mobile
-    setTimeout(() => {
-      editInput.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300);
-  }
+  cleanupEditingFocus = focusEditingInput(editInput.value);
 }
 
 /**
  * Save changes to item if name was modified
  */
 function saveEdit() {
+  cleanupEditingFocus();
   const hasNameChanged = editedName.value.trim() && editedName.value !== props.item.name;
 
   if (hasNameChanged) {
@@ -449,6 +446,7 @@ function saveEdit() {
  * Cancel editing and restore original values
  */
 function cancelEdit() {
+  cleanupEditingFocus();
   isEditing.value = false;
   editedName.value = props.item.name;
 }
@@ -515,4 +513,6 @@ watch(
     }
   }
 );
+
+onUnmounted(() => cleanupEditingFocus());
 </script>

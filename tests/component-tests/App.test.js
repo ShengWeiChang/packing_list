@@ -14,10 +14,12 @@ Created: 2026-02-11
 // Imports
 // -----------------------------------------------------------------------------
 
-import { flushPromises, shallowMount } from '@vue/test-utils';
+import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
 import { createI18n } from 'vue-i18n';
+
+enableAutoUnmount(afterEach);
 
 // -----------------------------------------------------------------------------
 // Mock composable
@@ -29,6 +31,8 @@ const mockItems = ref([]);
 const mockSelectedChecklistId = ref(null);
 const mockIsLoading = ref(false);
 const mockError = ref(null);
+const mockCanUndoPackingChange = ref(false);
+const mockCanRedoPackingChange = ref(false);
 
 const mockInitialize = vi.fn();
 const mockCreateChecklist = vi.fn();
@@ -46,6 +50,9 @@ const mockGetItems = vi.fn();
 const mockUpdateItem = vi.fn();
 const mockDeleteItem = vi.fn();
 const mockDuplicateItem = vi.fn();
+const mockSetCategoryPacked = vi.fn();
+const mockUndoPackingChange = vi.fn();
+const mockRedoPackingChange = vi.fn();
 const mockTemplates = ref([]);
 const mockLoadTemplates = vi.fn();
 const mockSaveAsTemplate = vi.fn();
@@ -74,6 +81,8 @@ vi.mock('../../source/composables/usePackingLists', () => ({
     ),
     isLoading: mockIsLoading,
     error: mockError,
+    canUndoPackingChange: mockCanUndoPackingChange,
+    canRedoPackingChange: mockCanRedoPackingChange,
     initialize: mockInitialize,
     createChecklist: mockCreateChecklist,
     updateChecklist: mockUpdateChecklist,
@@ -90,6 +99,9 @@ vi.mock('../../source/composables/usePackingLists', () => ({
     updateItem: mockUpdateItem,
     deleteItem: mockDeleteItem,
     duplicateItem: mockDuplicateItem,
+    setCategoryPacked: mockSetCategoryPacked,
+    undoPackingChange: mockUndoPackingChange,
+    redoPackingChange: mockRedoPackingChange,
   }),
 }));
 
@@ -134,9 +146,13 @@ const i18n = createI18n({
     en: {
       checklist: {
         defaultName: 'New Checklist',
+        defaultNameFromEmpty: 'New Checklist (Empty)',
+        defaultNameFromTemplate: 'New Checklist (Template: {name})',
+        defaultNameFromRecommended: 'New Checklist (Recommended: {name})',
         deleteConfirm: 'Are you sure you want to delete this checklist?',
         pleaseCreate: 'Please create a new checklist first',
       },
+      common: { packingUpdated: 'Packing status updated', undo: 'Undo' },
       category: { defaultName: 'New Category' },
       item: { defaultName: 'New Item' },
       template: { deleteConfirm: 'Are you sure you want to delete this template?' },
@@ -169,6 +185,8 @@ describe('App', () => {
       { id: 'item-2', name: 'Pants', categoryId: 'cat-1', isPacked: true, order: 1, quantity: 1 },
     ];
     mockSelectedChecklistId.value = 'cl-1';
+    mockCanUndoPackingChange.value = false;
+    mockCanRedoPackingChange.value = false;
     mockTemplates.value = [];
 
     // Reset all mocks
@@ -271,6 +289,7 @@ describe('App', () => {
               'update:category',
               'copy:category',
               'delete:category',
+              'set-category-packed',
               'reorder:categories',
               'move:item',
             ],
@@ -1163,8 +1182,9 @@ describe('App', () => {
 
     // Test Case 46: Should create a checklist from a selected personal template
     it('creates a checklist from a selected personal template', async () => {
+      const longTemplateName = 'W'.repeat(100);
       mockTemplates.value = [
-        { id: 'template-1', name: 'Weekend', order: 0, categories: [], items: [] },
+        { id: 'template-1', name: longTemplateName, order: 0, categories: [], items: [] },
       ];
       mockApplyTemplate.mockReturnValue({ categories: [{ id: 'cat-new' }], items: [] });
       mockCreateChecklist.mockResolvedValue({ id: 'cl-template' });
@@ -1183,12 +1203,16 @@ describe('App', () => {
         expect.stringMatching(/^checklist-/)
       );
       expect(mockCreateChecklist).toHaveBeenCalledWith(
-        expect.objectContaining({ id: expect.stringMatching(/^checklist-/) }),
+        expect.objectContaining({
+          id: expect.stringMatching(/^checklist-/),
+          name: expect.stringMatching(/^New Checklist \(Template: W+\)$/),
+        }),
         expect.objectContaining({
           source: 'template',
           seedData: { categories: [{ id: 'cat-new' }], items: [] },
         })
       );
+      expect(mockCreateChecklist.mock.calls[0][0].name).toHaveLength(100);
     });
 
     // Test Case 47: Should delete the active template and leave the editor
@@ -1227,7 +1251,7 @@ describe('App', () => {
         .vm.$emit('select', { source: 'empty' });
 
       expect(mockCreateChecklist).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'New Checklist', order: 2 }),
+        expect.objectContaining({ name: 'New Checklist (Empty)', order: 2 }),
         { source: 'empty' }
       );
     });
@@ -1243,6 +1267,13 @@ describe('App', () => {
       await wrapper
         .findComponent({ name: 'NewChecklistDialog' })
         .vm.$emit('select', { source: 'template', templateId: 'template-1' });
+
+      await wrapper
+        .findComponent({ name: 'NewChecklistDialog' })
+        .vm.$emit('select', { source: 'template', templateId: 'missing-template' });
+      await wrapper
+        .findComponent({ name: 'NewChecklistDialog' })
+        .vm.$emit('select', { source: 'recommended', recommendedListId: 'missing-list' });
 
       expect(mockCreateChecklist).not.toHaveBeenCalled();
     });
@@ -1394,9 +1425,120 @@ describe('App', () => {
         'en'
       );
       expect(mockCreateChecklist).toHaveBeenCalledWith(
-        expect.objectContaining({ id: expect.stringMatching(/^checklist-/) }),
+        expect.objectContaining({
+          id: expect.stringMatching(/^checklist-/),
+          name: 'New Checklist (Recommended: General Travel)',
+        }),
         { source: 'recommended', seedData }
       );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 14: Packing Undo
+  // ---------------------------------------------------------------------------
+
+  describe('packing undo', () => {
+    // Test Case 60: Should offer one-click undo after a category packing change
+    it('should apply a category packing change and offer one-click undo', async () => {
+      mockSetCategoryPacked.mockResolvedValue([{ id: 'item-1', isPacked: true }]);
+      mockUndoPackingChange.mockResolvedValue(true);
+      mockCanUndoPackingChange.value = true;
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+
+      await wrapper
+        .findComponent({ name: 'ChecklistComponent' })
+        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
+      await flushPromises();
+
+      expect(mockSetCategoryPacked).toHaveBeenCalledWith('cat-1', true);
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
+
+      mockCanUndoPackingChange.value = false;
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
+
+      mockCanUndoPackingChange.value = true;
+      await wrapper
+        .findComponent({ name: 'ChecklistComponent' })
+        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
+      await flushPromises();
+      const undoToast = wrapper.get('[data-testid="packing-undo-toast"]');
+      await undoToast.get('button').trigger('click');
+      await flushPromises();
+
+      expect(mockUndoPackingChange).toHaveBeenCalledOnce();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
+
+      let resolveStaleBatch;
+      mockSetCategoryPacked.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveStaleBatch = resolve;
+        })
+      );
+      mockSelectedChecklistId.value = 'cl-1';
+      void wrapper
+        .findComponent({ name: 'ChecklistComponent' })
+        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: false });
+      mockSelectedChecklistId.value = 'cl-2';
+      resolveStaleBatch([{ id: 'item-1', isPacked: false }]);
+      await flushPromises();
+
+      expect(mockCanUndoPackingChange.value).toBe(true);
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
+    });
+
+    // Test Case 61: Should preserve native undo inside an input
+    it('should use Ctrl+Z for packing undo but preserve input-native undo', async () => {
+      mockUndoPackingChange.mockResolvedValue(true);
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await flushPromises();
+
+      const unavailableUndo = new KeyboardEvent('keydown', {
+        key: 'z',
+        ctrlKey: true,
+        cancelable: true,
+      });
+      window.dispatchEvent(unavailableUndo);
+      expect(unavailableUndo.defaultPrevented).toBe(false);
+      expect(mockUndoPackingChange).not.toHaveBeenCalled();
+
+      mockCanUndoPackingChange.value = true;
+      const availableUndo = new KeyboardEvent('keydown', {
+        key: 'z',
+        ctrlKey: true,
+        cancelable: true,
+      });
+      window.dispatchEvent(availableUndo);
+      await flushPromises();
+      expect(availableUndo.defaultPrevented).toBe(true);
+      expect(mockUndoPackingChange).toHaveBeenCalledOnce();
+
+      mockCanRedoPackingChange.value = true;
+      const availableRedo = new KeyboardEvent('keydown', {
+        key: 'z',
+        ctrlKey: true,
+        shiftKey: true,
+        cancelable: true,
+      });
+      window.dispatchEvent(availableRedo);
+      await flushPromises();
+      expect(availableRedo.defaultPrevented).toBe(true);
+      expect(mockRedoPackingChange).toHaveBeenCalledOnce();
+
+      const input = document.createElement('input');
+      document.body.append(input);
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true })
+      );
+      await flushPromises();
+
+      expect(mockUndoPackingChange).toHaveBeenCalledOnce();
+      expect(mockRedoPackingChange).toHaveBeenCalledOnce();
+      input.remove();
+      wrapper.unmount();
     });
   });
 });

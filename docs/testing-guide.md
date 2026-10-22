@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 550    |
-| Unit tests         | 237    |
-| Component tests    | 263    |
+| Total tests        | 560    |
+| Unit tests         | 243    |
+| Component tests    | 267    |
 | E2E tests          | 50     |
-| Line coverage      | 98.66% |
-| Statement coverage | 97.80% |
-| Branch coverage    | 88.54% |
+| Line coverage      | 98.46% |
+| Statement coverage | 97.10% |
+| Branch coverage    | 88.23% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -29,8 +29,8 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 237   | Pure logic in models, services, composables, utils |
-| Component | Vitest + @vue/test-utils | 263   | Vue component rendering, events, state             |
+| Unit      | Vitest                   | 243   | Pure logic in models, services, composables, utils |
+| Component | Vitest + @vue/test-utils | 267   | Vue component rendering, events, state             |
 | E2E       | Playwright               | 50    | Full user flows in a real browser                  |
 
 ### Toolchain
@@ -41,7 +41,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | @vue/test-utils     | 2.4.6   | Vue component test utilities |
 | @vitest/coverage-v8 | 4.0.18  | Code coverage (V8 provider)  |
 | playwright          | 1.58.2  | Browser-based E2E testing    |
-| jsdom               | 25.0.1  | DOM environment for Vitest   |
+| jsdom               | 28.0.0  | DOM environment for Vitest   |
 
 ## 3. Test File Structure
 
@@ -50,7 +50,7 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 237 tests
+├── unit-tests/                          # 243 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -58,27 +58,28 @@ tests/
 │   │   ├── Category.test.js             #  9  tests
 │   │   └── Checklist.test.js            # 11  tests
 │   │   └── Template.test.js             #  3  tests
-│   ├── services/                        # 97  tests
-│   │   ├── localStorageService.test.js  # 78  tests
+│   ├── services/                        # 99  tests
+│   │   ├── localStorageService.test.js  # 80  tests
 │   │   ├── templateService.test.js      # 15  tests
 │   │   └── recommendedListService.test.js  #  4  tests
-│   ├── composables/                     # 58  tests
-│   │   └── usePackingLists.test.js      # 44  tests
+│   ├── composables/                     # 60  tests
+│   │   └── usePackingLists.test.js      # 46  tests
 │   │   └── useTemplates.test.js         # 14  tests
 │   ├── i18n/                            #  9  tests
 │   │   └── index.test.js                #  9  tests
-│   └── utils/                           # 29  tests
+│   └── utils/                           # 31  tests
 │       ├── helpers.test.js              # 21  tests
 │       ├── positioning.test.js          #  3  tests
 │       ├── order.test.js                #  3  tests
-│       └── dragDrop.test.js             #  2  tests
+│       ├── dragDrop.test.js             #  2  tests
+│       └── focusEditingInput.test.js     #  2  tests
 │
-├── component-tests/                     # 263 tests
-│   ├── App.test.js                      # 59  tests
+├── component-tests/                     # 267 tests
+│   ├── App.test.js                      # 61  tests
 │   ├── Checklist.test.js                # 37  tests
 │   ├── Item.test.js                     # 26  tests
 │   ├── Sidebar.test.js                  # 33  tests
-│   ├── Category.test.js                 # 25  tests
+│   ├── Category.test.js                 # 27  tests
 │   ├── OverflowMenu.test.js             # 23  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
@@ -221,7 +222,7 @@ This project uses three layers to balance speed and reliability.
 
 ## 8. Complete Test Inventory
 
-### 8.1 Unit Tests (237 tests)
+### 8.1 Unit Tests (243 tests)
 
 #### 8.1.1 Models (40 tests)
 
@@ -285,9 +286,9 @@ This project uses three layers to balance speed and reliability.
 | 2   | trims its name and round-trips snapshot content  | Serialization        |
 | 3   | rejects a non-string or too-long name            | Name validation      |
 
-#### 8.1.2 Services (97 tests)
+#### 8.1.2 Services (99 tests)
 
-##### 8.1.2.1 localStorageService.test.js (78 tests)
+##### 8.1.2.1 localStorageService.test.js (80 tests)
 
 | #   | Test                                                                          | What it verifies                  |
 | --- | ----------------------------------------------------------------------------- | --------------------------------- |
@@ -369,6 +370,8 @@ This project uses three layers to balance speed and reliability.
 | 76  | should preserve relative order semantics after duplicate and delete           | Order consistency                 |
 | 77  | should keep general recommended list shape stable across en and zh-TW locales | Locale stability                  |
 | 78  | should persist final state after rapid sequential stale item updates          | Final-write consistency           |
+| 79  | should update multiple items atomically with one storage write                | Atomic batch persistence          |
+| 80  | should not persist a partial batch when an item does not exist                | Batch failure integrity           |
 
 ##### 8.1.2.2 templateService.test.js (15 tests)
 
@@ -399,56 +402,58 @@ This project uses three layers to balance speed and reliability.
 | 3   | rejects missing recommended lists                                    | Missing recommended-list guard    |
 | 4   | applies the localized general recommended list                       | General list and locale selection |
 
-#### 8.1.3 Composables (58 tests)
+#### 8.1.3 Composables (60 tests)
 
-##### 8.1.3.1 usePackingLists.test.js (44 tests)
+##### 8.1.3.1 usePackingLists.test.js (46 tests)
 
-| #   | Test                                                                          | What it verifies              |
-| --- | ----------------------------------------------------------------------------- | ----------------------------- |
-| 1   | should return initial empty state                                             | Default refs are empty        |
-| 2   | should have computed properties                                               | Computed refs exist           |
-| 3   | should load data from storage on initialize                                   | Init reads from service       |
-| 4   | should manage loading state during initialization                             | `isLoading` toggles correctly |
-| 5   | should repair missing checklist order and persist repaired checklist          | Legacy order repair           |
-| 6   | should fallback selected checklist and reload scoped categories/items         | Selection fallback            |
-| 7   | should set error and clear state when initialize fails unexpectedly           | Init failure recovery         |
-| 8   | should create a new checklist                                                 | Creates and refreshes state   |
-| 9   | should select the first checklist after creation                              | Auto-selection logic          |
-| 10  | should update an existing checklist                                           | Update + refresh              |
-| 11  | should delete a checklist                                                     | Delete + refresh              |
-| 12  | should return null when createChecklist service call fails                    | Service failure path          |
-| 13  | should return null when updateChecklist service call fails                    | Service failure path          |
-| 14  | should create a category in the selected checklist                            | Category creation             |
-| 15  | should return null if no checklist is selected                                | Null guard                    |
-| 16  | should create an item in the selected checklist                               | Item creation                 |
-| 17  | should toggle item packed status                                              | Toggle + refresh              |
-| 18  | should calculate progress correctly                                           | Progress computation          |
-| 19  | should return 0 progress for empty checklist                                  | Zero-item edge case           |
-| 20  | should handle storage errors gracefully during initialization                 | Error recovery                |
-| 21  | should duplicate a checklist and refresh state                                | Checklist duplication         |
-| 22  | should duplicate a category and refresh state                                 | Category duplication          |
-| 23  | should duplicate an item and refresh state                                    | Item duplication              |
-| 24  | should delete a category and refresh both categories and items                | Category delete cascade       |
-| 25  | should delete an item and refresh items                                       | Item delete                   |
-| 26  | should update multiple checklists and refresh state                           | Batch update                  |
-| 27  | should return null when creating item without selected checklist              | Null guard                    |
-| 28  | should return null when duplicating item without selected checklist           | Null guard                    |
-| 29  | should return null when updating item without selected checklist              | Null guard                    |
-| 30  | should return empty array when getting categories without selected checklist  | Null guard                    |
-| 31  | should return empty array when getting items without selected checklist       | Null guard                    |
-| 32  | should return early when deleting item without selected checklist             | Null guard                    |
-| 33  | should return null when createItem service call fails (with checklist)        | Service failure path          |
-| 34  | should return null when duplicateCategory service call fails (with checklist) | Service failure path          |
-| 35  | should return null when updateItem service call fails (with checklist)        | Service failure path          |
-| 36  | should return null when duplicateItem service call fails (with checklist)     | Service failure path          |
-| 37  | should return null when createCategory service call fails (with checklist)    | Service failure path          |
-| 38  | should return null when duplicateChecklist service call fails (no checklist)  | Service failure path          |
-| 39  | should return null when updateCategory service call fails (no checklist)      | Service failure path          |
-| 40  | should return null when updateCategory service returns undefined              | Falsy result guard            |
-| 41  | should return null when updateMultipleChecklists service returns undefined    | Falsy result guard            |
-| 42  | should return null when updateCategory throws (real service)                  | Throw fallback                |
-| 43  | should refresh categories and return updated category on success              | Success path + refresh        |
-| 44  | should refresh state when storage event updates app data key                  | Cross-tab sync refresh        |
+| #   | Test                                                                            | What it verifies              |
+| --- | ------------------------------------------------------------------------------- | ----------------------------- |
+| 1   | should return initial empty state                                               | Default refs are empty        |
+| 2   | should have computed properties                                                 | Computed refs exist           |
+| 3   | should load data from storage on initialize                                     | Init reads from service       |
+| 4   | should manage loading state during initialization                               | `isLoading` toggles correctly |
+| 5   | should repair missing checklist order and persist repaired checklist            | Legacy order repair           |
+| 6   | should fallback selected checklist and reload scoped categories/items           | Selection fallback            |
+| 7   | should set error and clear state when initialize fails unexpectedly             | Init failure recovery         |
+| 8   | should create a new checklist                                                   | Creates and refreshes state   |
+| 9   | should select the first checklist after creation                                | Auto-selection logic          |
+| 10  | should update an existing checklist                                             | Update + refresh              |
+| 11  | should delete a checklist                                                       | Delete + refresh              |
+| 12  | should return null when createChecklist service call fails                      | Service failure path          |
+| 13  | should return null when updateChecklist service call fails                      | Service failure path          |
+| 14  | should create a category in the selected checklist                              | Category creation             |
+| 15  | should return null if no checklist is selected                                  | Null guard                    |
+| 16  | should create an item in the selected checklist                                 | Item creation                 |
+| 17  | should toggle item packed status                                                | Toggle + refresh; no undo     |
+| 18  | should calculate progress correctly                                             | Progress computation          |
+| 19  | should return 0 progress for empty checklist                                    | Zero-item edge case           |
+| 20  | should handle storage errors gracefully during initialization                   | Error recovery                |
+| 21  | should duplicate a checklist and refresh state                                  | Checklist duplication         |
+| 22  | should duplicate a category and refresh state                                   | Category duplication          |
+| 23  | should duplicate an item and refresh state                                      | Item duplication              |
+| 24  | should delete a category and refresh both categories and items                  | Category delete cascade       |
+| 25  | should delete an item and refresh items                                         | Item delete                   |
+| 26  | should update multiple checklists and refresh state                             | Batch update                  |
+| 27  | should return null when creating item without selected checklist                | Null guard                    |
+| 28  | should return null when duplicating item without selected checklist             | Null guard                    |
+| 29  | should return null when updating item without selected checklist                | Null guard                    |
+| 30  | should return empty array when getting categories without selected checklist    | Null guard                    |
+| 31  | should return empty array when getting items without selected checklist         | Null guard                    |
+| 32  | should return early when deleting item without selected checklist               | Null guard                    |
+| 33  | should return null when createItem service call fails (with checklist)          | Service failure path          |
+| 34  | should return null when duplicateCategory service call fails (with checklist)   | Service failure path          |
+| 35  | should return null when updateItem service call fails (with checklist)          | Service failure path          |
+| 36  | should return null when duplicateItem service call fails (with checklist)       | Service failure path          |
+| 37  | should return null when createCategory service call fails (with checklist)      | Service failure path          |
+| 38  | should return null when duplicateChecklist service call fails (no checklist)    | Service failure path          |
+| 39  | should return null when updateCategory service call fails (no checklist)        | Service failure path          |
+| 40  | should return null when updateCategory service returns undefined                | Falsy result guard            |
+| 41  | should return null when updateMultipleChecklists service returns undefined      | Falsy result guard            |
+| 42  | should return null when updateCategory throws (real service)                    | Throw fallback                |
+| 43  | should refresh categories and return updated category on success                | Success path + refresh        |
+| 44  | should refresh state when storage event updates app data key                    | Cross-tab sync refresh        |
+| 45  | should treat a category pack-all as one undoable action and restore mixed state | Grouped history; redo safety  |
+| 46  | should clear packing history when switching checklists                          | History scope isolation       |
 
 ##### 8.1.3.2 useTemplates.test.js (14 tests)
 
@@ -485,7 +490,7 @@ This project uses three layers to balance speed and reliability.
 | 8   | should ignore unsupported setLocale values and keep current locale   | Setter guard                 |
 | 9   | should keep English and Traditional Chinese translation keys aligned | Translation key parity       |
 
-#### 8.1.5 Utils (29 tests)
+#### 8.1.5 Utils (31 tests)
 
 ##### 8.1.5.1 helpers.test.js (21 tests)
 
@@ -536,6 +541,13 @@ This project uses three layers to balance speed and reliability.
 | 2   | should clamp dropdown left to max when near right edge    | Right max boundary clamp       |
 | 3   | should position dropdown above anchor with gap and zIndex | Fixed position calc (with gap) |
 
+##### 8.1.5.5 focusEditingInput.test.js (2 tests)
+
+| #   | Test                                                                                  | What it verifies            |
+| --- | ------------------------------------------------------------------------------------- | --------------------------- |
+| 1   | should focus without scrolling, select the name, and keep a visible input in place    | Stable focus and selection  |
+| 2   | should use nearest non-animated scrolling only when the input is outside the viewport | Conditional viewport scroll |
+
 #### 8.1.6 Data (4 tests)
 
 ##### 8.1.6.1 recommendedLists.test.js (4 tests)
@@ -547,9 +559,9 @@ This project uses three layers to balance speed and reliability.
 | 3   | falls back to English for unsupported locales                                | Locale fallback           |
 | 4   | returns isolated resolved data                                               | Resolver output isolation |
 
-### 8.2 Component Tests (263 tests)
+### 8.2 Component Tests (267 tests)
 
-#### 8.2.1 App.test.js (59 tests)
+#### 8.2.1 App.test.js (61 tests)
 
 | #   | Test                                                                    | What it verifies             |
 | --- | ----------------------------------------------------------------------- | ---------------------------- |
@@ -612,6 +624,8 @@ This project uses three layers to balance speed and reliability.
 | 57  | should use an empty initial name for an unknown checklist               | Missing checklist fallback   |
 | 58  | should ignore duplicate save events after source state clears           | Duplicate save guard         |
 | 59  | should create a checklist from a selected recommended list              | recommended list flow        |
+| 60  | should apply a category packing change and offer one-click undo         | Batch packing undo action    |
+| 61  | should use Ctrl+Z for packing undo but preserve input-native undo       | Keyboard shortcut isolation  |
 
 #### 8.2.2 Topbar.test.js (2 tests)
 
@@ -674,7 +688,7 @@ This project uses three layers to balance speed and reliability.
 | 5   | should display quantity value                                             | Quantity label           |
 | 6   | should emit "update:item" with toggled isPacked when checkbox is clicked  | Checkbox toggle event    |
 | 7   | should clear isPending when item becomes packed                           | Packed clears pending    |
-| 8   | should enter edit mode when item name is clicked                          | Click-to-edit            |
+| 8   | should enter edit mode when item name is clicked                          | Focus + select on edit   |
 | 9   | should save edited name on Enter key                                      | Enter confirms edit      |
 | 10  | should cancel edit mode on Escape key                                     | Escape cancels edit      |
 | 11  | should emit "update:item" with incremented quantity                       | Quantity increment       |
@@ -689,7 +703,7 @@ This project uses three layers to balance speed and reliability.
 | 20  | should show action buttons on mouseenter                                  | Hover-in shows controls  |
 | 21  | should hide action buttons on mouseleave                                  | Hover-out hides controls |
 | 22  | should not save during IME composition                                    | IME guard                |
-| 23  | should enter edit mode when newlyCreatedItemId matches                    | Auto-edit on create      |
+| 23  | should enter edit mode when newlyCreatedItemId matches                    | Auto-focus + select      |
 | 24  | should not enter edit mode when newlyCreatedItemId does not match         | No false trigger         |
 | 25  | should not decrement quantity below 1                                     | Minimum quantity guard   |
 | 26  | should apply cursor-grabbing when isDragging is true                      | Drag visual state        |
@@ -722,7 +736,7 @@ This project uses three layers to balance speed and reliability.
 | 22  | should clamp dropdown position within viewport bounds               | Viewport clamping       |
 | 23  | should fall back to createEvent when CustomEvent constructor throws | Legacy browser fallback |
 
-#### 8.2.9 Category.test.js (25 tests)
+#### 8.2.9 Category.test.js (27 tests)
 
 | #   | Test                                                                                | What it verifies       |
 | --- | ----------------------------------------------------------------------------------- | ---------------------- |
@@ -751,13 +765,15 @@ This project uses three layers to balance speed and reliability.
 | 23  | should enter edit mode when newlyCreatedCategoryId matches                          | Auto-edit on create    |
 | 24  | should not enter edit mode when newlyCreatedCategoryId does not match               | No false trigger       |
 | 25  | should not save during IME composition                                              | IME guard              |
+| 26  | should expose a mixed category checkbox and request packing all items               | Tri-state batch intent |
+| 27  | should expose checked, unchecked, and disabled category checkbox states             | State rendering        |
 
 #### 8.2.10 Checklist.test.js (37 tests)
 
 | #   | Test                                                          | What it verifies             |
 | --- | ------------------------------------------------------------- | ---------------------------- |
 | 1   | should display the checklist name                             | Name rendering               |
-| 2   | should display the formatted date range                       | Date format                  |
+| 2   | should display the formatted date range                       | Same-year date format        |
 | 3   | should pass correct item counts to ProgressBar                | Progress binding             |
 | 4   | should render Category components for each category           | Category rendering           |
 | 5   | should show PendingItemsCategory when pending items exist     | Conditional display          |
@@ -786,7 +802,7 @@ This project uses three layers to balance speed and reliability.
 | 28  | should forward "create:item" from Category component          | Item creation forward        |
 | 29  | should forward "update:category" from Category component      | Category update forward      |
 | 30  | should forward "move:item" from Category component            | Item move forward            |
-| 31  | should display single date when start and end dates are equal | Same-date display            |
+| 31  | should format single-date and cross-year ranges               | Single/cross-year display    |
 | 32  | should handle empty dates gracefully                          | No-date display              |
 | 33  | should forward "update:item" from PendingItemsCategory        | Pending item update forward  |
 | 34  | should set isDraggingCategory on drag start                   | Drag state                   |
@@ -925,8 +941,8 @@ This project uses three layers to balance speed and reliability.
 | #   | Test                                                     | What it verifies         |
 | --- | -------------------------------------------------------- | ------------------------ |
 | 1   | should create a new category via add button              | Category creation        |
-| 2   | should create a new item via add button                  | Item creation            |
-| 3   | should edit an item name                                 | Item editing             |
+| 2   | should create a new item via add button                  | Immediate focused typing |
+| 3   | should edit an item name                                 | Stable no-jump editing   |
 | 4   | should toggle item packed status via checkbox            | Checkbox toggle          |
 | 5   | should update progress when items are packed             | Progress update          |
 | 6   | should show 100% when all items in a category are packed | Full completion          |
@@ -952,7 +968,7 @@ This project uses three layers to balance speed and reliability.
 | 3   | should close sidebar when overlay backdrop is tapped   | Backdrop closes           |
 | 4   | should create a new checklist via topbar plus button   | Mobile checklist creation |
 | 5   | should create a new checklist via sidebar on mobile    | Sidebar creation flow     |
-| 6   | should add a new item via add item button              | Mobile item creation      |
+| 6   | should add a new item via add item button              | Mobile immediate typing   |
 | 7   | should edit an item name on mobile                     | Mobile item editing       |
 | 8   | should toggle item packed status on mobile             | Mobile packing toggle     |
 | 9   | should update progress when items are packed on mobile | Mobile progress update    |
@@ -980,6 +996,6 @@ This project uses three layers to balance speed and reliability.
 
 #### 8.3.10 recommended-lists.spec.js (1 tests)
 
-| #   | Test                                                          | What it verifies                      |
-| --- | ------------------------------------------------------------- | ------------------------------------- |
-| 1   | should create and persist a checklist from a recommended list | Recommended List selection and reload |
+| #   | Test                                                          | What it verifies             |
+| --- | ------------------------------------------------------------- | ---------------------------- |
+| 1   | should create and persist a checklist from a recommended list | Source-aware name and reload |

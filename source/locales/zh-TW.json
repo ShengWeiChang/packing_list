@@ -8,7 +8,9 @@
     "save": "儲存",
     "confirm": "確認",
     "copySuffix": " (複製)",
-    "moreOptions": "更多選項"
+    "moreOptions": "更多選項",
+    "packingUpdated": "打包狀態已更新",
+    "undo": "復原"
   },
   "sidebar": {
     "title": "清單列表",
@@ -25,6 +27,9 @@
     "deleteConfirm": "確定要刪除這個清單嗎？",
     "cannotDeleteLast": "無法刪除最後一個清單",
     "defaultName": "新清單",
+    "defaultNameFromEmpty": "新清單（空白）",
+    "defaultNameFromTemplate": "新清單（範本：{name}）",
+    "defaultNameFromRecommended": "新清單（推薦：{name}）",
     "pleaseCreate": "請先建立一個新清單",
     "startDate": "開始日期",
     "endDate": "結束日期"
@@ -36,7 +41,9 @@
     "shoppingList": "待買/待辦",
     "itemsLeft": "項待處理",
     "expand": "展開",
-    "collapse": "收合"
+    "collapse": "收合",
+    "packAll": "打包此分類的所有物品",
+    "unpackAll": "取消打包此分類的所有物品"
   },
   "item": {
     "name": "物品名稱",
@@ -60,9 +67,9 @@
     "useTemplate": "我的範本",
     "useRecommended": "推薦清單",
     "useEmpty": "空白清單",
-    "emptyDescription": "不加入任何分類或物品。",
-    "personalDescription": "重複使用已儲存的個人範本。",
-    "recommendedDescription": "依旅遊型態選擇推薦清單。",
+    "emptyDescription": "不加入任何分類或物品",
+    "personalDescription": "重複使用已儲存的個人範本",
+    "recommendedDescription": "依旅遊型態選擇推薦清單",
     "selectTemplate": "選擇範本",
     "selectRecommendedList": "選擇推薦清單",
     "templateName": "範本名稱",

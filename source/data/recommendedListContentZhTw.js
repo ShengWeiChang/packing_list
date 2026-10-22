@@ -13,19 +13,19 @@ export const recommendedListContentZhTw = {
   recommendedLists: {
     general: {
       name: '一般旅行',
-      description: '適合多數旅程的均衡起始清單。',
+      description: '適合多數旅程的起始清單',
     },
     business: {
       name: '商務出差',
-      description: '包含工作用品、商務服裝與日常旅行必需品。',
+      description: '適合需要工作用品、商務服裝的旅程',
     },
     warm: {
       name: '暖熱地區',
-      description: '適合炎熱、潮濕或日照強目的地的輕便衣物與防曬用品。',
+      description: '適合前往炎熱、潮濕、日照強烈的地區，以及海島或海灘旅程',
     },
     cold: {
       name: '寒冷地區',
-      description: '適合低溫、多風或降雪目的地的保暖與天候防護用品。',
+      description: '適合前往低溫、多風、降雪的地區的旅程',
     },
   },
   categories: {

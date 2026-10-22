@@ -8,7 +8,9 @@
     "save": "Save",
     "confirm": "Confirm",
     "copySuffix": " (Copy)",
-    "moreOptions": "More options"
+    "moreOptions": "More options",
+    "packingUpdated": "Packing status updated",
+    "undo": "Undo"
   },
   "sidebar": {
     "title": "Checklists",
@@ -25,6 +27,9 @@
     "deleteConfirm": "Are you sure you want to delete this checklist?",
     "cannotDeleteLast": "Cannot delete the last checklist",
     "defaultName": "New Checklist",
+    "defaultNameFromEmpty": "New Checklist (Empty)",
+    "defaultNameFromTemplate": "New Checklist (Template: {name})",
+    "defaultNameFromRecommended": "New Checklist (Recommended: {name})",
     "pleaseCreate": "Please create a new checklist first",
     "startDate": "Start Date",
     "endDate": "End Date"
@@ -36,7 +41,9 @@
     "shoppingList": "To Buy / To Do",
     "itemsLeft": "items left",
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "packAll": "Pack all items in this category",
+    "unpackAll": "Unpack all items in this category"
   },
   "item": {
     "name": "Item Name",
