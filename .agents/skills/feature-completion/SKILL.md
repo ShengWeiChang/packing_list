@@ -60,7 +60,7 @@ Use targeted repository searches rather than broad cleanup. A clean lint result 
 
 ## 5. Validation and Handoff
 
-Run only the checks relevant to the scope, normally choosing from:
+Run `npm run verify:feature` for a meaningful user-visible behavior change. For a documentation-only change, run `npm run verify:feature -- --docs`; report every skipped layer and its reason. When the command does not fit the scope, run only the relevant checks and report the same evidence explicitly. The available layers are:
 
 ```bash
 npm run validate
@@ -68,6 +68,7 @@ npm run test:run
 npm run test:coverage
 npm run test:inventory
 npx playwright test
+npm run build
 ```
 
 Run `npm run test:inventory` after changing test files or `testing-guide*.md`; use `npm run test:inventory:sync` only when executed results should update generated guide counts. Run the final residue audit after implementation and documentation have reached their intended names, then report its outcome alongside commands run, validation results, intentional omissions, coverage comparison (if available), manual test steps, remaining risks, and unresolved artifacts. Do not install dependencies, alter Git state, or create commits unless the user explicitly authorizes it.

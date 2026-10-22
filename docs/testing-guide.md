@@ -199,6 +199,8 @@ npm run test:coverage # Vitest code coverage only: outputs terminal summary + co
 ```bash
 npm run test:inventory      # Execute Vitest + Playwright and verify comments plus available guides
 npm run test:inventory:sync # After passing, synchronize generated guide counts
+npm run verify:feature      # Full feature verification: validate, coverage, E2E, inventory, build
+npm run verify:feature -- --docs # Documentation-only validation; reports skipped test and build layers
 ```
 
 ## 6. Testing Layers and Responsibilities
