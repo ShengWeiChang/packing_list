@@ -186,6 +186,7 @@ import Topbar from './components/Topbar.vue';
 import { usePackingLists } from './composables/usePackingLists';
 import { useTemplates } from './composables/useTemplates';
 import { RecommendedListService } from './services/recommendedListService.js';
+import { VALIDATION } from './utils/constants.js';
 import { generateSecureId } from './utils/helpers.js';
 
 // ------------------------------------------------------------------------------
@@ -557,6 +558,22 @@ async function handleCategoryReorder(reorderedCategories) {
 // ---------- Checklist Handlers ----------
 
 /**
+ * Build a default checklist name that identifies how it was created.
+ * Source names are truncated so the generated value still satisfies model limits.
+ * @param {'empty'|'template'|'recommended'} source - Creation source
+ * @param {string} [sourceName=''] - Localized template or recommended-list name
+ * @returns {string} Source-aware checklist name
+ */
+function buildSourceAwareChecklistName(source, sourceName = '') {
+  const key = `checklist.defaultNameFrom${source[0].toUpperCase()}${source.slice(1)}`;
+  if (source === 'empty') return t(key);
+
+  const wrapperLength = t(key, { name: '' }).length;
+  const availableNameLength = Math.max(0, VALIDATION.NAME_MAX_LENGTH - wrapperLength);
+  return t(key, { name: sourceName.slice(0, availableNameLength) });
+}
+
+/**
  * Open the new checklist dialog to let user choose source
  */
 function handleChecklistCreate() {
@@ -574,21 +591,27 @@ async function handleNewChecklistSelect(selection) {
   const maxOrder =
     checklists.value.length > 0 ? Math.max(...checklists.value.map((cl) => cl.order || 0)) : -1;
 
-  const newChecklistData = {
-    name: t('checklist.defaultName'),
-    order: maxOrder + 1,
-  };
-
   if (
     (selection.source === 'template' && selection.templateId) ||
     (selection.source === 'recommended' && selection.recommendedListId)
   ) {
     const checklistId = generateSecureId('checklist-');
     let seedData = null;
+    let sourceName = '';
 
     if (selection.source === 'template') {
+      const selectedTemplate = templates.value.find(
+        (template) => template.id === selection.templateId
+      );
+      if (!selectedTemplate) return;
+      sourceName = selectedTemplate.name;
       seedData = applyTemplate(selection.templateId, checklistId);
     } else {
+      const selectedRecommendedList = recommendedLists.value.find(
+        (list) => list.id === selection.recommendedListId
+      );
+      if (!selectedRecommendedList) return;
+      sourceName = selectedRecommendedList.name;
       try {
         seedData = recommendedListService.applyToNewChecklist(
           selection.recommendedListId,
@@ -602,8 +625,9 @@ async function handleNewChecklistSelect(selection) {
     if (!seedData) return;
 
     const checklistWithId = {
-      ...newChecklistData,
       id: checklistId,
+      name: buildSourceAwareChecklistName(selection.source, sourceName),
+      order: maxOrder + 1,
     };
     const options = { source: selection.source, seedData };
     const newChecklist = await handleAsyncAction(createChecklist, checklistWithId, options);
@@ -611,6 +635,10 @@ async function handleNewChecklistSelect(selection) {
       newlyCreatedChecklistId.value = newChecklist.id;
     }
   } else if (selection.source === 'empty') {
+    const newChecklistData = {
+      name: buildSourceAwareChecklistName('empty'),
+      order: maxOrder + 1,
+    };
     const options = { source: 'empty' };
     const newChecklist = await handleAsyncAction(createChecklist, newChecklistData, options);
     if (newChecklist) {

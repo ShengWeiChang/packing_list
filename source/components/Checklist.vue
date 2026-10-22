@@ -520,10 +520,13 @@ function formatDateRange(startDate, endDate) {
     });
   }
 
+  const crossesYear = start.getFullYear() !== end.getFullYear();
+
   // Different dates
   return `${start.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
+    ...(crossesYear ? { year: 'numeric' } : {}),
   })} - ${end.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

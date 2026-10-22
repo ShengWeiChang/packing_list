@@ -187,7 +187,9 @@ test.describe('Template Management', () => {
       (item) => item.checklistId === createdChecklist.id
     );
 
-    expect(createdChecklist).toEqual(expect.objectContaining({ name: 'New Checklist' }));
+    expect(createdChecklist).toEqual(
+      expect.objectContaining({ name: 'New Checklist (Template: Weekend)' })
+    );
     expect(createdCategory).toEqual(
       expect.objectContaining({ name: 'Clothes', checklistId: createdChecklist.id })
     );

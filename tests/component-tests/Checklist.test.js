@@ -139,8 +139,7 @@ describe('Checklist', () => {
     // Test Case 2: Should display date range
     it('should display the formatted date range', () => {
       const wrapper = createWrapper();
-      // Date range should be displayed when not editing
-      expect(wrapper.text()).toMatch(/Mar/);
+      expect(wrapper.text()).toContain('Mar 1 - Mar 15, 2026');
     });
 
     // Test Case 3: Should pass correct counts to ProgressBar
@@ -478,18 +477,23 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('date formatting', () => {
-    // Test Case 31: Should show single date when start and end are the same
-    it('should display single date when start and end dates are equal', () => {
-      const wrapper = createWrapper({
+    // Test Case 31: Should format single-date and cross-year ranges
+    it('should format single-date and cross-year ranges', () => {
+      const singleDateWrapper = createWrapper({
         checklist: createMockChecklist({
           startDate: '2026-03-10',
           endDate: '2026-03-10',
         }),
       });
-      // Same date: should only show one date with year
-      const text = wrapper.text();
-      expect(text).toMatch(/Mar\s+10/);
-      expect(text).toMatch(/2026/);
+      expect(singleDateWrapper.text()).toContain('Mar 10, 2026');
+
+      const crossYearWrapper = createWrapper({
+        checklist: createMockChecklist({
+          startDate: '2025-11-26',
+          endDate: '2026-01-05',
+        }),
+      });
+      expect(crossYearWrapper.text()).toContain('Nov 26, 2025 - Jan 5, 2026');
     });
 
     // Test Case 32: Should handle empty dates gracefully

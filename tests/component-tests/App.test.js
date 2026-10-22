@@ -146,6 +146,9 @@ const i18n = createI18n({
     en: {
       checklist: {
         defaultName: 'New Checklist',
+        defaultNameFromEmpty: 'New Checklist (Empty)',
+        defaultNameFromTemplate: 'New Checklist (Template: {name})',
+        defaultNameFromRecommended: 'New Checklist (Recommended: {name})',
         deleteConfirm: 'Are you sure you want to delete this checklist?',
         pleaseCreate: 'Please create a new checklist first',
       },
@@ -1179,8 +1182,9 @@ describe('App', () => {
 
     // Test Case 46: Should create a checklist from a selected personal template
     it('creates a checklist from a selected personal template', async () => {
+      const longTemplateName = 'W'.repeat(100);
       mockTemplates.value = [
-        { id: 'template-1', name: 'Weekend', order: 0, categories: [], items: [] },
+        { id: 'template-1', name: longTemplateName, order: 0, categories: [], items: [] },
       ];
       mockApplyTemplate.mockReturnValue({ categories: [{ id: 'cat-new' }], items: [] });
       mockCreateChecklist.mockResolvedValue({ id: 'cl-template' });
@@ -1199,12 +1203,16 @@ describe('App', () => {
         expect.stringMatching(/^checklist-/)
       );
       expect(mockCreateChecklist).toHaveBeenCalledWith(
-        expect.objectContaining({ id: expect.stringMatching(/^checklist-/) }),
+        expect.objectContaining({
+          id: expect.stringMatching(/^checklist-/),
+          name: expect.stringMatching(/^New Checklist \(Template: W+\)$/),
+        }),
         expect.objectContaining({
           source: 'template',
           seedData: { categories: [{ id: 'cat-new' }], items: [] },
         })
       );
+      expect(mockCreateChecklist.mock.calls[0][0].name).toHaveLength(100);
     });
 
     // Test Case 47: Should delete the active template and leave the editor
@@ -1243,7 +1251,7 @@ describe('App', () => {
         .vm.$emit('select', { source: 'empty' });
 
       expect(mockCreateChecklist).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'New Checklist', order: 2 }),
+        expect.objectContaining({ name: 'New Checklist (Empty)', order: 2 }),
         { source: 'empty' }
       );
     });
@@ -1259,6 +1267,13 @@ describe('App', () => {
       await wrapper
         .findComponent({ name: 'NewChecklistDialog' })
         .vm.$emit('select', { source: 'template', templateId: 'template-1' });
+
+      await wrapper
+        .findComponent({ name: 'NewChecklistDialog' })
+        .vm.$emit('select', { source: 'template', templateId: 'missing-template' });
+      await wrapper
+        .findComponent({ name: 'NewChecklistDialog' })
+        .vm.$emit('select', { source: 'recommended', recommendedListId: 'missing-list' });
 
       expect(mockCreateChecklist).not.toHaveBeenCalled();
     });
@@ -1410,7 +1425,10 @@ describe('App', () => {
         'en'
       );
       expect(mockCreateChecklist).toHaveBeenCalledWith(
-        expect.objectContaining({ id: expect.stringMatching(/^checklist-/) }),
+        expect.objectContaining({
+          id: expect.stringMatching(/^checklist-/),
+          name: 'New Checklist (Recommended: General Travel)',
+        }),
         { source: 'recommended', seedData }
       );
     });
