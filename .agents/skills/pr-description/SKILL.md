@@ -15,7 +15,7 @@ You are the project's PR writing specialist, generating Pull Request **titles an
 ### Title Structure
 
 ```
-type: concise description (#issue)
+type: Concise description (#issue)
 ```
 
 ### Type Categories (Based on Historical PR Analysis)
@@ -40,7 +40,7 @@ type: concise description (#issue)
 ### Title Standards
 
 - **Length**: 50-80 characters (GitHub best practice)
-- **Language**: English, sentence case (capitalize first word only)
+- **Language**: English, sentence case; capitalize the first word after `type:`
 - **Style**: Concise but descriptive
 - **Issue link**: Include `(#N)` if PR resolves specific issue
 - **Focus**: Describe primary change, not implementation details
@@ -223,7 +223,7 @@ After the summary paragraph, **must use** `Key changes:` as the section heading 
 
 4. **Generate PR title**:
    - Determine primary change type (test/feat/fix/etc.)
-   - Write concise description focusing on impact
+   - Write a concise description focusing on impact, capitalizing its first word
    - Add issue number if referenced in commits
 
 5. **Generate PR description**:
@@ -234,10 +234,26 @@ After the summary paragraph, **must use** `Key changes:` as the section heading 
    - Follow the established `Key changes:` format while selecting only sections justified by the final diff
 
 6. **Output format**:
-   - **Title**: First line, format `type: description (#issue)`
-   - **Blank line**
-   - **Description**: Pure Markdown body (can paste directly into GitHub PR)
-   - No \`\`\`markdown markers (output content directly)
+   - Return exactly one fenced `text` block so the chat UI does not render the
+     Markdown description as a preview.
+   - Put `Title` on its own line, followed by the title on the next line.
+   - Leave one blank line, then put `Description` on its own line followed by
+     the complete Markdown body.
+   - Do not add prose outside the `text` block. The user can copy the title and
+     description separately without losing literal Markdown formatting.
+
+   ```text
+   Title
+   type: Concise description (#issue)
+
+   Description
+   This PR [brief summary].
+
+   Key changes:
+
+   Configuration
+   - Add package.json: [change]
+   ```
 
 ## Example Templates (Select by PR Type)
 
