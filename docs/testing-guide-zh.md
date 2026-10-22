@@ -115,7 +115,7 @@ tests/
 
 每一個測試檔案都以 `Test Group N` 分隔相關測試，並在每個 `it()` 或 `test()` 前以連續的 `Test Case N` 註解標記。每個檔案皆從 1 開始編號，且必須與可執行案例數一致（包括展開後的 parameterized cases）。註解以簡潔的 `Should ...` 說明所測行為。
 
-驗證：本機的 `npm run test:inventory` 會實際執行 Vitest 與 Playwright，再依其 reported test counts 驗證此慣例，並拒絕不符合 Unit → Component → E2E 順序的 inventory sections。CI 會讓每個 test runner 僅執行一次、將 JSON reports 寫入 `test-inventory-reports/`，再以 `npm run test:inventory:ci` 稽核這些 reports，不會重跑任一測試套件。兩種模式一定稽核受 Git 追蹤的英文 guide，並在中文 guide 於本機可用時一併稽核。測試通過後使用 `npm run test:inventory:sync` 更新生成的 guide totals 與 file-heading counts；它絕不改寫 test comments。
+驗證：本機的 `npm run test:inventory` 會實際執行 Vitest 與 Playwright，再依其 reported test counts 驗證此慣例，並拒絕不符合 Unit → Component → E2E 順序的 inventory sections。`npm run verify:feature` 會讓每個 test runner 僅執行一次、將 JSON reports 寫入 `test-inventory-reports/`，再以 `npm run test:inventory:ci` 稽核這些 reports，不會重跑任一測試套件；GitHub Actions 也呼叫同一個 command。兩種模式一定稽核受 Git 追蹤的英文與中文 guides。測試通過後使用 `npm run test:inventory:sync` 更新生成的 guide totals 與 file-heading counts；它絕不改寫 test comments。
 
 ## 4. Coverage Breakdown 覆蓋率明細
 

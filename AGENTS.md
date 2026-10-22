@@ -94,3 +94,25 @@ provider-specific copies unless a future host demonstrably requires one.
 - For a test-design, coverage-risk, or test-quality review, use
   `$test-analysis`.
 - When modifying a paired document, use its matching `$doc-audit-*` skill.
+
+## Independent Feature Verification
+
+For a meaningful user-visible behavior change, the implementation agent must
+not be the final reviewer. When the host supports delegation, request a fresh,
+read-only `$code-review` reviewer after `npm run verify:feature`; request a
+fresh, read-only `$test-analysis` reviewer when the change creates meaningful
+test-design or coverage risk. Reviewers must not edit implementation files.
+
+After fixing a finding, obtain a new fresh reviewer verdict before handoff. If
+the host cannot delegate, perform the reviews sequentially and report the
+result as `degraded: no independent delegation`; never represent it as an
+independent review. Do not let multiple agents edit the same file concurrently.
+
+## Evidence-Based Feature Handoff
+
+For a meaningful behavior change, define the observable finish condition before
+implementation and decide what evidence can prove it. At handoff, report the
+user flow checked, exact commands and results, intentionally skipped layers and
+why, runtime or manual evidence when interaction behavior matters, remaining
+risks, and the independent-review verdict. Passing compilation or test totals
+alone are not a claim that a feature works for users.

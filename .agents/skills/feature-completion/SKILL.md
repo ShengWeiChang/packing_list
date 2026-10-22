@@ -13,6 +13,7 @@ Use this skill to establish evidence that a feature is ready for manual review o
 1. Read the applicable product specification, changed source files, and user-provided acceptance criteria.
 2. Inspect the diff before judging completeness. Keep unrelated existing changes intact.
 3. State the observable user behavior being verified. Do not treat an existing test as proof that the behavior is correct.
+4. Define a finish condition and the evidence that can prove it before declaring handoff. For a meaningful UI interaction, include a real user-flow check; command results alone do not prove an interaction is usable.
 
 ## 2. Coordinate Specialized Reviews
 
@@ -24,6 +25,18 @@ Use the smallest applicable set of reviews; do not repeat their work here.
 | Independent test architecture, effectiveness, and missing-risk review     | `test-analysis`              |
 | Bilingual product, code-quality, or test-documentation parity             | Relevant `doc-audit-*` Skill |
 | Separate concept-learning guide after successful validation               | `feature-learning`           |
+
+For a meaningful user-visible behavior change, run `npm run verify:feature`
+before review. When delegation is available, assign applicable review skills to
+a fresh, read-only reviewer context that did not implement the change. The
+reviewer may inspect the diff and evidence, but must not edit implementation
+files. After implementation fixes a finding, use a new fresh reviewer context
+for the follow-up verdict.
+
+When delegation is unavailable, perform the applicable reviews sequentially,
+but label the handoff `degraded: no independent delegation`. Do not call this
+an independent review. Follow the repository's constraints on concurrent file
+edits.
 
 For source behavior changes, run `npm run test:coverage` and compare with a baseline only when it used the same configuration and comparable source scope. Coverage movement is a signal to investigate changed modules, never a standalone pass/fail condition.
 
@@ -60,7 +73,7 @@ Use targeted repository searches rather than broad cleanup. A clean lint result 
 
 ## 5. Validation and Handoff
 
-Run `npm run verify:feature` for a meaningful user-visible behavior change. For a documentation-only change, run `npm run verify:feature -- --docs`; report every skipped layer and its reason. When the command does not fit the scope, run only the relevant checks and report the same evidence explicitly. The available layers are:
+Run `npm run verify:feature` for a meaningful user-visible behavior change. For a documentation-only change, run `npm run verify:feature -- --docs`; report every skipped layer and its reason. When the command does not fit the scope, run only the relevant checks and report the same evidence explicitly. The mechanical command does not replace runtime proof of a changed interaction; report the user flow exercised, manual observation or automated E2E evidence, and any limitation. The available layers are:
 
 ```bash
 npm run validate

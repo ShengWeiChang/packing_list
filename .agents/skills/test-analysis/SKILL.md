@@ -1,274 +1,62 @@
 ---
 name: test-analysis
-description: Execute independent test architecture and quality review, output Gate verdict, grade, and minimum viable fixes (MVP fixes).
-argument-hint: '[scope/path/extra constraints]'
+description: Independently review whether a scoped change has proportionate, behavior-focused test evidence. Use for meaningful test-design or coverage risk, not for routine edits or implementation code review.
+argument-hint: '[scope/path/acceptance criteria]'
 ---
 
-# Test Architecture and Quality Independent Review
-
----
-
-## 0. Execution Mode (Read First)
-
-You are a senior QA architect conducting a **complete, independent, traceable** review of this project's test architecture.
-
-### Mandatory Principles
-
-1. **Oracle First**: Judge correctness by requirements/specs/observable UI behavior.
-2. **Evidence First**: High-risk conclusions must include file/line number/reproduction steps/execution output.
-3. **Reproducibility First**: Non-reproducible issues cannot be marked P0/P1.
-4. **Independence**: Existing tests are not proof of correctness; tests themselves are also subject to review.
-5. **Risk-Oriented**: Test value > coverage percentage > test quantity.
-
----
-
-## 1. Project Background
-
-- Frontend: Vue 3 (Composition API)
-- Build: Vite
-- Testing: Vitest + @vue/test-utils + Playwright
-- Storage: localStorage
-- UI: Tailwind CSS
-
----
-
-## 2. Mission Objectives
-
-Answer two things:
-
-1. Does it currently meet Grade A threshold? (Under full review depth, avoid stopping at vague conservative conclusions every time; adopt **verifiable Gate decisions**.)
-2. If not Grade A, what minimally needs fixing (MVP fixes + priority)?
-
----
-
-## 3. Core Values (Avoid Wrong Optimization)
-
-Testing is not a quantity competition, but a risk management tool. Each test should answer:
-
-1. What risk does it protect against?
-2. Can it catch real bugs?
-3. Is maintenance cost reasonable?
-4. Is it redundantly covered?
-
-### Coverage Interpretation (Not a KPI)
-
-- Coverage is a byproduct, not a goal.
-- 90% ineffective tests < 70% high-value tests.
-- Uncovered doesn't mean must supplement (might be low-risk defensive code).
-- High coverage + low-quality assertions = false sense of security.
-
----
-
-## 4. Operation Steps (Recommended Execution Order)
-
-```bash
-git branch --show-current
-git log --oneline -10
-git diff main...HEAD --stat
-
-npm run test:run
-npm run test:coverage
-npm run test:e2e
-```
-
-Install dependencies only when the user authorizes it and the repository cannot otherwise run the required checks.
-
-If commands fail, must preserve in report:
-
-- Failed command
-- Error summary
-- Impact scope on conclusions
-
----
-
-## 5. Analysis Dimensions and Weights
-
-### A. Test Effectiveness (30%, Highest Weight)
-
-#### High-Value Tests (Tend to Keep)
-
-- Core business flows and high-risk paths
-- Regression bug corresponding tests
-- Boundary/error handling tests
-- Behavior-oriented assertions (not implementation details)
-
-#### Low-Value Tests (Consider Deleting/Merging)
-
-- Testing framework itself
-- Duplicate logic paths
-- Generic assertions (e.g., toBeTruthy overuse)
-- Over-coupled to private/internal
-
-#### Anti-Pattern Scanning (Examples)
-
-```bash
-grep -rn "toBeTruthy\|toBeUndefined" tests/
-grep -rn "setTimeout" tests/
-grep -rn "querySelector\|getElementsBy\|nth-child" tests/
-```
-
-### B. Test Architecture Design (20%)
-
-- Is Unit / Component / E2E layering reasonable
-- Is there cross-layer duplication
-- Is it independent, parallelizable, no shared pollution
-- Are setup/teardown and mock strategies appropriate
-
-### C. Risk Coverage (25%)
-
-#### High-Risk Must-Test
-
-- localStorage CRUD + failure paths (QuotaExceeded / parse error)
-- Cross-tab sync (storage event)
-- Checklist/Category/Item CRUD completeness
-- Drag & Drop reordering
-- cascade delete / orphan prevention
-
-#### Medium-Risk Recommended
-
-- Edit mode, Enter/Escape
-- i18n switching
-- Empty state
-- Minimum a11y baseline (keyboard operable, basic ARIA/label)
-- Basic security baseline (input escaping, XSS injection points don't execute)
-
-### D. Maintainability and Stability (15%)
-
-- Over-reliance on class/DOM structure/element order
-- Testing private/internal state
-- Duplicate setup, extractable helpers
-
-### E. Missing Risks (10%)
-
-- localStorage disabled/security error
-- Corrupted JSON
-- Multi-tab conflicting edits (simultaneous rename / rename+delete)
-
----
-
-## 6. Critical: Gate Decision Rules (Mandatory) (Avoid AI infinite loop giving moderate non-critical comments)
-
-### Grade A Threshold (Must All Be True)
-
-1. **P0 = 0**
-2. **P1 ≤ 1** (with acceptable workaround)
-3. Unit/Component/E2E can pass stably (no reproducible flaky)
-4. High-risk must-test list fully covered
-5. No "evidence-free" high-risk conclusions
-
-> If above holds: **Overall rating must be A/A-**.
-> Only P2/P3 remaining: **Cannot downgrade to B/B+**.
-
-### Downgrade Rules
-
-- Any unresolved P0 → Max B
-- P1 ≥ 2 → Max B+
-- Reproducible flaky exists and not isolated → Max B
-- High-risk critical path missing tests → Max B
-
-### Anti-Loop Constraints (New, Must Follow)
-
-1. **No "Evidence-Free Downgrade"**: If this round has no new reproducible evidence compared to last round, cannot repeat same downgrade reason.
-2. **No "Speculative P1"**: Without file+line number+reproduction steps+output, cannot mark P1.
-3. **Issue Deduplication**: Same-origin issues cannot be split into multiple P1s to inflate count.
-4. **Consistency Check**: Conclusions must match Gate verdict (if Gate passes, cannot give B+).
-5. **Convergence Requirement**: If only P2/P3 remain, explicitly declare "A-gate passed with residual P3".
-
----
-
-## 7. Evidence Standards (P0/P1 Required)
-
-Each ⚠️/❌ item needs:
-
-1. Evidence location (file + line number)
-2. Minimal reproduction steps
-3. Actual result vs expected result
-4. Risk level (High/Medium/Low) and reason
-5. Fix suggestion + estimated hours
-6. Confidence level (High/Medium/Low)
-
----
-
-## 8. Output Format (Fixed, Cannot Omit)
-
-### 1. Executive Summary
-
-- Test overview (Unit/Component/E2E file count and case count)
-- Four star ratings (effectiveness, coverage, maintainability, architecture)
-- Overall rating (A/B/C/D/F)
-- Top 3 strengths / Top 3 risks
-
-### 2. Gate Verdict Card (New, Required)
-
-Use following format to judge each:
-
-- Gate-1 P0=0: Pass/Fail (evidence)
-- Gate-2 P1≤1: Pass/Fail (evidence)
-- Gate-3 All layers stable: Pass/Fail (evidence)
-- Gate-4 High-risk covered: Pass/Fail (evidence)
-- Gate-5 No evidence-free high-risk: Pass/Fail (evidence)
-
-And output:
-
-- **Final Gate Verdict**: A-gate passed / not passed
-- **Final Grade**: A / A- / B+ / B / ...
-
-### 3. Defect List (Only List Evidenced Items)
-
-List by priority P0 → P1 → P2 → P3.
-
-### 4. Recommendation List (Unified Table)
-
-Type: 🗑️Delete / ✏️Refactor / ➕Add / 🔄Merge / ✅Keep
-
-| ID  | Type | Recommended Action | Reason | Impact Scope | Priority | Est. Hours | Related Files |
-| --- | ---- | ------------------ | ------ | ------------ | -------- | ---------- | ------------- |
-
-### 5. MVP Fixes (Required if Not Grade A)
-
-Only list "minimum necessary fixes":
-
-- Fix-1 (P0/P1)
-- Fix-2 (P0/P1)
-- Fix-3 (optional)
-
-And attach: After completing these, what grade is expected.
-
----
-
-## 9. Scoring Criteria (Maintain Completeness)
-
-### Overall Rating
-
-- A: High-risk coverage complete, tests effective, stable, maintainable, and passes Gate
-- B: Obvious gaps but core usable
-- C: Only basically usable, large room for improvement
-- D/F: Critical risks missing tests or tests failing
-
-### Dimensional Stars (1-5)
-
-- Test effectiveness
-- Critical coverage
-- Maintainability
-- Architecture reasonableness
-
-> Note: Stars are auxiliary, **final grade prioritizes Gate rules**.
-
----
-
-## 10. Notes (Keep + Strengthen)
-
-1. Coverage is reference, not goal.
-2. Quality over quantity; allow deleting low-value tests.
-3. Can reference specs as oracle, but cannot reuse existing evaluation conclusions.
-4. Must mark assumptions and confidence levels.
-5. Without evidence and reproduction steps, cannot upgrade to high priority.
-6. Strictly prohibit repeatedly downgrading scores for same issue without new evidence (prevent infinite loop).
-
----
-
-## 11. Final Question
-
-I want to know if Grade A threshold is currently met. If not yet achieved, please only list "minimum viable fixes (MVP fixes)" and priority.
-
-Please begin review analysis.
+# Independent Test Analysis
+
+Review whether the tests and executed evidence support the stated finish
+condition. This is a read-only advisory review: it neither edits tests nor
+declares a feature complete.
+
+## 1. Establish the Test Oracle
+
+1. Read `AGENTS.md`, the user-visible finish condition, applicable specification,
+   scoped diff, and relevant tests.
+2. State the behavior that must be proven and the most meaningful failure that
+   could still reach a user. Existing tests, coverage percentage, and a passing
+   build are evidence, not proof by themselves.
+3. Review only the risks introduced or materially affected by the change. Do
+   not require a full test-architecture audit for a focused fix.
+
+## 2. Inspect Evidence and Layering
+
+1. Read the result of `npm run verify:feature` when it is available. Request a
+   missing relevant layer rather than rerunning every command without reason.
+   Preserve failed or skipped commands and their effect on confidence.
+2. Match evidence to the changed boundary:
+   - **Unit**: models, transformations, ordering, persistence contracts, and
+     failure paths.
+   - **Component**: Vue state, props/emits, rendering, keyboard/focus behavior,
+     and locale-dependent UI.
+   - **E2E**: browser-only flows, integration boundaries, and interactions whose
+     correctness depends on a running application.
+3. For PackingList, investigate only relevant risks among reactive-state
+   ownership, localStorage compatibility or corrupted data, drag/drop ordering,
+   destructive actions, cross-tab updates, i18n, narrow layouts, and
+   accessibility.
+4. Prefer stable, behavior-oriented assertions. Flag tests coupled to private
+   implementation, brittle selectors, shared-state pollution, redundant layers,
+   or missing failure paths only when the diff provides evidence.
+
+## 3. Finding Standard
+
+Each finding must include a file and line, the unproven or unreliable behavior,
+its user impact, and a proportionate correction direction. Do not use arbitrary
+letter grades, coverage thresholds, estimated hours, or speculative blockers.
+
+## 4. Output
+
+Return, in order:
+
+1. **Verdict**: `sufficient evidence`, `changes requested`, or `insufficient evidence`.
+2. **Finish condition and evidence**: what behavior was checked and which test
+   layers or runtime proof support it.
+3. **Findings**: only evidenced items, ordered by impact.
+4. **Validation gaps**: the smallest missing proof and why it matters.
+5. **Scope note**: assumptions, skipped checks, or reasons this review was not
+   needed.
+
+Pass the result to `feature-completion` for handoff. A reviewer must not claim
+the feature is complete on this analysis alone.

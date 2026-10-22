@@ -63,7 +63,7 @@ function reportResult(scope, executed, skipped) {
  * @returns {void}
  */
 function runDocumentationVerification() {
-  const executed = ['npm run validate'];
+  const executed = ['npm run validate', 'npm run docs:check-pairs'];
   const skipped = [
     'Vitest coverage (documentation-only scope)',
     'Playwright E2E (documentation-only scope)',
@@ -72,6 +72,7 @@ function runDocumentationVerification() {
   ];
 
   runCommand('Validate formatting and lint rules', npmCommand, ['run', 'validate']);
+  runCommand('Check paired documentation structure', npmCommand, ['run', 'docs:check-pairs']);
   reportResult('docs', executed, skipped);
 }
 
@@ -82,6 +83,7 @@ function runDocumentationVerification() {
 function runFeatureVerification() {
   const executed = [
     'npm run validate',
+    'npm run docs:check-pairs',
     'Vitest coverage with JSON report',
     'Playwright E2E with JSON report',
     'npm run test:inventory:ci',
@@ -90,6 +92,7 @@ function runFeatureVerification() {
 
   mkdirSync(REPORT_DIRECTORY, { recursive: true });
   runCommand('Validate formatting and lint rules', npmCommand, ['run', 'validate']);
+  runCommand('Check paired documentation structure', npmCommand, ['run', 'docs:check-pairs']);
 
   const vitestPath = resolve(PROJECT_ROOT, 'node_modules', 'vitest', 'vitest.mjs');
   runCommand('Run Vitest coverage', process.execPath, [
