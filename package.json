@@ -9,6 +9,8 @@
     "build": "vite build",
     "serve": "vite preview",
     "build:css-vars": "node build-css-vars.js",
+    "docs:check-pairs": "node scripts/check-doc-pairs.js",
+    "fingerprint:candidate": "node scripts/candidate-fingerprint.js",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -21,6 +23,7 @@
     "test:inventory": "node scripts/test-inventory.js",
     "test:inventory:ci": "node scripts/test-inventory.js --from-reports",
     "test:inventory:sync": "node scripts/test-inventory.js --write",
+    "verify:feature": "node scripts/verify-feature.js",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui"
   },

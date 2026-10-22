@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: Generate Pull Request descriptions following exact project conventions (summary+metrics, "Key changes:" sections, technical details) based on PR #10-14 format analysis.
+description: Generate Pull Request descriptions from the current branch diff using project conventions for summary, metrics, Key changes, and technical detail.
 argument-hint: '[PR context/branch/issue number]'
 ---
 
@@ -15,7 +15,7 @@ You are the project's PR writing specialist, generating Pull Request **titles an
 ### Title Structure
 
 ```
-type: concise description (#issue)
+type: Concise description (#issue)
 ```
 
 ### Type Categories (Based on Historical PR Analysis)
@@ -40,7 +40,7 @@ type: concise description (#issue)
 ### Title Standards
 
 - **Length**: 50-80 characters (GitHub best practice)
-- **Language**: English, sentence case (capitalize first word only)
+- **Language**: English, sentence case; capitalize the first word after `type:`
 - **Style**: Concise but descriptive
 - **Issue link**: Include `(#N)` if PR resolves specific issue
 - **Focus**: Describe primary change, not implementation details
@@ -55,7 +55,7 @@ type: concise description (#issue)
 | Multiple unrelated changes           | Choose dominant (>60% of changes) |
 | Documentation + minimal code changes | `feat` or `docs`                  | `feat: Update testing documentation`               |
 
-## PR Description Format (Based on PR #10-14 Analysis)
+## PR Description Format
 
 ### Opening Paragraph (1-2 sentences)
 
@@ -196,12 +196,15 @@ After the summary paragraph, **must use** `Key changes:` as the section heading 
 
 ## Execution Workflow
 
-1. **Auto-collect information**:
+1. **Determine the comparison base and collect information**:
+   - Use the PR target branch when it is provided.
+   - Otherwise inspect repository metadata and state the assumed base branch; do not hard-code `main`.
+   - Compare the merge-base diff, not only individual branch commits.
 
    ```bash
-   git log main..HEAD --oneline --no-merges
-   git diff main...HEAD --stat
-   git diff main...HEAD --name-only
+   git log <base>..HEAD --oneline --no-merges
+   git diff <base>...HEAD --stat
+   git diff <base>...HEAD --name-only
    ```
 
 2. **Classify file changes**:
@@ -220,7 +223,7 @@ After the summary paragraph, **must use** `Key changes:` as the section heading 
 
 4. **Generate PR title**:
    - Determine primary change type (test/feat/fix/etc.)
-   - Write concise description focusing on impact
+   - Write a concise description focusing on impact, capitalizing its first word
    - Add issue number if referenced in commits
 
 5. **Generate PR description**:
@@ -228,13 +231,29 @@ After the summary paragraph, **must use** `Key changes:` as the section heading 
    - Key changes: followed by sections
    - Each section filled with bullet points based on **actual diff output only**
    - **CRITICAL**: Do NOT extract bullet points from commit messages - analyze file diffs directly
-   - Ensure format matches PR #10-14 exactly
+   - Follow the established `Key changes:` format while selecting only sections justified by the final diff
 
 6. **Output format**:
-   - **Title**: First line, format `type: description (#issue)`
-   - **Blank line**
-   - **Description**: Pure Markdown body (can paste directly into GitHub PR)
-   - No \`\`\`markdown markers (output content directly)
+   - Return exactly one fenced `text` block so the chat UI does not render the
+     Markdown description as a preview.
+   - Put `Title` on its own line, followed by the title on the next line.
+   - Leave one blank line, then put `Description` on its own line followed by
+     the complete Markdown body.
+   - Do not add prose outside the `text` block. The user can copy the title and
+     description separately without losing literal Markdown formatting.
+
+   ```text
+   Title
+   type: Concise description (#issue)
+
+   Description
+   This PR [brief summary].
+
+   Key changes:
+
+   Configuration
+   - Add package.json: [change]
+   ```
 
 ## Example Templates (Select by PR Type)
 
@@ -288,7 +307,7 @@ Documentation:
 
 1. **Never fabricate data**: All numbers, version numbers, file names must come from actual git diff or package.json
 2. **Use diff output ONLY**: Bullet points describe actual file changes from `git diff` analysis - **NEVER extract descriptions from commit messages** (commit messages may describe intermediate states that don't exist in final diff)
-3. **Maintain format consistency**: Strictly follow PR #10-14 format (capitalization, punctuation, section order)
+3. **Maintain format consistency**: Use the established `Key changes:` heading, concise technical tone, and sections selected from the final diff
 4. **Dynamic section adjustment**: Select sections based on actual changes, don't force all sections
 5. **Technical details first**: Prioritize specific technical implementation (file names, function names, version numbers) over abstract descriptions
 6. **If information insufficient**: Clearly indicate what additional information is needed (e.g., "Please provide the issue number this PR resolves")

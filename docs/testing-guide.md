@@ -115,7 +115,7 @@ tests/
 
 Every test file groups related assertions with `Test Group N` dividers and prefixes every `it()` or `test()` case with a sequential `Test Case N` comment. Numbering begins at 1 in each file and must match the executable case count (including expanded parameterized cases). The comment is a concise `Should ...` description of the behavior under test.
 
-Validation: Local `npm run test:inventory` executes Vitest and Playwright, then verifies this convention against their reported test counts and rejects inventory sections that are out of Unit → Component → E2E order. CI runs each test runner once, writes their JSON reports to `test-inventory-reports/`, then uses `npm run test:inventory:ci` to audit those reports without rerunning either suite. Both modes always audit the tracked English guide and also audit the Chinese guide when it is available locally. Use `npm run test:inventory:sync` to update generated guide totals and file-heading counts after the tests pass; it never rewrites test comments.
+Validation: Local `npm run test:inventory` executes Vitest and Playwright, then verifies this convention against their reported test counts and rejects inventory sections that are out of Unit → Component → E2E order. `npm run verify:feature` runs each test runner once, writes their JSON reports to `test-inventory-reports/`, then uses `npm run test:inventory:ci` to audit those reports without rerunning either suite; GitHub Actions calls this same command. Both modes always audit the tracked English and Chinese guides. Use `npm run test:inventory:sync` to update generated guide totals and file-heading counts after the tests pass; it never rewrites test comments.
 
 ## 4. Coverage Breakdown
 
@@ -199,6 +199,8 @@ npm run test:coverage # Vitest code coverage only: outputs terminal summary + co
 ```bash
 npm run test:inventory      # Execute Vitest + Playwright and verify comments plus available guides
 npm run test:inventory:sync # After passing, synchronize generated guide counts
+npm run verify:feature      # Full feature verification: validate, coverage, E2E, inventory, build
+npm run verify:feature -- --docs # Documentation-only validation; reports skipped test and build layers
 ```
 
 ## 6. Testing Layers and Responsibilities

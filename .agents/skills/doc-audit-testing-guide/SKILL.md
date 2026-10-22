@@ -33,7 +33,7 @@ Ensure the following items are consistent, correct, and fixed:
 3. Document section 8 (complete test inventory) - case count and totals per file
 4. Each test file's `Test Group` / `Test Case` numbering is sequential, no gaps, matches actual execution count
 5. `it.each` / `test.each` expanded cases are correctly reflected in comments and documentation
-6. `docs/testing-guide.md` and `docs/testing-guide-zh.md` must match content, be mutual translations (same structure, same statistics, same inventory)
+6. `docs/testing-guide.md` and `docs/testing-guide-zh.md` must be mutual translations with the same structure, statistics, inventory, and line count
 7. Test-inventory sections must follow the documented layer order: Unit, Component, then E2E. Do not append a new layer subsection after a later layer merely to minimize an edit.
 
 ---
@@ -55,7 +55,7 @@ Ensure the following items are consistent, correct, and fixed:
 5. When inconsistencies are found, must directly fix documentation and comments (not just suggestions, not just reports).
 6. `docs/testing-guide.md` and `docs/testing-guide-zh.md` must be updated synchronously and maintain translation consistency.
 7. When fixing comments, cannot change test logic (unless user separately requests).
-8. If a paired Chinese document is intentionally ignored by Git, still verify and update it in the working tree; report that it is absent from `git status` rather than treating its absence as proof it was not changed.
+8. Keep both paired documents tracked in Git; their changes must appear together in the review diff.
 
 ---
 

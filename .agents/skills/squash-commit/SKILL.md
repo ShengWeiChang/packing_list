@@ -15,7 +15,7 @@ You are the project's commit message specialist, responsible for composing multi
 ### Commit Format (Conventional Commits)
 
 ```
-type: description
+type: Description
 ```
 
 ### Type Categories (Priority Order)
@@ -43,16 +43,18 @@ type: description
 1. **Title line**: 50-80 characters, concise summary
 2. **Summary paragraph**: 1-2 sentences describing scope and impact (starts with "This commit...")
 3. **Bullet points**: Grouped by theme with `-` prefix, technical details
-4. **Language**: English (sentence case for title, lowercase start for bullets)
+4. **Language**: English (sentence case for title: capitalize the first word
+   after `type:`; lowercase start for bullets)
 5. **Issue Link** (optional):
    - Format: `(#issue-number)` at end of title
    - Example: `test: Establish automated testing infrastructure with CI/CD (#14)`
 
 ## Execution Workflow
 
-1. **Collect commits**:
-   - Read all commits in current branch: `git log main..HEAD --oneline`
-   - Count changed files: `git diff main...HEAD --stat`
+1. **Determine the comparison base and collect commits**:
+   - Use the merge target when supplied; otherwise inspect repository metadata and state the assumed base branch rather than hard-coding `main`.
+   - Read branch commits: `git log <base>..HEAD --oneline`
+   - Count changed files from the merge-base diff: `git diff <base>...HEAD --stat`
 
 2. **Analyze theme**:
    - Identify primary change type (feat / fix / test / docs)
@@ -64,7 +66,7 @@ type: description
    - Extract key metrics (file counts, line changes, new features)
 
 4. **Generate squash message**:
-   - **Title**: `type: concise description (#issue)`
+   - **Title**: `type: Concise description (#issue)`
    - **Blank line**
    - **Summary**: 1-2 sentences starting with "This commit..." (include key metrics)
    - **Blank line**
@@ -74,8 +76,12 @@ type: description
 
 5. **Output format**:
 
-   ```
-   type: concise description (#issue)
+   Return exactly one fenced `text` code block and no prose outside it, so the
+   complete message can be copied without the chat UI rendering its Markdown.
+   Inside that block, output only this commit message:
+
+   ```text
+   type: Concise description (#issue)
 
    This commit [summary with metrics].
 
@@ -99,7 +105,7 @@ type: description
 
 ## Example Output (Based on Historical Commits)
 
-```
+```text
 test: Establish automated testing infrastructure with CI/CD (#14)
 
 This commit implements 440 tests (196 unit, 202 component, 42 E2E), achieving 97.52% statement coverage with GitHub Actions pipeline.
