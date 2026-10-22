@@ -12,7 +12,8 @@ Review the implementation diff, not an imagined rewrite. This is an AI-assisted 
 
 - `code-review`: implementation correctness and maintainability in the changed code.
 - `test-analysis`: independent evaluation of test design, risk coverage, and test quality.
-- `feature-completion`: orchestrates requirements, executed validation, documentation, and handoff.
+- `feature-workflow`: owns requirements, planning, human approval gates, and delivery state.
+- `feature-completion`: owns verification evidence and the completion-review handoff.
 - `doc-audit-*`: audits the named bilingual documentation pair only.
 
 Do not repeat another Skill's full workflow. Refer to it when the review reveals that it is needed.
@@ -52,4 +53,6 @@ Return, in order:
 3. **Validation gaps**: commands or test layers that should still be executed, if any.
 4. **Scope note**: unrelated changes or assumptions that need user confirmation.
 
-For a feature handoff, pass this result to `feature-completion`; do not claim the feature is complete on this review alone.
+For a feature handoff, pass this result to `feature-completion`, which returns
+it to `feature-workflow`; do not claim the feature is complete on this review
+alone.

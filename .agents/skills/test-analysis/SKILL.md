@@ -58,5 +58,6 @@ Return, in order:
 5. **Scope note**: assumptions, skipped checks, or reasons this review was not
    needed.
 
-Pass the result to `feature-completion` for handoff. A reviewer must not claim
-the feature is complete on this analysis alone.
+Pass the result to `feature-completion`, which returns it to `feature-workflow`
+for the next human decision. A reviewer must not claim the feature is complete
+on this analysis alone.

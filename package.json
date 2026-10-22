@@ -10,6 +10,7 @@
     "serve": "vite preview",
     "build:css-vars": "node build-css-vars.js",
     "docs:check-pairs": "node scripts/check-doc-pairs.js",
+    "fingerprint:candidate": "node scripts/candidate-fingerprint.js",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
