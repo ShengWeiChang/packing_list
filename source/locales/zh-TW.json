@@ -27,12 +27,13 @@
     "deleteConfirm": "確定要刪除這個清單嗎？",
     "cannotDeleteLast": "無法刪除最後一個清單",
     "defaultName": "新清單",
-    "defaultNameFromEmpty": "新清單（空白）",
-    "defaultNameFromTemplate": "新清單（範本：{name}）",
-    "defaultNameFromRecommended": "新清單（推薦：{name}）",
+    "defaultNameFromEmpty": "新清單(空白)",
+    "defaultNameFromTemplate": "新清單({name})",
+    "defaultNameFromRecommended": "新清單({name})",
     "pleaseCreate": "請先建立一個新清單",
     "startDate": "開始日期",
-    "endDate": "結束日期"
+    "endDate": "結束日期",
+    "showUnpackedOnly": "只顯示未攜帶物品"
   },
   "category": {
     "name": "分類名稱",
@@ -76,7 +77,7 @@
     "categoryCount": "{count} 個分類",
     "nameRequired": "請輸入範本名稱。",
     "editingTemplate": "正在編輯範本：{name}",
-    "saveChanges": "儲存範本變更",
+    "saveChanges": "儲存範本",
     "deleteTemplate": "刪除範本",
     "saveTemplateConfirm": "儲存為範本",
     "deleteConfirm": "確定要刪除這個範本嗎？",

@@ -48,6 +48,7 @@ const mockDuplicateCategory = vi.fn();
 const mockCreateItem = vi.fn();
 const mockGetItems = vi.fn();
 const mockUpdateItem = vi.fn();
+const mockUpdateMultipleItems = vi.fn();
 const mockDeleteItem = vi.fn();
 const mockDuplicateItem = vi.fn();
 const mockSetCategoryPacked = vi.fn();
@@ -97,6 +98,7 @@ vi.mock('../../source/composables/usePackingLists', () => ({
     createItem: mockCreateItem,
     getItems: mockGetItems,
     updateItem: mockUpdateItem,
+    updateMultipleItems: mockUpdateMultipleItems,
     deleteItem: mockDeleteItem,
     duplicateItem: mockDuplicateItem,
     setCategoryPacked: mockSetCategoryPacked,
@@ -147,8 +149,8 @@ const i18n = createI18n({
       checklist: {
         defaultName: 'New Checklist',
         defaultNameFromEmpty: 'New Checklist (Empty)',
-        defaultNameFromTemplate: 'New Checklist (Template: {name})',
-        defaultNameFromRecommended: 'New Checklist (Recommended: {name})',
+        defaultNameFromTemplate: 'New Checklist ({name})',
+        defaultNameFromRecommended: 'New Checklist ({name})',
         deleteConfirm: 'Are you sure you want to delete this checklist?',
         pleaseCreate: 'Please create a new checklist first',
       },
@@ -805,9 +807,8 @@ describe('App', () => {
 
   describe('handleItemMove', () => {
     // Test Case 29: Should handle cross-category item move
-    it('should update item categoryId and reordered items on move type', async () => {
-      mockUpdateItem.mockResolvedValue(undefined);
-      mockGetItems.mockResolvedValue(undefined);
+    it('should batch all source and target item updates on move type', async () => {
+      mockUpdateMultipleItems.mockResolvedValue([]);
 
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -816,9 +817,7 @@ describe('App', () => {
 
       const moveData = {
         type: 'move',
-        item: { id: 'item-1', name: 'Shirt', categoryId: 'cat-1' },
-        newCategoryId: 'cat-2',
-        reorderedItems: [
+        items: [
           { id: 'item-1', name: 'Shirt', categoryId: 'cat-2', order: 0 },
           { id: 'item-3', name: 'Socks', categoryId: 'cat-2', order: 1 },
         ],
@@ -828,19 +827,13 @@ describe('App', () => {
       await checklist.vm.$emit('move:item', moveData);
       await flushPromises();
 
-      // First call: update item with new categoryId
-      expect(mockUpdateItem).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'item-1', categoryId: 'cat-2' })
-      );
-      // Additional calls: reordered items
-      expect(mockUpdateItem).toHaveBeenCalledTimes(3); // 1 move + 2 reorder
-      expect(mockGetItems).toHaveBeenCalled();
+      expect(mockUpdateMultipleItems).toHaveBeenCalledOnce();
+      expect(mockUpdateMultipleItems).toHaveBeenCalledWith(moveData.items);
     });
 
     // Test Case 30: Should handle same-category reorder
     it('should update all items with new order on reorder type', async () => {
-      mockUpdateItem.mockResolvedValue(undefined);
-      mockGetItems.mockResolvedValue(undefined);
+      mockUpdateMultipleItems.mockResolvedValue([]);
 
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -859,14 +852,13 @@ describe('App', () => {
       await checklist.vm.$emit('move:item', moveData);
       await flushPromises();
 
-      expect(mockUpdateItem).toHaveBeenCalledTimes(2);
-      expect(mockGetItems).toHaveBeenCalled();
+      expect(mockUpdateMultipleItems).toHaveBeenCalledOnce();
+      expect(mockUpdateMultipleItems).toHaveBeenCalledWith(moveData.items);
     });
 
-    // Test Case 31: Should handle move without reorderedItems
-    it('should handle move with empty reorderedItems gracefully', async () => {
-      mockUpdateItem.mockResolvedValue(undefined);
-      mockGetItems.mockResolvedValue(undefined);
+    // Test Case 31: Should ignore incomplete move payloads
+    it('should ignore a move payload without item updates', async () => {
+      mockUpdateMultipleItems.mockResolvedValue([]);
 
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -875,17 +867,14 @@ describe('App', () => {
 
       const moveData = {
         type: 'move',
-        item: { id: 'item-1', name: 'Shirt', categoryId: 'cat-1' },
-        newCategoryId: 'cat-2',
-        reorderedItems: [],
+        items: [],
       };
 
       const checklist = wrapper.findComponent({ name: 'ChecklistComponent' });
       await checklist.vm.$emit('move:item', moveData);
       await flushPromises();
 
-      expect(mockUpdateItem).toHaveBeenCalledTimes(1); // only the moved item
-      expect(mockGetItems).toHaveBeenCalled();
+      expect(mockUpdateMultipleItems).not.toHaveBeenCalled();
     });
   });
 
@@ -1205,7 +1194,7 @@ describe('App', () => {
       expect(mockCreateChecklist).toHaveBeenCalledWith(
         expect.objectContaining({
           id: expect.stringMatching(/^checklist-/),
-          name: expect.stringMatching(/^New Checklist \(Template: W+\)$/),
+          name: expect.stringMatching(/^New Checklist \(W+\)$/),
         }),
         expect.objectContaining({
           source: 'template',
@@ -1427,7 +1416,7 @@ describe('App', () => {
       expect(mockCreateChecklist).toHaveBeenCalledWith(
         expect.objectContaining({
           id: expect.stringMatching(/^checklist-/),
-          name: 'New Checklist (Recommended: General Travel)',
+          name: 'New Checklist (General Travel)',
         }),
         { source: 'recommended', seedData }
       );

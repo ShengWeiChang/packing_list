@@ -184,5 +184,40 @@ test.describe('Mobile Workflow (375px)', () => {
       const updatedText = await progressBar.textContent();
       expect(updatedText).not.toBe(initialText);
     });
+
+    // Test Case 10: Should filter packed items with the icon-only toolbar button
+    test('should filter packed items with an accessible icon button on mobile', async ({
+      page,
+    }) => {
+      const firstCategory = page.getByTestId('category-card').first();
+      const itemRows = firstCategory.getByTestId('item-row');
+      const initialItemCount = await itemRows.count();
+      expect(initialItemCount).toBeGreaterThan(0);
+
+      await firstCategory.getByTestId('item-checkbox').first().click();
+
+      const filterToggle = page.getByTestId('unpacked-items-filter-toggle');
+      await expect(filterToggle).toBeVisible();
+      await expect(filterToggle).toHaveText('');
+      await expect(filterToggle).toHaveAttribute('title', 'Show unpacked only');
+      await expect(filterToggle).toHaveAttribute('aria-label', 'Show unpacked only');
+      await expect(filterToggle).toHaveAttribute('aria-pressed', 'false');
+
+      const bounds = await filterToggle.boundingBox();
+      expect(bounds?.width).toBe(36);
+      expect(bounds?.height).toBe(36);
+
+      const overflowToggle = page.locator('[data-testid^="overflow-trigger-checklist-"]').first();
+      const overflowBounds = await overflowToggle.boundingBox();
+      expect(overflowBounds?.width).toBe(36);
+      expect(overflowBounds?.height).toBe(36);
+      expect(bounds?.x).toBeLessThan(overflowBounds?.x ?? 0);
+      expect(bounds?.y).toBe(overflowBounds?.y);
+
+      await filterToggle.click();
+
+      await expect(filterToggle).toHaveAttribute('aria-pressed', 'true');
+      await expect(itemRows).toHaveCount(initialItemCount - 1);
+    });
   });
 });

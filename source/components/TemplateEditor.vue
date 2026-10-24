@@ -50,6 +50,7 @@ Created: 2026-10-13
       :newly-created-item-id="newlyCreatedItemId"
       :newly-created-category-id="newlyCreatedCategoryId"
       :show-dates="false"
+      :show-item-filter="false"
       :show-overflow-menu="false"
       @update:checklist="updateChecklist"
       @create:item="createItem"
@@ -207,12 +208,8 @@ function deleteItem(itemId) {
 
 /** @param {object} moveData - Item move or reorder payload */
 function moveItem(moveData) {
-  if (moveData.type === 'move') {
-    updateItem({ ...moveData.item, categoryId: moveData.newCategoryId });
-    for (const item of moveData.reorderedItems || []) updateItem(item);
-  } else if (moveData.type === 'reorder') {
-    for (const item of moveData.items || []) updateItem(item);
-  }
+  if (!['move', 'reorder'].includes(moveData.type)) return;
+  for (const item of moveData.items || []) updateItem(item);
 }
 
 /** Create a category in the draft. */

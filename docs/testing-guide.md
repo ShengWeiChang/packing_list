@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 560    |
-| Unit tests         | 243    |
-| Component tests    | 267    |
-| E2E tests          | 50     |
-| Line coverage      | 98.46% |
-| Statement coverage | 97.10% |
-| Branch coverage    | 88.23% |
+| Total tests        | 576    |
+| Unit tests         | 251    |
+| Component tests    | 271    |
+| E2E tests          | 54     |
+| Line coverage      | 95.71% |
+| Statement coverage | 94.68% |
+| Branch coverage    | 86.49% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -29,9 +29,9 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 243   | Pure logic in models, services, composables, utils |
-| Component | Vitest + @vue/test-utils | 267   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 50    | Full user flows in a real browser                  |
+| Unit      | Vitest                   | 251   | Pure logic in models, services, composables, utils |
+| Component | Vitest + @vue/test-utils | 271   | Vue component rendering, events, state             |
+| E2E       | Playwright               | 54    | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -50,7 +50,7 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 243 tests
+├── unit-tests/                          # 251 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -67,19 +67,21 @@ tests/
 │   │   └── useTemplates.test.js         # 14  tests
 │   ├── i18n/                            #  9  tests
 │   │   └── index.test.js                #  9  tests
-│   └── utils/                           # 31  tests
+│   ├── utils/                           # 36  tests
 │       ├── helpers.test.js              # 21  tests
 │       ├── positioning.test.js          #  3  tests
-│       ├── order.test.js                #  3  tests
+│       ├── order.test.js                #  8  tests
 │       ├── dragDrop.test.js             #  2  tests
 │       └── focusEditingInput.test.js     #  2  tests
+│   └── scripts/                         #  3  tests
+│       └── verifyFeature.test.js        #  3  tests
 │
-├── component-tests/                     # 267 tests
+├── component-tests/                     # 271 tests
 │   ├── App.test.js                      # 61  tests
-│   ├── Checklist.test.js                # 37  tests
+│   ├── Checklist.test.js                # 38  tests
 │   ├── Item.test.js                     # 26  tests
 │   ├── Sidebar.test.js                  # 33  tests
-│   ├── Category.test.js                 # 27  tests
+│   ├── Category.test.js                 # 30  tests
 │   ├── OverflowMenu.test.js             # 23  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
@@ -90,14 +92,14 @@ tests/
 │   ├── TemplateEditor.test.js           # 13  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 50  tests
-    ├── mobile-workflow.spec.js          #  9  tests
+└── end2end-tests/                       # 54  tests
+    ├── mobile-workflow.spec.js          # 10  tests
     ├── item-packing.spec.js             #  7  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
     ├── checklist-management.spec.js     #  5  tests
     ├── category-crud.spec.js            #  3  tests
-    ├── drag-and-drop.spec.js            #  3  tests
+    ├── drag-and-drop.spec.js            #  6  tests
     ├── multi-tab-sync.spec.js           #  4  tests
     ├── template-management.spec.js      #  7  tests
     └── recommended-lists.spec.js           #  1  test
@@ -123,11 +125,12 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| source/      | 98.68%     | 86.06% | 99.28% |
-| components/  | 96.29%     | 88.67% | 98.00% |
-| composables/ | 100%       | 90.75% | 100%   |
+| scripts/     | 39.24%     | 35.13% | 38.46% |
+| source/      | 97.96%     | 86.07% | 98.87% |
+| components/  | 96.40%     | 88.99% | 98.19% |
+| composables/ | 95.72%     | 85.43% | 97.87% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 98.77%     | 85.84% | 98.62% |
+| services/    | 98.84%     | 86.22% | 98.70% |
 | utils/       | 100%       | 90.90% | 100%   |
 
 ### By Component
@@ -224,7 +227,7 @@ This project uses three layers to balance speed and reliability.
 
 ## 8. Complete Test Inventory
 
-### 8.1 Unit Tests (243 tests)
+### 8.1 Unit Tests (251 tests)
 
 #### 8.1.1 Models (40 tests)
 
@@ -492,7 +495,7 @@ This project uses three layers to balance speed and reliability.
 | 8   | should ignore unsupported setLocale values and keep current locale   | Setter guard                 |
 | 9   | should keep English and Traditional Chinese translation keys aligned | Translation key parity       |
 
-#### 8.1.5 Utils (31 tests)
+#### 8.1.5 Utils (36 tests)
 
 ##### 8.1.5.1 helpers.test.js (21 tests)
 
@@ -527,13 +530,18 @@ This project uses three layers to balance speed and reliability.
 | 1   | should allow drops only from the specified group name | vuedraggable put guard correct |
 | 2   | should return false when from group is missing        | DnD defensive error handling   |
 
-##### 8.1.5.3 order.test.js (3 tests)
+##### 8.1.5.3 order.test.js (8 tests)
 
-| #   | Test                                                  | What it verifies                     |
-| --- | ----------------------------------------------------- | ------------------------------------ |
-| 1   | should renumber order based on array index            | Reorder based on array index         |
-| 2   | should support custom start offset                    | Support insert scenario start offset |
-| 3   | should return empty array for null or undefined input | Null/undefined input fallback        |
+| #   | Test                                                                     | What it verifies                     |
+| --- | ------------------------------------------------------------------------ | ------------------------------------ |
+| 1   | should renumber order based on array index                               | Reorder based on array index         |
+| 2   | should support custom start offset                                       | Support insert scenario start offset |
+| 3   | should return empty array for null or undefined input                    | Null/undefined input fallback        |
+| 4   | should reorder visible entries without moving hidden slots               | Preserve packed-item slots           |
+| 5   | should keep complete order when visible entries do not match             | Invalid visible-set fallback         |
+| 6   | should insert at a visible position in the complete order                | Visible-to-complete index mapping    |
+| 7   | should append at the complete end when dropped after all visible entries | Visible-end insertion                |
+| 8   | should append when every target entry is hidden                          | Fully hidden target insertion        |
 
 ##### 8.1.5.4 positioning.test.js (3 tests)
 
@@ -561,7 +569,17 @@ This project uses three layers to balance speed and reliability.
 | 3   | falls back to English for unsupported locales                                | Locale fallback           |
 | 4   | returns isolated resolved data                                               | Resolver output isolation |
 
-### 8.2 Component Tests (267 tests)
+#### 8.1.7 Scripts (3 tests)
+
+##### 8.1.7.1 verifyFeature.test.js (3 tests)
+
+| #   | Test                                                         | What it verifies                           |
+| --- | ------------------------------------------------------------ | ------------------------------------------ |
+| 1   | should summarize Playwright failures without ANSI formatting | Concise, de-duplicated failure diagnostics |
+| 2   | should report missing individual errors                      | Reporter fallback message                  |
+| 3   | should summarize top-level Playwright runner failures        | Pre-test runner diagnostic                 |
+
+### 8.2 Component Tests (271 tests)
 
 #### 8.2.1 App.test.js (61 tests)
 
@@ -738,7 +756,7 @@ This project uses three layers to balance speed and reliability.
 | 22  | should clamp dropdown position within viewport bounds               | Viewport clamping       |
 | 23  | should fall back to createEvent when CustomEvent constructor throws | Legacy browser fallback |
 
-#### 8.2.9 Category.test.js (27 tests)
+#### 8.2.9 Category.test.js (30 tests)
 
 | #   | Test                                                                                | What it verifies       |
 | --- | ----------------------------------------------------------------------------------- | ---------------------- |
@@ -763,14 +781,17 @@ This project uses three layers to balance speed and reliability.
 | 19  | should clear dragging item ID on drag end                                           | Drag end cleanup       |
 | 20  | should emit "move:item" with type "move" when item is added from another category   | Cross-category move    |
 | 21  | should emit "move:item" with type "reorder" when item is moved within same category | Same-category reorder  |
-| 22  | should forward Item events from child Item component                                | Child event forwarding |
-| 23  | should enter edit mode when newlyCreatedCategoryId matches                          | Auto-edit on create    |
-| 24  | should not enter edit mode when newlyCreatedCategoryId does not match               | No false trigger       |
-| 25  | should not save during IME composition                                              | IME guard              |
-| 26  | should expose a mixed category checkbox and request packing all items               | Tri-state batch intent |
-| 27  | should expose checked, unchecked, and disabled category checkbox states             | State rendering        |
+| 22  | should preserve packed slots when reordering filtered items                         | Filtered slot reorder  |
+| 23  | should insert before the next visible target item while filtered                    | Filtered cross-move    |
+| 24  | should display only unpacked items while retaining full category progress           | Filtered rendering     |
+| 25  | should forward Item events from child Item component                                | Child event forwarding |
+| 26  | should enter edit mode when newlyCreatedCategoryId matches                          | Auto-edit on create    |
+| 27  | should not enter edit mode when newlyCreatedCategoryId does not match               | No false trigger       |
+| 28  | should not save during IME composition                                              | IME guard              |
+| 29  | should expose a mixed category checkbox and request packing all items               | Tri-state batch intent |
+| 30  | should expose checked, unchecked, and disabled category checkbox states             | State rendering        |
 
-#### 8.2.10 Checklist.test.js (37 tests)
+#### 8.2.10 Checklist.test.js (38 tests)
 
 | #   | Test                                                          | What it verifies             |
 | --- | ------------------------------------------------------------- | ---------------------------- |
@@ -781,36 +802,37 @@ This project uses three layers to balance speed and reliability.
 | 5   | should show PendingItemsCategory when pending items exist     | Conditional display          |
 | 6   | should hide PendingItemsCategory when no pending items        | Conditional hide             |
 | 7   | should hide dates and checklist overflow for template editing | Template editor display      |
-| 8   | should show input when checklist name is clicked              | Click-to-edit                |
-| 9   | should emit "update:checklist" with new name on Enter         | Enter confirms edit          |
-| 10  | should cancel edit mode on Escape key                         | Escape cancels               |
-| 11  | should emit "copy:checklist" from OverflowMenu                | Copy event forward           |
-| 12  | should emit "delete:checklist" from OverflowMenu              | Delete event forward         |
-| 13  | should emit "create:category" from AddCategoryButton          | Category creation event      |
-| 14  | should forward "update:item" from Category component          | Item update forward          |
-| 15  | should forward "copy:category" from Category                  | Category copy forward        |
-| 16  | should forward "delete:category" from Category                | Category delete forward      |
-| 17  | should display untitled placeholder for empty name            | Untitled fallback            |
-| 18  | should adjust end date when start date moves past it          | Date constraint: start > end |
-| 19  | should not change end date when start date is still before it | Date constraint: no-op       |
-| 20  | should auto-correct end date set earlier than start date      | Date constraint: end < start |
-| 21  | should not save on Enter during IME composition               | IME guard                    |
-| 22  | should not emit update when name has not changed              | No-op save                   |
-| 23  | should use untitled placeholder when saving empty name        | Empty name fallback          |
-| 24  | should enter edit mode when OverflowMenu triggers edit        | Edit-mode trigger            |
-| 25  | should enter edit mode when newlyCreatedChecklistId matches   | Auto-edit on create          |
-| 26  | should forward "copy:item" from Category component            | Item copy forward            |
-| 27  | should forward "delete:item" from Category component          | Item delete forward          |
-| 28  | should forward "create:item" from Category component          | Item creation forward        |
-| 29  | should forward "update:category" from Category component      | Category update forward      |
-| 30  | should forward "move:item" from Category component            | Item move forward            |
-| 31  | should format single-date and cross-year ranges               | Single/cross-year display    |
-| 32  | should handle empty dates gracefully                          | No-date display              |
-| 33  | should forward "update:item" from PendingItemsCategory        | Pending item update forward  |
-| 34  | should set isDraggingCategory on drag start                   | Drag state                   |
-| 35  | should clear drag state on category drag end                  | Drag cleanup                 |
-| 36  | should emit "reorder:categories" with renumbered order        | Category reorder event       |
-| 37  | should save when focus leaves all editing inputs              | Global blur-save             |
+| 8   | should toggle unpacked-only display without hiding categories | Filter state and categories  |
+| 9   | should show input when checklist name is clicked              | Click-to-edit                |
+| 10  | should emit "update:checklist" with new name on Enter         | Enter confirms edit          |
+| 11  | should cancel edit mode on Escape key                         | Escape cancels               |
+| 12  | should emit "copy:checklist" from OverflowMenu                | Copy event forward           |
+| 13  | should emit "delete:checklist" from OverflowMenu              | Delete event forward         |
+| 14  | should emit "create:category" from AddCategoryButton          | Category creation event      |
+| 15  | should forward "update:item" from Category component          | Item update forward          |
+| 16  | should forward "copy:category" from Category                  | Category copy forward        |
+| 17  | should forward "delete:category" from Category                | Category delete forward      |
+| 18  | should display untitled placeholder for empty name            | Untitled fallback            |
+| 19  | should adjust end date when start date moves past it          | Date constraint: start > end |
+| 20  | should not change end date when start date is still before it | Date constraint: no-op       |
+| 21  | should auto-correct end date set earlier than start date      | Date constraint: end < start |
+| 22  | should not save on Enter during IME composition               | IME guard                    |
+| 23  | should not emit update when name has not changed              | No-op save                   |
+| 24  | should use untitled placeholder when saving empty name        | Empty name fallback          |
+| 25  | should enter edit mode when OverflowMenu triggers edit        | Edit-mode trigger            |
+| 26  | should enter edit mode when newlyCreatedChecklistId matches   | Auto-edit on create          |
+| 27  | should forward "copy:item" from Category component            | Item copy forward            |
+| 28  | should forward "delete:item" from Category component          | Item delete forward          |
+| 29  | should forward "create:item" from Category component          | Item creation forward        |
+| 30  | should forward "update:category" from Category component      | Category update forward      |
+| 31  | should forward "move:item" from Category component            | Item move forward            |
+| 32  | should format single-date and cross-year ranges               | Single/cross-year display    |
+| 33  | should handle empty dates gracefully                          | No-date display              |
+| 34  | should forward "update:item" from PendingItemsCategory        | Pending item update forward  |
+| 35  | should set isDraggingCategory on drag start                   | Drag state                   |
+| 36  | should clear drag state on category drag end                  | Drag cleanup                 |
+| 37  | should emit "reorder:categories" with renumbered order        | Category reorder event       |
+| 38  | should save when focus leaves all editing inputs              | Global blur-save             |
 
 #### 8.2.11 Sidebar.test.js (33 tests)
 
@@ -900,7 +922,7 @@ This project uses three layers to balance speed and reliability.
 | 9   | traps forward and reverse Tab navigation        | Keyboard focus trap      |
 | 10  | ignores keyboard handling while hidden          | Hidden-state guard       |
 
-### 8.3 E2E Tests (50 tests)
+### 8.3 E2E Tests (54 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -930,13 +952,16 @@ This project uses three layers to balance speed and reliability.
 | 2   | should copy a category via overflow menu            | Category duplication     |
 | 3   | should show copy suffix in duplicated category name | Copy suffix localization |
 
-#### 8.3.4 drag-and-drop.spec.js (3 tests)
+#### 8.3.4 drag-and-drop.spec.js (6 tests)
 
-| #   | Test                                                    | What it verifies                |
-| --- | ------------------------------------------------------- | ------------------------------- |
-| 1   | should reorder checklists in sidebar by drag-and-drop   | Sidebar checklist reordering    |
-| 2   | should reorder categories by drag-and-drop              | Category card reordering        |
-| 3   | should reorder items within a category by drag-and-drop | Item reordering within category |
+| #   | Test                                                                | What it verifies                |
+| --- | ------------------------------------------------------------------- | ------------------------------- |
+| 1   | should reorder checklists in sidebar by drag-and-drop               | Sidebar checklist reordering    |
+| 2   | should reorder categories by drag-and-drop                          | Category card reordering        |
+| 3   | should reorder items within a category by drag-and-drop             | Item reordering within category |
+| 4   | should preserve packed item slots when filtered items are reordered | Filtered item reordering        |
+| 5   | should persist a filtered move into a partially visible category    | Filtered cross-category insert  |
+| 6   | should persist a filtered move into an all-hidden category          | Empty-target append and persist |
 
 #### 8.3.5 item-packing.spec.js (7 tests)
 
@@ -961,19 +986,20 @@ This project uses three layers to balance speed and reliability.
 | 5   | should revert all labels to English after switching back       | Language revert               |
 | 6   | should persist language selection after page reload            | Language preference persisted |
 
-#### 8.3.7 mobile-workflow.spec.js (9 tests)
+#### 8.3.7 mobile-workflow.spec.js (10 tests)
 
-| #   | Test                                                   | What it verifies          |
-| --- | ------------------------------------------------------ | ------------------------- |
-| 1   | should display topbar with hamburger button on mobile  | Mobile topbar             |
-| 2   | should open sidebar overlay when hamburger is clicked  | Sidebar overlay open      |
-| 3   | should close sidebar when overlay backdrop is tapped   | Backdrop closes           |
-| 4   | should create a new checklist via topbar plus button   | Mobile checklist creation |
-| 5   | should create a new checklist via sidebar on mobile    | Sidebar creation flow     |
-| 6   | should add a new item via add item button              | Mobile immediate typing   |
-| 7   | should edit an item name on mobile                     | Mobile item editing       |
-| 8   | should toggle item packed status on mobile             | Mobile packing toggle     |
-| 9   | should update progress when items are packed on mobile | Mobile progress update    |
+| #   | Test                                                                | What it verifies          |
+| --- | ------------------------------------------------------------------- | ------------------------- |
+| 1   | should display topbar with hamburger button on mobile               | Mobile topbar             |
+| 2   | should open sidebar overlay when hamburger is clicked               | Sidebar overlay open      |
+| 3   | should close sidebar when overlay backdrop is tapped                | Backdrop closes           |
+| 4   | should create a new checklist via topbar plus button                | Mobile checklist creation |
+| 5   | should create a new checklist via sidebar on mobile                 | Sidebar creation flow     |
+| 6   | should add a new item via add item button                           | Mobile immediate typing   |
+| 7   | should edit an item name on mobile                                  | Mobile item editing       |
+| 8   | should toggle item packed status on mobile                          | Mobile packing toggle     |
+| 9   | should update progress when items are packed on mobile              | Mobile progress update    |
+| 10  | should filter packed items with an accessible icon button on mobile | Accessible mobile filter  |
 
 #### 8.3.8 multi-tab-sync.spec.js (4 tests)
 

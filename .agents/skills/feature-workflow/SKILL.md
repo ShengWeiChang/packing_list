@@ -37,21 +37,27 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
 
 ## 2. Approved Milestones
 
-1. Implement only an approved checklist milestone. One implementation agent
+1. Before changing tracked files, inspect the current branch and worktree. If
+   the work is not already on a suitable feature branch, propose a scoped
+   branch name and obtain explicit approval to create or switch branches unless
+   the user's implementation approval already included that instruction. Record
+   the starting branch, feature branch, and branch-point HEAD in the plan. Never
+   move unrelated working-tree changes while creating or switching branches.
+2. Implement only an approved checklist milestone. One implementation agent
    owns any given file at a time.
-2. After each meaningful milestone, update the plan with completed checklist
+3. After each meaningful milestone, update the plan with completed checklist
    items, changed scope, commands or manual evidence, unresolved questions,
    reviewed scope or revision, reviewer role and verdict, and user decision.
-3. Select and run the targeted validation required by `$feature-completion` for
+4. Select and run the targeted validation required by `$feature-completion` for
    the changed boundary. Use the full final gate early only when the milestone
    crosses an integration boundary that needs it.
-4. Stage exactly the candidate scope as reversible candidate preparation, then
+5. Stage exactly the candidate scope as reversible candidate preparation, then
    run `npm run fingerprint:candidate -- <scoped files>`. Do this before the
    fresh reviewer. The helper reports renames as their deleted and added paths,
    so include both paths in the scope. The reviewer inspects `git diff --cached`
    and the exact index content a commit would use. Staging does not authorize a
    commit.
-5. Invoke `$feature-completion` for the fresh review and evidence verdict, then
+6. Invoke `$feature-completion` for the fresh review and evidence verdict, then
    set status to `awaiting milestone review` and present the staged milestone
    diff, updated plan status, validation evidence, fingerprint, and reviewer
    verdict. Begin every status update by naming the current state and the one
@@ -60,6 +66,12 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
    run the full final gate; do not present a normal milestone commit candidate.
    Otherwise, wait for that response before continuing to a dependent milestone
    or commit.
+7. Treat partial, truncated, or still-running command output as **unknown**, not
+   as a pass. Record a completed command's exit result and its applicable
+   success marker before reporting validation as passed. For
+   `npm run verify:feature`, the evidence must include exit code 0 and the
+   terminal `Feature verification passed.` marker; record the Playwright pass
+   summary when browser tests run.
 
 ## 3. Feedback and Commit Control
 
@@ -108,11 +120,13 @@ SHA. The log must include the final candidate's base HEAD SHA, scoped file list,
 `git status --short`, and the output of `npm run fingerprint:candidate --
 <scoped files>`. If no final commit is needed, record that decision instead.
 Then set status to `awaiting push approval`. After an approved push, set status
-to `awaiting PR approval`; after an approved pull request with passing CI and
-resolved review, set status to `awaiting merge approval`. Record each external
-URL or commit SHA and user decision. Set status to `complete` only after the
-approved merge, or after the user explicitly ends the workflow without a push or
-pull request.
+to `awaiting PR approval` only after locating the newest CI run for the pushed
+commit and recording its URL and state. A pending run is not a pass; a failed
+run must be diagnosed from that newest run rather than a prior failure. After an
+approved pull request with passing CI and resolved review, set status to
+`awaiting merge approval`. Record each external URL or commit SHA and user
+decision. Set status to `complete` only after the approved merge, or after the
+user explicitly ends the workflow without a push or pull request.
 
 For a trivial wording, formatting, or documentation-only change, first conduct
 read-only investigation. Planning mode can be skipped only when the user then
