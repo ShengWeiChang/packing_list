@@ -149,8 +149,8 @@ const i18n = createI18n({
       checklist: {
         defaultName: 'New Checklist',
         defaultNameFromEmpty: 'New Checklist (Empty)',
-        defaultNameFromTemplate: 'New Checklist (Template: {name})',
-        defaultNameFromRecommended: 'New Checklist (Recommended: {name})',
+        defaultNameFromTemplate: 'New Checklist ({name})',
+        defaultNameFromRecommended: 'New Checklist ({name})',
         deleteConfirm: 'Are you sure you want to delete this checklist?',
         pleaseCreate: 'Please create a new checklist first',
       },
@@ -1194,7 +1194,7 @@ describe('App', () => {
       expect(mockCreateChecklist).toHaveBeenCalledWith(
         expect.objectContaining({
           id: expect.stringMatching(/^checklist-/),
-          name: expect.stringMatching(/^New Checklist \(Template: W+\)$/),
+          name: expect.stringMatching(/^New Checklist \(W+\)$/),
         }),
         expect.objectContaining({
           source: 'template',
@@ -1416,7 +1416,7 @@ describe('App', () => {
       expect(mockCreateChecklist).toHaveBeenCalledWith(
         expect.objectContaining({
           id: expect.stringMatching(/^checklist-/),
-          name: 'New Checklist (Recommended: General Travel)',
+          name: 'New Checklist (General Travel)',
         }),
         { source: 'recommended', seedData }
       );
