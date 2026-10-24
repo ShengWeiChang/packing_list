@@ -13,12 +13,107 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 const PROJECT_ROOT = resolve(import.meta.dirname, '..');
 const REPORT_DIRECTORY = resolve(PROJECT_ROOT, 'test-inventory-reports');
 const DOCUMENTATION_MODE = process.argv.includes('--docs');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+const ANSI_ESCAPE_PATTERN = new RegExp(`${String.fromCharCode(27)}\\[[0-?]*[ -/]*[@-~]`, 'g');
+
+/**
+ * Convert a child-process output value to text.
+ * @param {string | Buffer | undefined} output - Child-process output.
+ * @returns {string} Text output.
+ */
+function outputToText(output) {
+  return output ? output.toString().trim() : '';
+}
+
+/**
+ * Remove terminal formatting from a test failure message.
+ * @param {string} message - Potentially ANSI-formatted error message.
+ * @returns {string} Plain-text error message.
+ */
+function stripAnsi(message) {
+  return message.replace(ANSI_ESCAPE_PATTERN, '');
+}
+
+/**
+ * Shorten a failure path when it belongs to this repository.
+ * @param {string} file - Reporter file path.
+ * @returns {string} Repository-relative path when possible.
+ */
+function relativeToProject(file) {
+  const projectPrefix = `${PROJECT_ROOT}/`;
+  return file.startsWith(projectPrefix) ? file.slice(projectPrefix.length) : file;
+}
+
+/**
+ * Return a concise, de-duplicated summary of Playwright test failures.
+ * @param {object} report - Playwright JSON reporter output.
+ * @returns {string} Human-readable failure summary.
+ */
+export function summarizePlaywrightFailures(report) {
+  const failures = [];
+
+  for (const error of report.errors || []) {
+    failures.push({
+      file: error.location?.file || 'Playwright runner',
+      line: error.location?.line,
+      column: error.location?.column,
+      message: error.message || 'Unknown Playwright runner failure',
+    });
+  }
+
+  /**
+   * Collect every reported test error from nested Playwright suites.
+   * @param {object[]} suites - Reporter suites.
+   * @returns {void}
+   */
+  function collectSuites(suites = []) {
+    for (const suite of suites) {
+      for (const spec of suite.specs || []) {
+        for (const test of spec.tests || []) {
+          for (const result of test.results || []) {
+            for (const error of result.errors || []) {
+              failures.push({
+                file: error.location?.file || spec.file || 'unknown file',
+                line: error.location?.line,
+                column: error.location?.column,
+                message: error.message || 'Unknown Playwright failure',
+              });
+            }
+          }
+        }
+      }
+      collectSuites(suite.suites);
+    }
+  }
+
+  collectSuites(report.suites);
+
+  if (failures.length === 0) {
+    return 'Playwright failed, but its JSON report contained no individual test errors.';
+  }
+
+  const uniqueFailures = new Map();
+  for (const failure of failures) {
+    const location = [relativeToProject(failure.file), failure.line, failure.column]
+      .filter(Boolean)
+      .join(':');
+    const message = stripAnsi(failure.message).replace(/\s+/g, ' ').trim();
+    uniqueFailures.set(`${location}\n${message}`, { location, message });
+  }
+
+  return [
+    'Playwright failure summary:',
+    ...[...uniqueFailures.values()].map(
+      ({ location, message }) => `- ${location} — ${message.slice(0, 240)}`
+    ),
+  ].join('\n');
+}
 
 /**
  * Run one named verification command and preserve its failure output.
@@ -39,8 +134,48 @@ function runCommand(label, command, args, options = {}) {
       ...options,
     });
   } catch (error) {
-    const output = [error.stdout, error.stderr].filter(Boolean).join('\n').trim();
+    const output = [outputToText(error.stdout), outputToText(error.stderr)]
+      .filter(Boolean)
+      .join('\n');
     throw new Error(`${label} failed.${output ? `\n${output}` : ''}`);
+  }
+}
+
+/**
+ * Run Playwright, retaining its JSON report when tests fail and surfacing a
+ * concise diagnostic summary instead of the full reporter payload.
+ * @returns {string} Playwright JSON reporter output.
+ */
+function runPlaywrightE2E() {
+  const label = 'Run Playwright E2E';
+  const reportPath = resolve(REPORT_DIRECTORY, 'playwright.json');
+  const args = ['playwright', 'test', '--reporter=json'];
+
+  process.stdout.write(`\n→ ${label}\n`);
+
+  try {
+    const report = execFileSync(npxCommand, args, {
+      cwd: PROJECT_ROOT,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    writeFileSync(reportPath, report);
+    return report;
+  } catch (error) {
+    const report = outputToText(error.stdout);
+    if (report) {
+      writeFileSync(reportPath, report);
+    }
+
+    let summary = 'Playwright did not return a parseable JSON report.';
+    try {
+      summary = summarizePlaywrightFailures(JSON.parse(report));
+    } catch {
+      // Preserve the child-process stderr below when JSON reporting is unavailable.
+    }
+
+    const stderr = outputToText(error.stderr);
+    throw new Error(`${label} failed.\n${summary}${stderr ? `\n${stderr}` : ''}`);
   }
 }
 
@@ -104,25 +239,30 @@ function runFeatureVerification() {
     resolve(REPORT_DIRECTORY, 'vitest.json'),
   ]);
 
-  const playwrightReport = runCommand('Run Playwright E2E', npxCommand, [
-    'playwright',
-    'test',
-    '--reporter=json',
-  ]);
-  writeFileSync(resolve(REPORT_DIRECTORY, 'playwright.json'), playwrightReport);
+  runPlaywrightE2E();
 
   runCommand('Audit test inventory', npmCommand, ['run', 'test:inventory:ci']);
   runCommand('Build production bundle', npmCommand, ['run', 'build']);
   reportResult('feature', executed, []);
 }
 
-try {
+/**
+ * Run the verification scope selected by command-line arguments.
+ * @returns {void}
+ */
+function main() {
   if (DOCUMENTATION_MODE) {
     runDocumentationVerification();
   } else {
     runFeatureVerification();
   }
-} catch (error) {
-  process.stderr.write(`\nFeature verification failed.\n${error.message}\n`);
-  process.exitCode = 1;
+}
+
+if (resolve(process.argv[1] || '') === fileURLToPath(import.meta.url)) {
+  try {
+    main();
+  } catch (error) {
+    process.stderr.write(`\nFeature verification failed.\n${error.message}\n`);
+    process.exitCode = 1;
+  }
 }

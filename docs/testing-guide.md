@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 573    |
-| Unit tests         | 248    |
+| Total tests        | 576    |
+| Unit tests         | 251    |
 | Component tests    | 271    |
 | E2E tests          | 54     |
-| Line coverage      | 98.42% |
-| Statement coverage | 97.08% |
-| Branch coverage    | 88.00% |
+| Line coverage      | 95.71% |
+| Statement coverage | 94.68% |
+| Branch coverage    | 86.49% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -29,7 +29,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 248   | Pure logic in models, services, composables, utils |
+| Unit      | Vitest                   | 251   | Pure logic in models, services, composables, utils |
 | Component | Vitest + @vue/test-utils | 271   | Vue component rendering, events, state             |
 | E2E       | Playwright               | 54    | Full user flows in a real browser                  |
 
@@ -50,7 +50,7 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 248 tests
+├── unit-tests/                          # 251 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -67,12 +67,14 @@ tests/
 │   │   └── useTemplates.test.js         # 14  tests
 │   ├── i18n/                            #  9  tests
 │   │   └── index.test.js                #  9  tests
-│   └── utils/                           # 36  tests
+│   ├── utils/                           # 36  tests
 │       ├── helpers.test.js              # 21  tests
 │       ├── positioning.test.js          #  3  tests
 │       ├── order.test.js                #  8  tests
 │       ├── dragDrop.test.js             #  2  tests
 │       └── focusEditingInput.test.js     #  2  tests
+│   └── scripts/                         #  3  tests
+│       └── verifyFeature.test.js        #  3  tests
 │
 ├── component-tests/                     # 271 tests
 │   ├── App.test.js                      # 61  tests
@@ -123,11 +125,12 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| source/      | 98.68%     | 86.06% | 99.28% |
-| components/  | 96.29%     | 88.67% | 98.00% |
-| composables/ | 100%       | 90.75% | 100%   |
+| scripts/     | 39.24%     | 35.13% | 38.46% |
+| source/      | 97.96%     | 86.07% | 98.87% |
+| components/  | 96.40%     | 88.99% | 98.19% |
+| composables/ | 95.72%     | 85.43% | 97.87% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 98.77%     | 85.84% | 98.62% |
+| services/    | 98.84%     | 86.22% | 98.70% |
 | utils/       | 100%       | 90.90% | 100%   |
 
 ### By Component
@@ -224,7 +227,7 @@ This project uses three layers to balance speed and reliability.
 
 ## 8. Complete Test Inventory
 
-### 8.1 Unit Tests (248 tests)
+### 8.1 Unit Tests (251 tests)
 
 #### 8.1.1 Models (40 tests)
 
@@ -565,6 +568,16 @@ This project uses three layers to balance speed and reliability.
 | 2   | includes core clothing in every recommended list                             | Core wardrobe coverage    |
 | 3   | falls back to English for unsupported locales                                | Locale fallback           |
 | 4   | returns isolated resolved data                                               | Resolver output isolation |
+
+#### 8.1.7 Scripts (3 tests)
+
+##### 8.1.7.1 verifyFeature.test.js (3 tests)
+
+| #   | Test                                                         | What it verifies                           |
+| --- | ------------------------------------------------------------ | ------------------------------------------ |
+| 1   | should summarize Playwright failures without ANSI formatting | Concise, de-duplicated failure diagnostics |
+| 2   | should report missing individual errors                      | Reporter fallback message                  |
+| 3   | should summarize top-level Playwright runner failures        | Pre-test runner diagnostic                 |
 
 ### 8.2 Component Tests (271 tests)
 

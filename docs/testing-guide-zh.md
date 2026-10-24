@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 573    |
-| Unit tests 單元測試           | 248    |
+| Total tests 總測試數          | 576    |
+| Unit tests 單元測試           | 251    |
 | Component tests 組件測試      | 271    |
 | E2E tests E2E 測試            | 54     |
-| Line coverage 行覆蓋率        | 98.42% |
-| Statement coverage 語句覆蓋率 | 97.08% |
-| Branch coverage 分支覆蓋率    | 88.00% |
+| Line coverage 行覆蓋率        | 95.71% |
+| Statement coverage 語句覆蓋率 | 94.68% |
+| Branch coverage 分支覆蓋率    | 86.49% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,7 +29,7 @@
 
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 248   | models、services、composables、utils 純邏輯 |
+| Unit      | Vitest                   | 251   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 271   | Vue 組件渲染、事件、狀態                    |
 | E2E       | Playwright               | 54    | 真實瀏覽器中的完整使用者流程                |
 
@@ -50,7 +50,7 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 248 tests
+├── unit-tests/                          # 251 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -67,12 +67,14 @@ tests/
 │   │   └── useTemplates.test.js         # 14  tests
 │   ├── i18n/                            #  9  tests
 │   │   └── index.test.js                #  9  tests
-│   └── utils/                           # 36  tests
+│   ├── utils/                           # 36  tests
 │       ├── helpers.test.js              # 21  tests
 │       ├── positioning.test.js          #  3  tests
 │       ├── order.test.js                #  8  tests
 │       ├── dragDrop.test.js             #  2  tests
 │       └── focusEditingInput.test.js     #  2  tests
+│   └── scripts/                         #  3  tests
+│       └── verifyFeature.test.js        #  3  tests
 │
 ├── component-tests/                     # 271 tests
 │   ├── App.test.js                      # 61  tests
@@ -123,11 +125,12 @@ tests/
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| source/      | 98.68%     | 86.06% | 99.28% |
-| components/  | 96.29%     | 88.67% | 98.00% |
-| composables/ | 100%       | 90.75% | 100%   |
+| scripts/     | 39.24%     | 35.13% | 38.46% |
+| source/      | 97.96%     | 86.07% | 98.87% |
+| components/  | 96.40%     | 88.99% | 98.19% |
+| composables/ | 95.72%     | 85.43% | 97.87% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 98.77%     | 85.84% | 98.62% |
+| services/    | 98.84%     | 86.22% | 98.70% |
 | utils/       | 100%       | 90.90% | 100%   |
 
 ### By Component 各組件覆蓋率
@@ -224,7 +227,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ## 8. Complete Test Inventory 完整測試案例清單
 
-### 8.1 Unit Tests（248）
+### 8.1 Unit Tests（251）
 
 #### 8.1.1 Models（40）
 
@@ -565,6 +568,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | includes core clothing in every recommended list                             | 基本衣物涵蓋     |
 | 3   | falls back to English for unsupported locales                                | 語系後備         |
 | 4   | returns isolated resolved data                                               | 解析結果隔離     |
+
+#### 8.1.7 Scripts（3）
+
+##### 8.1.7.1 verifyFeature.test.js（3）
+
+| #   | Test                                                         | 測試重點                 |
+| --- | ------------------------------------------------------------ | ------------------------ |
+| 1   | should summarize Playwright failures without ANSI formatting | 精簡、去重的失敗診斷摘要 |
+| 2   | should report missing individual errors                      | reporter 後備訊息        |
+| 3   | should summarize top-level Playwright runner failures        | 測試前 runner 診斷       |
 
 ### 8.2 Component Tests（271）
 

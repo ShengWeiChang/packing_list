@@ -86,6 +86,14 @@ but label the handoff `degraded: no independent delegation`. Do not call this
 an independent review. Follow the repository's constraints on concurrent file
 edits.
 
+For every reported verification result, retain terminal command evidence rather
+than inferring success from partial output. A full feature gate passes only when
+the command has completed with exit code 0 and `npm run verify:feature` prints
+its terminal `Feature verification passed.` marker. Record the Playwright pass
+or failure total when browser tests run. If a host yields output early, truncates
+it, or leaves a command running, report that layer as `unknown` and wait for its
+terminal result before staging a final candidate or declaring a verdict.
+
 For source behavior changes, run `npm run test:coverage` when the milestone's
 risk plan selects coverage, or at the final gate. Compare with a baseline only
 when it used the same configuration and comparable source scope. Coverage
