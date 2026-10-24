@@ -231,8 +231,8 @@ const {
   deleteCategory,
   duplicateCategory,
   createItem,
-  getItems,
   updateItem,
+  updateMultipleItems,
   deleteItem,
   duplicateItem,
   setCategoryPacked,
@@ -391,29 +391,8 @@ async function handleItemDelete(itemId) {
  * @param {object} moveData - Move data containing item, category IDs, and reordered items
  */
 async function handleItemMove(moveData) {
-  if (moveData.type === 'move') {
-    // Item moved to different category
-    const updatedItem = {
-      ...moveData.item,
-      categoryId: moveData.newCategoryId,
-    };
-    await handleAsyncAction(updateItem, updatedItem);
-
-    // Also update the reordered items in the target category
-    if (moveData.reorderedItems && moveData.reorderedItems.length > 0) {
-      for (const item of moveData.reorderedItems) {
-        await handleAsyncAction(updateItem, item);
-      }
-    }
-  } else if (moveData.type === 'reorder') {
-    // Items reordered within same category
-    for (const item of moveData.items) {
-      await handleAsyncAction(updateItem, item);
-    }
-  }
-
-  // Refresh items list
-  await getItems();
+  if (!['move', 'reorder'].includes(moveData.type) || !moveData.items?.length) return;
+  await handleAsyncAction(updateMultipleItems, moveData.items);
 }
 
 // ---------- Category Handlers ----------

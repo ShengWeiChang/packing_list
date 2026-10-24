@@ -102,23 +102,60 @@ Created: 2025-09-19
           </div>
         </div>
 
-        <!-- Overflow menu -->
+        <!-- Checklist actions -->
         <div
-          v-if="showOverflowMenu"
-          class="shrink-0"
+          v-if="showItemFilter || showOverflowMenu"
+          class="flex shrink-0 items-center gap-1"
         >
-          <OverflowMenu
-            :item-id="checklist.id"
-            :force-visible="true"
-            :use-group-hover="false"
-            menu-type="checklist"
-            alignment="left"
-            class="ml-2"
-            @edit="startEdit"
-            @copy="$emit('copy:checklist', checklist.id)"
-            @delete="handleDelete"
-            @save-as-template="$emit('save-as-template', checklist.id)"
-          />
+          <button
+            v-if="showItemFilter && !isEditing"
+            type="button"
+            data-testid="unpacked-items-filter-toggle"
+            :class="[
+              'inline-flex size-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary focus-visible:ring-offset-1 md:size-6',
+              showUnpackedOnly
+                ? 'bg-theme-secondary text-theme-primary'
+                : 'text-secondary hover:bg-interactive-hover-light hover:text-primary',
+            ]"
+            :title="$t('checklist.showUnpackedOnly')"
+            :aria-label="$t('checklist.showUnpackedOnly')"
+            :aria-pressed="showUnpackedOnly"
+            @click="showUnpackedOnly = !showUnpackedOnly"
+          >
+            <svg
+              class="size-4 shrink-0"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.75"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3.75 4.5h16.5l-6.75 7.75v5.5l-3 1.75v-7.25L3.75 4.5Z"
+              />
+            </svg>
+          </button>
+
+          <!-- Overflow menu -->
+          <div
+            v-if="showOverflowMenu"
+            class="shrink-0"
+          >
+            <OverflowMenu
+              :item-id="checklist.id"
+              :force-visible="true"
+              :use-group-hover="false"
+              menu-type="checklist"
+              alignment="left"
+              @edit="startEdit"
+              @copy="$emit('copy:checklist', checklist.id)"
+              @delete="handleDelete"
+              @save-as-template="$emit('save-as-template', checklist.id)"
+            />
+          </div>
         </div>
       </div>
 
@@ -136,7 +173,7 @@ Created: 2025-09-19
       class="category-item mb-3"
     >
       <PendingItemsCategory
-        :items="items"
+        :items="pendingItemsForDisplay"
         @update:item="$emit('update:item', $event)"
       />
     </div>
@@ -169,6 +206,7 @@ Created: 2025-09-19
               :data-category-id="category.id"
               :category="category"
               :items="items"
+              :show-unpacked-only="showUnpackedOnly"
               :newly-created-item-id="newlyCreatedItemId"
               :newly-created-category-id="newlyCreatedCategoryId"
               @update:item="$emit('update:item', $event)"
@@ -265,6 +303,10 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  showItemFilter: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 // Emits
@@ -300,6 +342,7 @@ const startDateInput = ref(null);
 const endDateInput = ref(null);
 const isComposing = ref(false);
 const isAdjustingDates = ref(false); // Guard flag to prevent watcher infinite loops
+const showUnpackedOnly = ref(false);
 let cleanupEditingFocus = () => {};
 
 // Drag state
@@ -312,7 +355,9 @@ const isDraggingCategory = ref(false);
 
 // Filter items that are marked as pending (to-buy / to-do)
 const pendingItemsForDisplay = computed(() => {
-  return props.items.filter((item) => item.isPending);
+  return props.items.filter(
+    (item) => item.isPending && (!showUnpackedOnly.value || !item.isPacked)
+  );
 });
 
 // Sorted categories for this checklist (sorted by order)

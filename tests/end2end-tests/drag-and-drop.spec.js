@@ -207,5 +207,154 @@ test.describe('Drag & Drop', () => {
       await expect(itemNames.nth(0)).toHaveText(secondItemName);
       await expect(itemNames.nth(1)).toHaveText(firstItemName);
     });
+
+    // Test Case 4: Should reorder visible items without moving packed slots
+    test('should preserve packed item slots when filtered items are reordered', async ({
+      page,
+    }) => {
+      await createAndConfirmChecklist(page);
+
+      const categoryCards = page.getByTestId('category-card');
+      const categoryCount = await categoryCards.count();
+      expect(categoryCount).toBeGreaterThanOrEqual(2);
+
+      const firstCategory = categoryCards.nth(0);
+      const fullItemNames = firstCategory.getByTestId('item-name');
+      const fullItemCount = await fullItemNames.count();
+      expect(fullItemCount).toBeGreaterThanOrEqual(4);
+      const originalFirstFour = await fullItemNames.evaluateAll((elements) =>
+        elements.slice(0, 4).map((element) => element.textContent.trim())
+      );
+
+      await firstCategory.getByTestId('item-checkbox').nth(0).click();
+      await firstCategory.getByTestId('item-checkbox').nth(2).click();
+      await categoryCards.nth(1).getByTestId('category-checkbox').click();
+
+      const filterToggle = page.getByTestId('unpacked-items-filter-toggle');
+      await filterToggle.click();
+      await expect(filterToggle).toHaveAttribute('aria-pressed', 'true');
+      await expect(categoryCards).toHaveCount(categoryCount);
+      await expect(categoryCards.nth(1).getByTestId('item-row')).toHaveCount(0);
+      await expect(categoryCards.nth(1).getByTestId('add-item-button')).toBeVisible();
+
+      const visibleRows = firstCategory.getByTestId('item-row');
+      await slowDragTo(page, visibleRows.nth(1), visibleRows.nth(0));
+
+      await filterToggle.click();
+      await expect(filterToggle).toHaveAttribute('aria-pressed', 'false');
+      await expect(fullItemNames.nth(0)).toHaveText(originalFirstFour[0]);
+      await expect(fullItemNames.nth(1)).toHaveText(originalFirstFour[3]);
+      await expect(fullItemNames.nth(2)).toHaveText(originalFirstFour[2]);
+      await expect(fullItemNames.nth(3)).toHaveText(originalFirstFour[1]);
+
+      await page.reload();
+      await expect(page.getByTestId('unpacked-items-filter-toggle')).toHaveAttribute(
+        'aria-pressed',
+        'false'
+      );
+      const persistedNames = page.getByTestId('category-card').first().getByTestId('item-name');
+      await expect(persistedNames.nth(0)).toHaveText(originalFirstFour[0]);
+      await expect(persistedNames.nth(1)).toHaveText(originalFirstFour[3]);
+      await expect(persistedNames.nth(2)).toHaveText(originalFirstFour[2]);
+      await expect(persistedNames.nth(3)).toHaveText(originalFirstFour[1]);
+    });
+
+    // Test Case 5: Should map a filtered cross-category drop before a visible target
+    test('should persist a filtered move into a partially visible category', async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 1800 });
+      await createAndConfirmChecklist(page);
+
+      const categoryCards = page.getByTestId('category-card');
+      const sourceCategory = categoryCards.nth(0);
+      const targetCategory = categoryCards.nth(1);
+      const sourceNames = sourceCategory.getByTestId('item-name');
+      const targetNames = targetCategory.getByTestId('item-name');
+      const movedItemName = (await sourceNames.nth(0).textContent()).trim();
+      const originalTargetNames = await targetNames.evaluateAll((elements) =>
+        elements.map((element) => element.textContent.trim())
+      );
+      expect(originalTargetNames).toHaveLength(4);
+
+      await targetCategory.getByTestId('item-checkbox').nth(0).click();
+      await targetCategory.getByTestId('item-checkbox').nth(2).click();
+
+      const filterToggle = page.getByTestId('unpacked-items-filter-toggle');
+      await filterToggle.click();
+      await expect(targetCategory.getByTestId('item-row')).toHaveCount(2);
+
+      await slowDragTo(
+        page,
+        sourceCategory.getByTestId('item-row').first(),
+        targetCategory.getByTestId('item-row').first()
+      );
+      await expect(
+        targetCategory.getByTestId('item-name').filter({ hasText: movedItemName })
+      ).toHaveCount(1);
+
+      await filterToggle.click();
+      const expectedTargetNames = [
+        originalTargetNames[0],
+        movedItemName,
+        ...originalTargetNames.slice(1),
+      ];
+      await expect(targetCategory.getByTestId('item-name')).toHaveText(expectedTargetNames);
+      await expect(
+        sourceCategory.getByTestId('item-name').filter({ hasText: movedItemName })
+      ).toHaveCount(0);
+
+      await page.reload();
+      const persistedCategories = page.getByTestId('category-card');
+      await expect(persistedCategories.nth(1).getByTestId('item-name')).toHaveText(
+        expectedTargetNames
+      );
+      await expect(
+        persistedCategories.nth(0).getByTestId('item-name').filter({ hasText: movedItemName })
+      ).toHaveCount(0);
+    });
+
+    // Test Case 6: Should append a filtered cross-category drop to an all-hidden target
+    test('should persist a filtered move into an all-hidden category', async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 1800 });
+      await createAndConfirmChecklist(page);
+
+      const categoryCards = page.getByTestId('category-card');
+      const sourceCategory = categoryCards.nth(0);
+      const targetCategory = categoryCards.nth(1);
+      const sourceNames = sourceCategory.getByTestId('item-name');
+      const targetNames = targetCategory.getByTestId('item-name');
+      const movedItemName = (await sourceNames.nth(0).textContent()).trim();
+      const originalTargetNames = await targetNames.evaluateAll((elements) =>
+        elements.map((element) => element.textContent.trim())
+      );
+
+      await targetCategory.getByTestId('category-checkbox').click();
+
+      const filterToggle = page.getByTestId('unpacked-items-filter-toggle');
+      await filterToggle.click();
+      await expect(targetCategory.getByTestId('item-row')).toHaveCount(0);
+
+      await slowDragTo(
+        page,
+        sourceCategory.getByTestId('item-row').first(),
+        targetCategory.getByTestId('category-items-draggable')
+      );
+      await expect(targetCategory.getByTestId('item-name')).toHaveText([movedItemName]);
+
+      await filterToggle.click();
+      const expectedTargetNames = [...originalTargetNames, movedItemName];
+      await expect(targetCategory.getByTestId('item-name')).toHaveText(expectedTargetNames);
+      await expect(
+        sourceCategory.getByTestId('item-name').filter({ hasText: movedItemName })
+      ).toHaveCount(0);
+
+      await page.reload();
+      const persistedCategories = page.getByTestId('category-card');
+      await expect(persistedCategories.nth(1).getByTestId('item-name')).toHaveText(
+        expectedTargetNames
+      );
+      await expect(
+        persistedCategories.nth(0).getByTestId('item-name').filter({ hasText: movedItemName })
+      ).toHaveCount(0);
+    });
   });
 });

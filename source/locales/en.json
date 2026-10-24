@@ -32,7 +32,8 @@
     "defaultNameFromRecommended": "New Checklist (Recommended: {name})",
     "pleaseCreate": "Please create a new checklist first",
     "startDate": "Start Date",
-    "endDate": "End Date"
+    "endDate": "End Date",
+    "showUnpackedOnly": "Show unpacked only"
   },
   "category": {
     "name": "Category Name",

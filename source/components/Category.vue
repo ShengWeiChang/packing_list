@@ -174,7 +174,7 @@ Created: 2025-09-19
             :ghost-class="'ghost-item'"
             :chosen-class="'chosen-item'"
             :drag-class="'drag-item'"
-            class="space-y-1"
+            :class="['space-y-1', { 'min-h-9': showUnpackedOnly && visibleItems.length === 0 }]"
             data-testid="category-items-draggable"
             :data-category-id="category.id"
             @start="onItemDragStart"
@@ -220,6 +220,7 @@ import draggable from 'vuedraggable';
 import { Category } from '../models/Category';
 import { putOnlyFromGroup } from '../utils/dragDrop.js';
 import { focusEditingInput } from '../utils/focusEditingInput.js';
+import { insertAtVisibleIndex, renumberOrder, reorderVisibleSlots } from '../utils/order.js';
 import AddItemButton from './AddItemButton.vue';
 import Item from './Item.vue';
 import OverflowMenu from './OverflowMenu.vue';
@@ -255,6 +256,10 @@ const props = defineProps({
   newlyCreatedCategoryId: {
     type: String,
     default: null,
+  },
+  showUnpackedOnly: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -299,10 +304,26 @@ const sortedItems = computed(() => {
   return filteredItems.sort((a, b) => (a.order || 0) - (b.order || 0));
 });
 
+// Items currently visible in this category. The full set remains available to
+// progress, completion, and category-wide packing controls.
+const visibleItems = computed(() => {
+  if (!props.showUnpackedOnly) return sortedItems.value;
+  return sortedItems.value.filter((item) => !item.isPacked);
+});
+
+/**
+ * Return whether an item participates in the current visible drag list.
+ * @param {object} item - Item to evaluate.
+ * @returns {boolean} Whether the item is visible.
+ */
+function isItemVisible(item) {
+  return !props.showUnpackedOnly || !item.isPacked;
+}
+
 // Draggable items (two-way binding with vuedraggable)
 const draggableItems = computed({
   get() {
-    return sortedItems.value;
+    return visibleItems.value;
   },
   set(_newItems) {
     // This setter is intentionally empty (no-op) since we handle ALL drag events via @change event
@@ -475,35 +496,25 @@ function onItemChange(event) {
     const item = event.added.element;
     const newIndex = event.added.newIndex;
 
-    // Get current items in this category (excluding the newly added item)
-    const currentCategoryItems = sortedItems.value.filter((i) => i.id !== item.id);
-
-    // Create updated item with new category and order
-    const updatedItem = {
+    const sourceItems = props.items
+      .filter((entry) => entry.categoryId === item.categoryId && entry.id !== item.id)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+    const targetItems = sortedItems.value.filter((entry) => entry.id !== item.id);
+    const movedItem = {
       ...item,
       categoryId: props.category.id,
-      order: newIndex,
     };
-
-    // Shift down items that come after the insertion point
-    const reorderedItems = currentCategoryItems.map((existingItem, index) => {
-      let newOrder = index;
-      if (index >= newIndex) {
-        newOrder = index + 1;
-      }
-      return {
-        ...existingItem,
-        order: newOrder,
-      };
-    });
+    const reorderedSourceItems = renumberOrder(sourceItems);
+    const reorderedTargetItems = insertAtVisibleIndex(
+      targetItems,
+      movedItem,
+      newIndex,
+      isItemVisible
+    );
 
     emit('move:item', {
-      item: updatedItem,
-      reorderedItems: reorderedItems,
-      newCategoryId: props.category.id,
-      oldCategoryId: item.categoryId,
-      newIndex: newIndex,
       type: 'move',
+      items: [...reorderedSourceItems, ...reorderedTargetItems],
     });
   }
 
@@ -513,16 +524,14 @@ function onItemChange(event) {
     const oldIndex = event.moved.oldIndex;
     const newIndex = event.moved.newIndex;
 
-    // Build the new order by simulating the move
-    const items = [...sortedItems.value];
-    const [removed] = items.splice(oldIndex, 1);
-    items.splice(newIndex, 0, removed);
-
-    // Renumber all items based on the new order
-    const itemsWithNewOrder = items.map((item, index) => ({
-      ...item,
-      order: index,
-    }));
+    const reorderedVisibleItems = [...visibleItems.value];
+    const [removed] = reorderedVisibleItems.splice(oldIndex, 1);
+    reorderedVisibleItems.splice(newIndex, 0, removed);
+    const itemsWithNewOrder = reorderVisibleSlots(
+      sortedItems.value,
+      reorderedVisibleItems,
+      isItemVisible
+    );
 
     emit('move:item', {
       items: itemsWithNewOrder,

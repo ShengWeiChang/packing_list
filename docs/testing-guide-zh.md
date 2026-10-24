@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 560    |
-| Unit tests 單元測試           | 243    |
-| Component tests 組件測試      | 267    |
-| E2E tests E2E 測試            | 50     |
-| Line coverage 行覆蓋率        | 98.46% |
-| Statement coverage 語句覆蓋率 | 97.10% |
-| Branch coverage 分支覆蓋率    | 88.23% |
+| Total tests 總測試數          | 573    |
+| Unit tests 單元測試           | 248    |
+| Component tests 組件測試      | 271    |
+| E2E tests E2E 測試            | 54     |
+| Line coverage 行覆蓋率        | 98.42% |
+| Statement coverage 語句覆蓋率 | 97.08% |
+| Branch coverage 分支覆蓋率    | 88.00% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,9 +29,9 @@
 
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 243   | models、services、composables、utils 純邏輯 |
-| Component | Vitest + @vue/test-utils | 267   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 50    | 真實瀏覽器中的完整使用者流程                |
+| Unit      | Vitest                   | 248   | models、services、composables、utils 純邏輯 |
+| Component | Vitest + @vue/test-utils | 271   | Vue 組件渲染、事件、狀態                    |
+| E2E       | Playwright               | 54    | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
@@ -50,7 +50,7 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 243 tests
+├── unit-tests/                          # 248 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -67,19 +67,19 @@ tests/
 │   │   └── useTemplates.test.js         # 14  tests
 │   ├── i18n/                            #  9  tests
 │   │   └── index.test.js                #  9  tests
-│   └── utils/                           # 31  tests
+│   └── utils/                           # 36  tests
 │       ├── helpers.test.js              # 21  tests
 │       ├── positioning.test.js          #  3  tests
-│       ├── order.test.js                #  3  tests
+│       ├── order.test.js                #  8  tests
 │       ├── dragDrop.test.js             #  2  tests
 │       └── focusEditingInput.test.js     #  2  tests
 │
-├── component-tests/                     # 267 tests
+├── component-tests/                     # 271 tests
 │   ├── App.test.js                      # 61  tests
-│   ├── Checklist.test.js                # 37  tests
+│   ├── Checklist.test.js                # 38  tests
 │   ├── Item.test.js                     # 26  tests
 │   ├── Sidebar.test.js                  # 33  tests
-│   ├── Category.test.js                 # 27  tests
+│   ├── Category.test.js                 # 30  tests
 │   ├── OverflowMenu.test.js             # 23  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
@@ -90,14 +90,14 @@ tests/
 │   ├── TemplateEditor.test.js           # 13  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 50  tests
-    ├── mobile-workflow.spec.js          #  9  tests
+└── end2end-tests/                       # 54  tests
+    ├── mobile-workflow.spec.js          # 10  tests
     ├── item-packing.spec.js             #  7  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
     ├── checklist-management.spec.js     #  5  tests
     ├── category-crud.spec.js            #  3  tests
-    ├── drag-and-drop.spec.js            #  3  tests
+    ├── drag-and-drop.spec.js            #  6  tests
     ├── multi-tab-sync.spec.js           #  4  tests
     ├── template-management.spec.js      #  7  tests
     └── recommended-lists.spec.js           #  1  test
@@ -224,7 +224,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ## 8. Complete Test Inventory 完整測試案例清單
 
-### 8.1 Unit Tests（243）
+### 8.1 Unit Tests（248）
 
 #### 8.1.1 Models（40）
 
@@ -492,7 +492,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 8   | should ignore unsupported setLocale values and keep current locale   | setter 防禦       |
 | 9   | should keep English and Traditional Chinese translation keys aligned | 翻譯 key 一致性   |
 
-#### 8.1.5 Utils（31）
+#### 8.1.5 Utils（36）
 
 ##### 8.1.5.1 helpers.test.js（21）
 
@@ -527,13 +527,18 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | should allow drops only from the specified group name | vuedraggable put guard 正確 |
 | 2   | should return false when from group is missing        | DnD 異常輸入的防禦行為      |
 
-##### 8.1.5.3 order.test.js（3）
+##### 8.1.5.3 order.test.js（8）
 
-| #   | Test                                                  | 測試重點                |
-| --- | ----------------------------------------------------- | ----------------------- |
-| 1   | should renumber order based on array index            | 依陣列順序重編 order    |
-| 2   | should support custom start offset                    | 支援插入情境的起始偏移  |
-| 3   | should return empty array for null or undefined input | null/undefined 輸入後備 |
+| #   | Test                                                                     | 測試重點                |
+| --- | ------------------------------------------------------------------------ | ----------------------- |
+| 1   | should renumber order based on array index                               | 依陣列順序重編 order    |
+| 2   | should support custom start offset                                       | 支援插入情境的起始偏移  |
+| 3   | should return empty array for null or undefined input                    | null/undefined 輸入後備 |
+| 4   | should reorder visible entries without moving hidden slots               | 保留已打包物品槽位      |
+| 5   | should keep complete order when visible entries do not match             | 無效可見集合後備        |
+| 6   | should insert at a visible position in the complete order                | 可見索引映射完整順序    |
+| 7   | should append at the complete end when dropped after all visible entries | 可見末端插入            |
+| 8   | should append when every target entry is hidden                          | 全隱藏目標插入          |
 
 ##### 8.1.5.4 positioning.test.js（3）
 
@@ -561,7 +566,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 3   | falls back to English for unsupported locales                                | 語系後備         |
 | 4   | returns isolated resolved data                                               | 解析結果隔離     |
 
-### 8.2 Component Tests（267）
+### 8.2 Component Tests（271）
 
 #### 8.2.1 App.test.js（61）
 
@@ -738,7 +743,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 22  | should clamp position within viewport         | 視窗邊界限制      |
 | 23  | should fall back to createEvent               | 舊瀏覽器相容      |
 
-#### 8.2.9 Category.test.js（27）
+#### 8.2.9 Category.test.js（30）
 
 | #   | Test                                                                                | 測試重點       |
 | --- | ----------------------------------------------------------------------------------- | -------------- |
@@ -763,14 +768,17 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 19  | should clear dragging item ID on drag end                                           | 拖曳結束       |
 | 20  | should emit "move:item" with type "move" when item is added from another category   | 跨分類移動     |
 | 21  | should emit "move:item" with type "reorder" when item is moved within same category | 同分類排序     |
-| 22  | should forward Item events from child Item component                                | 子元件事件轉送 |
-| 23  | should enter edit mode when newlyCreatedCategoryId matches                          | 新建自動編輯   |
-| 24  | should not enter edit mode when newlyCreatedCategoryId does not match               | 無誤觸發       |
-| 25  | should not save during IME composition                                              | IME 檢查       |
-| 26  | should expose a mixed category checkbox and request packing all items               | 三態批次意圖   |
-| 27  | should expose checked, unchecked, and disabled category checkbox states             | 狀態渲染       |
+| 22  | should preserve packed slots when reordering filtered items                         | 篩選槽位重排   |
+| 23  | should insert before the next visible target item while filtered                    | 篩選跨分類移動 |
+| 24  | should display only unpacked items while retaining full category progress           | 篩選顯示       |
+| 25  | should forward Item events from child Item component                                | 子元件事件轉送 |
+| 26  | should enter edit mode when newlyCreatedCategoryId matches                          | 新建自動編輯   |
+| 27  | should not enter edit mode when newlyCreatedCategoryId does not match               | 無誤觸發       |
+| 28  | should not save during IME composition                                              | IME 檢查       |
+| 29  | should expose a mixed category checkbox and request packing all items               | 三態批次意圖   |
+| 30  | should expose checked, unchecked, and disabled category checkbox states             | 狀態渲染       |
 
-#### 8.2.10 Checklist.test.js（37）
+#### 8.2.10 Checklist.test.js（38）
 
 | #   | Test                                                                        | 測試重點             |
 | --- | --------------------------------------------------------------------------- | -------------------- |
@@ -781,36 +789,37 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 5   | should show PendingItemsCategory when pending items exist                   | 條件顯示             |
 | 6   | should hide PendingItemsCategory when no pending items                      | 條件隱藏             |
 | 7   | should hide dates and checklist overflow for template editing               | Template editor 顯示 |
-| 8   | should show input on name click                                             | 點擊編輯             |
-| 9   | should emit update on Enter                                                 | Enter 確認           |
-| 10  | should cancel on Escape                                                     | Escape 取消          |
-| 11  | should emit copy:checklist from OverflowMenu                                | 複製轉發             |
-| 12  | should emit delete:checklist from OverflowMenu                              | 刪除轉發             |
-| 13  | should emit create:category from AddCategoryButton                          | 新增分類事件         |
-| 14  | should forward update:item from Category                                    | 物品更新轉發         |
-| 15  | should forward copy:category from Category                                  | 分類複製轉發         |
-| 16  | should forward delete:category from Category                                | 分類刪除轉發         |
-| 17  | should display untitled placeholder for empty name                          | 未命名顯示           |
-| 18  | should adjust end date when start date moves past it                        | 日期約束             |
-| 19  | should not change end date when start before it                             | 日期無變更           |
-| 20  | should auto-correct end date earlier than start                             | 日期自動修正         |
-| 21  | should not save on Enter during IME                                         | IME 檢查             |
-| 22  | should not emit when name unchanged                                         | 無變更檢查           |
-| 23  | should use untitled placeholder when saving empty name                      | 空名稱後備           |
-| 24  | should enter edit mode from OverflowMenu                                    | 編輯模式觸發         |
-| 25  | should enter edit mode when newlyCreatedChecklistId matches                 | 新建自動編輯         |
-| 26  | should forward copy:item from Category component                            | 物品複製轉發         |
-| 27  | should forward delete:item from Category component                          | 物品刪除轉發         |
-| 28  | should forward create:item from Category component                          | 物品新增轉發         |
-| 29  | should forward update:category from Category component                      | 分類更新轉發         |
-| 30  | should forward move:item from Category component                            | 物品移動轉發         |
-| 31  | should format single-date and cross-year ranges                             | 單日／跨年顯示       |
-| 32  | should handle empty dates gracefully                                        | 無日期顯示           |
-| 33  | should forward update:item from PendingItemsCategory                        | pending 更新轉發     |
-| 34  | should set isDraggingCategory on drag start                                 | 拖曳狀態             |
-| 35  | should clear drag state on drag end                                         | 拖曳清理             |
-| 36  | should emit "reorder:categories" with renumbered order when v-model changes | 分類重排事件         |
-| 37  | should save when focus leaves all editing inputs                            | 全域 blur 儲存       |
+| 8   | should toggle unpacked-only display without hiding categories               | 篩選狀態與分類保留   |
+| 9   | should show input on name click                                             | 點擊編輯             |
+| 10  | should emit update on Enter                                                 | Enter 確認           |
+| 11  | should cancel on Escape                                                     | Escape 取消          |
+| 12  | should emit copy:checklist from OverflowMenu                                | 複製轉發             |
+| 13  | should emit delete:checklist from OverflowMenu                              | 刪除轉發             |
+| 14  | should emit create:category from AddCategoryButton                          | 新增分類事件         |
+| 15  | should forward update:item from Category                                    | 物品更新轉發         |
+| 16  | should forward copy:category from Category                                  | 分類複製轉發         |
+| 17  | should forward delete:category from Category                                | 分類刪除轉發         |
+| 18  | should display untitled placeholder for empty name                          | 未命名顯示           |
+| 19  | should adjust end date when start date moves past it                        | 日期約束             |
+| 20  | should not change end date when start before it                             | 日期無變更           |
+| 21  | should auto-correct end date earlier than start                             | 日期自動修正         |
+| 22  | should not save on Enter during IME                                         | IME 檢查             |
+| 23  | should not emit when name unchanged                                         | 無變更檢查           |
+| 24  | should use untitled placeholder when saving empty name                      | 空名稱後備           |
+| 25  | should enter edit mode from OverflowMenu                                    | 編輯模式觸發         |
+| 26  | should enter edit mode when newlyCreatedChecklistId matches                 | 新建自動編輯         |
+| 27  | should forward copy:item from Category component                            | 物品複製轉發         |
+| 28  | should forward delete:item from Category component                          | 物品刪除轉發         |
+| 29  | should forward create:item from Category component                          | 物品新增轉發         |
+| 30  | should forward update:category from Category component                      | 分類更新轉發         |
+| 31  | should forward move:item from Category component                            | 物品移動轉發         |
+| 32  | should format single-date and cross-year ranges                             | 單日／跨年顯示       |
+| 33  | should handle empty dates gracefully                                        | 無日期顯示           |
+| 34  | should forward update:item from PendingItemsCategory                        | pending 更新轉發     |
+| 35  | should set isDraggingCategory on drag start                                 | 拖曳狀態             |
+| 36  | should clear drag state on drag end                                         | 拖曳清理             |
+| 37  | should emit "reorder:categories" with renumbered order when v-model changes | 分類重排事件         |
+| 38  | should save when focus leaves all editing inputs                            | 全域 blur 儲存       |
 
 #### 8.2.11 Sidebar.test.js（33）
 
@@ -900,7 +909,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 9   | traps forward and reverse Tab navigation        | 鍵盤焦點圈限    |
 | 10  | ignores keyboard handling while hidden          | 隱藏狀態 guard  |
 
-### 8.3 E2E Tests（50）
+### 8.3 E2E Tests（54）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -930,13 +939,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | should copy a category via overflow menu            | 分類複製 |
 | 3   | should show copy suffix in duplicated category name | 複製後綴 |
 
-#### 8.3.4 drag-and-drop.spec.js（3）
+#### 8.3.4 drag-and-drop.spec.js（6）
 
-| #   | Test                                                    | 測試重點               |
-| --- | ------------------------------------------------------- | ---------------------- |
-| 1   | should reorder checklists in sidebar by drag-and-drop   | Sidebar 清單拖放重排序 |
-| 2   | should reorder categories by drag-and-drop              | 分類卡片拖放重排序     |
-| 3   | should reorder items within a category by drag-and-drop | 分類內物品拖放重排序   |
+| #   | Test                                                                | 測試重點               |
+| --- | ------------------------------------------------------------------- | ---------------------- |
+| 1   | should reorder checklists in sidebar by drag-and-drop               | Sidebar 清單拖放重排序 |
+| 2   | should reorder categories by drag-and-drop                          | 分類卡片拖放重排序     |
+| 3   | should reorder items within a category by drag-and-drop             | 分類內物品拖放重排序   |
+| 4   | should preserve packed item slots when filtered items are reordered | 篩選物品重排           |
+| 5   | should persist a filtered move into a partially visible category    | 篩選跨分類插入         |
+| 6   | should persist a filtered move into an all-hidden category          | 空目標追加與持久化     |
 
 #### 8.3.5 item-packing.spec.js（7）
 
@@ -961,19 +973,20 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 5   | should revert all labels to English after switching back       | 語言復原     |
 | 6   | should persist language selection after page reload            | 語言持久化   |
 
-#### 8.3.7 mobile-workflow.spec.js（9）
+#### 8.3.7 mobile-workflow.spec.js（10）
 
-| #   | Test                                                   | 測試重點       |
-| --- | ------------------------------------------------------ | -------------- |
-| 1   | should display topbar with hamburger button on mobile  | 行動版頂欄     |
-| 2   | should open sidebar overlay when hamburger is clicked  | 側邊欄開啟     |
-| 3   | should close sidebar when overlay backdrop is tapped   | 背景關閉       |
-| 4   | should create a new checklist via topbar plus button   | 行動版建立     |
-| 5   | should create a new checklist via sidebar on mobile    | 側邊欄建立     |
-| 6   | should add a new item via add item button              | 行動版立即輸入 |
-| 7   | should edit an item name on mobile                     | 行動版編輯物品 |
-| 8   | should toggle item packed status on mobile             | 行動版打包切換 |
-| 9   | should update progress when items are packed on mobile | 行動版進度     |
+| #   | Test                                                                | 測試重點         |
+| --- | ------------------------------------------------------------------- | ---------------- |
+| 1   | should display topbar with hamburger button on mobile               | 行動版頂欄       |
+| 2   | should open sidebar overlay when hamburger is clicked               | 側邊欄開啟       |
+| 3   | should close sidebar when overlay backdrop is tapped                | 背景關閉         |
+| 4   | should create a new checklist via topbar plus button                | 行動版建立       |
+| 5   | should create a new checklist via sidebar on mobile                 | 側邊欄建立       |
+| 6   | should add a new item via add item button                           | 行動版立即輸入   |
+| 7   | should edit an item name on mobile                                  | 行動版編輯物品   |
+| 8   | should toggle item packed status on mobile                          | 行動版打包切換   |
+| 9   | should update progress when items are packed on mobile              | 行動版進度       |
+| 10  | should filter packed items with an accessible icon button on mobile | 可存取行動版篩選 |
 
 #### 8.3.8 multi-tab-sync.spec.js（4）
 

@@ -194,6 +194,25 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Same-category reorder: Each item `order` is continuous from 0; persists after reload.
   - Cross-category move: Target `categoryId` and `order` are correct; remaining items in both categories have continuous `order`; progress updates correctly on both sides.
 
+#### Unpacked Items Filter
+
+- Purpose: Reduce scrolling in long packing lists by temporarily showing only items that still need to be packed without removing category-level actions.
+- Key features:
+  - An icon-only `Show unpacked only` toggle appears immediately before the overflow menu in the checklist header at every supported viewport width. It provides a localized tooltip and accessible name, exposes its active state with `aria-pressed`, and uses the brand-green selected style without shortening the checklist progress bar.
+  - The filter is in-memory view state only; it does not modify checklist data or localStorage and resets after reload.
+  - Every category card remains visible. A fully packed category keeps its checked header, full progress, menu, add-item action, and drop target while its packed item rows are hidden.
+  - Newly created categories and unpacked items remain visible and editable while the filter is active; the template editor does not show the runtime packing filter.
+  - Progress and category completion always use the complete item set rather than the filtered display set.
+  - Same-category dragging reorders visible items within the original visible slots, leaving hidden packed items in their slots.
+  - Cross-category dragging maps the visible drop position to the complete target order: insert before the next visible item, or append to the complete category when dropped at the visible end or when no item is visible.
+  - Source and target orders are renumbered and saved together with one `updateMultipleItems` operation.
+- Flow:
+  - Toggle the filter → review or edit unpacked items → add/reorder/move items as needed → toggle off to restore the complete view.
+- Validation:
+  - Packed item rows disappear and return without changing packing state; all category cards and creation actions remain available.
+  - Filtered same-category and cross-category dragging produce continuous persisted `order` values while hidden-item placement follows the rules above.
+  - Reload restores the complete view while preserving item data and any explicit drag reorder performed before reload.
+
 #### Pending Items (To Buy / To Do)
 
 - Purpose: Provide a virtual, cross-category view for items the user marked as "pending" — this covers both "to-buy" and general "to-do" semantics.
@@ -333,13 +352,13 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Reorder categories within a checklist; after drop, set categories’ `order = 0..n`.
     - Drop restriction: Only allow drops within the categories container.
   - Item dragging (`Category.vue` with `vuedraggable` group: `items`):
-    - Same-category reorder: On drop, rewrite all items’ `order = 0..n` in that category; `isPacked` unchanged.
-    - Cross-category move: Update the moved item’s `categoryId` and `order = evt.newIndex`; shift subsequent items in the target category (`order + 1` after the insertion point) and renumber the source category (`order = 0..n`).
+    - Same-category reorder: Normally follow visual order; under the unpacked-only filter, reorder visible items within their original visible slots so hidden packed items retain their slots. Then rewrite the complete category’s `order = 0..n`; `isPacked` remains unchanged.
+    - Cross-category move: Update the moved item’s `categoryId`; insert before the next visible target item, or at the complete target-category end when dropped after all visible items or when none are visible; renumber both source and target categories to `order = 0..n`.
     - Drop restriction: Only allow drops within item containers (`group.put` check).
   - Visuals & motion:
     - `ghost/chosen/drag` classes for translucent, grab, and scale effects, ~200ms animations; keep masonry layout stable while dragging.
   - Persistence:
-    - Drag events are handled by parent logic to call `updateChecklist`/`updateCategory`/`updateItem` and then reload data to ensure consistency; orders persist across reloads.
+    - Item drag events send all affected source/target entries to one `updateMultipleItems` operation and reload data for consistency; orders persist across reloads.
 - Flow:
   - Press and hold on a checklist, item, or category → drag to the target position/category → drop → reorder/save.
 - Validation:
@@ -506,19 +525,19 @@ The application uses a centralized color management system with semantic naming:
 
 ### Component Specifications
 
-| Component            | Description                        | Interactions                                                                                                 |
-| -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Sidebar              | Checklist and template navigation  | Responsive collapse/expand; checklist selection/reordering; template menu opens the template editor          |
-| Topbar               | Mobile navigation bar              | Hamburger menu; quick add checklist                                                                          |
-| Checklist            | Main content area                  | Shows categories and items for the selected checklist; drag and drop for category reordering; masonry layout |
-| PendingItemsCategory | Virtual category for pending items | Orange theme; multi-column grid; displays items marked as pending (to-buy/to-do)                             |
-| Category             | Category card                      | Lists items; shows progress; edit actions; drag and drop for item reordering and movement                    |
-| Item                 | Item row/card                      | Toggle packed/pending; inline edit; delete; draggable within/between categories                              |
-| ProgressBar          | Progress visualization             | Displays completion percentage                                                                               |
-| OverflowMenu         | Overflow actions                   | Edit/copy/delete and other actions                                                                           |
-| NewChecklistDialog   | Checklist source selection         | Choose an empty checklist, a personal template, or a read-only recommended list                              |
-| SaveTemplateDialog   | New template naming                | Validate a name before saving a new template snapshot                                                        |
-| TemplateEditor       | Isolated template editing          | Edit template content; explicitly save, cancel, or delete without creating a checklist                       |
+| Component            | Description                        | Interactions                                                                                        |
+| -------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Sidebar              | Checklist and template navigation  | Responsive collapse/expand; checklist selection/reordering; template menu opens the template editor |
+| Topbar               | Mobile navigation bar              | Hamburger menu; quick add checklist                                                                 |
+| Checklist            | Main content area                  | Shows categories/items, category reordering, masonry layout, and the unpacked-only view toggle      |
+| PendingItemsCategory | Virtual category for pending items | Orange theme; multi-column grid; displays items marked as pending (to-buy/to-do)                    |
+| Category             | Category card                      | Lists items; shows progress; edit actions; drag and drop for item reordering and movement           |
+| Item                 | Item row/card                      | Toggle packed/pending; inline edit; delete; draggable within/between categories                     |
+| ProgressBar          | Progress visualization             | Displays completion percentage                                                                      |
+| OverflowMenu         | Overflow actions                   | Edit/copy/delete and other actions                                                                  |
+| NewChecklistDialog   | Checklist source selection         | Choose an empty checklist, a personal template, or a read-only recommended list                     |
+| SaveTemplateDialog   | New template naming                | Validate a name before saving a new template snapshot                                               |
+| TemplateEditor       | Isolated template editing          | Edit template content; explicitly save, cancel, or delete without creating a checklist              |
 
 ## 7. Data Models
 

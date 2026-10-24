@@ -57,6 +57,7 @@ describe('TemplateEditor', () => {
     const checklist = createWrapper().findComponent({ name: 'Checklist' });
 
     expect(checklist.props('showDates')).toBe(false);
+    expect(checklist.props('showItemFilter')).toBe(false);
     expect(checklist.props('showOverflowMenu')).toBe(false);
   });
 
@@ -172,9 +173,7 @@ describe('TemplateEditor', () => {
     const copiedItemId = checklist.props('items')[1].id;
     await checklist.vm.$emit('move:item', {
       type: 'move',
-      item: { ...checklist.props('items')[0], categoryId: 'category-1' },
-      newCategoryId: 'category-2',
-      reorderedItems: [],
+      items: [{ ...checklist.props('items')[0], categoryId: 'category-2', order: 0 }],
     });
     await checklist.vm.$emit('delete:item', copiedItemId);
     await wrapper.get('[data-testid="template-editor-save"]').trigger('click');
@@ -252,15 +251,14 @@ describe('TemplateEditor', () => {
     });
   });
 
-  // Test Case 12: Should move an item without an optional reordered-items payload
-  it('moves an item without an optional reordered-items payload', async () => {
+  // Test Case 12: Should apply a cross-category batch payload
+  it('applies a cross-category batch payload', async () => {
     const wrapper = createWrapper();
     const checklist = wrapper.findComponent({ name: 'Checklist' });
 
     await checklist.vm.$emit('move:item', {
       type: 'move',
-      item: checklist.props('items')[0],
-      newCategoryId: 'category-2',
+      items: [{ ...checklist.props('items')[0], categoryId: 'category-2', order: 0 }],
     });
     await wrapper.get('[data-testid="template-editor-save"]').trigger('click');
 
