@@ -81,7 +81,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Create checklist: Always open a source dialog offering an empty checklist, a personal template, or a recommended list.
     - Empty source: Create only the checklist without categories or items.
     - Seeded sources: Generate fresh category/item IDs, remap item `categoryId`, and reset packed/pending state.
-    - Source-aware name: Default to `New Checklist (Empty)`, `New Checklist (Template: {name})`, or `New Checklist (Recommended: {name})`; truncate the source name to keep the complete name within 100 characters.
+    - Source-aware name: Default to `New Checklist (Empty)` for an empty source or `New Checklist ({name})` for a template or recommended list; truncate the source name to keep the complete name within 100 characters.
   - Edit checklist: Edit `name`.
   - Date Editing:
     - Uses native HTML5 date input for reliability.

@@ -26,7 +26,7 @@ test.describe('Recommended Lists', () => {
 
     const nameInput = page.getByTestId('checklist-name-input');
     await expect(nameInput).toBeVisible();
-    await expect(nameInput).toHaveValue('New Checklist (Recommended: General Travel)');
+    await expect(nameInput).toHaveValue('New Checklist (General Travel)');
     await nameInput.press('Enter');
     await expect(page.getByTestId('category-name').first()).toBeVisible();
     await expect(page.getByTestId('item-row').first()).toBeVisible();
@@ -35,16 +35,12 @@ test.describe('Recommended Lists', () => {
       JSON.parse(localStorage.getItem('packingListApp'))
     );
     expect(storedBeforeReload.checklists).toHaveLength(1);
-    expect(storedBeforeReload.checklists[0].name).toBe(
-      'New Checklist (Recommended: General Travel)'
-    );
+    expect(storedBeforeReload.checklists[0].name).toBe('New Checklist (General Travel)');
     expect(storedBeforeReload.categories.length).toBeGreaterThan(0);
     expect(storedBeforeReload.items.length).toBeGreaterThan(0);
 
     await page.reload();
-    await expect(page.getByTestId('checklist-name')).toHaveText(
-      'New Checklist (Recommended: General Travel)'
-    );
+    await expect(page.getByTestId('checklist-name')).toHaveText('New Checklist (General Travel)');
     await expect(page.getByTestId('category-name').first()).toBeVisible();
   });
 });
