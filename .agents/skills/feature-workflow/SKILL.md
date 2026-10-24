@@ -37,21 +37,27 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
 
 ## 2. Approved Milestones
 
-1. Implement only an approved checklist milestone. One implementation agent
+1. Before changing tracked files, inspect the current branch and worktree. If
+   the work is not already on a suitable feature branch, propose a scoped
+   branch name and obtain explicit approval to create or switch branches unless
+   the user's implementation approval already included that instruction. Record
+   the starting branch, feature branch, and branch-point HEAD in the plan. Never
+   move unrelated working-tree changes while creating or switching branches.
+2. Implement only an approved checklist milestone. One implementation agent
    owns any given file at a time.
-2. After each meaningful milestone, update the plan with completed checklist
+3. After each meaningful milestone, update the plan with completed checklist
    items, changed scope, commands or manual evidence, unresolved questions,
    reviewed scope or revision, reviewer role and verdict, and user decision.
-3. Select and run the targeted validation required by `$feature-completion` for
+4. Select and run the targeted validation required by `$feature-completion` for
    the changed boundary. Use the full final gate early only when the milestone
    crosses an integration boundary that needs it.
-4. Stage exactly the candidate scope as reversible candidate preparation, then
+5. Stage exactly the candidate scope as reversible candidate preparation, then
    run `npm run fingerprint:candidate -- <scoped files>`. Do this before the
    fresh reviewer. The helper reports renames as their deleted and added paths,
    so include both paths in the scope. The reviewer inspects `git diff --cached`
    and the exact index content a commit would use. Staging does not authorize a
    commit.
-5. Invoke `$feature-completion` for the fresh review and evidence verdict, then
+6. Invoke `$feature-completion` for the fresh review and evidence verdict, then
    set status to `awaiting milestone review` and present the staged milestone
    diff, updated plan status, validation evidence, fingerprint, and reviewer
    verdict. Begin every status update by naming the current state and the one
