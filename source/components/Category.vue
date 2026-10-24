@@ -174,7 +174,7 @@ Created: 2025-09-19
             :ghost-class="'ghost-item'"
             :chosen-class="'chosen-item'"
             :drag-class="'drag-item'"
-            :class="['space-y-1', { 'min-h-9': showUnpackedOnly && visibleItems.length === 0 }]"
+            :class="['space-y-1', { 'min-h-12': showUnpackedOnly && visibleItems.length === 0 }]"
             data-testid="category-items-draggable"
             :data-category-id="category.id"
             @start="onItemDragStart"

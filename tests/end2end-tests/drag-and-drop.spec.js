@@ -66,8 +66,9 @@ async function createAndConfirmChecklist(page, name) {
  * @param {import('@playwright/test').Page} page - Active Playwright page.
  * @param {import('@playwright/test').Locator} source - Locator for the item to drag.
  * @param {import('@playwright/test').Locator} target - Locator for the destination item.
+ * @param {{ settleInTarget?: boolean }} [options] - Whether to move within the target before release.
  */
-async function slowDragTo(page, source, target) {
+async function slowDragTo(page, source, target, { settleInTarget = false } = {}) {
   const srcBox = await source.boundingBox();
   const tgtBox = await target.boundingBox();
   const srcCenter = { x: srcBox.x + srcBox.width / 2, y: srcBox.y + srcBox.height / 2 };
@@ -85,6 +86,14 @@ async function slowDragTo(page, source, target) {
     );
     await waitForNextAnimationFrame(page);
   }
+
+  if (settleInTarget) {
+    await page.mouse.move(tgtCenter.x, tgtCenter.y + Math.min(8, tgtBox.height / 4));
+    await waitForNextAnimationFrame(page);
+    await page.mouse.move(tgtCenter.x, tgtCenter.y);
+    await waitForNextAnimationFrame(page);
+  }
+
   await page.mouse.up();
 }
 
@@ -336,7 +345,8 @@ test.describe('Drag & Drop', () => {
       await slowDragTo(
         page,
         sourceCategory.getByTestId('item-row').first(),
-        targetCategory.getByTestId('category-items-draggable')
+        targetCategory.getByTestId('category-items-draggable'),
+        { settleInTarget: true }
       );
       await expect(targetCategory.getByTestId('item-name')).toHaveText([movedItemName]);
 
