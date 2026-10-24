@@ -17,20 +17,77 @@ approval boundaries. Do not require users to remember workflow prompt keywords.
    specifications, and existing behavior. Do not change tracked files, create a
    commit, or make external Git changes in this stage. Creating or updating the
    ignored plan below is the sole permitted write.
-2. Create `plans/<feature>-plan-zh.md`. Include these headings: **Status**,
+2. Select the smallest justified planning tier using requirement clarity,
+   existing patterns, blast radius, data or side effects, interaction
+   complexity, evidence difficulty, and user impact. Persistence, sensitive
+   data, access control, external boundaries, irreversible actions, or high
+   user impact are a floor of T3. Do not infer a tier from diff size alone.
+   Re-evaluate the tier when new evidence changes the risk: escalate immediately
+   and record why; after plan approval, lower it only with documented new
+   evidence and the user's explicit agreement because lowering reduces the
+   approved validation and independent-review budget.
+3. For T1/T2/T3, create `plans/<feature>-plan-zh.md`. Include these headings: **Status**,
    **Request**, **Observable finish conditions**, **Affected areas and risks**,
    **Options and decision**, **Implementation checklist**, **Validation and
-   reviewer plan**, and **Approval/evidence log**. `Status` must be one of:
-   `draft`, `awaiting implementation approval`, `implementing milestone N`,
-   `awaiting milestone review`, `awaiting commit approval`, `final
+   reviewer plan**, and **Approval/evidence log**. It must also record the
+   selected T0–T3 tier, its evidence and intentionally skipped roles; for T2/T3
+   it records the decision ledger (confirmed facts, consensus, conflicts, and
+   unresolved decisions). `Status` must be one of:
+   `draft`, `awaiting design decisions`, `awaiting implementation approval`,
+   `implementing milestone N`, `awaiting milestone review`, `awaiting commit approval`, `final
 verification`, `awaiting final decision`, `awaiting final commit approval`,
    `awaiting push approval`, `awaiting PR approval`, `awaiting merge approval`, or
    `complete`.
    Record the feature base HEAD SHA before the first implementation change.
-3. Describe feasible options and recommend one, rather than silently choosing
+   For a potential T0, do not create the full plan before the user explicitly
+   agrees it is trivial. Then create the same path as a **T0 reduced record**
+   containing only the read-only scope, base HEAD, explicit trivial agreement,
+   relevant minimum validation/evidence, and Git decision. It omits normal plan
+   headings, options, council, and decision questions.
+4. Apply the tier actions below. T0 is available only after read-only discovery
+   and the user's explicit agreement that the scope is trivial. Every tier
+   retains explicit implementation, commit, push, PR, and merge approvals; T0
+   reduces planning and independent-review work only.
+
+   | Tier         | Required planning actions                                                                                                       | Milestone evidence and independent review                                                                       | Final local gate                                                       |
+   | ------------ | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+   | T0: trivial  | Reduced record and relevant minimal validation; explicit implementation and Git approvals                                       | Only the explicitly agreed reduced path; no council or independent reviewer                                     | Reduced path only                                                      |
+   | T1: small    | Compact plan, assumptions, observable finish condition, targeted validation; at most one material question                      | Focused proof for each changed boundary; no intermediate independent review                                     | Focused final evidence + one fresh code review                         |
+   | T2: standard | Normal plan; root plus one boundary-relevant read-only specialist by default; one bounded decision round                        | Focused proof for each changed boundary; add a fresh review only at a meaningful non-final integration boundary | `verify:feature` once + one fresh code review; triggered test analysis |
+   | T3: complex  | Full plan and decision ledger; root plus two complementary read-only specialists by default; resolve blocking decision frontier | Focused proof for each changed boundary; fresh review at each meaningful non-final integration boundary         | `verify:feature` once + fresh code review + fresh test analysis        |
+
+   A milestone is a user-observable behavior or integration boundary, not an
+   arbitrary file slice. Do not repeat a full final gate at every milestone.
+   T1 uses focused local final evidence; T2/T3 run the full
+   `$feature-completion` gate once after the feature's last implementation
+   milestone. Repository CI remains the full merge safeguard for every pull
+   request. Tiering reduces planning and independent-review cost without
+   removing the user's implementation, commit, push, PR, or merge approvals.
+
+5. For a non-trivial user-visible UI or interaction change, invoke
+   `$ui-ux-design`: T1 uses its compact applicable checklist, while T2/T3 use
+   a fresh read-only design specialist as part of their selected planning
+   roles. Do not invoke it for a pure data, tooling, documentation, or tiny
+   established-pattern change. The planning specialist returns a concise memo,
+   never a product redesign or open-ended debate. Record the resulting T1
+   checklist or T2/T3 memo as the approved UI/UX artifact in the plan.
+6. Describe feasible options and recommend one, rather than silently choosing
    a product-affecting tradeoff. Make every finish condition observable from a
-   user's perspective.
-4. Present the plan and wait for the user's explicit approval to implement,
+   user's perspective. Investigate facts available from the repository,
+   documentation, or focused tools rather than asking the user to rediscover
+   them.
+7. Ask the user only about the current material decision frontier: choices whose
+   answer affects behavior, scope, evidence, risk, or an irreversible decision
+   and whose prerequisites are known. Each question gives two or three viable
+   options, a recommendation, and user and engineering consequences. T1 asks at
+   most one question; T2 uses one bounded round by default. If no material
+   decision remains, record the reversible low-risk assumption and reason.
+8. For T2/T3, have selected specialists investigate independently before root
+   synthesizes conclusions. Use targeted cross-review only for a material
+   conflict; do not use unbounded agent discussion. Present unresolved material
+   product decisions and wait for answers before finalizing the implementation
+   plan. A UI/UX heuristic review is not user research or usability proof.
+9. Present the plan and wait for the user's explicit approval to implement,
    such as `開始實作`. That approval covers only the approved scope; it does not
    authorize a commit, push, pull request, merge, dependency installation, or
    unrelated cleanup.
@@ -49,24 +106,31 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
    items, changed scope, commands or manual evidence, unresolved questions,
    reviewed scope or revision, reviewer role and verdict, and user decision.
 4. Select and run the targeted validation required by `$feature-completion` for
-   the changed boundary. Use the full final gate early only when the milestone
-   crosses an integration boundary that needs it.
-5. Stage exactly the candidate scope as reversible candidate preparation, then
-   run `npm run fingerprint:candidate -- <scoped files>`. Do this before the
-   fresh reviewer. The helper reports renames as their deleted and added paths,
+   the changed boundary. An intermediate independent review is required only if
+   the tier table calls for it, the milestone crosses a meaningful non-final
+   integration boundary, or the user explicitly asks for one; otherwise record
+   it as not required rather than manufacturing a review. The final-gate review
+   satisfies the review requirement for the last integration-boundary milestone.
+5. Stage exactly the candidate scope when it will be reviewed independently or
+   presented as a commit candidate, then run
+   `npm run fingerprint:candidate -- <scoped files>`. The helper reports renames
+   as their deleted and added paths,
    so include both paths in the scope. The reviewer inspects `git diff --cached`
    and the exact index content a commit would use. Staging does not authorize a
    commit.
-6. Invoke `$feature-completion` for the fresh review and evidence verdict, then
-   set status to `awaiting milestone review` and present the staged milestone
-   diff, updated plan status, validation evidence, fingerprint, and reviewer
-   verdict. Begin every status update by naming the current state and the one
-   user decision needed. If this completes the implementation checklist and its
-   targeted gate is ready, automatically set status to `final verification` and
-   run the full final gate; do not present a normal milestone commit candidate.
-   Otherwise, wait for that response before continuing to a dependent milestone
-   or commit.
-7. Treat partial, truncated, or still-running command output as **unknown**, not
+6. When an intermediate independent review is required, invoke
+   `$feature-completion`; it is the sole coordinator for `$code-review`,
+   triggered `$test-analysis`, and applicable UI/UX conformance evidence. Do
+   not start a duplicate review cycle for the same candidate without a new
+   reason.
+7. Set status to `awaiting milestone review` and present the changed scope,
+   validation evidence, fingerprint when staged, and reviewer verdict or
+   explicit reason it was not required. Begin every status update by naming the
+   current state and the one user decision needed. Wait for the user's response
+   before continuing to a dependent milestone or commit. If this is the final
+   milestone, a user acceptance moves it to `final verification` and runs the
+   tier's final gate; do not present a normal milestone commit candidate first.
+8. Treat partial, truncated, or still-running command output as **unknown**, not
    as a pass. Record a completed command's exit result and its applicable
    success marker before reporting validation as passed. For
    `npm run verify:feature`, the evidence must include exit code 0 and the
@@ -76,30 +140,36 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
 ## 3. Feedback and Commit Control
 
 If the user raises an objection, record the decision in the plan, revise the
-affected implementation, run the applicable validation again, and obtain a new
-fresh reviewer verdict before presenting the revised milestone. Do not reuse a
-prior reviewer verdict after a fix.
+affected implementation, and run the applicable validation again. Obtain a new
+fresh reviewer verdict immediately only when the current tier/boundary requires
+an intermediate review or a prior reviewer raised a blocking or important
+finding. For T1 and non-integration T2 feedback, defer the required fresh review
+to the final gate so a user-requested adjustment does not manufacture a duplicate
+review. Never reuse a prior reviewer verdict after a repair that requires review.
 
-Only after required validation passes and the fresh reviewer verdict is `ready`
-may a user accept a milestone's content. If validation fails, evidence is
-insufficient, or review requests changes, return to the approved repair loop;
-do not present a commit candidate. A non-blocking remaining risk requires the
-user's explicit recorded acceptance. Then set status to `awaiting commit
-approval` and present its commit candidate. When the user approves that
-candidate, first recompute its recorded fingerprint. The approval/evidence log
-must include the review's base HEAD SHA, scoped file list, `git status --short`,
-and the output of `npm run fingerprint:candidate -- <scoped files>`, which
-binds the staged index candidate. If its fingerprint differs, return to the
-review gate. Create only the approved files in that commit and record its SHA,
-candidate revision, and approval in the plan. Set status to `implementing
-milestone N+1` when checklist work remains. A commit approval does not authorize
-push, pull request, merge, or other Git state changes.
+Only after required validation passes and any tier-required reviewer verdict is
+`ready` may a user accept a milestone's content. If validation fails, evidence
+is insufficient, or a required review requests changes, return to the approved
+repair loop; do not present a commit candidate. A non-blocking remaining risk
+requires the user's explicit recorded acceptance. For a non-final milestone,
+then set status to `awaiting commit approval` and present its commit candidate.
+When the user approves that candidate, first recompute its recorded fingerprint.
+The approval/evidence log must include the review's base HEAD SHA when review
+was required, scoped file list, `git status --short`, and the output of `npm run
+fingerprint:candidate -- <scoped files>`, which binds the staged index candidate.
+If its fingerprint differs, return to the applicable review gate. Create only
+the approved files in that commit and record its SHA, candidate revision, and
+approval in the plan. Set status to `implementing milestone N+1` when checklist
+work remains. A commit approval does not authorize push, pull request, merge,
+or other Git state changes. For a final milestone, acceptance transitions to the
+final-verification flow instead of a normal milestone commit.
 
-The last implementation milestone automatically enters `final verification`
-after its targeted gate is ready. Run the full `$feature-completion` handoff
+After the user accepts the final milestone in `awaiting milestone review`, enter
+`final verification` and run the tier-selected `$feature-completion` handoff
 before presenting a final decision. Do not require the user to restate each
-validation or review instruction. The full gate is required unless the user
-explicitly agreed the change was trivial after discovery.
+validation or review instruction. T1 uses focused final evidence; T2/T3 run the
+full feature gate unless the user explicitly agreed the change was trivial after
+discovery.
 
 ## 4. Release Controls and Exceptions
 

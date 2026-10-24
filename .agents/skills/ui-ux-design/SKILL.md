@@ -21,10 +21,16 @@ novel visual treatment.
 Use the planning depth selected by `$feature-workflow`:
 
 - **T1**: produce only a short checklist for the changed, applicable states.
-  Do not request a specialist review unless a material decision remains.
-- **T2/T3**: a fresh, read-only UI/UX specialist may prepare the memo. It must
+  Use the root agent's one permitted material question; do not request a
+  specialist. If specialist expertise is necessary, escalate to T2 and record
+  the evidence that justifies the higher tier.
+- **T2/T3**: a fresh, read-only UI/UX specialist must prepare the memo. It must
   return bounded conclusions, not redesign the product or hold an open-ended
   agent debate.
+
+The applicable T1 checklist or T2/T3 memo is the approved **UI/UX artifact**.
+Record it in the feature plan so final verification can compare the delivered
+experience with the accepted design intent.
 
 Do not apply this skill to a pure data, tooling, documentation, or tiny
 established-pattern change. A changed label alone does not require a design
@@ -70,9 +76,9 @@ reversible low-risk assumption and why it fits the existing product.
 
 ## Handoff
 
-Add the memo's conclusions, open decisions, and planned evidence to the feature
-plan. Wait for the user's implementation approval before changing tracked
-implementation files. After implementation, `$feature-completion` compares the
-approved task flow and applicable state matrix with the rendered/runtime
-evidence; a heuristic review must never be presented as user research or proof
-of usability.
+Add the UI/UX artifact's conclusions, open decisions, and planned evidence to
+the feature plan. Wait for the user's implementation approval before changing
+tracked implementation files. After implementation, `$feature-completion`
+compares the approved task flow and applicable state matrix with the
+rendered/runtime evidence; a heuristic review must never be presented as user
+research or proof of usability.
