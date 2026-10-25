@@ -49,6 +49,7 @@
 - Build Tool: Vite 4.4.9
 - CSS Framework: Tailwind CSS 3.4.17
 - Drag and Drop: vuedraggable 4.1.0
+- 圖示系統：透過本地 `AppIcon` adapter 使用 `@lucide/vue`；語意名稱、尺寸 slot 與無障礙模式仍由專案管理
 - Additional Tools: PostCSS, Autoprefixer
 
 ### Data Storage 資料存儲
@@ -414,6 +415,7 @@ packing-list/
     ├── components/                   # UI元件
     │   ├── AddCategoryButton.vue     # 新增分類按鈕
     │   ├── AddItemButton.vue         # 新增物品按鈕
+    │   ├── AppIcon.vue               # 共用語意圖示 adapter
     │   ├── Category.vue              # 分類卡片元件
     │   ├── Checklist.vue             # 清單主內容元件
     │   ├── Item.vue                  # 物品卡片元件
@@ -525,19 +527,20 @@ packing-list/
 
 ### Component Specifications 元件規格
 
-| 元件名稱             | 功能描述           | 互動行為                                                 |
-| -------------------- | ------------------ | -------------------------------------------------------- |
-| Sidebar              | 清單與範本導航     | 響應式收合/展開、清單選擇與排序、範本選單開啟範本 editor |
-| Topbar               | 手機版導航欄       | 漢堡選單，新增清單快捷按鈕                               |
-| Checklist            | 主內容區域         | 顯示分類／物品、分類排序、瀑布流與只顯示未攜帶物品切換   |
-| PendingItemsCategory | 待處理物品虛擬分類 | 橘色主題；多欄格局；顯示標記為待處理（待買/待辦）的物品  |
-| Category             | 分類卡片           | 包含物品列表，進度顯示，編輯功能，拖曳物品重新排序或移動 |
-| Item                 | 物品條目           | 勾選打包/待處理，即時編輯，刪除，支援拖曳移動            |
-| ProgressBar          | 進度條             | 動態顯示完成百分比                                       |
-| OverflowMenu         | 更多選項           | 編輯/複製/刪除等操作選單                                 |
-| NewChecklistDialog   | 清單來源選擇       | 選擇空白清單、個人範本或唯讀推薦清單                     |
-| SaveTemplateDialog   | 新範本命名         | 儲存新範本快照前驗證名稱                                 |
-| TemplateEditor       | 獨立範本編輯       | 編輯範本內容；明確儲存、取消或刪除且不建立清單           |
+| 元件名稱             | 功能描述             | 互動行為                                                                   |
+| -------------------- | -------------------- | -------------------------------------------------------------------------- |
+| AppIcon              | 共用語意圖示 adapter | 將專案圖示名稱對應至單一圖示家族；套用尺寸 slot 與裝飾／具名稱的無障礙行為 |
+| Sidebar              | 清單與範本導航       | 響應式收合/展開、清單選擇與排序、範本選單開啟範本 editor                   |
+| Topbar               | 手機版導航欄         | 漢堡選單，新增清單快捷按鈕                                                 |
+| Checklist            | 主內容區域           | 顯示分類／物品、分類排序、瀑布流與只顯示未攜帶物品切換                     |
+| PendingItemsCategory | 待處理物品虛擬分類   | 橘色主題；多欄格局；顯示標記為待處理（待買/待辦）的物品                    |
+| Category             | 分類卡片             | 包含物品列表，進度顯示，編輯功能，拖曳物品重新排序或移動                   |
+| Item                 | 物品條目             | 勾選打包/待處理，即時編輯，刪除，支援拖曳移動                              |
+| ProgressBar          | 進度條               | 動態顯示完成百分比                                                         |
+| OverflowMenu         | 更多選項             | 編輯/複製/刪除等操作選單                                                   |
+| NewChecklistDialog   | 清單來源選擇         | 選擇空白清單、個人範本或唯讀推薦清單                                       |
+| SaveTemplateDialog   | 新範本命名           | 儲存新範本快照前驗證名稱                                                   |
+| TemplateEditor       | 獨立範本編輯         | 編輯範本內容；明確儲存、取消或刪除且不建立清單                             |
 
 ## 7. Data Models 資料模型
 

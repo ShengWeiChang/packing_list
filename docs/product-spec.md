@@ -49,6 +49,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Build Tool: Vite 4.4.9
 - CSS Framework: Tailwind CSS 3.4.17
 - Drag and Drop: vuedraggable 4.1.0
+- Icon System: `@lucide/vue` through the local `AppIcon` adapter; semantic names, size slots, and accessibility modes remain project-owned
 - Additional Tools: PostCSS, Autoprefixer
 
 ### Data Storage
@@ -414,6 +415,7 @@ packing-list/
     ├── components/                   # UI components
     │   ├── AddCategoryButton.vue     # Add category button
     │   ├── AddItemButton.vue         # Add item button
+    │   ├── AppIcon.vue               # Shared semantic icon adapter
     │   ├── Category.vue              # Category card
     │   ├── Checklist.vue             # Main checklist view
     │   ├── Item.vue                  # Item row/card
@@ -525,19 +527,20 @@ The application uses a centralized color management system with semantic naming:
 
 ### Component Specifications
 
-| Component            | Description                        | Interactions                                                                                        |
-| -------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Sidebar              | Checklist and template navigation  | Responsive collapse/expand; checklist selection/reordering; template menu opens the template editor |
-| Topbar               | Mobile navigation bar              | Hamburger menu; quick add checklist                                                                 |
-| Checklist            | Main content area                  | Shows categories/items, category reordering, masonry layout, and the unpacked-only view toggle      |
-| PendingItemsCategory | Virtual category for pending items | Orange theme; multi-column grid; displays items marked as pending (to-buy/to-do)                    |
-| Category             | Category card                      | Lists items; shows progress; edit actions; drag and drop for item reordering and movement           |
-| Item                 | Item row/card                      | Toggle packed/pending; inline edit; delete; draggable within/between categories                     |
-| ProgressBar          | Progress visualization             | Displays completion percentage                                                                      |
-| OverflowMenu         | Overflow actions                   | Edit/copy/delete and other actions                                                                  |
-| NewChecklistDialog   | Checklist source selection         | Choose an empty checklist, a personal template, or a read-only recommended list                     |
-| SaveTemplateDialog   | New template naming                | Validate a name before saving a new template snapshot                                               |
-| TemplateEditor       | Isolated template editing          | Edit template content; explicitly save, cancel, or delete without creating a checklist              |
+| Component            | Description                        | Interactions                                                                                         |
+| -------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| AppIcon              | Shared semantic icon adapter       | Maps project icon names to one icon family; applies size slots and decorative/labelled accessibility |
+| Sidebar              | Checklist and template navigation  | Responsive collapse/expand; checklist selection/reordering; template menu opens the template editor  |
+| Topbar               | Mobile navigation bar              | Hamburger menu; quick add checklist                                                                  |
+| Checklist            | Main content area                  | Shows categories/items, category reordering, masonry layout, and the unpacked-only view toggle       |
+| PendingItemsCategory | Virtual category for pending items | Orange theme; multi-column grid; displays items marked as pending (to-buy/to-do)                     |
+| Category             | Category card                      | Lists items; shows progress; edit actions; drag and drop for item reordering and movement            |
+| Item                 | Item row/card                      | Toggle packed/pending; inline edit; delete; draggable within/between categories                      |
+| ProgressBar          | Progress visualization             | Displays completion percentage                                                                       |
+| OverflowMenu         | Overflow actions                   | Edit/copy/delete and other actions                                                                   |
+| NewChecklistDialog   | Checklist source selection         | Choose an empty checklist, a personal template, or a read-only recommended list                      |
+| SaveTemplateDialog   | New template naming                | Validate a name before saving a new template snapshot                                                |
+| TemplateEditor       | Isolated template editing          | Edit template content; explicitly save, cancel, or delete without creating a checklist               |
 
 ## 7. Data Models
 

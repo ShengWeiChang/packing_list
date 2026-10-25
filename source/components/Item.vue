@@ -111,20 +111,10 @@ Created: 2025-09-19
       @mousedown.prevent
     >
       <!-- clipboard with checklist icon -->
-      <svg
-        class="size-4"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
+      <AppIcon
+        name="clipboardCheck"
+        size="inline"
+      />
     </button>
 
     <!-- Quantity control - Amazon-style stepper -->
@@ -157,36 +147,18 @@ Created: 2025-09-19
           @mousedown.prevent
         >
           <!-- Trash icon when quantity is 1 -->
-          <svg
+          <AppIcon
             v-if="item.quantity === 1"
-            class="size-4"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
+            name="delete"
+            size="inline"
+          />
 
           <!-- Minus icon when quantity > 1 -->
-          <svg
+          <AppIcon
             v-else
-            class="size-3.5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M20 12H4"
-            />
-          </svg>
+            name="decrease"
+            size="compact"
+          />
         </button>
 
         <!-- Quantity display -->
@@ -210,19 +182,10 @@ Created: 2025-09-19
           @click.stop="incrementQuantity"
           @mousedown.prevent
         >
-          <svg
-            class="size-3.5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
+          <AppIcon
+            name="add"
+            size="compact"
+          />
         </button>
       </div>
     </div>
@@ -253,6 +216,7 @@ import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 
 import { Item } from '../models/Item';
 import { focusEditingInput } from '../utils/focusEditingInput.js';
+import AppIcon from './AppIcon.vue';
 import OverflowMenu from './OverflowMenu.vue';
 
 // ------------------------------------------------------------------------------

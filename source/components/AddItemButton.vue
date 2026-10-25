@@ -26,19 +26,11 @@ Created: 2025-09-19
       :class="isHovered ? 'text-primary' : 'text-secondary'"
       data-testid="add-item-button-icon"
     >
-      <svg
-        class="size-5 md:size-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-        />
-      </svg>
+      <AppIcon
+        class="md:size-4"
+        name="add"
+        size="control"
+      />
     </span>
 
     <!-- Button label aligned with item name area -->
@@ -57,6 +49,8 @@ Created: 2025-09-19
 // ------------------------------------------------------------------------------
 
 import { ref } from 'vue';
+
+import AppIcon from './AppIcon.vue';
 
 // ------------------------------------------------------------------------------
 // Props & Emits

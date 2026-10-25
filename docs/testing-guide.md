@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 576    |
+| Total tests        | 581    |
 | Unit tests         | 251    |
-| Component tests    | 271    |
+| Component tests    | 276    |
 | E2E tests          | 54     |
-| Line coverage      | 95.71% |
-| Statement coverage | 94.68% |
-| Branch coverage    | 86.49% |
+| Line coverage      | 95.75% |
+| Statement coverage | 94.74% |
+| Branch coverage    | 86.32% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -30,7 +30,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
 | Unit      | Vitest                   | 251   | Pure logic in models, services, composables, utils |
-| Component | Vitest + @vue/test-utils | 271   | Vue component rendering, events, state             |
+| Component | Vitest + @vue/test-utils | 276   | Vue component rendering, events, state             |
 | E2E       | Playwright               | 54    | Full user flows in a real browser                  |
 
 ### Toolchain
@@ -76,13 +76,14 @@ tests/
 │   └── scripts/                         #  3  tests
 │       └── verifyFeature.test.js        #  3  tests
 │
-├── component-tests/                     # 271 tests
+├── component-tests/                     # 276 tests
 │   ├── App.test.js                      # 61  tests
+│   ├── AppIcon.test.js                  #  4  tests
 │   ├── Checklist.test.js                # 38  tests
 │   ├── Item.test.js                     # 26  tests
 │   ├── Sidebar.test.js                  # 33  tests
 │   ├── Category.test.js                 # 30  tests
-│   ├── OverflowMenu.test.js             # 23  tests
+│   ├── OverflowMenu.test.js             # 24  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
 │   ├── Topbar.test.js                   #  2  tests
@@ -125,32 +126,33 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 39.24%     | 35.13% | 38.46% |
+| scripts/     | 42.16%     | 42.22% | 41.46% |
 | source/      | 97.96%     | 86.07% | 98.87% |
-| components/  | 96.40%     | 88.99% | 98.19% |
+| components/  | 96.49%     | 88.85% | 98.23% |
 | composables/ | 95.72%     | 85.43% | 97.87% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 98.84%     | 86.22% | 98.70% |
-| utils/       | 100%       | 90.90% | 100%   |
+| utils/       | 98.90%     | 87.69% | 100%   |
 
 ### By Component
 
 | Component                | Statements | Lines  | Tests |
 | ------------------------ | ---------- | ------ | ----- |
-| App.vue                  | 98.68%     | 99.28% | 59    |
+| App.vue                  | 97.96%     | 98.87% | 61    |
+| AppIcon.vue              | 100%       | 100%   | 4     |
 | AddCategoryButton.vue    | 100%       | 100%   | 2     |
 | AddItemButton.vue        | 100%       | 100%   | 8     |
 | ProgressBar.vue          | 100%       | 100%   | 8     |
 | Topbar.vue               | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue | 100%       | 100%   | 5     |
 | Sidebar.vue              | 100%       | 100%   | 33    |
-| OverflowMenu.vue         | 95.00%     | 96.10% | 23    |
-| Category.vue             | 96.66%     | 97.61% | 25    |
-| Checklist.vue            | 93.84%     | 98.31% | 37    |
-| Item.vue                 | 90.66%     | 91.89% | 26    |
+| OverflowMenu.vue         | 95.00%     | 96.10% | 24    |
+| Category.vue             | 97.19%     | 97.91% | 30    |
+| Checklist.vue            | 93.38%     | 98.40% | 38    |
+| Item.vue                 | 92.20%     | 93.33% | 26    |
 | NewChecklistDialog.vue   | 97.36%     | 100%   | 12    |
 | SaveTemplateDialog.vue   | 97.95%     | 100%   | 10    |
-| TemplateEditor.vue       | 98.78%     | 100%   | 13    |
+| TemplateEditor.vue       | 98.73%     | 100%   | 13    |
 
 ### Coverage Metrics Explained
 
@@ -579,7 +581,7 @@ This project uses three layers to balance speed and reliability.
 | 2   | should report missing individual errors                      | Reporter fallback message                  |
 | 3   | should summarize top-level Playwright runner failures        | Pre-test runner diagnostic                 |
 
-### 8.2 Component Tests (271 tests)
+### 8.2 Component Tests (276 tests)
 
 #### 8.2.1 App.test.js (61 tests)
 
@@ -728,33 +730,34 @@ This project uses three layers to balance speed and reliability.
 | 25  | should not decrement quantity below 1                                     | Minimum quantity guard   |
 | 26  | should apply cursor-grabbing when isDragging is true                      | Drag visual state        |
 
-#### 8.2.8 OverflowMenu.test.js (23 tests)
+#### 8.2.8 OverflowMenu.test.js (24 tests)
 
-| #   | Test                                                                | What it verifies        |
-| --- | ------------------------------------------------------------------- | ----------------------- |
-| 1   | should render the menu trigger button                               | Button exists           |
-| 2   | should show three-dot icon when not editing                         | Default icon            |
-| 3   | should show checkmark icon when isEditing is true                   | Edit-mode icon          |
-| 4   | should not show dropdown menu initially                             | Menu starts closed      |
-| 5   | should show dropdown menu when trigger button is clicked            | Open on click           |
-| 6   | should hide dropdown menu when trigger button is clicked again      | Toggle close            |
-| 7   | should emit "edit" when edit option is clicked                      | Edit action             |
-| 8   | should emit "copy" when copy option is clicked                      | Copy action             |
-| 9   | should emit "delete" when delete option is clicked                  | Delete action           |
-| 10  | should close dropdown after an action is performed                  | Auto-close on action    |
-| 11  | should emit "confirm-edit" when checkmark is clicked in edit mode   | Confirm edit            |
-| 12  | should not open dropdown menu when in edit mode                     | Edit-mode blocks menu   |
-| 13  | should close menu when clicking outside the component               | Click-outside handler   |
-| 14  | should close menu on window scroll                                  | Scroll handler          |
-| 15  | should close menu when focus leaves the component                   | Focus-out handler       |
-| 16  | should close when another overflow menu opens                       | Multi-menu coordination |
-| 17  | should not close when the same menu dispatches its own open event   | Self-event ignore       |
-| 18  | should use size-4 class for item menu type                          | Item icon sizing        |
-| 19  | should use size-5 class for category menu type                      | Category icon sizing    |
-| 20  | should apply fixed positioning styles to dropdown                   | Position strategy       |
-| 21  | should dispatch overflow-menu-open CustomEvent when opened          | CustomEvent dispatch    |
-| 22  | should clamp dropdown position within viewport bounds               | Viewport clamping       |
-| 23  | should fall back to createEvent when CustomEvent constructor throws | Legacy browser fallback |
+| #   | Test                                                                | What it verifies                |
+| --- | ------------------------------------------------------------------- | ------------------------------- |
+| 1   | should render a spacious transparent menu trigger when configured   | Trigger surface + frame variant |
+| 2   | should show three-dot icon when not editing                         | Default icon                    |
+| 3   | should show checkmark icon when isEditing is true                   | Edit-mode icon                  |
+| 4   | should not show dropdown menu initially                             | Menu starts closed              |
+| 5   | should show dropdown menu when trigger button is clicked            | Open on click                   |
+| 6   | should hide dropdown menu when trigger button is clicked again      | Toggle close                    |
+| 7   | should emit "edit" when edit option is clicked                      | Edit action                     |
+| 8   | should emit "copy" when copy option is clicked                      | Copy action                     |
+| 9   | should emit "delete" when delete option is clicked                  | Delete action                   |
+| 10  | should close dropdown after an action is performed                  | Auto-close on action            |
+| 11  | should emit "confirm-edit" when checkmark is clicked in edit mode   | Confirm edit                    |
+| 12  | should not open dropdown menu when in edit mode                     | Edit-mode blocks menu           |
+| 13  | should close menu when clicking outside the component               | Click-outside handler           |
+| 14  | should close menu on window scroll                                  | Scroll handler                  |
+| 15  | should close menu when focus leaves the component                   | Focus-out handler               |
+| 16  | should close when another overflow menu opens                       | Multi-menu coordination         |
+| 17  | should not close when the same menu dispatches its own open event   | Self-event ignore               |
+| 18  | should use inline size for item menu type                           | Item icon sizing                |
+| 19  | should use control size for category menu type                      | Category icon sizing            |
+| 20  | should use an explicit trigger size when one is supplied            | Explicit icon sizing            |
+| 21  | should apply fixed positioning styles to dropdown                   | Position strategy               |
+| 22  | should dispatch overflow-menu-open CustomEvent when opened          | CustomEvent dispatch            |
+| 23  | should clamp dropdown position within viewport bounds               | Viewport clamping               |
+| 24  | should fall back to createEvent when CustomEvent constructor throws | Legacy browser fallback         |
 
 #### 8.2.9 Category.test.js (30 tests)
 
@@ -921,6 +924,15 @@ This project uses three layers to balance speed and reliability.
 | 8   | restores focus to the previously active element | Focus restoration        |
 | 9   | traps forward and reverse Tab navigation        | Keyboard focus trap      |
 | 10  | ignores keyboard handling while hidden          | Hidden-state guard       |
+
+#### 8.2.15 AppIcon.test.js (4 tests)
+
+| #   | Test                                                                               | What it verifies                |
+| --- | ---------------------------------------------------------------------------------- | ------------------------------- |
+| 1   | renders the mapped template-library icon at the navigation size                    | Semantic mapping and size slot  |
+| 2   | renders a labelled non-decorative icon without hiding it from assistive technology | Accessible icon contract        |
+| 3   | keeps an unlabelled non-decorative icon hidden from assistive technology           | Empty-label accessibility guard |
+| 4   | uses the compact size token for dense controls                                     | Compact size slot               |
 
 ### 8.3 E2E Tests (54 tests)
 

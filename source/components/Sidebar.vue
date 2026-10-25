@@ -33,19 +33,11 @@ Created: 2025-09-19
       @click="$emit('toggle-sidebar')"
     >
       <div class="shrink-0 p-3">
-        <svg
-          class="size-6 text-secondary"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
+        <AppIcon
+          class="text-secondary"
+          name="menu"
+          size="navigation"
+        />
       </div>
     </button>
 
@@ -57,19 +49,11 @@ Created: 2025-09-19
       @click="$emit('create-checklist')"
     >
       <div class="shrink-0 p-3">
-        <svg
-          class="size-6 text-secondary"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 4v16m8-8H4"
-          />
-        </svg>
+        <AppIcon
+          class="text-secondary"
+          name="add"
+          size="navigation"
+        />
       </div>
       <span
         class="ml-4 text-lg text-secondary transition-opacity duration-300 ease-in-out md:text-base"
@@ -210,20 +194,10 @@ Created: 2025-09-19
           @click="toggleTemplatesMenu"
         >
           <span class="shrink-0 p-3 text-secondary">
-            <svg
-              class="size-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 01-1 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
-              />
-            </svg>
+            <AppIcon
+              name="templateLibrary"
+              size="navigation"
+            />
           </span>
           <span
             v-if="isExpanded || isMobile"
@@ -271,61 +245,11 @@ Created: 2025-09-19
           @click="toggleLanguageMenu"
         >
           <div class="shrink-0 p-3">
-            <svg
-              class="size-6 text-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <!-- Outer circle -->
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke-width="2"
-              />
-
-              <!-- Parallels (latitude-like curves): top, middle (straight), bottom -->
-              <path
-                d="M4  6 c4  2 8  2 16 0"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M2 12 h20"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M4 18 c4 -2 8 -2 16 0"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-
-              <!-- Meridians (longitude-like curves): left, center (straight), right -->
-              <path
-                d="M12 2 C 6 6  6 18 12 22"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M12 2 v20"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M12 2 C18 6 18 18 12 22"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <AppIcon
+              class="text-secondary"
+              name="language"
+              size="navigation"
+            />
           </div>
           <span
             v-if="isExpanded || isMobile"
@@ -353,18 +277,12 @@ Created: 2025-09-19
             @click="selectLanguage(lang.code)"
           >
             <span>{{ lang.label }}</span>
-            <svg
+            <AppIcon
               v-if="currentLocale === lang.code"
-              class="ml-auto size-4 text-primary"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-              />
-            </svg>
+              class="ml-auto text-primary"
+              name="confirm"
+              size="inline"
+            />
           </button>
         </div>
       </div>
@@ -381,6 +299,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 
+import AppIcon from './AppIcon.vue';
 import OverflowMenu from './OverflowMenu.vue';
 
 // ------------------------------------------------------------------------------

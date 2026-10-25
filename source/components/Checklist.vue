@@ -105,38 +105,28 @@ Created: 2025-09-19
         <!-- Checklist actions -->
         <div
           v-if="showItemFilter || showOverflowMenu"
-          class="flex shrink-0 items-center gap-1"
+          class="flex shrink-0 items-center gap-1 md:gap-2"
         >
           <button
             v-if="showItemFilter && !isEditing"
             type="button"
             data-testid="unpacked-items-filter-toggle"
             :class="[
-              'inline-flex size-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary focus-visible:ring-offset-1 md:size-6',
+              'inline-flex size-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary focus-visible:ring-offset-1 md:size-8',
               showUnpackedOnly
                 ? 'bg-theme-secondary text-theme-primary'
-                : 'text-secondary hover:bg-interactive-hover-light hover:text-primary',
+                : 'text-secondary hover:bg-control-hover hover:text-primary',
             ]"
             :title="$t('checklist.showUnpackedOnly')"
             :aria-label="$t('checklist.showUnpackedOnly')"
             :aria-pressed="showUnpackedOnly"
             @click="showUnpackedOnly = !showUnpackedOnly"
           >
-            <svg
-              class="size-4 shrink-0"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.75"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M3.75 4.5h16.5l-6.75 7.75v5.5l-3 1.75v-7.25L3.75 4.5Z"
-              />
-            </svg>
+            <AppIcon
+              class="shrink-0"
+              name="filter"
+              size="control"
+            />
           </button>
 
           <!-- Overflow menu -->
@@ -150,6 +140,9 @@ Created: 2025-09-19
               :use-group-hover="false"
               menu-type="checklist"
               alignment="left"
+              trigger-icon-size="navigation"
+              trigger-frame-size="spacious"
+              transparent-trigger
               @edit="startEdit"
               @copy="$emit('copy:checklist', checklist.id)"
               @delete="handleDelete"
@@ -243,6 +236,7 @@ import { putOnlyFromGroup } from '../utils/dragDrop.js';
 import { focusEditingInput } from '../utils/focusEditingInput.js';
 import { renumberOrder } from '../utils/order.js';
 import AddCategoryButton from './AddCategoryButton.vue';
+import AppIcon from './AppIcon.vue';
 import Category from './Category.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import PendingItemsCategory from './PendingItemsCategory.vue';

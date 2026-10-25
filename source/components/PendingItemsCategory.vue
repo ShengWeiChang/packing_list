@@ -56,19 +56,10 @@ Created: 2025-11-01
           @click.stop="markAsCompleted(item)"
         >
           <!-- Checkmark icon -->
-          <svg
-            class="size-4"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="4"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M5 13l4 5L19 7"
-            />
-          </svg>
+          <AppIcon
+            name="confirm"
+            size="inline"
+          />
         </button>
 
         <!-- Item name and optional quantity -->
@@ -101,6 +92,7 @@ import { computed } from 'vue';
 
 import { Item } from '../models/Item';
 import { THEME_COLORS } from '../utils/constants';
+import AppIcon from './AppIcon.vue';
 
 // ------------------------------------------------------------------------------
 // Props & Emits
