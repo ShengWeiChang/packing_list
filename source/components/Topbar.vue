@@ -20,19 +20,11 @@ Created: 2025-09-19
       data-testid="topbar-toggle"
       @click="$emit('toggle')"
     >
-      <svg
-        class="size-6 text-secondary"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M4 6h16M4 12h16M4 18h16"
-        />
-      </svg>
+      <AppIcon
+        class="text-secondary"
+        name="menu"
+        size="navigation"
+      />
     </button>
 
     <!-- New checklist action -->
@@ -42,19 +34,11 @@ Created: 2025-09-19
       data-testid="topbar-new"
       @click="$emit('new')"
     >
-      <svg
-        class="size-6 text-secondary"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 4v16m8-8H4"
-        />
-      </svg>
+      <AppIcon
+        class="text-secondary"
+        name="add"
+        size="navigation"
+      />
     </button>
   </header>
 </template>
@@ -63,6 +47,8 @@ Created: 2025-09-19
 // ------------------------------------------------------------------------------
 // Props & Emits
 // ------------------------------------------------------------------------------
+
+import AppIcon from './AppIcon.vue';
 
 // Props
 defineProps({

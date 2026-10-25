@@ -47,19 +47,10 @@ Created: 2026-10-13
           data-testid="new-checklist-option-empty"
           @click="$emit('select', { source: 'empty' })"
         >
-          <svg
-            class="mr-3 size-5 shrink-0 text-secondary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
+          <AppIcon
+            class="mr-3 shrink-0 text-secondary"
+            name="add"
+          />
           <span>
             <span class="block text-primary">{{ $t('template.useEmpty') }}</span>
             <span class="mt-0.5 block text-xs text-secondary">
@@ -78,19 +69,10 @@ Created: 2026-10-13
           data-testid="new-checklist-option-template"
           @click="showList('template')"
         >
-          <svg
-            class="mr-3 size-5 shrink-0 text-secondary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
-            />
-          </svg>
+          <AppIcon
+            class="mr-3 shrink-0 text-secondary"
+            name="templateLibrary"
+          />
           <span class="min-w-0">
             <span class="block text-primary">{{ $t('template.useTemplate') }}</span>
             <span class="mt-0.5 block text-xs text-secondary">
@@ -111,19 +93,10 @@ Created: 2026-10-13
           data-testid="new-checklist-option-recommended"
           @click="showList('recommended')"
         >
-          <svg
-            class="mr-3 size-5 shrink-0 text-secondary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
+          <AppIcon
+            class="mr-3 shrink-0 text-secondary"
+            name="clipboardCheck"
+          />
           <span>
             <span class="block text-primary">{{ $t('template.useRecommended') }}</span>
             <span class="mt-0.5 block text-xs text-secondary">
@@ -141,19 +114,11 @@ Created: 2026-10-13
           data-testid="new-checklist-back"
           @click="showSources"
         >
-          <svg
-            class="mr-1 size-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          <AppIcon
+            class="mr-1"
+            name="back"
+            size="inline"
+          />
           {{ $t('common.back') }}
         </button>
 
@@ -232,6 +197,8 @@ Created: 2026-10-13
 // ------------------------------------------------------------------------------
 
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+
+import AppIcon from './AppIcon.vue';
 
 // ------------------------------------------------------------------------------
 // Props & Emits

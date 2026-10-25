@@ -191,7 +191,19 @@ describe('Checklist', () => {
       expect(toggle.attributes('title')).toBe('checklist.showUnpackedOnly');
       expect(toggle.attributes('aria-label')).toBe('checklist.showUnpackedOnly');
       expect(toggle.attributes('aria-pressed')).toBe('false');
-      expect(toggle.find('svg').exists()).toBe(true);
+      expect(toggle.findComponent({ name: 'AppIcon' }).props('name')).toBe('filter');
+      expect(toggle.findComponent({ name: 'AppIcon' }).props('size')).toBe('control');
+      expect(wrapper.findComponent({ name: 'OverflowMenu' }).props('triggerIconSize')).toBe(
+        'navigation'
+      );
+      expect(wrapper.findComponent({ name: 'OverflowMenu' }).props('triggerFrameSize')).toBe(
+        'spacious'
+      );
+      expect(wrapper.findComponent({ name: 'OverflowMenu' }).props('transparentTrigger')).toBe(
+        true
+      );
+      expect(toggle.classes()).toContain('hover:bg-control-hover');
+      expect(toggle.classes()).toContain('md:size-8');
 
       await toggle.trigger('click');
 

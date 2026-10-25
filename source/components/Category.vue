@@ -96,37 +96,17 @@ Created: 2025-09-19
           @click.stop="toggleCollapse"
         >
           <!-- Down arrow (Expand) -->
-          <svg
+          <AppIcon
             v-if="isCollapsed"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="2"
-            stroke="currentColor"
-            class="size-5 md:size-4"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-            />
-          </svg>
+            class="md:size-4"
+            name="expand"
+          />
           <!-- Up arrow (Collapse) -->
-          <svg
+          <AppIcon
             v-else
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="2"
-            stroke="currentColor"
-            class="size-5 md:size-4"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M4.5 15.75l7.5-7.5 7.5 7.5"
-            />
-          </svg>
+            class="md:size-4"
+            name="collapse"
+          />
         </button>
 
         <OverflowMenu
@@ -222,6 +202,7 @@ import { putOnlyFromGroup } from '../utils/dragDrop.js';
 import { focusEditingInput } from '../utils/focusEditingInput.js';
 import { insertAtVisibleIndex, renumberOrder, reorderVisibleSlots } from '../utils/order.js';
 import AddItemButton from './AddItemButton.vue';
+import AppIcon from './AppIcon.vue';
 import Item from './Item.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import ProgressBar from './ProgressBar.vue';

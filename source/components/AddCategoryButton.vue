@@ -17,20 +17,11 @@ Created: 2025-09-19
     @click="$emit('click')"
   >
     <div class="text-center">
-      <!-- Plus icon -->
-      <svg
-        class="mx-auto mb-2 size-8 text-secondary"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-        />
-      </svg>
+      <AppIcon
+        class="mx-auto mb-2 text-secondary"
+        name="add"
+        size="feature"
+      />
 
       <!-- Button label -->
       <span class="text-base text-secondary group-hover:text-primary">
@@ -41,6 +32,12 @@ Created: 2025-09-19
 </template>
 
 <script setup>
+// ------------------------------------------------------------------------------
+// Imports
+// ------------------------------------------------------------------------------
+
+import AppIcon from './AppIcon.vue';
+
 // ------------------------------------------------------------------------------
 // Props & Emits
 // ------------------------------------------------------------------------------

@@ -28,46 +28,18 @@ Created: 2025-09-19
       @click.stop="props.isEditing ? handleConfirmEdit() : toggleMenu()"
     >
       <!-- Checkmark icon when editing -->
-      <svg
+      <AppIcon
         v-if="props.isEditing"
-        :class="svgClass"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M5 13l4 4L19 7"
-        />
-      </svg>
+        name="confirm"
+        :size="triggerIconSize"
+      />
 
       <!-- Three-dot menu icon when not editing -->
-      <svg
+      <AppIcon
         v-else
-        :class="svgClass"
-        fill="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <circle
-          cx="6"
-          cy="12"
-          r="1.5"
-        />
-        <circle
-          cx="12"
-          cy="12"
-          r="1.5"
-        />
-        <circle
-          cx="18"
-          cy="12"
-          r="1.5"
-        />
-      </svg>
+        name="more"
+        :size="triggerIconSize"
+      />
     </button>
 
     <!-- Dropdown menu with edit and delete actions -->
@@ -83,19 +55,11 @@ Created: 2025-09-19
         :data-testid="`overflow-action-edit-${props.menuType}-${props.itemId}`"
         @click="handleEdit"
       >
-        <svg
-          class="mr-2 size-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L15.232 5.232z"
-          />
-        </svg>
+        <AppIcon
+          class="mr-2"
+          name="edit"
+          size="inline"
+        />
         {{ $t('common.edit') }}
       </button>
 
@@ -105,19 +69,11 @@ Created: 2025-09-19
         :data-testid="`overflow-action-copy-${props.menuType}-${props.itemId}`"
         @click="handleCopy"
       >
-        <svg
-          class="mr-2 size-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-          />
-        </svg>
+        <AppIcon
+          class="mr-2"
+          name="copy"
+          size="inline"
+        />
         {{ $t('common.copy') }}
       </button>
 
@@ -128,19 +84,11 @@ Created: 2025-09-19
         :data-testid="`overflow-action-save-template-${props.menuType}-${props.itemId}`"
         @click="handleSaveAsTemplate"
       >
-        <svg
-          class="mr-2 size-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
-          />
-        </svg>
+        <AppIcon
+          class="mr-2"
+          name="saveTemplate"
+          size="inline"
+        />
         {{ $t('template.saveAsTemplate') }}
       </button>
 
@@ -149,19 +97,11 @@ Created: 2025-09-19
         :data-testid="`overflow-action-delete-${props.menuType}-${props.itemId}`"
         @click="handleDelete"
       >
-        <svg
-          class="mr-2 size-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-          />
-        </svg>
+        <AppIcon
+          class="mr-2"
+          name="delete"
+          size="inline"
+        />
         {{ $t('common.delete') }}
       </button>
     </div>
@@ -174,6 +114,8 @@ Created: 2025-09-19
 // ------------------------------------------------------------------------------
 
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+
+import AppIcon from './AppIcon.vue';
 
 // ------------------------------------------------------------------------------
 // Props & Emits
@@ -207,6 +149,21 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  triggerIconSize: {
+    type: String,
+    default: null,
+    validator: (value) =>
+      value === null || ['compact', 'inline', 'control', 'feature', 'navigation'].includes(value),
+  },
+  transparentTrigger: {
+    type: Boolean,
+    default: false,
+  },
+  triggerFrameSize: {
+    type: String,
+    default: 'standard',
+    validator: (value) => ['standard', 'spacious'].includes(value),
+  },
 });
 
 // Emits
@@ -229,16 +186,18 @@ const root = ref(null);
 
 // Button visibility based on props and menu state
 const buttonClass = computed(() => {
-  const baseClass =
-    'size-9 md:size-6 flex items-center justify-center rounded-lg bg-control-bg transition-all duration-200 hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1';
+  const frameSizeClass =
+    props.triggerFrameSize === 'spacious' ? 'size-9 md:size-8' : 'size-9 md:size-6';
+  const baseClass = `${frameSizeClass} flex items-center justify-center rounded-lg transition-all duration-200 hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1`;
+  const surfaceClass = props.transparentTrigger ? 'bg-transparent' : 'bg-control-bg';
 
   // Green checkmark style when editing
   if (props.isEditing) {
-    return `${baseClass} opacity-100 text-success-state-text hover:text-success-state-text-dark hover:bg-success-state-bg`;
+    return `${baseClass} ${surfaceClass} opacity-100 text-success-state-text hover:text-success-state-text-dark hover:bg-success-state-bg`;
   }
 
   // Gray three-dot style when not editing
-  const normalClass = `${baseClass} text-secondary hover:text-primary`;
+  const normalClass = `${baseClass} ${surfaceClass} text-secondary hover:text-primary`;
 
   // Show the button when menu is open or forceVisible is true
   if (showMenu.value || props.forceVisible) {
@@ -256,15 +215,14 @@ const buttonClass = computed(() => {
   return `${normalClass} opacity-100 md:opacity-0 focus:opacity-100 md:focus:opacity-100`;
 });
 
+const triggerIconSize = computed(
+  () => props.triggerIconSize ?? (props.menuType === 'item' ? 'inline' : 'control')
+);
+
 // Dropdown styling
 const dropdownClass = computed(
   () => `mt-1 bg-white border border-border-color-light rounded-md shadow-lg z-50 w-auto max-w-xs`
 );
-
-// SVG icon size based on menu type
-const svgClass = computed(() => {
-  return props.menuType === 'item' ? 'size-4' : 'size-5';
-});
 
 // ------------------------------------------------------------------------------
 // Functions

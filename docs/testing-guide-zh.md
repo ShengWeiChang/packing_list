@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 576    |
+| Total tests 總測試數          | 581    |
 | Unit tests 單元測試           | 251    |
-| Component tests 組件測試      | 271    |
+| Component tests 組件測試      | 276    |
 | E2E tests E2E 測試            | 54     |
-| Line coverage 行覆蓋率        | 95.71% |
-| Statement coverage 語句覆蓋率 | 94.68% |
-| Branch coverage 分支覆蓋率    | 86.49% |
+| Line coverage 行覆蓋率        | 95.75% |
+| Statement coverage 語句覆蓋率 | 94.74% |
+| Branch coverage 分支覆蓋率    | 86.32% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -30,7 +30,7 @@
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
 | Unit      | Vitest                   | 251   | models、services、composables、utils 純邏輯 |
-| Component | Vitest + @vue/test-utils | 271   | Vue 組件渲染、事件、狀態                    |
+| Component | Vitest + @vue/test-utils | 276   | Vue 組件渲染、事件、狀態                    |
 | E2E       | Playwright               | 54    | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
@@ -76,13 +76,14 @@ tests/
 │   └── scripts/                         #  3  tests
 │       └── verifyFeature.test.js        #  3  tests
 │
-├── component-tests/                     # 271 tests
+├── component-tests/                     # 276 tests
 │   ├── App.test.js                      # 61  tests
+│   ├── AppIcon.test.js                  #  4  tests
 │   ├── Checklist.test.js                # 38  tests
 │   ├── Item.test.js                     # 26  tests
 │   ├── Sidebar.test.js                  # 33  tests
 │   ├── Category.test.js                 # 30  tests
-│   ├── OverflowMenu.test.js             # 23  tests
+│   ├── OverflowMenu.test.js             # 24  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
 │   ├── Topbar.test.js                   #  2  tests
@@ -125,32 +126,33 @@ tests/
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 39.24%     | 35.13% | 38.46% |
+| scripts/     | 42.16%     | 42.22% | 41.46% |
 | source/      | 97.96%     | 86.07% | 98.87% |
-| components/  | 96.40%     | 88.99% | 98.19% |
+| components/  | 96.49%     | 88.85% | 98.23% |
 | composables/ | 95.72%     | 85.43% | 97.87% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 98.84%     | 86.22% | 98.70% |
-| utils/       | 100%       | 90.90% | 100%   |
+| utils/       | 98.90%     | 87.69% | 100%   |
 
 ### By Component 各組件覆蓋率
 
 | Component                | Statements | Lines  | Tests |
 | ------------------------ | ---------- | ------ | ----- |
-| App.vue                  | 98.68%     | 99.28% | 59    |
+| App.vue                  | 97.96%     | 98.87% | 61    |
+| AppIcon.vue              | 100%       | 100%   | 4     |
 | AddCategoryButton.vue    | 100%       | 100%   | 2     |
 | AddItemButton.vue        | 100%       | 100%   | 8     |
 | ProgressBar.vue          | 100%       | 100%   | 8     |
 | Topbar.vue               | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue | 100%       | 100%   | 5     |
 | Sidebar.vue              | 100%       | 100%   | 33    |
-| OverflowMenu.vue         | 95.00%     | 96.10% | 23    |
-| Category.vue             | 96.66%     | 97.61% | 25    |
-| Checklist.vue            | 93.84%     | 98.31% | 37    |
-| Item.vue                 | 90.66%     | 91.89% | 26    |
+| OverflowMenu.vue         | 95.00%     | 96.10% | 24    |
+| Category.vue             | 97.19%     | 97.91% | 30    |
+| Checklist.vue            | 93.38%     | 98.40% | 38    |
+| Item.vue                 | 92.20%     | 93.33% | 26    |
 | NewChecklistDialog.vue   | 97.36%     | 100%   | 12    |
 | SaveTemplateDialog.vue   | 97.95%     | 100%   | 10    |
-| TemplateEditor.vue       | 98.78%     | 100%   | 13    |
+| TemplateEditor.vue       | 98.73%     | 100%   | 13    |
 
 ### Coverage Metrics Explained 覆蓋率指標說明
 
@@ -579,7 +581,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | should report missing individual errors                      | reporter 後備訊息        |
 | 3   | should summarize top-level Playwright runner failures        | 測試前 runner 診斷       |
 
-### 8.2 Component Tests（271）
+### 8.2 Component Tests（276）
 
 #### 8.2.1 App.test.js（61）
 
@@ -728,33 +730,34 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 25  | should not decrement quantity below 1                  | 最小數量檢查        |
 | 26  | should apply cursor-grabbing when isDragging           | 拖曳視覺狀態        |
 
-#### 8.2.8 OverflowMenu.test.js（23）
+#### 8.2.8 OverflowMenu.test.js（24）
 
-| #   | Test                                          | 測試重點          |
-| --- | --------------------------------------------- | ----------------- |
-| 1   | should render the menu trigger button         | 按鈕存在          |
-| 2   | should show three-dot icon when not editing   | 預設圖示          |
-| 3   | should show checkmark icon when isEditing     | 編輯圖示          |
-| 4   | should not show dropdown initially            | 選單預設關閉      |
-| 5   | should show dropdown on click                 | 點擊開啟          |
-| 6   | should hide dropdown on second click          | 切換關閉          |
-| 7   | should emit "edit" on edit click              | 編輯動作          |
-| 8   | should emit "copy" on copy click              | 複製動作          |
-| 9   | should emit "delete" on delete click          | 刪除動作          |
-| 10  | should close dropdown after action            | 動作後關閉        |
-| 11  | should emit "confirm-edit" on checkmark click | 確認編輯          |
-| 12  | should not open dropdown in edit mode         | 編輯模式阻擋      |
-| 13  | should close on outside click                 | 外部點擊關閉      |
-| 14  | should close on window scroll                 | 捲動關閉          |
-| 15  | should close when focus leaves                | 焦點離開關閉      |
-| 16  | should close when another menu opens          | 多選單協調        |
-| 17  | should not close on own open event            | 自身事件忽略      |
-| 18  | should use size-4 for item menu               | Item 圖示尺寸     |
-| 19  | should use size-5 for category menu           | Category 圖示尺寸 |
-| 20  | should apply fixed positioning                | 定位策略          |
-| 21  | should dispatch CustomEvent when opened       | CustomEvent 發送  |
-| 22  | should clamp position within viewport         | 視窗邊界限制      |
-| 23  | should fall back to createEvent               | 舊瀏覽器相容      |
+| #   | Test                                                              | 測試重點                  |
+| --- | ----------------------------------------------------------------- | ------------------------- |
+| 1   | should render a spacious transparent menu trigger when configured | Trigger 表面 + frame 變體 |
+| 2   | should show three-dot icon when not editing                       | 預設圖示                  |
+| 3   | should show checkmark icon when isEditing                         | 編輯圖示                  |
+| 4   | should not show dropdown initially                                | 選單預設關閉              |
+| 5   | should show dropdown on click                                     | 點擊開啟                  |
+| 6   | should hide dropdown on second click                              | 切換關閉                  |
+| 7   | should emit "edit" on edit click                                  | 編輯動作                  |
+| 8   | should emit "copy" on copy click                                  | 複製動作                  |
+| 9   | should emit "delete" on delete click                              | 刪除動作                  |
+| 10  | should close dropdown after action                                | 動作後關閉                |
+| 11  | should emit "confirm-edit" on checkmark click                     | 確認編輯                  |
+| 12  | should not open dropdown in edit mode                             | 編輯模式阻擋              |
+| 13  | should close on outside click                                     | 外部點擊關閉              |
+| 14  | should close on window scroll                                     | 捲動關閉                  |
+| 15  | should close when focus leaves                                    | 焦點離開關閉              |
+| 16  | should close when another menu opens                              | 多選單協調                |
+| 17  | should not close on own open event                                | 自身事件忽略              |
+| 18  | should use inline size for item menu                              | Item 圖示尺寸             |
+| 19  | should use control size for category menu                         | Category 圖示尺寸         |
+| 20  | should use an explicit trigger size when supplied                 | 明確圖示尺寸              |
+| 21  | should apply fixed positioning                                    | 定位策略                  |
+| 22  | should dispatch CustomEvent when opened                           | CustomEvent 發送          |
+| 23  | should clamp position within viewport                             | 視窗邊界限制              |
+| 24  | should fall back to createEvent                                   | 舊瀏覽器相容              |
 
 #### 8.2.9 Category.test.js（30）
 
@@ -921,6 +924,15 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 8   | restores focus to the previously active element | 焦點還原        |
 | 9   | traps forward and reverse Tab navigation        | 鍵盤焦點圈限    |
 | 10  | ignores keyboard handling while hidden          | 隱藏狀態 guard  |
+
+#### 8.2.15 AppIcon.test.js（4）
+
+| #   | Test                                                                               | 測試重點              |
+| --- | ---------------------------------------------------------------------------------- | --------------------- |
+| 1   | renders the mapped template-library icon at the navigation size                    | 語意映射與尺寸 slot   |
+| 2   | renders a labelled non-decorative icon without hiding it from assistive technology | 可存取圖示契約        |
+| 3   | keeps an unlabelled non-decorative icon hidden from assistive technology           | 空 label 可存取性防護 |
+| 4   | uses the compact size token for dense controls                                     | 緊密控制項尺寸 slot   |
 
 ### 8.3 E2E Tests（54）
 

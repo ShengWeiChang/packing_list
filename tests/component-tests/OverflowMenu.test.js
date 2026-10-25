@@ -63,28 +63,27 @@ describe('OverflowMenu', () => {
   // ---------------------------------------------------------------------------
 
   describe('rendering', () => {
-    // Test Case 1: Should render the menu trigger button
-    it('should render the menu trigger button', () => {
-      const w = createWrapper();
-      expect(
-        w.get('[data-testid="overflow-trigger-item-test-id"]').attributes('aria-haspopup')
-      ).toBe('true');
+    // Test Case 1: Should render a spacious transparent menu trigger when configured
+    it('should render a spacious transparent menu trigger when configured', () => {
+      const w = createWrapper({ transparentTrigger: true, triggerFrameSize: 'spacious' });
+      const trigger = w.get('[data-testid="overflow-trigger-item-test-id"]');
+
+      expect(trigger.attributes('aria-haspopup')).toBe('true');
+      expect(trigger.classes()).toContain('bg-transparent');
+      expect(trigger.classes()).not.toContain('bg-control-bg');
+      expect(trigger.classes()).toContain('md:size-8');
     });
 
-    // Test Case 2: Should show three-dot icon when not editing
+    // Test Case 2: Should show the more-options icon when not editing
     it('should show three-dot icon when not editing', () => {
       const w = createWrapper({ isEditing: false });
-      const circles = w.findAll('circle');
-      expect(circles.length).toBe(3);
+      expect(w.findComponent({ name: 'AppIcon' }).props('name')).toBe('more');
     });
 
     // Test Case 3: Should show checkmark icon when isEditing is true
     it('should show checkmark icon when isEditing is true', () => {
       const w = createWrapper({ isEditing: true });
-      const circles = w.findAll('circle');
-      expect(circles.length).toBe(0);
-      // Should have a path element for the checkmark
-      expect(w.get('path').attributes('d')).toContain('M5');
+      expect(w.findComponent({ name: 'AppIcon' }).props('name')).toBe('confirm');
     });
 
     // Test Case 4: Dropdown should not be visible initially
@@ -255,22 +254,26 @@ describe('OverflowMenu', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Test Group 6: SVG Size
+  // Test Group 6: Icon Size
   // ---------------------------------------------------------------------------
 
   describe('icon sizing', () => {
-    // Test Case 18: Should use smaller icon for item menu type
-    it('should use size-4 class for item menu type', () => {
+    // Test Case 18: Should use inline size for item menu type
+    it('should use inline size for item menu type', () => {
       const w = createWrapper({ menuType: 'item' });
-      const svg = w.find('svg');
-      expect(svg.classes()).toContain('size-4');
+      expect(w.findComponent({ name: 'AppIcon' }).props('size')).toBe('inline');
     });
 
-    // Test Case 19: Should use larger icon for category menu type
-    it('should use size-5 class for category menu type', () => {
+    // Test Case 19: Should use control size for category menu type
+    it('should use control size for category menu type', () => {
       const w = createWrapper({ menuType: 'category' });
-      const svg = w.find('svg');
-      expect(svg.classes()).toContain('size-5');
+      expect(w.findComponent({ name: 'AppIcon' }).props('size')).toBe('control');
+    });
+
+    // Test Case 20: Should use an explicit trigger size when one is supplied
+    it('should use an explicit trigger size when one is supplied', () => {
+      const w = createWrapper({ menuType: 'checklist', triggerIconSize: 'navigation' });
+      expect(w.findComponent({ name: 'AppIcon' }).props('size')).toBe('navigation');
     });
   });
 
@@ -279,7 +282,7 @@ describe('OverflowMenu', () => {
   // ---------------------------------------------------------------------------
 
   describe('dropdown positioning', () => {
-    // Test Case 20: Should apply fixed positioning when menu opens
+    // Test Case 21: Should apply fixed positioning when menu opens
     it('should apply fixed positioning styles to dropdown', async () => {
       // Use deferred rAF so positionDropdown runs after Vue renders the dropdown
       const rafCallbacks = [];
@@ -303,7 +306,7 @@ describe('OverflowMenu', () => {
       expect(style).not.toContain('-9999px');
     });
 
-    // Test Case 21: Should dispatch custom event when menu opens
+    // Test Case 22: Should dispatch custom event when menu opens
     it('should dispatch overflow-menu-open CustomEvent when opened', async () => {
       const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
       const w = createWrapper({ itemId: 'test-item', menuType: 'item' });
@@ -317,7 +320,7 @@ describe('OverflowMenu', () => {
       expect(customEvents[0][0].detail).toEqual({ id: 'test-item', type: 'item' });
     });
 
-    // Test Case 22: Should clamp dropdown position within viewport bounds
+    // Test Case 23: Should clamp dropdown position within viewport bounds
     it('should clamp dropdown position within viewport bounds', async () => {
       // Use deferred rAF
       const rafCallbacks = [];
@@ -344,7 +347,7 @@ describe('OverflowMenu', () => {
       expect(style).toContain('left: 8px');
     });
 
-    // Test Case 23: Should use CustomEvent fallback when constructor throws
+    // Test Case 24: Should use CustomEvent fallback when constructor throws
     it('should fall back to createEvent when CustomEvent constructor throws', async () => {
       const dispatchSpy = vi.spyOn(window, 'dispatchEvent').mockImplementation(() => true);
 

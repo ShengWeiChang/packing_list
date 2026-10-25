@@ -32,7 +32,14 @@ approval boundaries. Do not require users to remember workflow prompt keywords.
    reviewer plan**, and **Approval/evidence log**. It must also record the
    selected T0–T3 tier, its evidence and intentionally skipped roles; for T2/T3
    it records the decision ledger (confirmed facts, consensus, conflicts, and
-   unresolved decisions). `Status` must be one of:
+   unresolved decisions). Before implementation approval, include a documentation-impact
+   matrix for `product-spec`, `code-quality`, and `testing-guide`: mark each pair
+   as `update` or `not affected`, give a concrete reason, and name the applicable
+   `$doc-audit-*` skill when an update is required. Treat a new or renamed
+   production component, controlled dependency, shared UI primitive, architecture
+   or design-system convention, documented file inventory, or user-facing contract
+   as a product-spec impact signal; do not automatically document private details
+   that are outside the existing specification. `Status` must be one of:
    `draft`, `awaiting design decisions`, `awaiting implementation approval`,
    `implementing milestone N`, `awaiting milestone review`, `awaiting commit approval`, `final
 verification`, `awaiting final decision`, `awaiting final commit approval`,
