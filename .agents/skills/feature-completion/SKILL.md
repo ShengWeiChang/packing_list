@@ -14,10 +14,10 @@ actions.
 ## Entry and Exit
 
 Enter only after `$feature-workflow` has an approved plan and the implementation
-has reached a reviewable milestone. Read the relevant plan's observable finish
-conditions, state, reviewed scope or revision, and prior evidence before
-validating. Return an evidence-backed verdict so the workflow can update the
-plan and wait for the user's decision.
+has reached a reviewable milestone or final gate. Read the selected T0–T3 tier,
+observable finish conditions, state, reviewed scope or revision, and prior
+evidence before validating. Return an evidence-backed verdict so the workflow
+can update the plan and wait for the user's decision.
 
 For a milestone review, inspect the staged candidate with `git diff --cached`.
 For a final review, inspect the aggregate feature range from the plan's feature
@@ -50,13 +50,17 @@ Use the smallest applicable set of reviews; do not repeat their work here.
 | Independent test architecture, effectiveness, and missing-risk review     | `test-analysis`                                    |
 | Bilingual product, code-quality, or test-documentation parity             | Relevant `doc-audit-*` Skill during implementation |
 
-For a milestone gate, run the smallest relevant validation and obtain a fresh,
-read-only `$code-review` verdict. A fresh reviewer did not implement the
+For a milestone gate, run the smallest relevant validation. Do not automatically
+obtain a fresh reviewer: T1 never needs an intermediate independent review; T2
+needs one only for a meaningful non-final integration boundary; T3 needs one at
+each meaningful non-final integration boundary. The final-gate review satisfies
+the review requirement for the last integration-boundary milestone. Record an
+omitted intermediate review as `not required by tier/boundary`, rather than
+representing it as missing evidence. A fresh reviewer did not implement the
 reviewed scope and has not issued a verdict during its current repair cycle.
 After a blocking or important finding is fixed, use a different read-only
 context that did not review the earlier repair-cycle revision. Record reviewer
-identity or context and the reviewed fingerprint. Escalate to the final gate
-when the milestone crosses an integration boundary or the plan requires it.
+identity or context and the reviewed fingerprint.
 
 Select milestone evidence from the changed boundary; do not replace relevant
 runtime proof with a cheaper unrelated command:
@@ -72,14 +76,19 @@ Run a targeted test file or scenario where it proves the changed behavior. Do
 not run the whole Playwright suite, full coverage suite, inventory audit, or
 production build at every milestone unless the boundary or plan requires it.
 
-For a final gate of every feature, bug, or behavior change that has not been
-explicitly reduced to trivial after discovery, run `npm run verify:feature`
-before review. Obtain a fresh, read-only `$code-review` verdict and a fresh
-`$test-analysis` verdict when the change affects persistence, state/data
-transformations, browser-only or cross-boundary behavior, complex interaction,
-or lacks direct behavior proof. The reviewer may inspect the diff and evidence,
-but must not edit implementation files. After implementation fixes a finding,
-use a new fresh reviewer context for the follow-up verdict.
+At a final gate, select evidence and review from the approved tier:
+
+| Tier | Required final evidence and review                                                                                                                                                                                                                        |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T0   | Do not enter this skill; use the explicitly agreed reduced path.                                                                                                                                                                                          |
+| T1   | Run `npm run validate`, the focused tests or manual proof that directly establish the finish condition, and one fresh read-only `$code-review`. Do not require local `verify:feature` or `$test-analysis` unless the risk is reclassified.                |
+| T2   | Run `npm run verify:feature`, obtain one fresh read-only `$code-review`, and add fresh `$test-analysis` only for persistence, state/data transformations, browser-only or cross-boundary behavior, complex interaction, or missing direct behavior proof. |
+| T3   | Run `npm run verify:feature`, obtain one fresh read-only `$code-review` and one fresh `$test-analysis`; include the risk-specific runtime, E2E, or manual proof defined in the plan.                                                                      |
+
+The reviewer may inspect the diff and evidence, but must not edit implementation
+files. After implementation fixes a finding, use a new fresh reviewer context
+for the follow-up verdict. A T1 final gate does not make CI optional: the
+repository's full PR checks remain required before merge.
 
 When delegation is unavailable, perform the applicable reviews sequentially,
 but label the handoff `degraded: no independent delegation`. Do not call this
@@ -94,10 +103,11 @@ or failure total when browser tests run. If a host yields output early, truncate
 it, or leaves a command running, report that layer as `unknown` and wait for its
 terminal result before staging a final candidate or declaring a verdict.
 
-For source behavior changes, run `npm run test:coverage` when the milestone's
-risk plan selects coverage, or at the final gate. Compare with a baseline only
-when it used the same configuration and comparable source scope. Coverage
-movement is a signal to investigate changed modules, never a standalone
+For source behavior changes, run `npm run test:coverage` only when the risk plan
+selects coverage. T2/T3 `npm run verify:feature` may already include coverage;
+do not add a separate coverage run unless the plan requires it. Compare with a
+baseline only when it used the same configuration and comparable source scope.
+Coverage movement is a signal to investigate changed modules, never a standalone
 pass/fail condition.
 
 If required validation fails, a reviewer requests changes, or available evidence
@@ -105,7 +115,15 @@ is insufficient, return that verdict to `$feature-workflow`; it must not present
 a commit candidate or final handoff. A remaining non-blocking risk is reportable
 only when the user explicitly accepts it in the plan.
 
-## 3. Accessibility and Internationalization
+## 3. Approved UI/UX Conformance, Accessibility, and Internationalization
+
+When the approved plan contains a UI/UX artifact—the T1 checklist or T2/T3
+`$ui-ux-design` memo—compare the implementation and its evidence with the
+artifact's applicable primary task flow, selected control or hierarchy rationale,
+changed-state matrix, and recorded user decisions. Record either conformance or
+a specific design drift with its effect and disposition. Inspect only applicable
+states and surfaces; this is a heuristic conformance check, not user research or
+proof of usability.
 
 For new or changed interactive UI, verify as applicable:
 
@@ -139,8 +157,7 @@ Use targeted repository searches rather than broad cleanup. A clean lint result 
 ## 5. Validation and Handoff
 
 At a milestone, run the smallest relevant commands and report every skipped
-layer and its reason. At a final gate that was not explicitly reduced to trivial
-after discovery, run `npm run verify:feature`. For a non-trivial
+layer and its reason. At a final gate, follow the tier table above; for a T2/T3
 documentation-only final gate, run `npm run verify:feature -- --docs`. The
 mechanical command does not replace runtime proof of a changed interaction;
 report the user flow exercised, manual observation or automated E2E evidence,

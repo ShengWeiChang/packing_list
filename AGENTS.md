@@ -93,10 +93,37 @@ provider-specific copies unless a future host demonstrably requires one.
   when the user gives only a short description.
 - For verification of a reviewable implementation milestone or completed
   feature, use `$feature-completion`.
-- For an implementation-diff review, use `$code-review`.
-- For a test-design, coverage-risk, or test-quality review, use
-  `$test-analysis`.
+- Within `$feature-workflow`, `$feature-completion` coordinates `$code-review`
+  and any triggered `$test-analysis` review. Use either directly only for a
+  separately requested, scoped review outside that lifecycle.
 - When modifying a paired document, use its matching `$doc-audit-*` skill.
+
+## Adaptive Planning and Product Decisions
+
+At read-only discovery, `$feature-workflow` must select the smallest justified
+T0–T3 planning tier from requirement clarity, existing patterns, blast radius,
+side effects, interaction complexity, evidence difficulty, and user impact.
+T0/T1 must remain lightweight; they do not automatically receive a multi-agent
+council or repeated decision rounds. Persistence, sensitive data, access
+control, external boundaries, irreversible actions, or high user impact are a
+floor of T3.
+
+For a non-trivial user-visible UI or interaction change, use `$ui-ux-design`
+during planning: T1 gets its compact applicable checklist, while T2/T3 use a
+fresh read-only design specialist. Do not invoke it for pure data, tooling,
+documentation, or tiny established-pattern changes. Keep existing product
+patterns and task efficiency ahead of speculative visual novelty.
+
+Agents must investigate facts available from the repository, documentation, or
+focused tools. Ask the user only about material product decisions that affect
+behavior, scope, evidence, risk, or irreversible choices; include viable
+options, a recommendation, and consequences. Record a reversible low-risk
+assumption when no such decision remains. `$feature-workflow` owns the detailed
+tier, role-selection, decision-frontier, and output rules.
+
+New evidence may raise a tier immediately. After plan approval, lowering a tier
+requires documented new evidence and explicit user agreement because it reduces
+the approved validation and independent-review budget.
 
 ## Feature Delivery Control Points
 
@@ -125,17 +152,22 @@ Recompute it before committing. A `commit` approval applies only to that reviewe
 candidate; push, PR, and merge each require separate explicit approval.
 
 Only after read-only investigation may a user explicitly agree to treat a
-wording, formatting, or documentation-only change as trivial and skip planning
-mode. Otherwise do not infer that a feature request authorizes tracked-file
-edits before the plan is approved.
+wording, formatting, or documentation-only change as trivial and skip **full**
+planning mode. T0 still requires a reduced record in
+`plans/<feature>-plan-zh.md` containing the read-only scope, explicit trivial
+agreement, base HEAD, and validation evidence. Otherwise do not infer that a
+feature request authorizes tracked-file edits before the plan is approved.
 
-Use a targeted, risk-proportionate verification gate at each meaningful
-milestone. Reserve `npm run verify:feature`, runtime evidence, and final-only
-specialist reviews, such as triggered `$test-analysis`, for the final gate,
-unless a milestone crosses an integration boundary that requires the full gate.
-Every feature, bug, or behavior change that the user has not explicitly agreed
-is trivial after discovery must pass the full final gate. Report the current plan
-state and the one user decision needed before proceeding.
+Use the selected tier's verification budget. Every milestone gets the smallest
+evidence that proves its changed boundary, but does not automatically get an
+independent reviewer. T1 gets one fresh final `$code-review`; T2 gets one fresh
+final review and adds an intermediate review only at a non-final integration
+boundary; T3 adds fresh non-final integration-boundary reviews and final
+risk-triggered specialist
+evidence. T1 may use focused local final evidence; T2/T3 run the full final
+`npm run verify:feature` gate once, after the last implementation milestone.
+All pull requests remain subject to the repository's full CI before merge.
+Report the current plan state and the one user decision needed before proceeding.
 
 Do not present a commit candidate or final handoff when required validation
 fails, evidence is insufficient, or a reviewer requests changes. Return to the
@@ -151,10 +183,14 @@ reviewed scope and has not issued a verdict in the current repair cycle. After a
 blocking or important finding is fixed, the follow-up reviewer must be a
 different read-only context that did not review the earlier repair-cycle
 revision. Record its identity or context and reviewed fingerprint. When the host
-supports delegation, request a fresh `$code-review` reviewer at each meaningful
-milestone and final gate. Request fresh `$test-analysis` when the change affects
-persistence, state/data transformations, browser-only or cross-boundary
-behavior, complex interaction, or lacks direct behavior proof. Reviewers must
+supports delegation, request a fresh `$code-review` at the final gate for every
+non-trivial tier. Add an intermediate fresh review only when the selected tier
+and integration boundary require it: never for ordinary T1 work, only for a
+meaningful non-final T2 integration boundary, and for non-final T3 integration
+boundaries. Request
+fresh `$test-analysis` for triggered T2 changes (persistence, state/data
+transformations, browser-only or cross-boundary behavior, complex interaction,
+or missing direct behavior proof) and for every T3 final gate. Reviewers must
 not edit implementation files.
 
 After fixing a finding, obtain a new fresh reviewer verdict before handoff. If
