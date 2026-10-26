@@ -19,6 +19,10 @@ observable finish conditions, state, reviewed scope or revision, and prior
 evidence before validating. Return an evidence-backed verdict so the workflow
 can update the plan and wait for the user's decision.
 
+## README Impact Rule
+
+Treat README as a concise project entry point. During verification, assess whether the aggregate diff changes project purpose, principal capabilities, setup or run path, public interface, contribution entry point, or top-level navigation; require an update only then. Do not put detailed specifications, internal workflow, implementation details, or change history in README. If README is outside the approved write scope, report the missing required update instead of modifying it.
+
 For a milestone review, inspect the staged candidate with `git diff --cached`.
 For a final review, inspect the aggregate feature range from the plan's feature
 base HEAD SHA through current `HEAD`, plus any staged final candidate. Do not
@@ -138,7 +142,7 @@ For new or changed interactive UI, verify as applicable:
 
 1. Before final verification, reconcile the plan's documentation-impact matrix against the aggregate feature diff from the feature base through the candidate revision. Update the matrix and evidence log if implementation scope changed; a passing paired-document check does not prove that documentation content is complete.
 2. Treat a new or renamed production component, controlled dependency, shared UI primitive, architecture or design-system convention, documented file inventory, or user-facing contract as a product-spec impact signal. Assess private implementation details against the existing specification instead of automatically documenting them.
-3. For every assessed document pair, record `updated` with its applicable `$doc-audit-*` result, or `not affected` with a concrete diff-based reason. When a pair is affected, update both English and Traditional Chinese files in the same candidate.
+3. For `README.md` and every assessed document pair, record `updated` with applicable validation, or `not affected` with a concrete diff-based reason. When a document pair is affected, update both English and Traditional Chinese files in the same candidate.
 4. Keep paired English and Traditional Chinese documents structurally aligned, with equivalent content and the same line count. Both files must be included in the Git diff.
 5. Follow `AGENTS.md` for Vue attribute order, Tailwind class order, naming, and paired documentation rules.
 6. Do not broaden the diff with unrelated cleanup or create feature-specific Skills unless the workflow is genuinely reusable across the project.
