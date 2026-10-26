@@ -668,11 +668,6 @@ async function handleChecklistDelete(checklistId) {
   if (!confirmed) return;
 
   await handleAsyncAction(deleteChecklist, checklistId);
-
-  if (selectedChecklistId.value === checklistId) {
-    // Switch to first available checklist
-    selectedChecklistId.value = checklists.value[0]?.id || null;
-  }
 }
 
 /**

@@ -91,6 +91,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Copy checklist: Duplicate an existing checklist with all its categories and items.
   - Delete checklist: Cascade delete all categories and items under the checklist.
   - Reorder checklists: Drag to update `order` (starting at 0); persists and remains after reload.
+  - Reload selection: Reload restores the last opened checklist. If that checklist no longer exists, it selects the sidebar's top checklist (the highest `order`).
   - Switch checklist: Load that checklist's categories and items, sorted by `order`.
 - Flow:
   - Create checklist → add categories/items → edit info → copy/delete → reorder → switch checklists.
@@ -104,6 +105,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Copy: Duplicated checklist appears right after the original with " (Copy)" suffix; all categories and items are duplicated with new IDs.
   - Delete: Checklist, categories, and items are all removed from localStorage; UI switches to another list or empty state.
   - Reorder: Drag checklists in sidebar to reorder; `order` values update continuously from 0; persists after reload.
+  - Reload selection: Reload opens the last opened checklist; an unavailable saved checklist safely falls back to the sidebar's top checklist (highest `order`).
   - Switch: Categories/items load sorted by `order`; progress bar reflects the current checklist.
 
 #### Personal Template Management
