@@ -605,8 +605,8 @@ describe('App', () => {
       expect(mockDeleteChecklist).not.toHaveBeenCalled();
     });
 
-    // Test Case 19: handleChecklistDelete should fallback to first checklist
-    it('should select first remaining checklist after deleting the selected one', async () => {
+    // Test Case 19: handleChecklistDelete should delegate selection recovery to the composable
+    it('should delegate selected checklist deletion to the composable', async () => {
       vi.spyOn(window, 'confirm').mockReturnValue(true);
       mockDeleteChecklist.mockResolvedValue(undefined);
 
@@ -615,15 +615,10 @@ describe('App', () => {
       dispatchResize();
       await wrapper.vm.$nextTick();
 
-      // Currently selected cl-1
-      expect(mockSelectedChecklistId.value).toBe('cl-1');
-
       const sidebar = wrapper.findComponent({ name: 'Sidebar' });
       await sidebar.vm.$emit('delete-checklist', 'cl-1');
       await wrapper.vm.$nextTick();
 
-      // Should fallback to first available (cl-1 is still in array because mock doesn't remove)
-      // In real code, after deleteChecklist the checklists.value array would update
       expect(mockDeleteChecklist).toHaveBeenCalledWith('cl-1');
     });
 

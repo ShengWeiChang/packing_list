@@ -11,6 +11,10 @@ change. `$feature-completion` owns verification and independent review; this
 skill owns planning, implementation milestones, progress reporting, and human
 approval boundaries. Do not require users to remember workflow prompt keywords.
 
+## README Impact Rule
+
+Treat README as a concise project entry point, not a detailed delivery record. Assess whether each change affects the project purpose, principal capabilities, setup or run path, public interface, contribution entry point, or top-level navigation; update README in the approved scope only when one of those changes. Keep detailed specifications, internal workflow, implementation details, and change history elsewhere, and record a concrete reason when README is not affected.
+
 ## 1. Read-Only Discovery and Plan
 
 1. Begin with read-only investigation of the relevant source, tests,
@@ -33,7 +37,7 @@ approval boundaries. Do not require users to remember workflow prompt keywords.
    selected T0–T3 tier, its evidence and intentionally skipped roles; for T2/T3
    it records the decision ledger (confirmed facts, consensus, conflicts, and
    unresolved decisions). Before implementation approval, include a documentation-impact
-   matrix for `product-spec`, `code-quality`, and `testing-guide`: mark each pair
+   matrix for `README.md`, `product-spec`, `code-quality`, and `testing-guide`: mark each pair or document
    as `update` or `not affected`, give a concrete reason, and name the applicable
    `$doc-audit-*` skill when an update is required. Treat a new or renamed
    production component, controlled dependency, shared UI primitive, architecture

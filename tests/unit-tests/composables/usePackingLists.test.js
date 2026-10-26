@@ -18,6 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usePackingLists } from '../../../source/composables/usePackingLists';
 import { LocalStorageService } from '../../../source/services/localStorageService';
+import { STORAGE_KEYS } from '../../../source/utils/constants.js';
 
 // -----------------------------------------------------------------------------
 // usePackingLists Tests
@@ -33,20 +34,23 @@ describe('usePackingLists', () => {
   beforeEach(() => {
     mockStorage = {};
 
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => mockStorage[key] || null);
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
-      mockStorage[key] = value;
-    });
-    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation((key) => {
-      delete mockStorage[key];
-    });
-    vi.spyOn(Storage.prototype, 'clear').mockImplementation(() => {
-      mockStorage = {};
+    vi.stubGlobal('localStorage', {
+      clear: () => {
+        mockStorage = {};
+      },
+      getItem: (key) => mockStorage[key] || null,
+      removeItem: (key) => {
+        delete mockStorage[key];
+      },
+      setItem: (key, value) => {
+        mockStorage[key] = value;
+      },
     });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   // ---------------------------------------------------------------------------
@@ -124,16 +128,18 @@ describe('usePackingLists', () => {
     // Test Case 4: isLoading should transition during async operation
     it('should manage loading state during initialization', async () => {
       const { initialize, isLoading } = usePackingLists();
+      mockStorage[STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID] = 'stale-checklist';
 
       expect(isLoading.value).toBe(false);
 
       // After initialize completes, loading should be false
       await initialize();
       expect(isLoading.value).toBe(false);
+      expect(mockStorage[STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID]).toBeUndefined();
     });
 
-    // Test Case 5: Legacy checklists missing order should be repaired and persisted
-    it('should repair missing checklist order and persist repaired checklist', async () => {
+    // Test Case 5: Legacy checklist order repair should restore the saved checklist
+    it('should repair missing checklist order and restore the saved checklist', async () => {
       vi.spyOn(LocalStorageService.prototype, 'getData').mockResolvedValue({
         checklists: [
           {
@@ -150,14 +156,39 @@ describe('usePackingLists', () => {
             order: 5,
           },
         ],
-        categories: [],
-        items: [],
+        categories: [
+          { id: 'cat-legacy', name: 'Legacy Category', checklistId: 'cl-legacy', order: 0 },
+          { id: 'cat-ordered', name: 'Ordered Category', checklistId: 'cl-ordered', order: 0 },
+        ],
+        items: [
+          {
+            id: 'item-legacy',
+            name: 'Legacy Item',
+            quantity: 1,
+            categoryId: 'cat-legacy',
+            isPacked: false,
+            isPending: false,
+            checklistId: 'cl-legacy',
+            order: 0,
+          },
+          {
+            id: 'item-ordered',
+            name: 'Ordered Item',
+            quantity: 1,
+            categoryId: 'cat-ordered',
+            isPacked: false,
+            isPending: false,
+            checklistId: 'cl-ordered',
+            order: 0,
+          },
+        ],
       });
       const updateChecklistSpy = vi
         .spyOn(LocalStorageService.prototype, 'updateChecklist')
         .mockResolvedValue({});
+      mockStorage[STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID] = 'cl-legacy';
 
-      const { initialize, checklists, selectedChecklistId } = usePackingLists();
+      const { initialize, checklists, selectedChecklistId, categories, items } = usePackingLists();
       await initialize();
 
       expect(updateChecklistSpy).toHaveBeenCalledTimes(1);
@@ -166,9 +197,11 @@ describe('usePackingLists', () => {
       );
       expect(checklists.value.map((c) => c.id)).toEqual(['cl-legacy', 'cl-ordered']);
       expect(selectedChecklistId.value).toBe('cl-legacy');
+      expect(categories.value).toEqual([expect.objectContaining({ id: 'cat-legacy' })]);
+      expect(items.value).toEqual([expect.objectContaining({ id: 'item-legacy' })]);
     });
 
-    // Test Case 6: Deleted selected checklist should fallback to first available checklist
+    // Test Case 6: Deleted selected checklist should fallback to the sidebar top
     it('should fallback selected checklist and reload scoped categories/items', async () => {
       vi.spyOn(LocalStorageService.prototype, 'getData').mockResolvedValue({
         checklists: [
@@ -208,11 +241,12 @@ describe('usePackingLists', () => {
 
       await api.initialize();
 
-      expect(api.selectedChecklistId.value).toBe('cl-1');
+      expect(api.selectedChecklistId.value).toBe('cl-2');
+      expect(mockStorage[STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID]).toBe('cl-2');
       expect(api.categories.value).toHaveLength(1);
-      expect(api.categories.value[0].checklistId).toBe('cl-1');
+      expect(api.categories.value[0].checklistId).toBe('cl-2');
       expect(api.items.value).toHaveLength(1);
-      expect(api.items.value[0].checklistId).toBe('cl-1');
+      expect(api.items.value[0].checklistId).toBe('cl-2');
     });
 
     // Test Case 7: Initialize should surface errors when data service throws
@@ -261,7 +295,14 @@ describe('usePackingLists', () => {
 
     // Test Case 10: Update should modify checklist data
     it('should update an existing checklist', async () => {
-      const { initialize, createChecklist, updateChecklist, checklists } = usePackingLists();
+      const {
+        initialize,
+        createChecklist,
+        getChecklists,
+        selectedChecklistId,
+        updateChecklist,
+        checklists,
+      } = usePackingLists();
 
       await initialize();
       const created = await createChecklist({ name: 'Original' });
@@ -269,20 +310,35 @@ describe('usePackingLists', () => {
 
       const updated = checklists.value.find((c) => c.id === created.id);
       expect(updated.name).toBe('Updated');
+
+      vi.spyOn(LocalStorageService.prototype, 'getChecklists').mockRejectedValue(
+        new Error('Storage error')
+      );
+      await getChecklists();
+
+      expect(checklists.value).toEqual([expect.objectContaining({ id: created.id })]);
+      expect(selectedChecklistId.value).toBe(created.id);
+      expect(mockStorage[STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID]).toBe(created.id);
     });
 
     // Test Case 11: Delete should remove checklist from state
     it('should delete a checklist', async () => {
-      const { initialize, createChecklist, deleteChecklist, checklists } = usePackingLists();
+      const { initialize, createChecklist, deleteChecklist, checklists, selectedChecklistId } =
+        usePackingLists();
 
       await initialize();
-      const created = await createChecklist({ name: 'To Delete' });
+      const first = await createChecklist({ name: 'First' });
+      await createChecklist({ name: 'Second' });
+      const newest = await createChecklist({ name: 'Newest' });
+      selectedChecklistId.value = first.id;
       const countBefore = checklists.value.length;
 
-      await deleteChecklist(created.id);
+      await deleteChecklist(first.id);
 
       expect(checklists.value.length).toBe(countBefore - 1);
-      expect(checklists.value.find((c) => c.id === created.id)).toBeUndefined();
+      expect(checklists.value.find((c) => c.id === first.id)).toBeUndefined();
+      expect(selectedChecklistId.value).toBe(newest.id);
+      expect(mockStorage[STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID]).toBe(newest.id);
     });
 
     // Test Case 12: createChecklist should return null when service call fails
@@ -757,26 +813,50 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('cross-tab sync', () => {
-    // Test Case 44: Storage event should trigger state refresh
-    it('should refresh state when storage event updates app data key', async () => {
+    // Test Case 44: APP_DATA refresh should preserve valid selection and recover deleted selection
+    it('should preserve valid selection and recover deleted selection on app data refresh', async () => {
       vi.useFakeTimers();
 
       const addSpy = vi.spyOn(window, 'addEventListener');
       const removeSpy = vi.spyOn(window, 'removeEventListener');
 
-      const getDataSpy = vi
-        .spyOn(LocalStorageService.prototype, 'getData')
-        .mockResolvedValue({ checklists: [], categories: [], items: [] });
+      const getDataSpy = vi.spyOn(LocalStorageService.prototype, 'getData');
+      const activeChecklistData = {
+        checklists: [
+          {
+            id: 'cl-older',
+            name: 'Older',
+            startDate: '2026-01-01',
+            endDate: '2026-01-02',
+            order: 0,
+          },
+          {
+            id: 'cl-newest',
+            name: 'Newest',
+            startDate: '2026-02-01',
+            endDate: '2026-02-02',
+            order: 1,
+          },
+        ],
+        categories: [],
+        items: [],
+      };
+      let api;
 
       const Host = {
         template: '<div />',
         setup() {
-          const api = usePackingLists();
+          api = usePackingLists();
           return { api };
         },
       };
 
       const wrapper = mount(Host);
+      getDataSpy.mockResolvedValue(activeChecklistData);
+      await api.initialize();
+      api.selectedChecklistId.value = 'cl-older';
+      await flushPromises();
+      getDataSpy.mockClear();
 
       const storageCalls = addSpy.mock.calls.filter((call) => call[0] === 'storage');
       expect(storageCalls.length).toBeGreaterThan(0);
@@ -789,15 +869,28 @@ describe('usePackingLists', () => {
 
       // Unrelated key should be ignored
       handler({ key: 'other-key' });
+      handler({ key: STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID });
       vi.runAllTimers();
       await Promise.resolve();
       expect(getDataSpy).not.toHaveBeenCalled();
 
-      // App data key should trigger refresh
+      // A valid in-memory selection remains active after another tab changes app data.
       handler({ key: 'packingListApp' });
       vi.runAllTimers();
-      await Promise.resolve();
+      await flushPromises();
       expect(getDataSpy).toHaveBeenCalled();
+      expect(api.selectedChecklistId.value).toBe('cl-older');
+
+      // If another tab deleted the active checklist, recover to the sidebar top.
+      getDataSpy.mockResolvedValue({
+        checklists: [activeChecklistData.checklists[1]],
+        categories: [],
+        items: [],
+      });
+      handler({ key: 'packingListApp' });
+      vi.runAllTimers();
+      await flushPromises();
+      expect(api.selectedChecklistId.value).toBe('cl-newest');
 
       wrapper.unmount();
       expect(removeSpy).toHaveBeenCalledWith('storage', handler);

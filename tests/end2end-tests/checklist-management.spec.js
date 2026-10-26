@@ -158,4 +158,39 @@ test.describe('Checklist Management', () => {
       await expect(sidebarItems).toHaveCount(countBefore - 1);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 5: Reload Selection
+  // ---------------------------------------------------------------------------
+
+  test.describe('reload selection', () => {
+    // Test Case 6: Reload should restore the last opened checklist, then recover to sidebar top
+    test('should restore the last opened checklist and fallback to sidebar top after invalidation', async ({
+      page,
+    }) => {
+      await createAndConfirmChecklist(page, 'Older Trip');
+      await createAndConfirmChecklist(page, 'Newest Trip');
+
+      await expect(page.getByTestId('sidebar-checklist-item').first()).toContainText('Newest Trip');
+      await page.getByTestId('sidebar-checklist-item').filter({ hasText: 'Older Trip' }).click();
+
+      await page.reload();
+
+      await expect(
+        page.getByTestId('sidebar-checklist-item').filter({ hasText: 'Older Trip' })
+      ).toHaveAttribute('aria-current', 'page');
+      await expect(page.getByTestId('checklist-name')).toHaveText('Older Trip');
+
+      await page.evaluate(() =>
+        localStorage.setItem('packingListLastOpenedChecklistId', 'missing')
+      );
+      await page.reload();
+
+      await expect(page.getByTestId('sidebar-checklist-item').first()).toHaveAttribute(
+        'aria-current',
+        'page'
+      );
+      await expect(page.getByTestId('checklist-name')).toHaveText('Newest Trip');
+    });
+  });
 });

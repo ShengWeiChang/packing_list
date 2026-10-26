@@ -110,6 +110,66 @@ export function usePackingLists() {
   // ---------------------------------------------------------------------------
 
   /**
+   * Read the checklist last opened in this browser profile.
+   * @returns {string|null} Stored checklist ID, if available
+   */
+  function getLastOpenedChecklistId() {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Persist or clear the last opened checklist without blocking the current UI.
+   * @param {string|null} checklistId - Checklist ID to persist
+   */
+  function persistLastOpenedChecklistId(checklistId) {
+    try {
+      if (checklistId) {
+        localStorage.setItem(STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID, checklistId);
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID);
+      }
+    } catch {
+      // Storage can be unavailable (for example, disabled browser storage).
+      // Keep the in-memory selection usable even when it cannot be remembered.
+    }
+  }
+
+  /**
+   * Return the canonical ID that appears at the top of the descending Sidebar.
+   * @returns {string|null} Highest-order checklist ID, if available
+   */
+  function getSidebarTopChecklistId() {
+    return checklists.value.at(-1)?.id || null;
+  }
+
+  /**
+   * Keep a valid in-memory selection, otherwise restore the saved selection or
+   * recover to the checklist shown first in the Sidebar.
+   */
+  function resolveSelectedChecklist() {
+    if (checklists.value.some((checklist) => checklist.id === selectedChecklistId.value)) {
+      return;
+    }
+
+    if (!selectedChecklistId.value) {
+      const lastOpenedChecklistId = getLastOpenedChecklistId();
+      if (checklists.value.some((checklist) => checklist.id === lastOpenedChecklistId)) {
+        selectedChecklistId.value = lastOpenedChecklistId;
+        return;
+      }
+    }
+
+    selectedChecklistId.value = getSidebarTopChecklistId();
+    if (!selectedChecklistId.value) {
+      persistLastOpenedChecklistId(null);
+    }
+  }
+
+  /**
    * Generic wrapper for async data operations with error handling and loading state
    * @param {Function} loader - Async function to execute
    * @param {string} errorMessage - Error message prefix for failures
@@ -315,20 +375,9 @@ export function usePackingLists() {
         await Promise.all(checklistsToUpdate.map((cl) => dataService.updateChecklist(cl)));
       }
 
-      // Load checklists
+      // Load checklists and restore the user's saved context when possible.
       checklists.value = preChecklists;
-      // If no selected checklist yet, pick the first
-      if (checklists.value.length > 0 && !selectedChecklistId.value) {
-        selectedChecklistId.value = checklists.value[0].id;
-      }
-
-      // If the selected checklist was deleted in another tab, fall back safely
-      if (
-        selectedChecklistId.value &&
-        !checklists.value.some((cl) => cl.id === selectedChecklistId.value)
-      ) {
-        selectedChecklistId.value = checklists.value[0]?.id || null;
-      }
+      resolveSelectedChecklist();
 
       // Load categories and items for the currently selected checklist
       if (selectedChecklistId.value) {
@@ -377,10 +426,10 @@ export function usePackingLists() {
    */
   async function getChecklists() {
     const result = await loadData(() => dataService.getChecklists(), 'Error getting checklists');
-    checklists.value = (result || []).sort((a, b) => (a.order || 0) - (b.order || 0));
-    if (checklists.value.length > 0 && !selectedChecklistId.value) {
-      selectedChecklistId.value = checklists.value[0].id;
-    }
+    if (!result) return checklists.value;
+
+    checklists.value = result.sort((a, b) => (a.order || 0) - (b.order || 0));
+    resolveSelectedChecklist();
     return checklists.value;
   }
 
@@ -427,9 +476,6 @@ export function usePackingLists() {
   async function deleteChecklist(checklistId) {
     await loadData(() => dataService.deleteChecklist(checklistId), 'Error deleting checklist');
     await getChecklists();
-    if (selectedChecklistId.value === checklistId) {
-      selectedChecklistId.value = checklists.value[0]?.id || null;
-    }
   }
 
   /**
@@ -726,6 +772,7 @@ export function usePackingLists() {
     selectedChecklistId,
     (newId, oldId) => {
       if (newId !== oldId) {
+        persistLastOpenedChecklistId(newId);
         selectionRevision += 1;
         clearPackingHistory();
       }

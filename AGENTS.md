@@ -78,6 +78,10 @@ When editing ANY document in `docs/`, you MUST update BOTH versions.
 3. **Structure must be identical** — same sections, headings, code blocks, number of lines, etc.
 4. **Track both files in Git** — do not add paired documentation to `.gitignore`
 
+## README Maintenance
+
+For every change, assess whether `README.md` remains an accurate, concise project entry point. Update it only when the project purpose, principal supported capabilities, setup or run path, public interface, contribution entry point, or top-level navigation changes. Keep detailed specifications, internal workflows, implementation details, and change history outside the README; record a concrete reason when it is not affected.
+
 ## Project Skill Language
 
 Project skills live in `.agents/skills/` and each has one English canonical

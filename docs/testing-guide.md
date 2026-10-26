@@ -14,10 +14,10 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 581    |
+| Total tests        | 582    |
 | Unit tests         | 251    |
 | Component tests    | 276    |
-| E2E tests          | 54     |
+| E2E tests          | 55     |
 | Line coverage      | 95.75% |
 | Statement coverage | 94.74% |
 | Branch coverage    | 86.32% |
@@ -93,12 +93,12 @@ tests/
 │   ├── TemplateEditor.test.js           # 13  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 54  tests
+└── end2end-tests/                       # 55  tests
     ├── mobile-workflow.spec.js          # 10  tests
     ├── item-packing.spec.js             #  7  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
-    ├── checklist-management.spec.js     #  5  tests
+    ├── checklist-management.spec.js     #  6  tests
     ├── category-crud.spec.js            #  3  tests
     ├── drag-and-drop.spec.js            #  6  tests
     ├── multi-tab-sync.spec.js           #  4  tests
@@ -413,54 +413,54 @@ This project uses three layers to balance speed and reliability.
 
 ##### 8.1.3.1 usePackingLists.test.js (46 tests)
 
-| #   | Test                                                                            | What it verifies              |
-| --- | ------------------------------------------------------------------------------- | ----------------------------- |
-| 1   | should return initial empty state                                               | Default refs are empty        |
-| 2   | should have computed properties                                                 | Computed refs exist           |
-| 3   | should load data from storage on initialize                                     | Init reads from service       |
-| 4   | should manage loading state during initialization                               | `isLoading` toggles correctly |
-| 5   | should repair missing checklist order and persist repaired checklist            | Legacy order repair           |
-| 6   | should fallback selected checklist and reload scoped categories/items           | Selection fallback            |
-| 7   | should set error and clear state when initialize fails unexpectedly             | Init failure recovery         |
-| 8   | should create a new checklist                                                   | Creates and refreshes state   |
-| 9   | should select the first checklist after creation                                | Auto-selection logic          |
-| 10  | should update an existing checklist                                             | Update + refresh              |
-| 11  | should delete a checklist                                                       | Delete + refresh              |
-| 12  | should return null when createChecklist service call fails                      | Service failure path          |
-| 13  | should return null when updateChecklist service call fails                      | Service failure path          |
-| 14  | should create a category in the selected checklist                              | Category creation             |
-| 15  | should return null if no checklist is selected                                  | Null guard                    |
-| 16  | should create an item in the selected checklist                                 | Item creation                 |
-| 17  | should toggle item packed status                                                | Toggle + refresh; no undo     |
-| 18  | should calculate progress correctly                                             | Progress computation          |
-| 19  | should return 0 progress for empty checklist                                    | Zero-item edge case           |
-| 20  | should handle storage errors gracefully during initialization                   | Error recovery                |
-| 21  | should duplicate a checklist and refresh state                                  | Checklist duplication         |
-| 22  | should duplicate a category and refresh state                                   | Category duplication          |
-| 23  | should duplicate an item and refresh state                                      | Item duplication              |
-| 24  | should delete a category and refresh both categories and items                  | Category delete cascade       |
-| 25  | should delete an item and refresh items                                         | Item delete                   |
-| 26  | should update multiple checklists and refresh state                             | Batch update                  |
-| 27  | should return null when creating item without selected checklist                | Null guard                    |
-| 28  | should return null when duplicating item without selected checklist             | Null guard                    |
-| 29  | should return null when updating item without selected checklist                | Null guard                    |
-| 30  | should return empty array when getting categories without selected checklist    | Null guard                    |
-| 31  | should return empty array when getting items without selected checklist         | Null guard                    |
-| 32  | should return early when deleting item without selected checklist               | Null guard                    |
-| 33  | should return null when createItem service call fails (with checklist)          | Service failure path          |
-| 34  | should return null when duplicateCategory service call fails (with checklist)   | Service failure path          |
-| 35  | should return null when updateItem service call fails (with checklist)          | Service failure path          |
-| 36  | should return null when duplicateItem service call fails (with checklist)       | Service failure path          |
-| 37  | should return null when createCategory service call fails (with checklist)      | Service failure path          |
-| 38  | should return null when duplicateChecklist service call fails (no checklist)    | Service failure path          |
-| 39  | should return null when updateCategory service call fails (no checklist)        | Service failure path          |
-| 40  | should return null when updateCategory service returns undefined                | Falsy result guard            |
-| 41  | should return null when updateMultipleChecklists service returns undefined      | Falsy result guard            |
-| 42  | should return null when updateCategory throws (real service)                    | Throw fallback                |
-| 43  | should refresh categories and return updated category on success                | Success path + refresh        |
-| 44  | should refresh state when storage event updates app data key                    | Cross-tab sync refresh        |
-| 45  | should treat a category pack-all as one undoable action and restore mixed state | Grouped history; redo safety  |
-| 46  | should clear packing history when switching checklists                          | History scope isolation       |
+| #   | Test                                                                              | What it verifies              |
+| --- | --------------------------------------------------------------------------------- | ----------------------------- |
+| 1   | should return initial empty state                                                 | Default refs are empty        |
+| 2   | should have computed properties                                                   | Computed refs exist           |
+| 3   | should load data from storage on initialize                                       | Init reads from service       |
+| 4   | should manage loading state during initialization                                 | `isLoading` toggles correctly |
+| 5   | should repair missing checklist order and restore the saved checklist             | Legacy repair + saved restore |
+| 6   | should fallback selected checklist and reload scoped categories/items             | Sidebar-top fallback          |
+| 7   | should set error and clear state when initialize fails unexpectedly               | Init failure recovery         |
+| 8   | should create a new checklist                                                     | Creates and refreshes state   |
+| 9   | should select the first checklist after creation                                  | Auto-selection logic          |
+| 10  | should update an existing checklist                                               | Update + refresh              |
+| 11  | should delete a checklist                                                         | Delete + refresh              |
+| 12  | should return null when createChecklist service call fails                        | Service failure path          |
+| 13  | should return null when updateChecklist service call fails                        | Service failure path          |
+| 14  | should create a category in the selected checklist                                | Category creation             |
+| 15  | should return null if no checklist is selected                                    | Null guard                    |
+| 16  | should create an item in the selected checklist                                   | Item creation                 |
+| 17  | should toggle item packed status                                                  | Toggle + refresh; no undo     |
+| 18  | should calculate progress correctly                                               | Progress computation          |
+| 19  | should return 0 progress for empty checklist                                      | Zero-item edge case           |
+| 20  | should handle storage errors gracefully during initialization                     | Error recovery                |
+| 21  | should duplicate a checklist and refresh state                                    | Checklist duplication         |
+| 22  | should duplicate a category and refresh state                                     | Category duplication          |
+| 23  | should duplicate an item and refresh state                                        | Item duplication              |
+| 24  | should delete a category and refresh both categories and items                    | Category delete cascade       |
+| 25  | should delete an item and refresh items                                           | Item delete                   |
+| 26  | should update multiple checklists and refresh state                               | Batch update                  |
+| 27  | should return null when creating item without selected checklist                  | Null guard                    |
+| 28  | should return null when duplicating item without selected checklist               | Null guard                    |
+| 29  | should return null when updating item without selected checklist                  | Null guard                    |
+| 30  | should return empty array when getting categories without selected checklist      | Null guard                    |
+| 31  | should return empty array when getting items without selected checklist           | Null guard                    |
+| 32  | should return early when deleting item without selected checklist                 | Null guard                    |
+| 33  | should return null when createItem service call fails (with checklist)            | Service failure path          |
+| 34  | should return null when duplicateCategory service call fails (with checklist)     | Service failure path          |
+| 35  | should return null when updateItem service call fails (with checklist)            | Service failure path          |
+| 36  | should return null when duplicateItem service call fails (with checklist)         | Service failure path          |
+| 37  | should return null when createCategory service call fails (with checklist)        | Service failure path          |
+| 38  | should return null when duplicateChecklist service call fails (no checklist)      | Service failure path          |
+| 39  | should return null when updateCategory service call fails (no checklist)          | Service failure path          |
+| 40  | should return null when updateCategory service returns undefined                  | Falsy result guard            |
+| 41  | should return null when updateMultipleChecklists service returns undefined        | Falsy result guard            |
+| 42  | should return null when updateCategory throws (real service)                      | Throw fallback                |
+| 43  | should refresh categories and return updated category on success                  | Success path + refresh        |
+| 44  | should preserve valid selection and recover deleted selection on app data refresh | Cross-tab selection recovery  |
+| 45  | should treat a category pack-all as one undoable action and restore mixed state   | Grouped history; redo safety  |
+| 46  | should clear packing history when switching checklists                            | History scope isolation       |
 
 ##### 8.1.3.2 useTemplates.test.js (14 tests)
 
@@ -605,7 +605,7 @@ This project uses three layers to balance speed and reliability.
 | 16  | should duplicate checklist and select the copy on handleChecklistCopy   | Checklist duplication        |
 | 17  | should delete checklist after user confirms the dialog                  | Confirmed deletion           |
 | 18  | should not delete checklist when user cancels the dialog                | Cancelled deletion           |
-| 19  | should select first remaining checklist after deleting the selected one | Post-delete selection        |
+| 19  | should delegate selected checklist deletion to the composable           | Delete delegation            |
 | 20  | should update checklist via ChecklistComponent emit                     | Checklist update             |
 | 21  | should call updateMultipleChecklists on handleChecklistMove             | Checklist move               |
 | 22  | should update selectedChecklistId from overlay sidebar select-checklist | Overlay sidebar selection    |
@@ -946,15 +946,16 @@ This project uses three layers to balance speed and reliability.
 | 4   | should show checklist content after creating a checklist | Post-create state |
 | 5   | should show topbar on mobile viewport                    | Mobile layout     |
 
-#### 8.3.2 checklist-management.spec.js (5 tests)
+#### 8.3.2 checklist-management.spec.js (6 tests)
 
-| #   | Test                                                     | What it verifies |
-| --- | -------------------------------------------------------- | ---------------- |
-| 1   | should create a new checklist via sidebar button         | Create flow      |
-| 2   | should auto-select and enter edit mode for new checklist | Auto-edit UX     |
-| 3   | should rename checklist by clicking on the name          | Rename flow      |
-| 4   | should switch between checklists                         | Navigation flow  |
-| 5   | should delete checklist after confirmation               | Delete flow      |
+| #   | Test                                                                                    | What it verifies          |
+| --- | --------------------------------------------------------------------------------------- | ------------------------- |
+| 1   | should create a new checklist via sidebar button                                        | Create flow               |
+| 2   | should auto-select and enter edit mode for new checklist                                | Auto-edit UX              |
+| 3   | should rename checklist by clicking on the name                                         | Rename flow               |
+| 4   | should switch between checklists                                                        | Navigation flow           |
+| 5   | should delete checklist after confirmation                                              | Delete flow               |
+| 6   | should restore the last opened checklist and fallback to sidebar top after invalidation | Reload restore + fallback |
 
 #### 8.3.3 category-crud.spec.js (3 tests)
 

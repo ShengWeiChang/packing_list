@@ -14,10 +14,10 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 581    |
+| Total tests 總測試數          | 582    |
 | Unit tests 單元測試           | 251    |
 | Component tests 組件測試      | 276    |
-| E2E tests E2E 測試            | 54     |
+| E2E tests E2E 測試            | 55     |
 | Line coverage 行覆蓋率        | 95.75% |
 | Statement coverage 語句覆蓋率 | 94.74% |
 | Branch coverage 分支覆蓋率    | 86.32% |
@@ -93,12 +93,12 @@ tests/
 │   ├── TemplateEditor.test.js           # 13  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 54  tests
+└── end2end-tests/                       # 55  tests
     ├── mobile-workflow.spec.js          # 10  tests
     ├── item-packing.spec.js             #  7  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
-    ├── checklist-management.spec.js     #  5  tests
+    ├── checklist-management.spec.js     #  6  tests
     ├── category-crud.spec.js            #  3  tests
     ├── drag-and-drop.spec.js            #  6  tests
     ├── multi-tab-sync.spec.js           #  4  tests
@@ -413,54 +413,54 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ##### 8.1.3.1 usePackingLists.test.js（46）
 
-| #   | Test                                                                            | 測試重點                   |
-| --- | ------------------------------------------------------------------------------- | -------------------------- |
-| 1   | should return initial empty state                                               | 預設空狀態                 |
-| 2   | should have computed properties                                                 | computed refs 存在         |
-| 3   | should load data from storage on initialize                                     | 初始化讀取 service         |
-| 4   | should manage loading state during initialization                               | isLoading 切換             |
-| 5   | should repair missing checklist order and persist repaired checklist            | 修復 legacy order + 持久化 |
-| 6   | should fallback selected checklist and reload scoped categories/items           | 選取回退                   |
-| 7   | should set error and clear state when initialize fails unexpectedly             | 初始化失敗復原             |
-| 8   | should create a new checklist                                                   | 建立 + 刷新                |
-| 9   | should select the first checklist after creation                                | 自動選取                   |
-| 10  | should update an existing checklist                                             | 更新 + 刷新                |
-| 11  | should delete a checklist                                                       | 刪除 + 刷新                |
-| 12  | should return null when createChecklist service call fails                      | Service 失敗路徑           |
-| 13  | should return null when updateChecklist service call fails                      | Service 失敗路徑           |
-| 14  | should create a category in the selected checklist                              | 建立分類                   |
-| 15  | should return null if no checklist is selected                                  | 空選取檢查                 |
-| 16  | should create an item in the selected checklist                                 | 建立物品                   |
-| 17  | should toggle item packed status                                                | 切換 + 刷新；不建立復原    |
-| 18  | should calculate progress correctly                                             | 進度計算                   |
-| 19  | should return 0 progress for empty checklist                                    | 零物品邊界                 |
-| 20  | should handle storage errors gracefully during initialization                   | 錯誤容錯                   |
-| 21  | should duplicate a checklist and refresh state                                  | 複製清單                   |
-| 22  | should duplicate a category and refresh state                                   | 複製分類                   |
-| 23  | should duplicate an item and refresh state                                      | 複製物品                   |
-| 24  | should delete a category and refresh both categories and items                  | 分類級聯刪除               |
-| 25  | should delete an item and refresh items                                         | 物品刪除                   |
-| 26  | should update multiple checklists and refresh state                             | 批量更新                   |
-| 27  | should return null when creating item without selected checklist                | 空選取檢查                 |
-| 28  | should return null when duplicating item without selected checklist             | 空選取檢查                 |
-| 29  | should return null when updating item without selected checklist                | 空選取檢查                 |
-| 30  | should return empty array when getting categories without selected checklist    | 空選取檢查                 |
-| 31  | should return empty array when getting items without selected checklist         | 空選取檢查                 |
-| 32  | should return early when deleting item without selected checklist               | 空選取檢查                 |
-| 33  | should return null when createItem service call fails (with checklist)          | Service 失敗路徑           |
-| 34  | should return null when duplicateCategory service call fails (with checklist)   | Service 失敗路徑           |
-| 35  | should return null when updateItem service call fails (with checklist)          | Service 失敗路徑           |
-| 36  | should return null when duplicateItem service call fails (with checklist)       | Service 失敗路徑           |
-| 37  | should return null when createCategory service call fails (with checklist)      | Service 失敗路徑           |
-| 38  | should return null when duplicateChecklist service call fails (no checklist)    | Service 失敗路徑           |
-| 39  | should return null when updateCategory service call fails (no checklist)        | Service 失敗路徑           |
-| 40  | should return null when updateCategory service returns undefined                | falsy 結果防禦             |
-| 41  | should return null when updateMultipleChecklists service returns undefined      | falsy 結果防禦             |
-| 42  | should return null when updateCategory throws (real service)                    | throw → null 後備          |
-| 43  | should refresh categories and return updated category on success                | 成功路徑 + refresh         |
-| 44  | should refresh state when storage event updates app data key                    | 跨分頁同步 refresh         |
-| 45  | should treat a category pack-all as one undoable action and restore mixed state | 群組歷史與重做安全         |
-| 46  | should clear packing history when switching checklists                          | 歷史範圍隔離               |
+| #   | Test                                                                              | 測試重點                |
+| --- | --------------------------------------------------------------------------------- | ----------------------- |
+| 1   | should return initial empty state                                                 | 預設空狀態              |
+| 2   | should have computed properties                                                   | computed refs 存在      |
+| 3   | should load data from storage on initialize                                       | 初始化讀取 service      |
+| 4   | should manage loading state during initialization                                 | isLoading 切換          |
+| 5   | should repair missing checklist order and restore the saved checklist             | 舊資料修復與已儲存選取  |
+| 6   | should fallback selected checklist and reload scoped categories/items             | 側欄頂端回退            |
+| 7   | should set error and clear state when initialize fails unexpectedly               | 初始化失敗復原          |
+| 8   | should create a new checklist                                                     | 建立 + 刷新             |
+| 9   | should select the first checklist after creation                                  | 自動選取                |
+| 10  | should update an existing checklist                                               | 更新 + 刷新             |
+| 11  | should delete a checklist                                                         | 刪除 + 刷新             |
+| 12  | should return null when createChecklist service call fails                        | Service 失敗路徑        |
+| 13  | should return null when updateChecklist service call fails                        | Service 失敗路徑        |
+| 14  | should create a category in the selected checklist                                | 建立分類                |
+| 15  | should return null if no checklist is selected                                    | 空選取檢查              |
+| 16  | should create an item in the selected checklist                                   | 建立物品                |
+| 17  | should toggle item packed status                                                  | 切換 + 刷新；不建立復原 |
+| 18  | should calculate progress correctly                                               | 進度計算                |
+| 19  | should return 0 progress for empty checklist                                      | 零物品邊界              |
+| 20  | should handle storage errors gracefully during initialization                     | 錯誤容錯                |
+| 21  | should duplicate a checklist and refresh state                                    | 複製清單                |
+| 22  | should duplicate a category and refresh state                                     | 複製分類                |
+| 23  | should duplicate an item and refresh state                                        | 複製物品                |
+| 24  | should delete a category and refresh both categories and items                    | 分類級聯刪除            |
+| 25  | should delete an item and refresh items                                           | 物品刪除                |
+| 26  | should update multiple checklists and refresh state                               | 批量更新                |
+| 27  | should return null when creating item without selected checklist                  | 空選取檢查              |
+| 28  | should return null when duplicating item without selected checklist               | 空選取檢查              |
+| 29  | should return null when updating item without selected checklist                  | 空選取檢查              |
+| 30  | should return empty array when getting categories without selected checklist      | 空選取檢查              |
+| 31  | should return empty array when getting items without selected checklist           | 空選取檢查              |
+| 32  | should return early when deleting item without selected checklist                 | 空選取檢查              |
+| 33  | should return null when createItem service call fails (with checklist)            | Service 失敗路徑        |
+| 34  | should return null when duplicateCategory service call fails (with checklist)     | Service 失敗路徑        |
+| 35  | should return null when updateItem service call fails (with checklist)            | Service 失敗路徑        |
+| 36  | should return null when duplicateItem service call fails (with checklist)         | Service 失敗路徑        |
+| 37  | should return null when createCategory service call fails (with checklist)        | Service 失敗路徑        |
+| 38  | should return null when duplicateChecklist service call fails (no checklist)      | Service 失敗路徑        |
+| 39  | should return null when updateCategory service call fails (no checklist)          | Service 失敗路徑        |
+| 40  | should return null when updateCategory service returns undefined                  | falsy 結果防禦          |
+| 41  | should return null when updateMultipleChecklists service returns undefined        | falsy 結果防禦          |
+| 42  | should return null when updateCategory throws (real service)                      | throw → null 後備       |
+| 43  | should refresh categories and return updated category on success                  | 成功路徑 + refresh      |
+| 44  | should preserve valid selection and recover deleted selection on app data refresh | 跨分頁選取復原          |
+| 45  | should treat a category pack-all as one undoable action and restore mixed state   | 群組歷史與重做安全      |
+| 46  | should clear packing history when switching checklists                            | 歷史範圍隔離            |
 
 ##### 8.1.3.2 useTemplates.test.js（14）
 
@@ -605,7 +605,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 16  | should duplicate checklist and select the copy on handleChecklistCopy   | 清單複製               |
 | 17  | should delete checklist after user confirms the dialog                  | 確認刪除               |
 | 18  | should not delete checklist when user cancels the dialog                | 取消刪除               |
-| 19  | should select first remaining checklist after deleting the selected one | 刪後選取               |
+| 19  | should delegate selected checklist deletion to the composable           | 刪除委派               |
 | 20  | should update checklist via ChecklistComponent emit                     | 清單更新               |
 | 21  | should call updateMultipleChecklists on handleChecklistMove             | 清單移動               |
 | 22  | should update selectedChecklistId from overlay sidebar select-checklist | overlay 側欄選取同步   |
@@ -946,15 +946,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 4   | should show checklist content after creating     | 建立後顯示 |
 | 5   | should show topbar on mobile viewport            | 行動版佈局 |
 
-#### 8.3.2 checklist-management.spec.js（5）
+#### 8.3.2 checklist-management.spec.js（6）
 
-| #   | Test                                             | 測試重點    |
-| --- | ------------------------------------------------ | ----------- |
-| 1   | should create a new checklist via sidebar button | 建立流程    |
-| 2   | should auto-select and enter edit mode           | 自動編輯 UX |
-| 3   | should rename checklist by clicking on the name  | 重命名流程  |
-| 4   | should switch between checklists                 | 導航流程    |
-| 5   | should delete checklist after confirmation       | 刪除流程    |
+| #   | Test                                                                                    | 測試重點        |
+| --- | --------------------------------------------------------------------------------------- | --------------- |
+| 1   | should create a new checklist via sidebar button                                        | 建立流程        |
+| 2   | should auto-select and enter edit mode                                                  | 自動編輯 UX     |
+| 3   | should rename checklist by clicking on the name                                         | 重命名流程      |
+| 4   | should switch between checklists                                                        | 導航流程        |
+| 5   | should delete checklist after confirmation                                              | 刪除流程        |
+| 6   | should restore the last opened checklist and fallback to sidebar top after invalidation | 重載恢復 + 回退 |
 
 #### 8.3.3 category-crud.spec.js（3）
 

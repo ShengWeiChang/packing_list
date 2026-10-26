@@ -18,6 +18,7 @@ Created: 2025-09-19
  */
 export const STORAGE_KEYS = {
   APP_DATA: 'packingListApp',
+  LAST_OPENED_CHECKLIST_ID: 'packingListLastOpenedChecklistId',
   TEMPLATES: 'packingListTemplates',
 };
 
