@@ -12,6 +12,10 @@
     "packingUpdated": "打包狀態已更新",
     "undo": "復原"
   },
+  "completion": {
+    "ready": "準備出發！",
+    "skip": "略過動畫"
+  },
   "sidebar": {
     "title": "清單列表",
     "newChecklist": "新增清單",

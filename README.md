@@ -61,6 +61,8 @@ npm run validate         # Lint + format check
 packing_list/
 ├── docs/                # Documentation
 ├── source/              # Application source
+│   ├── assets/          # Bundled visual assets
+│   │   └── completion/  # Packing completion illustrations
 │   ├── components/      # Vue components
 │   ├── composables/     # Composition API hooks
 │   ├── data/            # Default data
@@ -82,6 +84,7 @@ packing_list/
 - **[Product Specification](docs/product-spec.md)** — Feature requirements and data models
 - **[Code Quality Guide](docs/code-quality.md)** — Coding standards and best practices
 - **[Testing Guide](docs/testing-guide.md)** — Test architecture and conventions
+- **[Asset Governance](docs/assets.md)** — Visual asset ownership, replacement contracts, and verification
 
 ## Contributing
 

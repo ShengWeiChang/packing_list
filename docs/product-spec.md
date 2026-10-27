@@ -239,16 +239,21 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Category progress: Based on that category’s `sortedItems.length` and `isPacked` counts; shown on the category card (`Category.vue`).
   - Percentage formula: `Math.round(completed / total * 100)`; when `total = 0`, returns `0` (`ProgressBar.vue`).
   - Completed styling: When all items in a category are packed and the list is non-empty, the card shows a completed background style.
+  - Completion journey: A non-empty checklist that becomes fully packed through a successful local item toggle, category-wide pack, or redo shows a full-page travel overlay. Independent PNG layers render its suitcase, sparse airport, plane, and blank baggage label; HTML supplies the locally formatted checklist `startDate`/`endDate` trip range, checklist `name`, and prominent localized departure message on that label.
+  - Completion scope: Initial load, reload, switching to an already complete checklist, and cross-tab storage synchronization do not show the overlay. Unpacking, marking an item pending, or adding an unpacked item makes a later local completion eligible again.
+  - Accessible completion: The temporary overlay covers the complete app while leaving the original interface faintly visible, makes that underlying interface inert, contains keyboard focus on its black-background skip control, supports Escape and backdrop dismissal, then returns focus to the triggering control. Reduced-motion users receive the same static completion content without travel movement.
 - Flow:
   - Check/uncheck items → category and checklist progress update immediately.
   - Add/delete/drag items → progress recalculates automatically.
   - Switch checklist → progress recalculates for the selected list.
+  - Local incomplete → complete transition → completion journey → return to the completed checklist with its regular progress display.
 - Validation:
   - Empty set: `total=0` displays `0%`; no divide-by-zero/NaN.
   - Rounding: e.g., 1/3 → `33%`, 2/3 → `67%`.
   - Completed style: Category turns green only when non-empty and fully packed.
   - Persistence: Packing status saved in localStorage; progress matches UI after reload.
   - Cross-category moves: Source/target category completion updates correctly; checklist total progress stays correct.
+  - Completion journey: Only a successful local incomplete-to-complete transition for a non-empty checklist opens the overlay; skip, narrow viewport, and reduced-motion paths remain usable.
 
 #### Packing Undo and Redo
 
@@ -257,7 +262,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Each category-wide pack/unpack action creates one history entry containing only `isPacked` and `isPending` changes.
   - Individual item packed/pending changes are not recorded; making one after an undo clears the redo entry so it cannot overwrite the newer choice.
   - `Ctrl+Z` / `Cmd+Z` undoes and `Ctrl+Shift+Z` / `Cmd+Shift+Z` redoes when focus is outside editable controls; text inputs retain native browser undo.
-  - Category-wide changes show a five-second status notice with an Undo button. `Escape` continues to cancel inline name editing without saving.
+  - Category-wide changes show a five-second status notice with an Undo button. When that action opens the completion journey, or a later individual item completes the checklist while the notice is visible, the notice waits until the overlay closes and then receives a fresh five-second window. `Escape` continues to cancel inline name editing without saving.
   - History is limited to 50 entries, stays in memory for the current tab, and clears when switching checklists, deleting items/categories, or receiving external storage changes.
 - Validation:
   - Undoing a category-wide change restores the previous mixed packed/pending state in one action; redo reapplies it.
@@ -412,6 +417,8 @@ packing-list/
 │   └── code-quality.md               # Coding & linting guidelines
 └── source/                           # Application source
     ├── App.vue                       # Root component
+    ├── assets/                        # Bundled visual assets
+    │   └── completion/                # Packing completion PNG illustration layers
     ├── index.css                     # Global styles; contains auto-generated :root variables
     ├── main.js                       # App entry point (createApp + mount)
     ├── components/                   # UI components
@@ -423,6 +430,7 @@ packing-list/
     │   ├── Item.vue                  # Item row/card
     │   ├── OverflowMenu.vue          # Overflow actions menu
     │   ├── NewChecklistDialog.vue    # Checklist source selection dialog
+    │   ├── PackingCompletionOverlay.vue # Full-page packing completion journey
     │   ├── ProgressBar.vue           # Progress bar component
     │   ├── SaveTemplateDialog.vue    # New template naming dialog
     │   ├── Sidebar.vue               # Sidebar navigation
@@ -529,20 +537,21 @@ The application uses a centralized color management system with semantic naming:
 
 ### Component Specifications
 
-| Component            | Description                        | Interactions                                                                                         |
-| -------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| AppIcon              | Shared semantic icon adapter       | Maps project icon names to one icon family; applies size slots and decorative/labelled accessibility |
-| Sidebar              | Checklist and template navigation  | Responsive collapse/expand; checklist selection/reordering; template menu opens the template editor  |
-| Topbar               | Mobile navigation bar              | Hamburger menu; quick add checklist                                                                  |
-| Checklist            | Main content area                  | Shows categories/items, category reordering, masonry layout, and the unpacked-only view toggle       |
-| PendingItemsCategory | Virtual category for pending items | Orange theme; multi-column grid; displays items marked as pending (to-buy/to-do)                     |
-| Category             | Category card                      | Lists items; shows progress; edit actions; drag and drop for item reordering and movement            |
-| Item                 | Item row/card                      | Toggle packed/pending; inline edit; delete; draggable within/between categories                      |
-| ProgressBar          | Progress visualization             | Displays completion percentage                                                                       |
-| OverflowMenu         | Overflow actions                   | Edit/copy/delete and other actions                                                                   |
-| NewChecklistDialog   | Checklist source selection         | Choose an empty checklist, a personal template, or a read-only recommended list                      |
-| SaveTemplateDialog   | New template naming                | Validate a name before saving a new template snapshot                                                |
-| TemplateEditor       | Isolated template editing          | Edit template content; explicitly save, cancel, or delete without creating a checklist               |
+| Component                | Description                        | Interactions                                                                                         |
+| ------------------------ | ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| AppIcon                  | Shared semantic icon adapter       | Maps project icon names to one icon family; applies size slots and decorative/labelled accessibility |
+| Sidebar                  | Checklist and template navigation  | Responsive collapse/expand; checklist selection/reordering; template menu opens the template editor  |
+| Topbar                   | Mobile navigation bar              | Hamburger menu; quick add checklist                                                                  |
+| Checklist                | Main content area                  | Shows categories/items, category reordering, masonry layout, and the unpacked-only view toggle       |
+| PendingItemsCategory     | Virtual category for pending items | Orange theme; multi-column grid; displays items marked as pending (to-buy/to-do)                     |
+| Category                 | Category card                      | Lists items; shows progress; edit actions; drag and drop for item reordering and movement            |
+| Item                     | Item row/card                      | Toggle packed/pending; inline edit; delete; draggable within/between categories                      |
+| ProgressBar              | Progress visualization             | Displays completion percentage                                                                       |
+| OverflowMenu             | Overflow actions                   | Edit/copy/delete and other actions                                                                   |
+| NewChecklistDialog       | Checklist source selection         | Choose an empty checklist, a personal template, or a read-only recommended list                      |
+| PackingCompletionOverlay | Completion journey overlay         | Shows the local 100% packing journey; supports skip, focus return, and reduced motion                |
+| SaveTemplateDialog       | New template naming                | Validate a name before saving a new template snapshot                                                |
+| TemplateEditor           | Isolated template editing          | Edit template content; explicitly save, cancel, or delete without creating a checklist               |
 
 ## 7. Data Models
 

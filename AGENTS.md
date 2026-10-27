@@ -70,6 +70,7 @@ When editing ANY document in `docs/`, you MUST update BOTH versions.
 | `product-spec.md`  | `product-spec-zh.md`  |
 | `code-quality.md`  | `code-quality-zh.md`  |
 | `testing-guide.md` | `testing-guide-zh.md` |
+| `assets.md`        | `assets-zh.md`        |
 
 ### Rules
 

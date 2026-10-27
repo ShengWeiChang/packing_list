@@ -10,7 +10,10 @@ Created: 2025-09-19
 -->
 
 <template>
-  <div :class="['min-h-screen text-primary', isMobileViewport ? 'flex flex-col' : 'flex']">
+  <div
+    ref="appShell"
+    :class="['min-h-screen text-primary', isMobileViewport ? 'flex flex-col' : 'flex']"
+  >
     <!-- Overlay for narrow screens when sidebar is open -->
     <div
       v-if="(isMobileViewport || (isSmallDesktop && isSidebarOpen)) && isSidebarOpen"
@@ -37,7 +40,11 @@ Created: 2025-09-19
       v-if="isOverlayVisible"
       to="body"
     >
-      <div class="fixed inset-y-0 left-0 z-50">
+      <div
+        class="fixed inset-y-0 left-0 z-50"
+        :inert="showPackingCompletion || undefined"
+        data-testid="overlay-sidebar"
+      >
         <Sidebar
           :is-expanded="isSidebarOpen"
           :is-mobile="isMobileViewport"
@@ -151,6 +158,16 @@ Created: 2025-09-19
       @save="handleTemplateSave"
     />
 
+    <Teleport to="body">
+      <PackingCompletionOverlay
+        v-if="showPackingCompletion && packingCompletion"
+        :checklist-name="packingCompletion.checklistName"
+        :end-date="packingCompletion.endDate"
+        :start-date="packingCompletion.startDate"
+        @close="handlePackingCompletionClose"
+      />
+    </Teleport>
+
     <div
       v-if="showPackingUndo && canUndoPackingChange"
       class="fixed bottom-4 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-4 rounded-lg bg-primary px-4 py-3 text-white shadow-lg"
@@ -174,11 +191,12 @@ Created: 2025-09-19
 // Imports
 // ------------------------------------------------------------------------------
 
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import ChecklistComponent from './components/Checklist.vue';
 import NewChecklistDialog from './components/NewChecklistDialog.vue';
+import PackingCompletionOverlay from './components/PackingCompletionOverlay.vue';
 import SaveTemplateDialog from './components/SaveTemplateDialog.vue';
 import Sidebar from './components/Sidebar.vue';
 import TemplateEditor from './components/TemplateEditor.vue';
@@ -261,7 +279,12 @@ const templateChecklistId = ref(null);
 const templateChecklistName = ref('');
 const templateEditing = ref(null);
 const showPackingUndo = ref(false);
+const showPackingCompletion = ref(false);
+const packingCompletion = ref(null);
+const appShell = ref(null);
 let packingUndoTimer = null;
+let packingCompletionTrigger = null;
+let packingUndoPendingAfterCompletion = false;
 
 // Newly created item tracking for auto-edit
 const newlyCreatedItemId = ref(null);
@@ -289,6 +312,86 @@ const recommendedLists = computed(() => recommendedListService.getRecommendedLis
 const handleAsyncAction = async (action, ...args) => {
   return await action(...args);
 };
+
+/**
+ * Capture the active checklist's packing progress before or after a local action.
+ * @returns {{checklistId: string|null, checklistName: string, startDate: string, endDate: string, total: number, completed: number}} Current packing progress.
+ */
+function getPackingCompletionSnapshot() {
+  return {
+    checklistId: selectedChecklistId.value,
+    checklistName: selectedChecklist.value?.name || t('checklist.untitled'),
+    endDate: selectedChecklist.value?.endDate || '',
+    startDate: selectedChecklist.value?.startDate || '',
+    total: items.value.length,
+    completed: items.value.filter((item) => item.isPacked).length,
+  };
+}
+
+/**
+ * Return whether a non-empty snapshot represents a fully packed checklist.
+ * @param {{total: number, completed: number}} snapshot - Packing progress snapshot.
+ * @returns {boolean} `true` when every item in the snapshot is packed.
+ */
+function isPackingComplete(snapshot) {
+  return snapshot.total > 0 && snapshot.total === snapshot.completed;
+}
+
+/** Pause the current packing Undo notice until the completion overlay closes. */
+function deferPackingUndoUntilCompletionClose() {
+  showPackingUndo.value = false;
+  window.clearTimeout(packingUndoTimer);
+  packingUndoPendingAfterCompletion = true;
+}
+
+/**
+ * Open the completion overlay only for a successful local incomplete-to-complete transition.
+ * @param {{checklistId: string|null, total: number, completed: number}} before - Pre-action state.
+ * @returns {boolean} Whether the overlay opened.
+ */
+function showPackingCompletionForTransition(before) {
+  const after = getPackingCompletionSnapshot();
+  if (
+    !before.checklistId ||
+    before.checklistId !== after.checklistId ||
+    isPackingComplete(before) ||
+    !isPackingComplete(after)
+  ) {
+    return false;
+  }
+
+  packingCompletionTrigger =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  packingCompletion.value = after;
+  showPackingCompletion.value = true;
+  if (showPackingUndo.value && canUndoPackingChange.value) {
+    deferPackingUndoUntilCompletionClose();
+  }
+  return true;
+}
+
+/** Close the completion overlay and return focus to the triggering control when possible. */
+async function handlePackingCompletionClose() {
+  showPackingCompletion.value = false;
+  await nextTick();
+  packingCompletionTrigger?.focus();
+  packingCompletionTrigger = null;
+  packingCompletion.value = null;
+
+  if (packingUndoPendingAfterCompletion && canUndoPackingChange.value) {
+    packingUndoPendingAfterCompletion = false;
+    showPackingUndoToast();
+  }
+}
+
+/** Show the category packing recovery action for its complete five-second window. */
+function showPackingUndoToast() {
+  showPackingUndo.value = true;
+  window.clearTimeout(packingUndoTimer);
+  packingUndoTimer = window.setTimeout(() => {
+    showPackingUndo.value = false;
+  }, 5000);
+}
 
 /**
  * Check if screen is mobile size and adjust UI accordingly
@@ -362,7 +465,11 @@ async function handleItemCreate(categoryId) {
  * @param {object} item - The item object with updated properties
  */
 async function handleItemUpdate(item) {
-  await handleAsyncAction(updateItem, item);
+  const before = getPackingCompletionSnapshot();
+  const updatedItem = await handleAsyncAction(updateItem, item);
+  if (updatedItem) {
+    showPackingCompletionForTransition(before);
+  }
 
   // Clear the newly created flag if this was the item being edited
   if (newlyCreatedItemId.value === item.id) {
@@ -453,20 +560,20 @@ async function handleCategoryDelete(categoryId) {
  */
 async function handleCategoryPacked({ categoryId, isPacked }) {
   const checklistId = selectedChecklistId.value;
+  const before = getPackingCompletionSnapshot();
   const updatedItems = await handleAsyncAction(setCategoryPacked, categoryId, isPacked);
-  if (
-    !updatedItems?.length ||
-    selectedChecklistId.value !== checklistId ||
-    !canUndoPackingChange.value
-  ) {
+  if (!updatedItems?.length || selectedChecklistId.value !== checklistId) {
     return;
   }
 
-  showPackingUndo.value = true;
-  window.clearTimeout(packingUndoTimer);
-  packingUndoTimer = window.setTimeout(() => {
-    showPackingUndo.value = false;
-  }, 5000);
+  const completionShown = showPackingCompletionForTransition(before);
+  if (completionShown) {
+    if (canUndoPackingChange.value) deferPackingUndoUntilCompletionClose();
+    return;
+  }
+
+  if (!canUndoPackingChange.value) return;
+  showPackingUndoToast();
 }
 
 /**
@@ -476,6 +583,16 @@ async function handleUndoPackingChange() {
   if (await undoPackingChange()) {
     showPackingUndo.value = false;
     window.clearTimeout(packingUndoTimer);
+  }
+}
+
+/**
+ * Redo the most recent category-wide packing change and celebrate if it completes the list.
+ */
+async function handleRedoPackingChange() {
+  const before = getPackingCompletionSnapshot();
+  if (await redoPackingChange()) {
+    showPackingCompletionForTransition(before);
   }
 }
 
@@ -500,6 +617,7 @@ function isEditableTarget(target) {
  */
 function handlePackingHistoryKeydown(event) {
   if (
+    showPackingCompletion.value ||
     event.repeat ||
     event.altKey ||
     (!event.ctrlKey && !event.metaKey) ||
@@ -512,7 +630,7 @@ function handlePackingHistoryKeydown(event) {
   if (event.shiftKey) {
     if (!canRedoPackingChange.value) return;
     event.preventDefault();
-    void redoPackingChange();
+    void handleRedoPackingChange();
   } else {
     if (!canUndoPackingChange.value) return;
     event.preventDefault();
@@ -767,6 +885,8 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
   window.removeEventListener('keydown', handlePackingHistoryKeydown);
   window.clearTimeout(packingUndoTimer);
+  if (appShell.value) appShell.value.inert = false;
+  document.body.style.overflow = '';
 });
 
 // ------------------------------------------------------------------------------
@@ -774,19 +894,23 @@ onUnmounted(() => {
 // ------------------------------------------------------------------------------
 
 // Prevent layout shift caused by scrollbar/body resizing when overlay drawer is active
-watch([isSidebarOpen, isMobileViewport, isSmallDesktop], () => {
+watch([isSidebarOpen, isMobileViewport, isSmallDesktop, showPackingCompletion], () => {
   const overlayActive =
-    isSidebarOpen.value &&
-    (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value));
+    showPackingCompletion.value ||
+    (isSidebarOpen.value &&
+      (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value)));
   if (overlayActive) {
     document.body.style.overflow = 'hidden';
   } else {
     document.body.style.overflow = '';
   }
+
+  if (appShell.value) appShell.value.inert = showPackingCompletion.value;
 });
 
 watch(canUndoPackingChange, (canUndo) => {
   if (canUndo) return;
+  packingUndoPendingAfterCompletion = false;
   showPackingUndo.value = false;
   window.clearTimeout(packingUndoTimer);
 });
