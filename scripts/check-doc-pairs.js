@@ -15,6 +15,7 @@ import process from 'node:process';
 
 const PROJECT_ROOT = resolve(import.meta.dirname, '..');
 const DOCUMENT_PAIRS = [
+  ['docs/assets.md', 'docs/assets-zh.md'],
   ['docs/product-spec.md', 'docs/product-spec-zh.md'],
   ['docs/code-quality.md', 'docs/code-quality-zh.md'],
   ['docs/testing-guide.md', 'docs/testing-guide-zh.md'],

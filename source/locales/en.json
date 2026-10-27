@@ -12,6 +12,10 @@
     "packingUpdated": "Packing status updated",
     "undo": "Undo"
   },
+  "completion": {
+    "ready": "Ready to go!",
+    "skip": "Skip animation"
+  },
   "sidebar": {
     "title": "Checklists",
     "newChecklist": "New Checklist",

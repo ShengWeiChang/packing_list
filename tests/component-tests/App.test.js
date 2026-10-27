@@ -178,8 +178,8 @@ describe('App', () => {
 
     // Reset reactive state
     mockChecklists.value = [
-      { id: 'cl-1', name: 'Trip A', order: 0 },
-      { id: 'cl-2', name: 'Trip B', order: 1 },
+      { id: 'cl-1', name: 'Trip A', startDate: '2025-12-01', endDate: '2025-12-02', order: 0 },
+      { id: 'cl-2', name: 'Trip B', startDate: '2025-12-08', endDate: '2025-12-09', order: 1 },
     ];
     mockCategories.value = [{ id: 'cat-1', name: 'Clothing', checklistId: 'cl-1', order: 0 }];
     mockItems.value = [
@@ -203,6 +203,7 @@ describe('App', () => {
 
   afterEach(() => {
     setInnerWidth(originalInnerWidth);
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -308,6 +309,12 @@ describe('App', () => {
             props: ['template'],
             emits: ['cancel', 'delete', 'save'],
           },
+          PackingCompletionOverlay: {
+            name: 'PackingCompletionOverlay',
+            template: '<section class="packing-completion-overlay-stub" />',
+            props: ['checklistName', 'endDate', 'startDate'],
+            emits: ['close'],
+          },
           teleport: { template: '<div><slot /></div>' },
         },
       },
@@ -341,6 +348,125 @@ describe('App', () => {
       expect(wrapper.getComponent({ name: 'ChecklistComponent' }).props('checklist').id).toBe(
         'cl-1'
       );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 1A: Packing Completion Feedback
+  // ---------------------------------------------------------------------------
+
+  describe('packing completion feedback', () => {
+    // Test Case 62: Should show the journey overlay after the final local item is packed
+    it('shows the completion overlay after the final local item is packed', async () => {
+      mockUpdateItem.mockImplementation(async (item) => {
+        mockItems.value = mockItems.value.map((existing) =>
+          existing.id === item.id ? { ...existing, ...item } : existing
+        );
+        return item;
+      });
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+
+      await wrapper.findComponent({ name: 'ChecklistComponent' }).vm.$emit('update:item', {
+        ...mockItems.value[0],
+        isPacked: true,
+      });
+      await flushPromises();
+
+      const overlay = wrapper.getComponent({ name: 'PackingCompletionOverlay' });
+      expect(overlay.props()).toMatchObject({
+        checklistName: 'Trip A',
+        endDate: '2025-12-02',
+        startDate: '2025-12-01',
+      });
+    });
+
+    // Test Case 64: Should show the journey only when redo successfully completes the checklist
+    it('shows the completion overlay only when redo completes the checklist', async () => {
+      mockCanRedoPackingChange.value = true;
+      mockRedoPackingChange.mockImplementationOnce(async () => {
+        mockItems.value = mockItems.value.map((item) => ({ ...item, isPacked: true }));
+        return true;
+      });
+      setInnerWidth(375);
+      const wrapper = createWrapper();
+      await flushPromises();
+
+      await wrapper.findComponent({ name: 'Topbar' }).vm.$emit('toggle');
+      await wrapper.vm.$nextTick();
+      expect(wrapper.get('[data-testid="overlay-sidebar"]').attributes('inert')).toBeUndefined();
+
+      const completingRedo = new KeyboardEvent('keydown', {
+        key: 'z',
+        ctrlKey: true,
+        shiftKey: true,
+        cancelable: true,
+      });
+      window.dispatchEvent(completingRedo);
+      await flushPromises();
+
+      expect(completingRedo.defaultPrevented).toBe(true);
+      expect(mockRedoPackingChange).toHaveBeenCalledOnce();
+      expect(wrapper.getComponent({ name: 'PackingCompletionOverlay' }).props()).toMatchObject({
+        checklistName: 'Trip A',
+        endDate: '2025-12-02',
+        startDate: '2025-12-01',
+      });
+      expect(wrapper.get('[data-testid="overlay-sidebar"]').attributes('inert')).toBe('true');
+
+      await wrapper.findComponent({ name: 'PackingCompletionOverlay' }).vm.$emit('close');
+      await flushPromises();
+      expect(wrapper.get('[data-testid="overlay-sidebar"]').attributes('inert')).toBeUndefined();
+      wrapper.unmount();
+
+      mockItems.value = mockItems.value.map((item, index) => ({
+        ...item,
+        isPacked: index !== 0,
+      }));
+      mockRedoPackingChange.mockResolvedValueOnce(true);
+      const guardedWrapper = createWrapper();
+      await flushPromises();
+
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'z',
+          ctrlKey: true,
+          shiftKey: true,
+          cancelable: true,
+        })
+      );
+      await flushPromises();
+
+      expect(mockRedoPackingChange).toHaveBeenCalledTimes(2);
+      expect(guardedWrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(
+        false
+      );
+    });
+
+    // Test Case 65: Should not show the journey for passive completed-state changes
+    it('keeps completed initialization and checklist switching silent', async () => {
+      mockItems.value = mockItems.value.map((item) => ({ ...item, isPacked: true }));
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await flushPromises();
+
+      expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(false);
+
+      mockSelectedChecklistId.value = 'cl-2';
+      mockCategories.value = [{ id: 'cat-2', name: 'Documents', checklistId: 'cl-2', order: 0 }];
+      mockItems.value = [
+        {
+          id: 'item-3',
+          name: 'Passport',
+          categoryId: 'cat-2',
+          isPacked: true,
+          order: 0,
+          quantity: 1,
+        },
+      ];
+      await flushPromises();
+
+      expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(false);
     });
   });
 
@@ -1523,6 +1649,120 @@ describe('App', () => {
       expect(mockRedoPackingChange).toHaveBeenCalledOnce();
       input.remove();
       wrapper.unmount();
+    });
+
+    // Test Case 63: Should defer the complete undo window until the completion overlay closes
+    it('should defer the complete undo window until the completion overlay closes', async () => {
+      vi.useFakeTimers();
+      mockCanUndoPackingChange.value = true;
+      mockCategories.value = [
+        { id: 'cat-1', name: 'Clothing', checklistId: 'cl-1', order: 0 },
+        { id: 'cat-2', name: 'Documents', checklistId: 'cl-1', order: 1 },
+      ];
+      mockItems.value = [
+        { id: 'item-1', name: 'Shirt', categoryId: 'cat-1', isPacked: false, order: 0 },
+        { id: 'item-2', name: 'Passport', categoryId: 'cat-2', isPacked: false, order: 0 },
+      ];
+      mockSetCategoryPacked.mockImplementation(async (categoryId) => {
+        mockItems.value = mockItems.value.map((item) =>
+          item.categoryId === categoryId ? { ...item, isPacked: true } : item
+        );
+        return mockItems.value.filter((item) => item.categoryId === categoryId);
+      });
+      setInnerWidth(1280);
+      const focusTrigger = document.createElement('button');
+      document.body.append(focusTrigger);
+      const wrapper = createWrapper();
+
+      await wrapper
+        .findComponent({ name: 'ChecklistComponent' })
+        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
+      await flushPromises();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
+
+      focusTrigger.focus();
+      await wrapper
+        .findComponent({ name: 'ChecklistComponent' })
+        .vm.$emit('set-category-packed', { categoryId: 'cat-2', isPacked: true });
+      await flushPromises();
+
+      expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(true);
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
+      expect(wrapper.element.inert).toBe(true);
+      expect(document.body.style.overflow).toBe('hidden');
+
+      await wrapper.findComponent({ name: 'PackingCompletionOverlay' }).vm.$emit('close');
+      await flushPromises();
+
+      expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(false);
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
+      expect(wrapper.element.inert).toBe(false);
+      expect(document.body.style.overflow).toBe('');
+      expect(document.activeElement).toBe(focusTrigger);
+
+      vi.advanceTimersByTime(4999);
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
+      vi.advanceTimersByTime(1);
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
+      focusTrigger.remove();
+    });
+
+    // Test Case 66: Should restart a visible category Undo window after item completion closes
+    it('should defer an existing category undo window when a final item opens completion', async () => {
+      vi.useFakeTimers();
+      mockCanUndoPackingChange.value = true;
+      mockCategories.value = [
+        { id: 'cat-1', name: 'Clothing', checklistId: 'cl-1', order: 0 },
+        { id: 'cat-2', name: 'Documents', checklistId: 'cl-1', order: 1 },
+      ];
+      mockItems.value = [
+        { id: 'item-1', name: 'Shirt', categoryId: 'cat-1', isPacked: false, order: 0 },
+        { id: 'item-2', name: 'Passport', categoryId: 'cat-2', isPacked: false, order: 0 },
+      ];
+      mockSetCategoryPacked.mockImplementation(async (categoryId) => {
+        mockItems.value = mockItems.value.map((item) =>
+          item.categoryId === categoryId ? { ...item, isPacked: true } : item
+        );
+        return mockItems.value.filter((item) => item.categoryId === categoryId);
+      });
+      mockUpdateItem.mockImplementation(async (updatedItem) => {
+        mockItems.value = mockItems.value.map((item) =>
+          item.id === updatedItem.id ? { ...item, ...updatedItem } : item
+        );
+        return updatedItem;
+      });
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+
+      await wrapper
+        .findComponent({ name: 'ChecklistComponent' })
+        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
+      await flushPromises();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
+
+      vi.advanceTimersByTime(4000);
+      await wrapper.findComponent({ name: 'ChecklistComponent' }).vm.$emit('update:item', {
+        ...mockItems.value.find((item) => item.id === 'item-2'),
+        isPacked: true,
+      });
+      await flushPromises();
+
+      expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(true);
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
+      vi.advanceTimersByTime(1000);
+
+      await wrapper.findComponent({ name: 'PackingCompletionOverlay' }).vm.$emit('close');
+      await flushPromises();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
+
+      vi.advanceTimersByTime(4999);
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
+      vi.advanceTimersByTime(1);
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
     });
   });
 });

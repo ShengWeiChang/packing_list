@@ -58,6 +58,20 @@ async function deleteSelectedChecklist(page) {
   await deleteButton.click();
 }
 
+/**
+ * Pack every category in the currently selected checklist.
+ * @param {import('@playwright/test').Page} page - Active Playwright page.
+ */
+async function packEveryCategory(page) {
+  const categoryCheckboxes = page.getByTestId('category-checkbox');
+  const count = await categoryCheckboxes.count();
+
+  for (let index = 0; index < count; index++) {
+    const checkbox = categoryCheckboxes.nth(index);
+    if (!(await checkbox.isChecked())) await checkbox.click();
+  }
+}
+
 // -----------------------------------------------------------------------------
 // Multi-tab Sync Tests
 // -----------------------------------------------------------------------------
@@ -173,6 +187,37 @@ test.describe('Multi-tab sync', () => {
       await expect(pageA.getByTestId('empty-state')).toBeVisible();
       await expect(pageB.getByTestId('empty-state')).toBeVisible();
 
+      await context.close();
+    });
+
+    // Test Case 5: Remote completion should sync without opening the local completion journey
+    test('should keep remote completion synchronization silent', async ({ browser }) => {
+      const context = await browser.newContext();
+      const pageA = await context.newPage();
+      const pageB = await context.newPage();
+
+      await pageA.goto('/');
+      await pageB.goto('/');
+      await createChecklist(pageA);
+      const syncedChecklist = pageB.getByTestId('sidebar-checklist-item').first();
+      await expect(syncedChecklist).toBeVisible();
+      await syncedChecklist.click();
+      await expect(pageB.getByTestId('category-checkbox').first()).toBeVisible();
+
+      await packEveryCategory(pageA);
+      await expect(pageA.getByTestId('packing-completion-overlay')).toBeVisible();
+      await expect
+        .poll(() =>
+          pageB
+            .getByTestId('category-checkbox')
+            .evaluateAll(
+              (checkboxes) =>
+                checkboxes.length > 0 && checkboxes.every((checkbox) => checkbox.checked)
+            )
+        )
+        .toBe(true);
+
+      await expect(pageB.getByTestId('packing-completion-overlay')).toHaveCount(0);
       await context.close();
     });
   });

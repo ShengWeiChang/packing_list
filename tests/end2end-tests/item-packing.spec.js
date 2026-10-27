@@ -43,6 +43,26 @@ async function createAndConfirmChecklist(page, name) {
   }
 }
 
+/**
+ * Pack every category so the active checklist reaches its local completion transition.
+ * @param {import('@playwright/test').Page} page - Active Playwright page.
+ * @returns {Promise<import('@playwright/test').Locator>} Category checkbox collection.
+ */
+async function completeChecklistByCategory(page) {
+  const categoryCheckboxes = page.getByTestId('category-checkbox');
+  const count = await categoryCheckboxes.count();
+
+  for (let index = 0; index < count; index++) {
+    const checkbox = categoryCheckboxes.nth(index);
+    if (!(await checkbox.isChecked())) {
+      await checkbox.click();
+      await expect(checkbox).toBeChecked();
+    }
+  }
+
+  return categoryCheckboxes;
+}
+
 // -----------------------------------------------------------------------------
 // Item Packing Workflow Tests
 // -----------------------------------------------------------------------------
@@ -205,6 +225,95 @@ test.describe('Item Packing Workflow', () => {
       const progressBar = page.getByTestId('progress-bar').first();
       await expect(progressBar).toContainText('100%');
     });
+
+    // Test Case 7: Should celebrate once when local packing completes the entire checklist
+    test('should show and dismiss the completion journey after the final category is packed', async ({
+      page,
+    }) => {
+      await completeChecklistByCategory(page);
+
+      const completionOverlay = page.getByTestId('packing-completion-overlay');
+      await expect(completionOverlay).toBeVisible();
+      await expect(completionOverlay).toContainText('Ready to go');
+      await expect(page.getByTestId('packing-completion-skip')).toBeFocused();
+      await expect(page.getByTestId('packing-undo-toast')).toBeHidden();
+      await expect
+        .poll(() =>
+          completionOverlay
+            .locator('img')
+            .evaluateAll((images) =>
+              images.every((image) => image.complete && image.naturalWidth > 0)
+            )
+        )
+        .toBe(true);
+
+      await page.getByTestId('packing-completion-skip').click();
+      await expect(completionOverlay).toBeHidden();
+      await expect(page.getByTestId('packing-undo-toast')).toBeVisible();
+    });
+
+    // Test Case 8: Should contain keyboard focus and support Escape and backdrop dismissal
+    test('should contain focus and dismiss completion with Escape or the backdrop', async ({
+      page,
+    }) => {
+      const categoryCheckboxes = await completeChecklistByCategory(page);
+      const completionOverlay = page.getByTestId('packing-completion-overlay');
+      const skipButton = page.getByTestId('packing-completion-skip');
+
+      await expect(skipButton).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(skipButton).toBeFocused();
+      await page.keyboard.press('Shift+Tab');
+      await expect(skipButton).toBeFocused();
+      await page.keyboard.press('Escape');
+      await expect(completionOverlay).toBeHidden();
+      await expect(categoryCheckboxes.last()).toBeFocused();
+
+      await categoryCheckboxes.last().click();
+      await expect(categoryCheckboxes.last()).not.toBeChecked();
+      await categoryCheckboxes.last().click();
+      await expect(completionOverlay).toBeVisible();
+      await page.mouse.click(12, 708);
+      await expect(completionOverlay).toBeHidden();
+    });
+
+    // Test Case 9: Should keep localized sticker copy inside the narrow reduced-motion scene
+    test('should fit localized sticker copy in a narrow reduced-motion scene', async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.route('**/*.png', async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        await route.continue();
+      });
+      await page.evaluate(() => localStorage.setItem('user-locale', 'zh-TW'));
+      await page.setViewportSize({ width: 375, height: 667 });
+      await page.reload();
+      await completeChecklistByCategory(page);
+
+      const completionOverlay = page.getByTestId('packing-completion-overlay');
+      await expect(completionOverlay).toBeVisible();
+      await expect(completionOverlay).toHaveAttribute('data-assets-ready', 'false');
+      await expect(completionOverlay).toHaveAttribute('data-assets-ready', 'true');
+      await expect(completionOverlay).toContainText('準備出發！');
+      await expect(completionOverlay).toHaveCSS('animation-name', 'none');
+      await expect(completionOverlay.locator('.packing-completion-overlay__suitcase')).toHaveCSS(
+        'animation-name',
+        'none'
+      );
+      await expect
+        .poll(() =>
+          completionOverlay
+            .locator('.packing-completion-overlay__sticker-copy')
+            .evaluate((element) => element.scrollWidth <= element.clientWidth)
+        )
+        .toBe(true);
+
+      const overlayBox = await completionOverlay.boundingBox();
+      expect(overlayBox).toMatchObject({ width: 375, height: 667 });
+      const sceneBox = await completionOverlay
+        .locator('.packing-completion-overlay__scene')
+        .boundingBox();
+      expect(sceneBox).toMatchObject({ width: 375, height: 667 });
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -212,7 +321,7 @@ test.describe('Item Packing Workflow', () => {
   // ---------------------------------------------------------------------------
 
   test.describe('data persistence', () => {
-    // Test Case 7: Changes should persist after page reload
+    // Test Case 10: Changes should persist after page reload
     test('should persist data after page reload', async ({ page }) => {
       // Rename the checklist
       await page.getByTestId('checklist-name').click();
