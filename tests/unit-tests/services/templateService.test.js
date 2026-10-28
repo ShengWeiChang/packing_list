@@ -21,6 +21,10 @@ describe('TemplateService', () => {
     storage = new Map();
     localStorage.getItem.mockImplementation((key) => storage.get(key) ?? null);
     localStorage.setItem.mockImplementation((key, value) => storage.set(key, value));
+    storage.set(
+      STORAGE_KEYS.APP_DATA,
+      JSON.stringify({ checklists: [{ id: 'checklist-1' }], categories: [], items: [] })
+    );
     service = new TemplateService();
   });
 
@@ -29,22 +33,27 @@ describe('TemplateService', () => {
   // ---------------------------------------------------------------------------
 
   // Test Case 1: Should create a storage-safe snapshot from a checklist
-  it('creates a storage-safe snapshot from a checklist', () => {
-    const template = service.createFromChecklist('checklist-1', 'Weekend', {
-      categories: [{ id: 'category-1', name: 'Clothes', checklistId: 'checklist-1', order: 0 }],
-      items: [
-        {
-          id: 'item-1',
-          name: 'Shirt',
-          quantity: 2,
-          categoryId: 'category-1',
-          checklistId: 'checklist-1',
-          isPacked: true,
-          isPending: true,
-          order: 0,
-        },
-      ],
-    });
+  it('creates a storage-safe snapshot from a checklist', async () => {
+    storage.set(
+      STORAGE_KEYS.APP_DATA,
+      JSON.stringify({
+        checklists: [{ id: 'checklist-1' }],
+        categories: [{ id: 'category-1', name: 'Clothes', checklistId: 'checklist-1', order: 0 }],
+        items: [
+          {
+            id: 'item-1',
+            name: 'Shirt',
+            quantity: 2,
+            categoryId: 'category-1',
+            checklistId: 'checklist-1',
+            isPacked: true,
+            isPending: true,
+            order: 0,
+          },
+        ],
+      })
+    );
+    const template = await service.createFromChecklist('checklist-1', 'Weekend');
 
     expect(template.categories).toEqual([{ id: 'category-1', name: 'Clothes', order: 0 }]);
     expect(template.items).toEqual([
@@ -56,8 +65,8 @@ describe('TemplateService', () => {
   });
 
   // Test Case 2: Should apply a template with fresh IDs and reset runtime state
-  it('applies a template with fresh IDs and reset runtime state', () => {
-    const template = service.createTemplate({
+  it('applies a template with fresh IDs and reset runtime state', async () => {
+    const template = await service.createTemplate({
       name: 'Weekend',
       categories: [{ id: 'old-category', name: 'Clothes', order: 0 }],
       items: [{ name: 'Shirt', quantity: 2, categoryId: 'old-category', order: 0 }],
@@ -77,15 +86,18 @@ describe('TemplateService', () => {
   // ---------------------------------------------------------------------------
 
   // Test Case 3: Should update only the template storage key
-  it('updates only the template storage key', () => {
-    const original = service.createTemplate({ name: 'Weekend', categories: [], items: [] });
+  it('updates only the template storage key', async () => {
+    const original = await service.createTemplate({ name: 'Weekend', categories: [], items: [] });
     localStorage.setItem.mockClear();
 
-    service.updateTemplate({
-      ...original,
-      name: 'Beach Weekend',
-      categories: [{ id: 'category-1', name: 'Beach', order: 0 }],
-    });
+    await service.updateTemplate(
+      {
+        ...original,
+        name: 'Beach Weekend',
+        categories: [{ id: 'category-1', name: 'Beach', order: 0 }],
+      },
+      original
+    );
 
     expect(localStorage.setItem).toHaveBeenCalledTimes(1);
     expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEYS.TEMPLATES, expect.any(String));
@@ -95,23 +107,24 @@ describe('TemplateService', () => {
     );
   });
 
-  // Test Case 4: Should recover from malformed template storage without changing app data
-  it('recovers from malformed template storage without changing app data', () => {
+  // Test Case 4: Should preserve malformed template storage without changing app data
+  it('preserves malformed template storage without changing app data', () => {
     storage.set(STORAGE_KEYS.TEMPLATES, '{not-json');
     storage.set(STORAGE_KEYS.APP_DATA, JSON.stringify({ checklists: [{ id: 'checklist-1' }] }));
 
-    expect(service.getTemplates()).toEqual([]);
+    expect(() => service.getTemplates()).toThrow('valid JSON');
+    expect(storage.get(STORAGE_KEYS.TEMPLATES)).toBe('{not-json');
     expect(localStorage.setItem).not.toHaveBeenCalled();
     expect(JSON.parse(storage.get(STORAGE_KEYS.APP_DATA)).checklists).toHaveLength(1);
   });
 
   // Test Case 5: Should propagate localStorage write failures
-  it('propagates localStorage write failures', () => {
+  it('propagates localStorage write failures', async () => {
     localStorage.setItem.mockImplementation(() => {
       throw new DOMException('Quota exceeded', 'QuotaExceededError');
     });
 
-    expect(() => service.createTemplate({ name: 'Weekend' })).toThrow('Quota exceeded');
+    await expect(service.createTemplate({ name: 'Weekend' })).rejects.toThrow('Quota exceeded');
   });
 
   // Test Case 6: Should return templates in ascending persisted order
@@ -132,32 +145,32 @@ describe('TemplateService', () => {
   });
 
   // Test Case 7: Should update and delete an existing template
-  it('updates and deletes an existing template', () => {
-    const original = service.createTemplate({ name: 'Weekend', categories: [], items: [] });
-    const updated = service.updateTemplate({ ...original, name: 'Beach Weekend' });
+  it('updates and deletes an existing template', async () => {
+    const original = await service.createTemplate({ name: 'Weekend', categories: [], items: [] });
+    const updated = await service.updateTemplate({ ...original, name: 'Beach Weekend' }, original);
 
     expect(updated.name).toBe('Beach Weekend');
-    service.deleteTemplate(original.id);
+    await service.deleteTemplate(original.id);
     expect(service.getTemplates()).toEqual([]);
   });
 
   // Test Case 8: Should reject updates and deletes for missing templates
-  it('rejects updates and deletes for missing templates', () => {
-    expect(() => service.updateTemplate({ id: 'missing-template', name: 'Missing' })).toThrow(
-      'Template with id missing-template not found'
-    );
-    expect(() => service.deleteTemplate('missing-template')).toThrow(
+  it('rejects updates and deletes for missing templates', async () => {
+    await expect(
+      service.updateTemplate({ id: 'missing-template', name: 'Missing' })
+    ).rejects.toThrow('Template with id missing-template not found');
+    await expect(service.deleteTemplate('missing-template')).rejects.toThrow(
       'Template with id missing-template not found'
     );
   });
 
   // Test Case 9: Should reorder requested templates and append unspecified templates
-  it('reorders requested templates and appends unspecified templates', () => {
-    const first = service.createTemplate({ name: 'First', order: 0 });
-    const second = service.createTemplate({ name: 'Second', order: 1 });
-    const third = service.createTemplate({ name: 'Third', order: 2 });
+  it('reorders requested templates and appends unspecified templates', async () => {
+    const first = await service.createTemplate({ name: 'First', order: 0 });
+    const second = await service.createTemplate({ name: 'Second', order: 1 });
+    const third = await service.createTemplate({ name: 'Third', order: 2 });
 
-    service.reorderTemplates([third.id, first.id, 'missing-template']);
+    await service.reorderTemplates([third.id, first.id, 'missing-template']);
 
     expect(service.getTemplates().map(({ id, order }) => ({ id, order }))).toEqual([
       { id: third.id, order: 0 },
@@ -167,10 +180,11 @@ describe('TemplateService', () => {
   });
 
   // Test Case 10: Should snapshot persisted checklist data when UI data is partial
-  it('snapshots persisted checklist data when UI data is partial', () => {
+  it('snapshots persisted checklist data when UI data is partial', async () => {
     storage.set(
       STORAGE_KEYS.APP_DATA,
       JSON.stringify({
+        checklists: [{ id: 'checklist-1' }],
         categories: [{ id: 'category-1', name: 'Clothes', checklistId: 'checklist-1', order: 0 }],
         items: [
           {
@@ -185,7 +199,7 @@ describe('TemplateService', () => {
       })
     );
 
-    const template = service.createFromChecklist('checklist-1', 'Weekend', {});
+    const template = await service.createFromChecklist('checklist-1', 'Weekend');
 
     expect(template.categories).toEqual([{ id: 'category-1', name: 'Clothes', order: 0 }]);
     expect(template.items).toEqual([
@@ -193,14 +207,14 @@ describe('TemplateService', () => {
     ]);
   });
 
-  // Test Case 11: Should recover from malformed persisted application data
-  it('recovers from malformed persisted application data', () => {
+  // Test Case 11: Should preserve malformed application data and reject snapshots
+  it('preserves malformed application data and rejects snapshots', async () => {
     storage.set(STORAGE_KEYS.APP_DATA, '{not-json');
-
-    const template = service.createFromChecklist('checklist-1', 'Weekend', {});
-
-    expect(template.categories).toEqual([]);
-    expect(template.items).toEqual([]);
+    await expect(service.createFromChecklist('checklist-1', 'Weekend')).rejects.toMatchObject({
+      code: 'corrupt',
+    });
+    expect(storage.get(STORAGE_KEYS.APP_DATA)).toBe('{not-json');
+    expect(storage.has(STORAGE_KEYS.TEMPLATES)).toBe(false);
   });
 
   // Test Case 12: Should reject applying a missing template
@@ -211,13 +225,10 @@ describe('TemplateService', () => {
   });
 
   // Test Case 13: Should append checklist snapshots after existing templates
-  it('appends checklist snapshots after existing templates', () => {
-    service.createTemplate({ name: 'First', order: 3 });
+  it('appends checklist snapshots after existing templates', async () => {
+    await service.createTemplate({ name: 'First', order: 3 });
 
-    const created = service.createFromChecklist('checklist-1', 'Second', {
-      categories: [],
-      items: [],
-    });
+    const created = await service.createFromChecklist('checklist-1', 'Second');
 
     expect(created.order).toBe(4);
   });
@@ -238,8 +249,8 @@ describe('TemplateService', () => {
   });
 
   // Test Case 15: Should preserve orphan category references and apply item defaults
-  it('preserves orphan category references and applies item defaults', () => {
-    const template = service.createTemplate({
+  it('preserves orphan category references and applies item defaults', async () => {
+    const template = await service.createTemplate({
       name: 'Minimal',
       categories: [],
       items: [{ name: 'Passport', categoryId: 'missing-category' }],

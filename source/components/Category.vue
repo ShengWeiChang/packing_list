@@ -171,7 +171,7 @@ Created: 2025-09-19
                   :newly-created-item-id="newlyCreatedItemId"
                   :category-completed="isCompleted"
                   :is-dragging="draggingItemId === item.id"
-                  @update:item="$emit('update:item', $event)"
+                  @update:item="(...args) => $emit('update:item', ...args)"
                   @copy:item="$emit('copy:item', $event)"
                   @delete:item="$emit('delete:item', $event)"
                 />
@@ -264,6 +264,7 @@ const emit = defineEmits([
 // Editing state
 const isEditing = ref(false);
 const editedName = ref('');
+let editBaseline = null;
 const editInput = ref(null);
 const isComposing = ref(false);
 let cleanupEditingFocus = () => {};
@@ -402,6 +403,7 @@ function handleBlur() {
 async function startEdit() {
   cleanupEditingFocus();
   isEditing.value = true;
+  editBaseline = { ...props.category };
   editedName.value = props.category.name;
 
   await nextTick();
@@ -413,14 +415,14 @@ async function startEdit() {
  */
 function saveEdit() {
   cleanupEditingFocus();
-  const hasNameChanged = editedName.value.trim() && editedName.value !== props.category.name;
+  const hasNameChanged = editedName.value.trim() && editedName.value !== editBaseline.name;
 
   if (hasNameChanged) {
     const updatedCategory = new Category({
-      ...props.category,
+      ...editBaseline,
       name: editedName.value.trim(),
     });
-    emit('update:category', updatedCategory);
+    emit('update:category', updatedCategory, editBaseline);
   }
   isEditing.value = false;
 }
@@ -496,6 +498,9 @@ function onItemChange(event) {
     emit('move:item', {
       type: 'move',
       items: [...reorderedSourceItems, ...reorderedTargetItems],
+      expectedItems: props.items.map((entry) =>
+        entry.id === item.id ? { ...item } : { ...entry }
+      ),
     });
   }
 
@@ -516,6 +521,9 @@ function onItemChange(event) {
 
     emit('move:item', {
       items: itemsWithNewOrder,
+      expectedItems: props.items.map((entry) =>
+        entry.id === event.moved.element?.id ? { ...event.moved.element } : { ...entry }
+      ),
       categoryId: props.category.id,
       type: 'reorder',
     });

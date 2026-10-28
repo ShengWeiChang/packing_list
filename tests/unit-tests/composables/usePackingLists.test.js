@@ -139,7 +139,7 @@ describe('usePackingLists', () => {
     });
 
     // Test Case 5: Legacy checklist order repair should restore the saved checklist
-    it('should repair missing checklist order and restore the saved checklist', async () => {
+    it('should normalize missing checklist order in memory and restore the saved checklist', async () => {
       vi.spyOn(LocalStorageService.prototype, 'getData').mockResolvedValue({
         checklists: [
           {
@@ -191,10 +191,8 @@ describe('usePackingLists', () => {
       const { initialize, checklists, selectedChecklistId, categories, items } = usePackingLists();
       await initialize();
 
-      expect(updateChecklistSpy).toHaveBeenCalledTimes(1);
-      expect(updateChecklistSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'cl-legacy', order: 0 })
-      );
+      expect(updateChecklistSpy).not.toHaveBeenCalled();
+      expect(checklists.value[0].order).toBe(0);
       expect(checklists.value.map((c) => c.id)).toEqual(['cl-legacy', 'cl-ordered']);
       expect(selectedChecklistId.value).toBe('cl-legacy');
       expect(categories.value).toEqual([expect.objectContaining({ id: 'cat-legacy' })]);
@@ -511,10 +509,10 @@ describe('usePackingLists', () => {
 
       await initialize();
 
-      // The service handles corrupted JSON by resetting to empty arrays
-      // so the composable should not see an error
+      // Corrupt content must be reported rather than treated as missing data.
       expect(checklists.value).toEqual([]);
-      expect(error.value).toBeNull();
+      expect(error.value).toContain('Stored data is not valid JSON');
+      expect(mockStorage['packingListApp']).toBe('invalid json {{{');
     });
   });
 
@@ -1032,5 +1030,53 @@ describe('usePackingLists', () => {
 
       expect(api.canUndoPackingChange.value).toBe(false);
     });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 15: Drag Intent and Concurrent Edits
+  // ---------------------------------------------------------------------------
+
+  // Test Case 47: A stale drag must not overwrite unrelated remote edits
+  it('preserves remote item edits when committing a stale drag payload', async () => {
+    const api = usePackingLists();
+    await api.initialize();
+    const checklist = await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+    const source = await api.createCategory({ name: 'Source' });
+    const destination = await api.createCategory({ name: 'Destination' });
+    const item = await api.createItem({ name: 'Old name', categoryId: source.id, quantity: 1 });
+    const dragBaseline = { ...item };
+
+    const remote = new LocalStorageService();
+    await remote.updateItem(checklist.id, { ...item, name: 'Remote name', quantity: 2 }, item);
+    await api.initialize();
+    const result = await api.updateMultipleItems(
+      [{ ...dragBaseline, categoryId: destination.id, order: 0 }],
+      { fields: ['order', 'categoryId'], expectedItems: [dragBaseline] }
+    );
+
+    expect(result[0]).toMatchObject({
+      name: 'Remote name',
+      quantity: 2,
+      categoryId: destination.id,
+    });
+    expect(await remote.getItemById(checklist.id, item.id)).toMatchObject({
+      name: 'Remote name',
+      quantity: 2,
+      categoryId: destination.id,
+    });
+
+    await remote.updateCategory({ ...source, name: 'Remote category' }, source);
+    await api.initialize();
+    const categories = await api.updateMultipleCategories([{ ...source, order: 3 }], [source]);
+    expect(categories[0]).toMatchObject({ name: 'Remote category', order: 3 });
+
+    await remote.updateChecklist({ ...checklist, name: 'Remote trip' }, checklist);
+    await api.initialize();
+    const checklists = await api.updateMultipleChecklists(
+      [{ ...checklist, order: 3 }],
+      [checklist]
+    );
+    expect(checklists[0]).toMatchObject({ name: 'Remote trip', order: 3 });
+    remote.dispose();
   });
 });

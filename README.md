@@ -14,7 +14,7 @@
 
 ## Quick Start
 
-**Prerequisites:** Node.js >= 18
+**Prerequisites:** Node.js 24.x (see `.nvmrc`)
 
 ```bash
 # Clone the repository

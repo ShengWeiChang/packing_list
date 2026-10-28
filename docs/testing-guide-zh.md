@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 603    |
-| Unit tests 單元測試           | 253    |
+| Total tests 總測試數          | 629    |
+| Unit tests 單元測試           | 277    |
 | Component tests 組件測試      | 291    |
-| E2E tests E2E 測試            | 59     |
-| Line coverage 行覆蓋率        | 95.90% |
-| Statement coverage 語句覆蓋率 | 94.81% |
-| Branch coverage 分支覆蓋率    | 86.36% |
+| E2E tests E2E 測試            | 61     |
+| Line coverage 行覆蓋率        | 95.22% |
+| Statement coverage 語句覆蓋率 | 94.30% |
+| Branch coverage 分支覆蓋率    | 87.02% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,17 +29,17 @@
 
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 253   | models、services、composables、utils 純邏輯 |
+| Unit      | Vitest                   | 277   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 291   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 59    | 真實瀏覽器中的完整使用者流程                |
+| E2E       | Playwright               | 61    | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
 | Package             | Version | Role                      |
 | ------------------- | ------- | ------------------------- |
-| vitest              | 4.0.18  | 測試執行器和斷言          |
+| vitest              | 4.1.12  | 測試執行器和斷言          |
 | @vue/test-utils     | 2.4.6   | Vue 組件測試工具          |
-| @vitest/coverage-v8 | 4.0.18  | 程式碼覆蓋率（V8 提供者） |
+| @vitest/coverage-v8 | 4.1.12  | 程式碼覆蓋率（V8 提供者） |
 | playwright          | 1.58.2  | 基於瀏覽器的 E2E 測試     |
 | jsdom               | 28.0.0  | Vitest 的 DOM 環境        |
 
@@ -50,7 +50,7 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 253 tests
+├── unit-tests/                          # 277 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -58,15 +58,16 @@ tests/
 │   │   ├── Category.test.js             #  9  tests
 │   │   └── Checklist.test.js            # 11  tests
 │   │   └── Template.test.js             #  3  tests
-│   ├── services/                        # 99  tests
+│   ├── services/                        # 119 tests
 │   │   ├── localStorageService.test.js  # 80  tests
 │   │   ├── templateService.test.js      # 15  tests
+│   │   ├── storageTransaction.test.js  # 20  tests
 │   │   └── recommendedListService.test.js  #  4  tests
-│   ├── composables/                     # 60  tests
-│   │   └── usePackingLists.test.js      # 46  tests
-│   │   └── useTemplates.test.js         # 14  tests
-│   ├── i18n/                            #  9  tests
-│   │   └── index.test.js                #  9  tests
+│   ├── composables/                     # 62  tests
+│   │   └── usePackingLists.test.js      # 47  tests
+│   │   └── useTemplates.test.js         # 15  tests
+│   ├── i18n/                            # 11  tests
+│   │   └── index.test.js                # 11  tests
 │   ├── utils/                           # 36  tests
 │       ├── helpers.test.js              # 21  tests
 │       ├── positioning.test.js          #  3  tests
@@ -95,15 +96,15 @@ tests/
 │   ├── TemplateEditor.test.js           # 13  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 59  tests
+└── end2end-tests/                       # 61  tests
     ├── mobile-workflow.spec.js          # 10  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
     ├── checklist-management.spec.js     #  6  tests
     ├── category-crud.spec.js            #  3  tests
-    ├── drag-and-drop.spec.js            #  6  tests
-    ├── multi-tab-sync.spec.js           #  5  tests
+    ├── drag-and-drop.spec.js            #  7  tests
+    ├── multi-tab-sync.spec.js           #  6  tests
     ├── template-management.spec.js      #  7  tests
     └── recommended-lists.spec.js           #  1  test
 ```
@@ -128,33 +129,34 @@ tests/
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 42.16%     | 42.22% | 41.46% |
-| source/      | 97.96%     | 86.07% | 98.87% |
-| components/  | 96.49%     | 88.85% | 98.23% |
-| composables/ | 95.72%     | 85.43% | 97.87% |
+| scripts/     | 57.48%     | 50.00% | 53.04% |
+| source/      | 97.59%     | 88.61% | 99.55% |
+| components/  | 96.60%     | 92.33% | 98.40% |
+| composables/ | 95.47%     | 86.58% | 97.26% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 98.84%     | 86.22% | 98.70% |
-| utils/       | 98.90%     | 87.69% | 100%   |
+| services/    | 95.77%     | 82.77% | 95.31% |
+| utils/       | 98.92%     | 87.69% | 100%   |
 
 ### By Component 各組件覆蓋率
 
-| Component                | Statements | Lines  | Tests |
-| ------------------------ | ---------- | ------ | ----- |
-| App.vue                  | 97.96%     | 98.87% | 61    |
-| AppIcon.vue              | 100%       | 100%   | 4     |
-| AddCategoryButton.vue    | 100%       | 100%   | 2     |
-| AddItemButton.vue        | 100%       | 100%   | 8     |
-| ProgressBar.vue          | 100%       | 100%   | 8     |
-| Topbar.vue               | 100%       | 100%   | 2     |
-| PendingItemsCategory.vue | 100%       | 100%   | 5     |
-| Sidebar.vue              | 100%       | 100%   | 33    |
-| OverflowMenu.vue         | 95.00%     | 96.10% | 24    |
-| Category.vue             | 97.19%     | 97.91% | 30    |
-| Checklist.vue            | 93.38%     | 98.40% | 38    |
-| Item.vue                 | 92.20%     | 93.33% | 26    |
-| NewChecklistDialog.vue   | 97.36%     | 100%   | 12    |
-| SaveTemplateDialog.vue   | 97.95%     | 100%   | 10    |
-| TemplateEditor.vue       | 98.73%     | 100%   | 13    |
+| Component                    | Statements | Lines  | Tests |
+| ---------------------------- | ---------- | ------ | ----- |
+| App.vue                      | 97.59%     | 99.55% | 66    |
+| AppIcon.vue                  | 100%       | 100%   | 4     |
+| AddCategoryButton.vue        | 100%       | 100%   | 2     |
+| AddItemButton.vue            | 100%       | 100%   | 8     |
+| ProgressBar.vue              | 100%       | 100%   | 8     |
+| Topbar.vue                   | 100%       | 100%   | 2     |
+| PendingItemsCategory.vue     | 100%       | 100%   | 5     |
+| Sidebar.vue                  | 100%       | 100%   | 33    |
+| OverflowMenu.vue             | 95.12%     | 96.20% | 24    |
+| Category.vue                 | 97.29%     | 98.00% | 30    |
+| Checklist.vue                | 93.52%     | 98.43% | 38    |
+| Item.vue                     | 92.40%     | 93.50% | 26    |
+| NewChecklistDialog.vue       | 97.36%     | 100%   | 12    |
+| PackingCompletionOverlay.vue | 97.18%     | 100%   | 10    |
+| SaveTemplateDialog.vue       | 97.95%     | 100%   | 10    |
+| TemplateEditor.vue           | 98.73%     | 100%   | 13    |
 
 ### Coverage Metrics Explained 覆蓋率指標說明
 
@@ -295,7 +297,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | trims its name and round-trips snapshot content  | 序列化     |
 | 3   | rejects a non-string or too-long name            | 名稱驗證   |
 
-#### 8.1.2 Services（99）
+#### 8.1.2 Services（119）
 
 ##### 8.1.2.1 localStorageService.test.js（80）
 
@@ -304,8 +306,8 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | should initialize with empty data when localStorage is empty                  | 空狀態初始化               |
 | 2   | should not overwrite data on repeated initialization                          | 冪等初始化                 |
 | 3   | should not overwrite when app data key already exists                         | initializeStorage 提前返回 |
-| 4   | should handle corrupted localStorage data gracefully                          | 損壞 JSON 容錯             |
-| 5   | should normalize data shape when stored JSON has invalid types                | 型別防禦 + 後備預設        |
+| 4   | should preserve corrupted localStorage data and report an error               | 損壞資料保留               |
+| 5   | should reject invalid collection types without replacing stored data          | 無效資料保留               |
 | 6   | should create a new checklist                                                 | 建立 + 存儲                |
 | 7   | should create general recommended list data for a new checklist by default    | 一般推薦清單後備           |
 | 8   | should persist supplied seed data when creating a checklist                   | 通用來源資料建立           |
@@ -365,20 +367,20 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 62  | should handle missing categories array in cache                               | 快取形狀後備               |
 | 63  | should handle missing items array in cache                                    | 快取形狀後備               |
 | 64  | should allow create operations with sparse cache shape                        | 稀疏快取建立路徑           |
-| 65  | should skip checklists that do not exist in storage                           | 批次更新跳過路徑           |
+| 65  | should reject the whole batch when a checklist does not exist                 | 原子批次失敗               |
 | 66  | should return all categories across all checklists                            | 不帶 filter 的分類查詢     |
 | 67  | should use original categoryId for items whose category was not found         | orphan item 後備           |
-| 68  | should duplicate checklist when cache categories and items are undefined      | duplicate 後備路徑         |
-| 69  | should duplicate category when cache items is undefined                       | duplicate 後備路徑         |
-| 70  | should duplicate item when cache data has items but no reorder targets        | duplicate 後備路徑         |
-| 71  | should apply last-write-wins semantics for concurrent checklist updates       | 併發一致性                 |
+| 68  | should duplicate checklist when stored categories and items are absent        | 舊版預設值                 |
+| 69  | should duplicate category when stored items are absent                        | 舊版預設值                 |
+| 70  | should duplicate item when stored data has no reorder targets                 | 複製後備路徑               |
+| 71  | should reject stale concurrent checklist updates                              | 同欄位衝突                 |
 | 72  | should invalidate cache after storage event from another tab                  | 跨分頁快取失效             |
 | 73  | should handle high data volume (50+) without losing correctness               | 高資料量正確性             |
 | 74  | should cascade delete categories and items when deleting checklist            | 級聯完整性                 |
 | 75  | should cascade delete all items in a deleted category                         | 級聯完整性                 |
 | 76  | should preserve relative order semantics after duplicate and delete           | 順序一致性                 |
 | 77  | should keep general recommended list shape stable across en and zh-TW locales | 語系資料形狀穩定           |
-| 78  | should persist final state after rapid sequential stale item updates          | 最終寫入一致性             |
+| 78  | should reject a stale item update without overwriting newer fields            | 同欄位衝突                 |
 | 79  | should update multiple items atomically with one storage write                | 原子性批次持久化           |
 | 80  | should not persist a partial batch when an item does not exist                | 批次失敗完整性             |
 
@@ -389,14 +391,14 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | creates a storage-safe checklist snapshot                      | template 建立 |
 | 2   | applies a template with fresh IDs and reset state              | template 套用 |
 | 3   | updates only the template storage key                          | 儲存隔離      |
-| 4   | recovers from malformed template storage                       | 壞資料復原    |
+| 4   | preserves malformed template storage without changing app data | 損壞資料保留  |
 | 5   | propagates localStorage write failures                         | 錯誤傳遞      |
 | 6   | returns templates in ascending persisted order                 | 讀取排序      |
 | 7   | updates and deletes an existing template                       | CRUD 成功路徑 |
 | 8   | rejects updates and deletes for missing templates              | CRUD 錯誤路徑 |
 | 9   | reorders requested templates and appends unspecified templates | 重排完整性    |
 | 10  | snapshots persisted checklist data when UI data is partial     | storage 後備  |
-| 11  | recovers from malformed persisted application data             | app data 復原 |
+| 11  | preserves malformed application data and rejects snapshots     | app 資料保留  |
 | 12  | rejects applying a missing template                            | 套用錯誤路徑  |
 | 13  | appends snapshots after existing templates                     | 快照排序      |
 | 14  | reloads external storage after cache invalidation              | Cache refresh |
@@ -411,93 +413,122 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 3   | rejects missing recommended lists                                    | 缺少推薦清單防護       |
 | 4   | applies the localized general recommended list                       | 一般推薦清單與語系選擇 |
 
-#### 8.1.3 Composables（60）
+##### 8.1.2.4 storageTransaction.test.js（20）
 
-##### 8.1.3.1 usePackingLists.test.js（46）
+| #   | Test                                                                          | 測試重點         |
+| --- | ----------------------------------------------------------------------------- | ---------------- |
+| 1   | keeps durable and readable data unchanged after a failed write                | 寫入失敗隔離     |
+| 2   | preserves app and template data when any supported mutation cannot be saved   | 各種修改失敗覆蓋 |
+| 3   | does not expose mutable references to committed data                          | 獨立快照         |
+| 4   | preserves corrupted application data and rejects writes                       | 損壞資料保留     |
+| 5   | rejects an unsupported application schema without replacing it                | 版本防護         |
+| 6   | rejects records without identity instead of generating a new id               | 身分防護         |
+| 7   | preserves malformed template snapshots and refuses to overwrite them          | 模板資料保留     |
+| 8   | rejects wrong-typed persisted fields without normalizing them into new values | 型別防護         |
+| 9   | refuses writes when safe cross-tab locking is unavailable                     | 唯讀後備         |
+| 10  | normalizes legacy defaults in memory without rewriting the stored bytes       | 非破壞性讀取     |
+| 11  | keeps both templates when an earlier reader creates after another writer      | 最新模板寫入     |
+| 12  | serializes simultaneous checklist creation across service instances           | 併發寫入         |
+| 13  | merges unrelated field changes and rejects stale edits to the same field      | 欄位意圖與衝突   |
+| 14  | does not create a category or item after its owner was deleted                | 所屬對象防護     |
+| 15  | rejects an entire batch when one item conflicts                               | 原子物品批次     |
+| 16  | does not partially reorder categories if a category was deleted               | 原子類別批次     |
+| 17  | rejects a template draft if another tab changed its original snapshot         | 模板衝突         |
+| 18  | rejects a queued item move after another writer deletes its destination       | 目的地衝突       |
+| 19  | rejects queued checklist creation after the selected template is deleted      | 已刪除模板防護   |
+| 20  | preserves corrupted template data and refuses queued checklist creation       | 損壞模板防護     |
 
-| #   | Test                                                                              | 測試重點                |
-| --- | --------------------------------------------------------------------------------- | ----------------------- |
-| 1   | should return initial empty state                                                 | 預設空狀態              |
-| 2   | should have computed properties                                                   | computed refs 存在      |
-| 3   | should load data from storage on initialize                                       | 初始化讀取 service      |
-| 4   | should manage loading state during initialization                                 | isLoading 切換          |
-| 5   | should repair missing checklist order and restore the saved checklist             | 舊資料修復與已儲存選取  |
-| 6   | should fallback selected checklist and reload scoped categories/items             | 側欄頂端回退            |
-| 7   | should set error and clear state when initialize fails unexpectedly               | 初始化失敗復原          |
-| 8   | should create a new checklist                                                     | 建立 + 刷新             |
-| 9   | should select the first checklist after creation                                  | 自動選取                |
-| 10  | should update an existing checklist                                               | 更新 + 刷新             |
-| 11  | should delete a checklist                                                         | 刪除 + 刷新             |
-| 12  | should return null when createChecklist service call fails                        | Service 失敗路徑        |
-| 13  | should return null when updateChecklist service call fails                        | Service 失敗路徑        |
-| 14  | should create a category in the selected checklist                                | 建立分類                |
-| 15  | should return null if no checklist is selected                                    | 空選取檢查              |
-| 16  | should create an item in the selected checklist                                   | 建立物品                |
-| 17  | should toggle item packed status                                                  | 切換 + 刷新；不建立復原 |
-| 18  | should calculate progress correctly                                               | 進度計算                |
-| 19  | should return 0 progress for empty checklist                                      | 零物品邊界              |
-| 20  | should handle storage errors gracefully during initialization                     | 錯誤容錯                |
-| 21  | should duplicate a checklist and refresh state                                    | 複製清單                |
-| 22  | should duplicate a category and refresh state                                     | 複製分類                |
-| 23  | should duplicate an item and refresh state                                        | 複製物品                |
-| 24  | should delete a category and refresh both categories and items                    | 分類級聯刪除            |
-| 25  | should delete an item and refresh items                                           | 物品刪除                |
-| 26  | should update multiple checklists and refresh state                               | 批量更新                |
-| 27  | should return null when creating item without selected checklist                  | 空選取檢查              |
-| 28  | should return null when duplicating item without selected checklist               | 空選取檢查              |
-| 29  | should return null when updating item without selected checklist                  | 空選取檢查              |
-| 30  | should return empty array when getting categories without selected checklist      | 空選取檢查              |
-| 31  | should return empty array when getting items without selected checklist           | 空選取檢查              |
-| 32  | should return early when deleting item without selected checklist                 | 空選取檢查              |
-| 33  | should return null when createItem service call fails (with checklist)            | Service 失敗路徑        |
-| 34  | should return null when duplicateCategory service call fails (with checklist)     | Service 失敗路徑        |
-| 35  | should return null when updateItem service call fails (with checklist)            | Service 失敗路徑        |
-| 36  | should return null when duplicateItem service call fails (with checklist)         | Service 失敗路徑        |
-| 37  | should return null when createCategory service call fails (with checklist)        | Service 失敗路徑        |
-| 38  | should return null when duplicateChecklist service call fails (no checklist)      | Service 失敗路徑        |
-| 39  | should return null when updateCategory service call fails (no checklist)          | Service 失敗路徑        |
-| 40  | should return null when updateCategory service returns undefined                  | falsy 結果防禦          |
-| 41  | should return null when updateMultipleChecklists service returns undefined        | falsy 結果防禦          |
-| 42  | should return null when updateCategory throws (real service)                      | throw → null 後備       |
-| 43  | should refresh categories and return updated category on success                  | 成功路徑 + refresh      |
-| 44  | should preserve valid selection and recover deleted selection on app data refresh | 跨分頁選取復原          |
-| 45  | should treat a category pack-all as one undoable action and restore mixed state   | 群組歷史與重做安全      |
-| 46  | should clear packing history when switching checklists                            | 歷史範圍隔離            |
+#### 8.1.3 Composables（62）
 
-##### 8.1.3.2 useTemplates.test.js（14）
+##### 8.1.3.1 usePackingLists.test.js（47）
 
-| #   | Test                                       | 測試重點       |
-| --- | ------------------------------------------ | -------------- |
-| 1   | should load template state                 | 初始載入       |
-| 2   | should expose a load error                 | 錯誤狀態       |
-| 3   | should save a template and refresh state   | 儲存 + refresh |
-| 4   | should expose an apply error               | 套用失敗       |
-| 5   | should rename a template and refresh state | 更新 + refresh |
-| 6   | should expose a delete error               | 刪除失敗       |
-| 7   | should delete a template and refresh state | 刪除 + refresh |
-| 8   | should expose a save error                 | 儲存失敗       |
-| 9   | should reject renaming a missing template  | 缺少項目 guard |
-| 10  | should expose a rename error               | 重命名失敗     |
-| 11  | should return applied template data        | 套用成功       |
-| 12  | should update a template and refresh state | 更新 + refresh |
-| 13  | should expose an update error              | 更新失敗       |
-| 14  | should expose its service instance         | Service 存取   |
+| #   | Test                                                                               | 測試重點                |
+| --- | ---------------------------------------------------------------------------------- | ----------------------- |
+| 1   | should return initial empty state                                                  | 預設空狀態              |
+| 2   | should have computed properties                                                    | computed refs 存在      |
+| 3   | should load data from storage on initialize                                        | 初始化讀取 service      |
+| 4   | should manage loading state during initialization                                  | isLoading 切換          |
+| 5   | should normalize missing checklist order in memory and restore the saved checklist | 舊版預設值與已儲存選取  |
+| 6   | should fallback selected checklist and reload scoped categories/items              | 側欄頂端回退            |
+| 7   | should set error and clear state when initialize fails unexpectedly                | 初始化失敗復原          |
+| 8   | should create a new checklist                                                      | 建立 + 刷新             |
+| 9   | should select the first checklist after creation                                   | 自動選取                |
+| 10  | should update an existing checklist                                                | 更新 + 刷新             |
+| 11  | should delete a checklist                                                          | 刪除 + 刷新             |
+| 12  | should return null when createChecklist service call fails                         | Service 失敗路徑        |
+| 13  | should return null when updateChecklist service call fails                         | Service 失敗路徑        |
+| 14  | should create a category in the selected checklist                                 | 建立分類                |
+| 15  | should return null if no checklist is selected                                     | 空選取檢查              |
+| 16  | should create an item in the selected checklist                                    | 建立物品                |
+| 17  | should toggle item packed status                                                   | 切換 + 刷新；不建立復原 |
+| 18  | should calculate progress correctly                                                | 進度計算                |
+| 19  | should return 0 progress for empty checklist                                       | 零物品邊界              |
+| 20  | should handle storage errors gracefully during initialization                      | 錯誤容錯                |
+| 21  | should duplicate a checklist and refresh state                                     | 複製清單                |
+| 22  | should duplicate a category and refresh state                                      | 複製分類                |
+| 23  | should duplicate an item and refresh state                                         | 複製物品                |
+| 24  | should delete a category and refresh both categories and items                     | 分類級聯刪除            |
+| 25  | should delete an item and refresh items                                            | 物品刪除                |
+| 26  | should update multiple checklists and refresh state                                | 批量更新                |
+| 27  | should return null when creating item without selected checklist                   | 空選取檢查              |
+| 28  | should return null when duplicating item without selected checklist                | 空選取檢查              |
+| 29  | should return null when updating item without selected checklist                   | 空選取檢查              |
+| 30  | should return empty array when getting categories without selected checklist       | 空選取檢查              |
+| 31  | should return empty array when getting items without selected checklist            | 空選取檢查              |
+| 32  | should return early when deleting item without selected checklist                  | 空選取檢查              |
+| 33  | should return null when createItem service call fails (with checklist)             | Service 失敗路徑        |
+| 34  | should return null when duplicateCategory service call fails (with checklist)      | Service 失敗路徑        |
+| 35  | should return null when updateItem service call fails (with checklist)             | Service 失敗路徑        |
+| 36  | should return null when duplicateItem service call fails (with checklist)          | Service 失敗路徑        |
+| 37  | should return null when createCategory service call fails (with checklist)         | Service 失敗路徑        |
+| 38  | should return null when duplicateChecklist service call fails (no checklist)       | Service 失敗路徑        |
+| 39  | should return null when updateCategory service call fails (no checklist)           | Service 失敗路徑        |
+| 40  | should return null when updateCategory service returns undefined                   | falsy 結果防禦          |
+| 41  | should return null when updateMultipleChecklists service returns undefined         | falsy 結果防禦          |
+| 42  | should return null when updateCategory throws (real service)                       | throw → null 後備       |
+| 43  | should refresh categories and return updated category on success                   | 成功路徑 + refresh      |
+| 44  | should preserve valid selection and recover deleted selection on app data refresh  | 跨分頁選取復原          |
+| 45  | should treat a category pack-all as one undoable action and restore mixed state    | 群組歷史與重做安全      |
+| 46  | should clear packing history when switching checklists                             | 歷史範圍隔離            |
+| 47  | preserves remote item edits when committing a stale drag payload                   | 明確拖曳意圖            |
 
-#### 8.1.4 i18n（9）
+##### 8.1.3.2 useTemplates.test.js（15）
 
-##### 8.1.4.1 index.test.js（9）
+| #   | Test                                                       | 測試重點       |
+| --- | ---------------------------------------------------------- | -------------- |
+| 1   | should load template state                                 | 初始載入       |
+| 2   | should expose a load error                                 | 錯誤狀態       |
+| 3   | should save a template and refresh state                   | 儲存 + refresh |
+| 4   | should expose an apply error                               | 套用失敗       |
+| 5   | should rename a template and refresh state                 | 更新 + refresh |
+| 6   | should expose a delete error                               | 刪除失敗       |
+| 7   | should delete a template and refresh state                 | 刪除 + refresh |
+| 8   | should expose a save error                                 | 儲存失敗       |
+| 9   | should reject renaming a missing template                  | 缺少項目 guard |
+| 10  | should expose a rename error                               | 重命名失敗     |
+| 11  | should return applied template data                        | 套用成功       |
+| 12  | should update a template and refresh state                 | 更新 + refresh |
+| 13  | should expose an update error                              | 更新失敗       |
+| 14  | should expose its service instance                         | Service 存取   |
+| 15  | refreshes for template and clear events only while mounted | 跨分頁生命週期 |
 
-| #   | Test                                                                 | 測試重點          |
-| --- | -------------------------------------------------------------------- | ----------------- |
-| 1   | should use saved locale when it is supported                         | 儲存語系還原      |
-| 2   | should map zh-HK browser language to zh-TW and persist               | 瀏覽器語系正規化  |
-| 3   | should fallback to en for unsupported browser language               | 不支援語系後備    |
-| 4   | should ignore invalid saved locale and detect from browser           | 無效儲存語系防禦  |
-| 5   | should use navigator.language when navigator.languages is empty      | 空 languages 後備 |
-| 6   | should map bare "zh" browser language to zh-TW                       | 裸 zh 對應        |
-| 7   | should persist locale when setLocale receives a supported value      | 語系持久化        |
-| 8   | should ignore unsupported setLocale values and keep current locale   | setter 防禦       |
-| 9   | should keep English and Traditional Chinese translation keys aligned | 翻譯 key 一致性   |
+#### 8.1.4 i18n（11）
+
+##### 8.1.4.1 index.test.js（11）
+
+| #   | Test                                                                    | 測試重點           |
+| --- | ----------------------------------------------------------------------- | ------------------ |
+| 1   | should use saved locale when it is supported                            | 儲存語系還原       |
+| 2   | should map zh-HK browser language to zh-TW and persist                  | 瀏覽器語系正規化   |
+| 3   | should fallback to en for unsupported browser language                  | 不支援語系後備     |
+| 4   | should ignore invalid saved locale and detect from browser              | 無效儲存語系防禦   |
+| 5   | should use navigator.language when navigator.languages is empty         | 空 languages 後備  |
+| 6   | should map bare "zh" browser language to zh-TW                          | 裸 zh 對應         |
+| 7   | should persist locale when setLocale receives a supported value         | 語系持久化         |
+| 8   | should ignore unsupported setLocale values and keep current locale      | setter 防禦        |
+| 9   | should keep English and Traditional Chinese translation keys aligned    | 翻譯 key 一致性    |
+| 10  | should render real interpolated and pluralized messages in both locales | 實際插值與複數形式 |
+| 11  | should render the English fallback when a Chinese message is missing    | 執行時英文後備顯示 |
 
 #### 8.1.5 Utils（36）
 
@@ -644,7 +675,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 46  | should create a checklist from a selected personal template                      | Template 套用流程                    |
 | 47  | should delete the active template and leave the editor                           | Template 刪除流程                    |
 | 48  | should create an explicitly empty checklist                                      | 空白來源流程                         |
-| 49  | should stop creation when applying a template fails                              | 套用失敗 guard                       |
+| 49  | handles failed template creation and ignores missing sources                     | 建立失敗與缺少來源防護               |
 | 50  | should ignore requests to edit a missing template                                | 缺少 template guard                  |
 | 51  | should keep the editor open when saving fails                                    | 儲存失敗狀態                         |
 | 52  | should discard a template draft when canceled                                    | 草稿取消                             |
@@ -994,16 +1025,17 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | should copy a category via overflow menu            | 分類複製 |
 | 3   | should show copy suffix in duplicated category name | 複製後綴 |
 
-#### 8.3.4 drag-and-drop.spec.js（6）
+#### 8.3.4 drag-and-drop.spec.js（7）
 
-| #   | Test                                                                | 測試重點               |
-| --- | ------------------------------------------------------------------- | ---------------------- |
-| 1   | should reorder checklists in sidebar by drag-and-drop               | Sidebar 清單拖放重排序 |
-| 2   | should reorder categories by drag-and-drop                          | 分類卡片拖放重排序     |
-| 3   | should reorder items within a category by drag-and-drop             | 分類內物品拖放重排序   |
-| 4   | should preserve packed item slots when filtered items are reordered | 篩選物品重排           |
-| 5   | should persist a filtered move into a partially visible category    | 篩選跨分類插入         |
-| 6   | should persist a filtered move into an all-hidden category          | 空目標追加與持久化     |
+| #   | Test                                                                 | 測試重點               |
+| --- | -------------------------------------------------------------------- | ---------------------- |
+| 1   | should reorder checklists in sidebar by drag-and-drop                | Sidebar 清單拖放重排序 |
+| 2   | should reorder categories by drag-and-drop                           | 分類卡片拖放重排序     |
+| 3   | should reorder items within a category by drag-and-drop              | 分類內物品拖放重排序   |
+| 4   | should preserve packed item slots when filtered items are reordered  | 篩選物品重排           |
+| 5   | should persist a filtered move into a partially visible category     | 篩選跨分類插入         |
+| 6   | should persist a filtered move into an all-hidden category           | 空目標追加與持久化     |
+| 7   | preserves a remote item rename made while another tab is dragging it | 併發拖曳與重新命名     |
 
 #### 8.3.5 item-packing.spec.js（10）
 
@@ -1046,15 +1078,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 9   | should update progress when items are packed on mobile              | 行動版進度       |
 | 10  | should filter packed items with an accessible icon button on mobile | 可存取行動版篩選 |
 
-#### 8.3.8 multi-tab-sync.spec.js（5）
+#### 8.3.8 multi-tab-sync.spec.js（6）
 
 | #   | Test                                                                     | 測試重點                     |
 | --- | ------------------------------------------------------------------------ | ---------------------------- |
 | 1   | should sync checklist create and rename across tabs                      | 跨頁籤同步（storage event）  |
-| 2   | should converge to the latest rename when two tabs edit concurrently     | 併發編輯一致性               |
+| 2   | should converge when tabs rename sequentially after synchronization      | 依序同步                     |
 | 3   | should converge after rapid alternating cross-tab edits                  | 快速交替編輯一致性           |
 | 4   | should converge to deletion when one tab renames and another tab deletes | rename+delete 衝突收斂一致性 |
 | 5   | should keep remote completion synchronization silent                     | storage sync 不觸發慶祝      |
+| 6   | keeps both templates when two tabs save behind the same lock barrier     | 併發模板寫入                 |
 
 #### 8.3.9 template-management.spec.js（7）
 

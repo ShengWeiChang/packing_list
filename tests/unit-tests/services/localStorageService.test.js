@@ -33,14 +33,14 @@ describe('LocalStorageService', () => {
   beforeEach(() => {
     mockStorage = {};
 
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => mockStorage[key] || null);
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
+    localStorage.getItem.mockImplementation((key) => mockStorage[key] ?? null);
+    localStorage.setItem.mockImplementation((key, value) => {
       mockStorage[key] = value;
     });
-    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation((key) => {
+    localStorage.removeItem.mockImplementation((key) => {
       delete mockStorage[key];
     });
-    vi.spyOn(Storage.prototype, 'clear').mockImplementation(() => {
+    localStorage.clear.mockImplementation(() => {
       mockStorage = {};
     });
 
@@ -83,39 +83,30 @@ describe('LocalStorageService', () => {
     it('should not overwrite when app data key already exists', () => {
       mockStorage['packingListApp'] = JSON.stringify({ checklists: [], categories: [], items: [] });
 
-      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
+      const setItemSpy = vi.spyOn(localStorage, 'setItem');
       service.initializeStorage();
 
       expect(setItemSpy).not.toHaveBeenCalled();
     });
 
-    // Test Case 4: Invalid JSON should reset to empty state
-    it('should handle corrupted localStorage data gracefully', async () => {
+    // Test Case 4: Invalid JSON should remain intact and produce an error
+    it('should preserve corrupted localStorage data and report an error', async () => {
       mockStorage['packingListApp'] = 'invalid json {{{';
-
-      const data = await service.getData();
-
-      expect(data.checklists).toEqual([]);
-      expect(data.categories).toEqual([]);
-      expect(data.items).toEqual([]);
+      await expect(service.getData()).rejects.toMatchObject({ code: 'corrupt' });
+      expect(mockStorage['packingListApp']).toBe('invalid json {{{');
     });
 
-    // Test Case 5: Valid JSON but invalid shapes should be normalized
-    it('should normalize data shape when stored JSON has invalid types', async () => {
+    // Test Case 5: Invalid collection types should not be normalized to empty data
+    it('should reject invalid collection types without replacing stored data', async () => {
       mockStorage['packingListApp'] = JSON.stringify({
         checklists: {},
         categories: null,
         items: 'not-an-array',
       });
 
-      const data = await service.getData();
-
-      expect(Array.isArray(data.checklists)).toBe(true);
-      expect(Array.isArray(data.categories)).toBe(true);
-      expect(Array.isArray(data.items)).toBe(true);
-      expect(data.checklists).toEqual([]);
-      expect(data.categories).toEqual([]);
-      expect(data.items).toEqual([]);
+      const raw = mockStorage['packingListApp'];
+      await expect(service.getData()).rejects.toMatchObject({ code: 'corrupt' });
+      expect(mockStorage['packingListApp']).toBe(raw);
     });
   });
 
@@ -198,7 +189,7 @@ describe('LocalStorageService', () => {
     // Test Case 11: Update should modify the checklist
     it('should update an existing checklist', async () => {
       const created = await service.createChecklist({ name: 'Original' });
-      const updated = await service.updateChecklist({ ...created, name: 'Updated' });
+      const updated = await service.updateChecklist({ ...created, name: 'Updated' }, created);
 
       expect(updated.name).toBe('Updated');
     });
@@ -248,7 +239,7 @@ describe('LocalStorageService', () => {
     // Test Case 16: Update should modify the category
     it('should update a category', async () => {
       const category = await service.createCategory(checklistId, { name: 'Original' });
-      const updated = await service.updateCategory({ ...category, name: 'Updated' });
+      const updated = await service.updateCategory({ ...category, name: 'Updated' }, category);
 
       expect(updated.name).toBe('Updated');
     });
@@ -317,11 +308,15 @@ describe('LocalStorageService', () => {
         categoryId: categoryId,
       });
 
-      const updated = await service.updateItem(checklistId, {
-        ...item,
-        name: 'Updated',
-        isPacked: true,
-      });
+      const updated = await service.updateItem(
+        checklistId,
+        {
+          ...item,
+          name: 'Updated',
+          isPacked: true,
+        },
+        item
+      );
 
       expect(updated.name).toBe('Updated');
       expect(updated.isPacked).toBe(true);
@@ -385,10 +380,14 @@ describe('LocalStorageService', () => {
 
       expect(item.isPacked).toBe(false);
 
-      const toggled = await service.updateItem(checklistId, {
-        ...item,
-        isPacked: true,
-      });
+      const toggled = await service.updateItem(
+        checklistId,
+        {
+          ...item,
+          isPacked: true,
+        },
+        item
+      );
 
       expect(toggled.isPacked).toBe(true);
     });
@@ -399,14 +398,15 @@ describe('LocalStorageService', () => {
   // ---------------------------------------------------------------------------
 
   describe('caching behavior', () => {
-    // Test Case 27: Cache should be used on subsequent getData calls
-    it('should use cache on subsequent getData calls', async () => {
+    // Test Case 27: Cached reads must notice external storage changes
+    it('should refresh cached data when the stored value changes', async () => {
       await service.getData();
-      const getItemSpy = vi.spyOn(Storage.prototype, 'getItem');
-
-      await service.getData();
-
-      expect(getItemSpy).not.toHaveBeenCalled();
+      mockStorage[service.STORAGE_KEY] = JSON.stringify({
+        checklists: [{ id: 'external', name: 'External' }],
+        categories: [],
+        items: [],
+      });
+      expect((await service.getData()).checklists[0].name).toBe('External');
     });
 
     // Test Case 28: Save operation should update cache
@@ -466,10 +466,13 @@ describe('LocalStorageService', () => {
       expect(secondBefore.id).toBe(second.id);
 
       // Seed deterministic order values (normally assigned by app initialize())
-      await service.updateMultipleChecklists([
-        { ...original, order: 0 },
-        { ...secondBefore, order: 1 },
-      ]);
+      await service.updateMultipleChecklists(
+        [
+          { ...original, order: 0 },
+          { ...secondBefore, order: 1 },
+        ],
+        [original, secondBefore]
+      );
 
       const seeded = await service.getChecklists();
       const seededSecond = seeded.find((c) => c.id === second.id);
@@ -551,10 +554,13 @@ describe('LocalStorageService', () => {
       const cl1 = await service.createChecklist({ name: 'List A' });
       const cl2 = await service.createChecklist({ name: 'List B' });
 
-      const result = await service.updateMultipleChecklists([
-        { ...cl1, name: 'Updated A', order: 1 },
-        { ...cl2, name: 'Updated B', order: 0 },
-      ]);
+      const result = await service.updateMultipleChecklists(
+        [
+          { ...cl1, name: 'Updated A', order: 1 },
+          { ...cl2, name: 'Updated B', order: 0 },
+        ],
+        [cl1, cl2]
+      );
 
       expect(result).toHaveLength(2);
 
@@ -725,7 +731,7 @@ describe('LocalStorageService', () => {
       if (categoryId) {
         // Set category name to max length
         const longName = 'b'.repeat(100);
-        await service.updateCategory({ ...data.categories[0], name: longName });
+        await service.updateCategory({ ...data.categories[0], name: longName }, data.categories[0]);
 
         const duplicated = await service.duplicateCategory(categoryId);
         expect(duplicated.name.length).toBeLessThanOrEqual(100);
@@ -956,25 +962,23 @@ describe('LocalStorageService', () => {
   // ---------------------------------------------------------------------------
 
   describe('updateMultipleChecklists skip path', () => {
-    // Test Case 65: Should skip non-existent checklists in batch update
-    it('should skip checklists that do not exist in storage', async () => {
+    // Test Case 65: A missing checklist should reject the whole batch
+    it('should reject the whole batch when a checklist does not exist', async () => {
       const cl1 = await service.createChecklist({ name: 'Real' });
-
-      const result = await service.updateMultipleChecklists([
-        { ...cl1, name: 'Updated Real', order: 0 },
-        { id: 'non-existent', name: 'Ghost', order: 1 },
-      ]);
-
-      expect(result).toHaveLength(2);
-
-      // The real checklist should be updated
+      const before = mockStorage[service.STORAGE_KEY];
+      await expect(
+        service.updateMultipleChecklists(
+          [
+            { ...cl1, name: 'Updated Real', order: 0 },
+            { id: 'non-existent', name: 'Ghost', order: 1 },
+          ],
+          [cl1]
+        )
+      ).rejects.toThrow('non-existent');
+      expect(mockStorage[service.STORAGE_KEY]).toBe(before);
       const data = await service.getData();
       const updated = data.checklists.find((c) => c.id === cl1.id);
-      expect(updated.name).toBe('Updated Real');
-
-      // The ghost checklist should NOT be in storage
-      const ghost = data.checklists.find((c) => c.id === 'non-existent');
-      expect(ghost).toBeUndefined();
+      expect(updated.name).toBe('Real');
     });
   });
 
@@ -1047,35 +1051,32 @@ describe('LocalStorageService', () => {
   // ---------------------------------------------------------------------------
 
   describe('duplicate method fallback branches', () => {
-    // Test Case 68: duplicateChecklist || [] branches when cache fields are undefined
-    it('should duplicate checklist when cache categories and items are undefined', async () => {
-      service._initialized = true;
-      service._cache = {
+    // Test Case 68: Duplicate a checklist when legacy collections are absent
+    it('should duplicate checklist when stored categories and items are absent', async () => {
+      mockStorage[service.STORAGE_KEY] = JSON.stringify({
         checklists: [{ id: 'cl-1', name: 'Trip', order: 0, startDate: '', endDate: '' }],
-      };
+      });
 
       const dup = await service.duplicateChecklist('cl-1');
       expect(dup.id).not.toBe('cl-1');
       expect(dup.name).toContain('Trip');
     });
 
-    // Test Case 69: duplicateCategory || [] branches when cache items is undefined
-    it('should duplicate category when cache items is undefined', async () => {
-      service._initialized = true;
-      service._cache = {
+    // Test Case 69: Duplicate a category when legacy items are absent
+    it('should duplicate category when stored items are absent', async () => {
+      mockStorage[service.STORAGE_KEY] = JSON.stringify({
         checklists: [],
         categories: [{ id: 'cat-1', name: 'Clothes', checklistId: 'cl-1', order: 0 }],
-      };
+      });
 
       const dup = await service.duplicateCategory('cat-1');
       expect(dup.id).not.toBe('cat-1');
       expect(dup.name).toContain('Clothes');
     });
 
-    // Test Case 70: duplicateItem || [] branches when items cache is manipulated
-    it('should duplicate item when cache data has items but no reorder targets', async () => {
-      service._initialized = true;
-      service._cache = {
+    // Test Case 70: Duplicate an item when no reorder targets exist
+    it('should duplicate item when stored data has no reorder targets', async () => {
+      mockStorage[service.STORAGE_KEY] = JSON.stringify({
         checklists: [],
         categories: [],
         items: [
@@ -1090,7 +1091,7 @@ describe('LocalStorageService', () => {
             order: 0,
           },
         ],
-      };
+      });
 
       const dup = await service.duplicateItem('cl-1', 'item-1');
       expect(dup.id).not.toBe('item-1');
@@ -1103,17 +1104,19 @@ describe('LocalStorageService', () => {
   // ---------------------------------------------------------------------------
 
   describe('high-value persistence scenarios', () => {
-    // Test Case 71: concurrent checklist updates should follow last-write-wins
-    it('should apply last-write-wins semantics for concurrent checklist updates', async () => {
+    // Test Case 71: Concurrent checklist updates should reject a stale same-field edit
+    it('should reject stale concurrent checklist updates', async () => {
       const checklist = await service.createChecklist({ name: 'Trip' });
       const staleSnapshot = { ...checklist };
 
-      await service.updateChecklist({ ...checklist, name: 'Trip A' });
-      await service.updateChecklist({ ...staleSnapshot, name: 'Trip B' });
+      await service.updateChecklist({ ...checklist, name: 'Trip A' }, checklist);
+      await expect(
+        service.updateChecklist({ ...staleSnapshot, name: 'Trip B' }, staleSnapshot)
+      ).rejects.toMatchObject({ code: 'conflict' });
 
       const finalChecklist = await service.getChecklistById(checklist.id);
       expect(finalChecklist).not.toBeNull();
-      expect(finalChecklist.name).toBe('Trip B');
+      expect(finalChecklist.name).toBe('Trip A');
     });
 
     // Test Case 72: storage event should invalidate cache
@@ -1165,7 +1168,7 @@ describe('LocalStorageService', () => {
 
       // Ensure one record remains updateable/correct under larger volume
       const target = checklists[55];
-      await service.updateChecklist({ ...target, name: 'Trip 55 Updated' });
+      await service.updateChecklist({ ...target, name: 'Trip 55 Updated' }, target);
       const updated = await service.getChecklistById(target.id);
       expect(updated).not.toBeNull();
       expect(updated.name).toBe('Trip 55 Updated');
@@ -1263,8 +1266,8 @@ describe('LocalStorageService', () => {
       expect(enItems.length).toBeGreaterThan(0);
     });
 
-    // Test Case 78: rapid sequential stale updates should honor final write on item
-    it('should persist final state after rapid sequential stale item updates', async () => {
+    // Test Case 78: Stale same-field updates should not overwrite newer item data
+    it('should reject a stale item update without overwriting newer fields', async () => {
       const checklist = await service.createChecklist({ name: 'Race' });
       const category = await service.createCategory(checklist.id, { name: 'Essentials' });
       const item = await service.createItem(checklist.id, {
@@ -1275,24 +1278,34 @@ describe('LocalStorageService', () => {
 
       const staleSnapshot = { ...item };
 
-      await service.updateItem(checklist.id, {
-        ...item,
-        name: 'Passport A',
-        quantity: 2,
-      });
-      await service.updateItem(checklist.id, {
-        ...staleSnapshot,
-        name: 'Passport Final',
-        isPacked: true,
-      });
+      await service.updateItem(
+        checklist.id,
+        {
+          ...item,
+          name: 'Passport A',
+          quantity: 2,
+        },
+        item
+      );
+      await expect(
+        service.updateItem(
+          checklist.id,
+          {
+            ...staleSnapshot,
+            name: 'Passport Final',
+            isPacked: true,
+          },
+          staleSnapshot
+        )
+      ).rejects.toMatchObject({ code: 'conflict' });
 
       const finalItem = await service.getItemById(checklist.id, item.id);
       expect(finalItem).not.toBeNull();
       expect(finalItem).toMatchObject({
         id: item.id,
-        name: 'Passport Final',
-        isPacked: true,
-        quantity: 1,
+        name: 'Passport A',
+        isPacked: false,
+        quantity: 2,
       });
     });
   });
@@ -1316,10 +1329,14 @@ describe('LocalStorageService', () => {
       });
       const saveSpy = vi.spyOn(service, '_saveData');
 
-      const updated = await service.updateMultipleItems(checklist.id, [
-        { ...first, isPacked: true },
-        { ...second, isPacked: true },
-      ]);
+      const updated = await service.updateMultipleItems(
+        checklist.id,
+        [
+          { ...first, isPacked: true },
+          { ...second, isPacked: true },
+        ],
+        [first, second]
+      );
 
       expect(updated.every((item) => item.isPacked)).toBe(true);
       expect(saveSpy).toHaveBeenCalledTimes(1);
@@ -1351,7 +1368,7 @@ describe('LocalStorageService', () => {
         throw new Error('Storage operation failed: quota exceeded');
       });
       await expect(
-        service.updateMultipleItems(checklist.id, [{ ...existing, isPacked: true }])
+        service.updateMultipleItems(checklist.id, [{ ...existing, isPacked: true }], [existing])
       ).rejects.toThrow('quota exceeded');
       expect(await service.getItemById(checklist.id, existing.id)).toEqual(
         expect.objectContaining({ isPacked: false })

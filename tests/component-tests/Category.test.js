@@ -461,7 +461,7 @@ describe('Category', () => {
         createSortableItem('4', 'cat-1', false, 0),
         createSortableItem('5', 'cat-1', true, 1),
         createSortableItem('6', 'cat-1', false, 2),
-        movedItem,
+        { ...movedItem, name: 'Remote update during drag' },
         createSortableItem('2', 'cat-2', true, 1),
       ];
       const wrapper = createDragWrapper({ items, showUnpackedOnly: true });
@@ -471,10 +471,12 @@ describe('Category', () => {
         added: { element: movedItem, newIndex: 1 },
       });
 
-      const emittedItems = wrapper.emitted('move:item')[0][0].items;
+      const payload = wrapper.emitted('move:item')[0][0];
+      const emittedItems = payload.items;
       expect(emittedItems.map((item) => item.id)).toEqual(['2', '4', '5', '1', '6']);
       expect(emittedItems.map((item) => item.order)).toEqual([0, 0, 1, 2, 3]);
       expect(emittedItems.find((item) => item.id === '1').categoryId).toBe('cat-1');
+      expect(payload.expectedItems.find((item) => item.id === '1')).toEqual(movedItem);
     });
 
     // Test Case 24: Should hide packed items without changing full progress data

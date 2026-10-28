@@ -267,6 +267,7 @@ const isEditing = ref(false);
 const isHovered = ref(false);
 const isQuantityHovered = ref(false);
 const editedName = ref('');
+let editBaseline = null;
 const editInput = ref(null);
 const isComposing = ref(false);
 let cleanupEditingFocus = () => {};
@@ -383,6 +384,7 @@ function handleEditBlur(_event) {
 async function startEdit() {
   cleanupEditingFocus();
   isEditing.value = true;
+  editBaseline = { ...props.item };
   editedName.value = props.item.name;
 
   await nextTick();
@@ -394,14 +396,14 @@ async function startEdit() {
  */
 function saveEdit() {
   cleanupEditingFocus();
-  const hasNameChanged = editedName.value.trim() && editedName.value !== props.item.name;
+  const hasNameChanged = editedName.value.trim() && editedName.value !== editBaseline.name;
 
   if (hasNameChanged) {
     const updatedItem = new Item({
-      ...props.item,
-      name: editedName.value.trim() || props.item.name,
+      ...editBaseline,
+      name: editedName.value.trim() || editBaseline.name,
     });
-    emit('update:item', updatedItem);
+    emit('update:item', updatedItem, editBaseline);
   }
   isEditing.value = false;
 }

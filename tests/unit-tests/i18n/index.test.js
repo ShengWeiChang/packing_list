@@ -212,3 +212,37 @@ describe('locale message parity', () => {
     expect(getTranslationKeys(zhTW)).toEqual(getTranslationKeys(en));
   });
 });
+
+describe('locale message rendering', () => {
+  // ---------------------------------------------------------------------------
+  // Test Group 4: Real Translation and Fallback
+  // ---------------------------------------------------------------------------
+
+  // Test Case 10: Should render interpolated and pluralized messages in both locales
+  it('should render real interpolated and pluralized messages in both locales', async () => {
+    const { default: i18n, setLocale } = await loadI18nModule();
+
+    setLocale('en');
+    expect(i18n.global.t('template.editingTemplate', { name: 'Travel' })).toBe(
+      'Editing template: Travel'
+    );
+    expect(i18n.global.t('template.categoryCount', 1)).toBe('1 category');
+    expect(i18n.global.t('template.categoryCount', 2)).toBe('2 categories');
+
+    setLocale('zh-TW');
+    expect(i18n.global.t('template.editingTemplate', { name: '旅行' })).toBe('正在編輯範本：旅行');
+    expect(i18n.global.t('template.categoryCount', 2)).toBe('2 個分類');
+  });
+
+  // Test Case 11: Should fall back to English when a message is missing in Chinese
+  it('should render the English fallback when a Chinese message is missing', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { default: i18n, setLocale } = await loadI18nModule();
+
+    i18n.global.setLocaleMessage('zh-TW', {});
+    setLocale('zh-TW');
+
+    expect(i18n.global.t('sidebar.title')).toBe(en.sidebar.title);
+    warnSpy.mockRestore();
+  });
+});

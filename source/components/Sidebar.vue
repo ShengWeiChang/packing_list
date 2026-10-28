@@ -412,7 +412,11 @@ const draggableChecklists = computed({
       order: newChecklists.length - index - 1,
     }));
 
-    emit('move:checklists', checklistsWithNewOrder);
+    emit(
+      'move:checklists',
+      checklistsWithNewOrder,
+      newChecklists.map((checklist) => ({ ...checklist }))
+    );
   },
 });
 

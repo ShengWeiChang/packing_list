@@ -46,8 +46,9 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 ### Frontend
 
 - Framework: Vue.js 3 (Composition API)
-- Build Tool: Vite 4.4.9
+- Build Tool: Vite 8.3.5
 - CSS Framework: Tailwind CSS 3.4.17
+- Internationalization: Vue I18n 11.4.16
 - Drag and Drop: vuedraggable 4.1.0
 - Icon System: `@lucide/vue` through the local `AppIcon` adapter; semantic names, size slots, and accessibility modes remain project-owned
 - Additional Tools: PostCSS, Autoprefixer
@@ -405,6 +406,7 @@ packing-list/
 ├── LICENSE                           # License terms
 ├── package.json                      # Dependencies and npm scripts (see `build:css-vars`)
 ├── package-lock.json                 # Lockfile
+├── .nvmrc                            # Shared Node.js version for local development and CI
 ├── vercel.json                       # Vercel deployment configuration (SPA routing, caching)
 ├── build-css-vars.js                 # CLI script: generates CSS custom properties from source/utils/constants.js
 ├── postcss.config.js                 # PostCSS config

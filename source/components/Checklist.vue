@@ -202,11 +202,11 @@ Created: 2025-09-19
               :show-unpacked-only="showUnpackedOnly"
               :newly-created-item-id="newlyCreatedItemId"
               :newly-created-category-id="newlyCreatedCategoryId"
-              @update:item="$emit('update:item', $event)"
+              @update:item="(...args) => $emit('update:item', ...args)"
               @copy:item="$emit('copy:item', $event)"
               @delete:item="$emit('delete:item', $event)"
               @create:item="$emit('create:item', $event)"
-              @update:category="$emit('update:category', $event)"
+              @update:category="(...args) => $emit('update:category', ...args)"
               @copy:category="$emit('copy:category', $event)"
               @delete:category="$emit('delete:category', $event)"
               @set-category-packed="$emit('set-category-packed', $event)"
@@ -329,6 +329,7 @@ const emit = defineEmits([
 // Editing state
 const isEditing = ref(false);
 const editedName = ref('');
+let editBaseline = null;
 const editedStartDate = ref('');
 const editedEndDate = ref('');
 const nameInput = ref(null);
@@ -368,7 +369,11 @@ const draggableCategories = computed({
     // When vuedraggable updates the array, emit the reorder event
     const categoriesWithNewOrder = renumberOrder(newCategories);
 
-    emit('reorder:categories', categoriesWithNewOrder);
+    emit(
+      'reorder:categories',
+      categoriesWithNewOrder,
+      newCategories.map((category) => ({ ...category }))
+    );
   },
 });
 
@@ -434,6 +439,7 @@ function handleEditBlur(_event) {
 async function startEdit() {
   cleanupEditingFocus();
   isEditing.value = true;
+  editBaseline = { ...props.checklist };
   editedName.value = props.checklist.name;
   editedStartDate.value = props.checklist.startDate;
   editedEndDate.value = props.checklist.endDate;
@@ -447,18 +453,18 @@ async function startEdit() {
  */
 function saveEdit() {
   cleanupEditingFocus();
-  const hasNameChanged = editedName.value.trim() !== props.checklist.name;
-  const hasStartDateChanged = editedStartDate.value !== props.checklist.startDate;
-  const hasEndDateChanged = editedEndDate.value !== props.checklist.endDate;
+  const hasNameChanged = editedName.value.trim() !== editBaseline.name;
+  const hasStartDateChanged = editedStartDate.value !== editBaseline.startDate;
+  const hasEndDateChanged = editedEndDate.value !== editBaseline.endDate;
 
   if (hasNameChanged || hasStartDateChanged || hasEndDateChanged) {
     const updatedChecklist = {
-      ...props.checklist,
+      ...editBaseline,
       name: editedName.value.trim() || t('checklist.untitled'),
       startDate: editedStartDate.value,
       endDate: editedEndDate.value,
     };
-    emit('update:checklist', updatedChecklist);
+    emit('update:checklist', updatedChecklist, editBaseline);
   }
   isEditing.value = false;
 }

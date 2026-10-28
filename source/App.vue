@@ -244,8 +244,8 @@ const {
   deleteChecklist,
   duplicateChecklist,
   createCategory,
-  getCategories,
   updateCategory,
+  updateMultipleCategories,
   deleteCategory,
   duplicateCategory,
   createItem,
@@ -261,8 +261,7 @@ const {
 } = usePackingLists();
 
 // Initialize templates composable
-const { templates, loadTemplates, saveAsTemplate, applyTemplate, deleteTemplate, updateTemplate } =
-  useTemplates();
+const { templates, loadTemplates, saveAsTemplate, deleteTemplate, updateTemplate } = useTemplates();
 const recommendedListService = new RecommendedListService();
 
 // ------------------------------------------------------------------------------
@@ -277,6 +276,7 @@ const showNewChecklistDialog = ref(false);
 const showSaveTemplateDialog = ref(false);
 const templateChecklistId = ref(null);
 const templateChecklistName = ref('');
+const isSavingTemplate = ref(false);
 const templateEditing = ref(null);
 const showPackingUndo = ref(false);
 const showPackingCompletion = ref(false);
@@ -463,10 +463,11 @@ async function handleItemCreate(categoryId) {
 /**
  * Update an existing item with new data
  * @param {object} item - The item object with updated properties
+ * @param {object} [expected] - Item before editing.
  */
-async function handleItemUpdate(item) {
+async function handleItemUpdate(item, expected) {
   const before = getPackingCompletionSnapshot();
-  const updatedItem = await handleAsyncAction(updateItem, item);
+  const updatedItem = await handleAsyncAction(updateItem, item, expected);
   if (updatedItem) {
     showPackingCompletionForTransition(before);
   }
@@ -499,7 +500,10 @@ async function handleItemDelete(itemId) {
  */
 async function handleItemMove(moveData) {
   if (!['move', 'reorder'].includes(moveData.type) || !moveData.items?.length) return;
-  await handleAsyncAction(updateMultipleItems, moveData.items);
+  await handleAsyncAction(updateMultipleItems, moveData.items, {
+    fields: ['order', 'categoryId'],
+    expectedItems: moveData.expectedItems,
+  });
 }
 
 // ---------- Category Handlers ----------
@@ -526,9 +530,10 @@ async function handleCategoryCreate() {
 /**
  * Update an existing category with new data
  * @param {object} category - The category object with updated properties
+ * @param {object} [expected] - Category before editing.
  */
-async function handleCategoryUpdate(category) {
-  await handleAsyncAction(updateCategory, category);
+async function handleCategoryUpdate(category, expected) {
+  await handleAsyncAction(updateCategory, category, expected);
 
   // Clear the newly-created flag if this was the category being edited
   if (newlyCreatedCategoryId.value === category.id) {
@@ -641,15 +646,10 @@ function handlePackingHistoryKeydown(event) {
 /**
  * Handle category drag-and-drop reordering
  * @param {Array<object>} reorderedCategories - Array of categories with updated order properties
+ * @param {Array<object>} [expectedCategories] - Categories before the drag.
  */
-async function handleCategoryReorder(reorderedCategories) {
-  // Update all categories with new order
-  for (const category of reorderedCategories) {
-    await handleAsyncAction(updateCategory, category);
-  }
-
-  // Refresh categories after all updates to ensure consistency
-  await getCategories();
+async function handleCategoryReorder(reorderedCategories, expectedCategories) {
+  await handleAsyncAction(updateMultipleCategories, reorderedCategories, expectedCategories);
 }
 
 // ---------- Checklist Handlers ----------
@@ -695,6 +695,7 @@ async function handleNewChecklistSelect(selection) {
     const checklistId = generateSecureId('checklist-');
     let seedData = null;
     let sourceName = '';
+    let expectedTemplate = null;
 
     if (selection.source === 'template') {
       const selectedTemplate = templates.value.find(
@@ -702,7 +703,7 @@ async function handleNewChecklistSelect(selection) {
       );
       if (!selectedTemplate) return;
       sourceName = selectedTemplate.name;
-      seedData = applyTemplate(selection.templateId, checklistId);
+      expectedTemplate = selectedTemplate;
     } else {
       const selectedRecommendedList = recommendedLists.value.find(
         (list) => list.id === selection.recommendedListId
@@ -719,14 +720,17 @@ async function handleNewChecklistSelect(selection) {
         return;
       }
     }
-    if (!seedData) return;
+    if (selection.source === 'recommended' && !seedData) return;
 
     const checklistWithId = {
       id: checklistId,
       name: buildSourceAwareChecklistName(selection.source, sourceName),
       order: maxOrder + 1,
     };
-    const options = { source: selection.source, seedData };
+    const options =
+      selection.source === 'template'
+        ? { source: 'template', templateId: selection.templateId, expectedTemplate }
+        : { source: selection.source, seedData };
     const newChecklist = await handleAsyncAction(createChecklist, checklistWithId, options);
     if (newChecklist) {
       newlyCreatedChecklistId.value = newChecklist.id;
@@ -747,9 +751,10 @@ async function handleNewChecklistSelect(selection) {
 /**
  * Update an existing checklist with new data
  * @param {object} checklist - The checklist object with updated properties
+ * @param {object} [expected] - Checklist before editing.
  */
-async function handleChecklistUpdate(checklist) {
-  await handleAsyncAction(updateChecklist, checklist);
+async function handleChecklistUpdate(checklist, expected) {
+  await handleAsyncAction(updateChecklist, checklist, expected);
 }
 
 /**
@@ -791,10 +796,11 @@ async function handleChecklistDelete(checklistId) {
 /**
  * Handle checklist drag-and-drop movement or reordering
  * @param {Array} reorderedChecklists - Array of checklists with updated order
+ * @param {Array<object>} [expectedChecklists] - Checklists before the drag.
  */
-async function handleChecklistMove(reorderedChecklists) {
+async function handleChecklistMove(reorderedChecklists, expectedChecklists) {
   // Update all checklists in a single transaction to avoid race conditions
-  await handleAsyncAction(updateMultipleChecklists, reorderedChecklists);
+  await handleAsyncAction(updateMultipleChecklists, reorderedChecklists, expectedChecklists);
 }
 
 // ---------- Template Handlers ----------
@@ -814,12 +820,17 @@ function handleSaveAsTemplate(checklistId) {
  * Persist the named template snapshot and clear the dialog source state.
  * @param {string} templateName - User-supplied template name
  */
-function handleTemplateSave(templateName) {
-  if (templateChecklistId.value) {
-    saveAsTemplate(templateChecklistId.value, templateName);
+async function handleTemplateSave(templateName) {
+  if (isSavingTemplate.value || !templateChecklistId.value) return;
+  isSavingTemplate.value = true;
+  try {
+    const saved = await saveAsTemplate(templateChecklistId.value, templateName);
+    if (!saved) return;
     templateChecklistId.value = null;
+    showSaveTemplateDialog.value = false;
+  } finally {
+    isSavingTemplate.value = false;
   }
-  showSaveTemplateDialog.value = false;
 }
 
 /**
@@ -836,8 +847,8 @@ function handleTemplateEdit(templateId) {
  * Save the isolated editor snapshot to the active template.
  * @param {object} template - Complete template snapshot from the editor
  */
-function handleTemplateEditSave(template) {
-  const updated = updateTemplate(template);
+async function handleTemplateEditSave(template) {
+  const updated = await updateTemplate(template, templateEditing.value);
   if (updated) templateEditing.value = null;
 }
 
@@ -850,17 +861,17 @@ function handleTemplateEditCancel() {
  * Delete the active template from the editor after confirmation.
  * @param {string} templateId - Active template ID
  */
-function handleTemplateEditDelete(templateId) {
-  handleTemplateDelete(templateId);
+async function handleTemplateEditDelete(templateId) {
+  await handleTemplateDelete(templateId);
 }
 
 /**
  * Delete a personal template after confirmation.
  * @param {string} templateId - Template ID to delete
  */
-function handleTemplateDelete(templateId) {
+async function handleTemplateDelete(templateId) {
   if (confirm(t('template.deleteConfirm'))) {
-    const deleted = deleteTemplate(templateId);
+    const deleted = await deleteTemplate(templateId);
     if (deleted && templateEditing.value?.id === templateId) templateEditing.value = null;
   }
 }

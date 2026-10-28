@@ -43,6 +43,7 @@ const mockDuplicateChecklist = vi.fn();
 const mockCreateCategory = vi.fn();
 const mockGetCategories = vi.fn();
 const mockUpdateCategory = vi.fn();
+const mockUpdateMultipleCategories = vi.fn();
 const mockDeleteCategory = vi.fn();
 const mockDuplicateCategory = vi.fn();
 const mockCreateItem = vi.fn();
@@ -93,6 +94,7 @@ vi.mock('../../source/composables/usePackingLists', () => ({
     createCategory: mockCreateCategory,
     getCategories: mockGetCategories,
     updateCategory: mockUpdateCategory,
+    updateMultipleCategories: mockUpdateMultipleCategories,
     deleteCategory: mockDeleteCategory,
     duplicateCategory: mockDuplicateCategory,
     createItem: mockCreateItem,
@@ -762,7 +764,7 @@ describe('App', () => {
       await checklist.vm.$emit('update:checklist', updatedData);
       await wrapper.vm.$nextTick();
 
-      expect(mockUpdateChecklist).toHaveBeenCalledWith(updatedData);
+      expect(mockUpdateChecklist).toHaveBeenCalledWith(updatedData, undefined);
     });
 
     // Test Case 21: handleChecklistMove should call updateMultipleChecklists
@@ -782,7 +784,7 @@ describe('App', () => {
       await sidebar.vm.$emit('move:checklists', reordered);
       await wrapper.vm.$nextTick();
 
-      expect(mockUpdateMultipleChecklists).toHaveBeenCalledWith(reordered);
+      expect(mockUpdateMultipleChecklists).toHaveBeenCalledWith(reordered, undefined);
     });
 
     // Test Case 22: Overlay sidebar should update selected checklist on select event
@@ -886,7 +888,7 @@ describe('App', () => {
       await checklist.vm.$emit('update:item', updatedItem);
       await wrapper.vm.$nextTick();
 
-      expect(mockUpdateItem).toHaveBeenCalledWith(updatedItem);
+      expect(mockUpdateItem).toHaveBeenCalledWith(updatedItem, undefined);
     });
 
     // Test Case 27: handleItemCopy should call duplicateItem
@@ -949,7 +951,10 @@ describe('App', () => {
       await flushPromises();
 
       expect(mockUpdateMultipleItems).toHaveBeenCalledOnce();
-      expect(mockUpdateMultipleItems).toHaveBeenCalledWith(moveData.items);
+      expect(mockUpdateMultipleItems).toHaveBeenCalledWith(moveData.items, {
+        fields: ['order', 'categoryId'],
+        expectedItems: moveData.expectedItems,
+      });
     });
 
     // Test Case 30: Should handle same-category reorder
@@ -974,7 +979,10 @@ describe('App', () => {
       await flushPromises();
 
       expect(mockUpdateMultipleItems).toHaveBeenCalledOnce();
-      expect(mockUpdateMultipleItems).toHaveBeenCalledWith(moveData.items);
+      expect(mockUpdateMultipleItems).toHaveBeenCalledWith(moveData.items, {
+        fields: ['order', 'categoryId'],
+        expectedItems: moveData.expectedItems,
+      });
     });
 
     // Test Case 31: Should ignore incomplete move payloads
@@ -1045,7 +1053,10 @@ describe('App', () => {
       await checklist.vm.$emit('update:category', { id: 'cat-new', name: 'Renamed' });
       await wrapper.vm.$nextTick();
 
-      expect(mockUpdateCategory).toHaveBeenCalledWith({ id: 'cat-new', name: 'Renamed' });
+      expect(mockUpdateCategory).toHaveBeenCalledWith(
+        { id: 'cat-new', name: 'Renamed' },
+        undefined
+      );
     });
 
     // Test Case 34: handleCategoryCopy should call duplicateCategory
@@ -1087,10 +1098,7 @@ describe('App', () => {
 
   describe('handleCategoryReorder', () => {
     // Test Case 36: Should update all categories and refresh
-    it('should update each category and call getCategories', async () => {
-      mockUpdateCategory.mockResolvedValue(undefined);
-      mockGetCategories.mockResolvedValue(undefined);
-
+    it('should submit all categories in one operation', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
       dispatchResize();
@@ -1105,8 +1113,8 @@ describe('App', () => {
       await checklist.vm.$emit('reorder:categories', reordered);
       await flushPromises();
 
-      expect(mockUpdateCategory).toHaveBeenCalledTimes(2);
-      expect(mockGetCategories).toHaveBeenCalled();
+      expect(mockUpdateMultipleCategories).toHaveBeenCalledWith(reordered, undefined);
+      expect(mockUpdateCategory).not.toHaveBeenCalled();
     });
   });
 
@@ -1272,7 +1280,7 @@ describe('App', () => {
       await wrapper.vm.$nextTick();
       await wrapper.findComponent({ name: 'TemplateEditor' }).vm.$emit('save', template);
 
-      expect(mockUpdateTemplate).toHaveBeenCalledWith(template);
+      expect(mockUpdateTemplate).toHaveBeenCalledWith(template, template);
       expect(mockUpdateChecklist).not.toHaveBeenCalled();
       expect(mockCreateChecklist).not.toHaveBeenCalled();
     });
@@ -1308,10 +1316,7 @@ describe('App', () => {
         .findComponent({ name: 'NewChecklistDialog' })
         .vm.$emit('select', { source: 'template', templateId: 'template-1' });
 
-      expect(mockApplyTemplate).toHaveBeenCalledWith(
-        'template-1',
-        expect.stringMatching(/^checklist-/)
-      );
+      expect(mockApplyTemplate).not.toHaveBeenCalled();
       expect(mockCreateChecklist).toHaveBeenCalledWith(
         expect.objectContaining({
           id: expect.stringMatching(/^checklist-/),
@@ -1319,7 +1324,8 @@ describe('App', () => {
         }),
         expect.objectContaining({
           source: 'template',
-          seedData: { categories: [{ id: 'cat-new' }], items: [] },
+          templateId: 'template-1',
+          expectedTemplate: mockTemplates.value[0],
         })
       );
       expect(mockCreateChecklist.mock.calls[0][0].name).toHaveLength(100);
@@ -1343,6 +1349,7 @@ describe('App', () => {
       await wrapper.vm.$nextTick();
 
       await wrapper.findComponent({ name: 'TemplateEditor' }).vm.$emit('delete', template.id);
+      await flushPromises();
 
       expect(mockDeleteTemplate).toHaveBeenCalledWith(template.id);
       expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(false);
@@ -1366,10 +1373,10 @@ describe('App', () => {
       );
     });
 
-    // Test Case 49: Should stop template creation when applying the template fails
-    it('stops template creation when applying the template fails', async () => {
+    // Test Case 49: Should handle a failed template creation and ignore missing sources
+    it('handles failed template creation and ignores missing sources', async () => {
       mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
-      mockApplyTemplate.mockReturnValue(null);
+      mockCreateChecklist.mockResolvedValue(null);
       setInnerWidth(1280);
       const wrapper = createWrapper();
 
@@ -1385,7 +1392,8 @@ describe('App', () => {
         .findComponent({ name: 'NewChecklistDialog' })
         .vm.$emit('select', { source: 'recommended', recommendedListId: 'missing-list' });
 
-      expect(mockCreateChecklist).not.toHaveBeenCalled();
+      expect(mockCreateChecklist).toHaveBeenCalledTimes(1);
+      expect(mockApplyTemplate).not.toHaveBeenCalled();
     });
 
     // Test Case 50: Should ignore requests to edit a missing template
@@ -1505,12 +1513,14 @@ describe('App', () => {
 
     // Test Case 58: Should ignore duplicate template save events after source state is cleared
     it('ignores duplicate template save events after source state is cleared', async () => {
+      mockSaveAsTemplate.mockResolvedValue({ id: 'template-1' });
       setInnerWidth(1280);
       const wrapper = createWrapper();
       await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('save-as-template', 'cl-1');
       const dialog = wrapper.findComponent({ name: 'SaveTemplateDialog' });
 
       await dialog.vm.$emit('save', 'Trip Template');
+      await flushPromises();
       await dialog.vm.$emit('save', 'Trip Template');
 
       expect(mockSaveAsTemplate).toHaveBeenCalledTimes(1);

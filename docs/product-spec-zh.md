@@ -46,8 +46,9 @@
 ### Frontend 前端
 
 - Framework: Vue.js 3 (Composition API)
-- Build Tool: Vite 4.4.9
+- Build Tool: Vite 8.3.5
 - CSS Framework: Tailwind CSS 3.4.17
+- 國際化：Vue I18n 11.4.16
 - Drag and Drop: vuedraggable 4.1.0
 - 圖示系統：透過本地 `AppIcon` adapter 使用 `@lucide/vue`；語意名稱、尺寸 slot 與無障礙模式仍由專案管理
 - Additional Tools: PostCSS, Autoprefixer
@@ -405,6 +406,7 @@ packing-list/
 ├── LICENSE                           # 授權條款
 ├── package.json                      # 專案依賴配置
 ├── package-lock.json                 # 鎖定檔
+├── .nvmrc                            # 本機開發與 CI 共用的 Node.js 版本
 ├── vercel.json                       # Vercel 部署配置（SPA 路由、快取設定）
 ├── build-css-vars.js                 # CLI 腳本：從 source/utils/constants.js 生成 CSS 變數
 ├── postcss.config.js                 # PostCSS配置

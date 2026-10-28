@@ -202,8 +202,7 @@ test.describe('Item Packing Workflow', () => {
       }
 
       // Progress text should have changed
-      const updatedText = await progressBar.textContent();
-      expect(updatedText).not.toBe(initialText);
+      await expect.poll(() => progressBar.textContent()).not.toBe(initialText);
     });
 
     // Test Case 6: Progress should show 100% when all items packed
