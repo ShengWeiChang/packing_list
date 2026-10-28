@@ -391,6 +391,10 @@
 - LocalStorageService 實現資料本地存儲
 - 抽象 DataService 介面支持未來擴展
 - JSON序列化與模型實例化
+- 清單與範本分別使用 `packingListApp` 與 `packingListTemplates` key。寫入透過共用 Web Lock 協調參與此機制的分頁，在鎖內讀取最新資料，並在目的 key 儲存成功後才發布結果。
+- 欄位意圖更新會比較所編輯欄位的預期原值：不同欄位的變更可共存，對相同欄位的過期變更則會被拒絕。批次變更全部寫入或全部不寫入。
+- 損壞資料或不支援的 schema 會保留原始 storage 內容，並拒絕對該 domain 寫入。舊資料缺少的預設值只在記憶體正規化，讀取時不重寫。
+- 保留 localStorage 以避免儲存遷移；Web Locks 不可用時拒絕安全寫入。舊版部署的分頁可能不參與鎖，單一 key 寫入也不提供跨 key 原子交易。若需要更廣的寫入相容性或更強的交易能力，可重新評估 IndexedDB。
 
 #### State Management 狀態管理
 
@@ -460,6 +464,7 @@ packing-list/
     │   ├── dataService.js            # 抽象資料服務介面
     │   ├── localStorageService.js    # 清單 localStorage 實現
     │   ├── recommendedListService.js # 內建推薦清單套用邏輯
+    │   ├── storageTransaction.js     # 共用 storage 解碼與寫入協調
     │   └── templateService.js        # 個人範本 localStorage 實現
     └── utils/                        # 工具函數
         ├── constants.js              # 應用常數定義（顏色定義在 THEME_COLORS）

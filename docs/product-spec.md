@@ -391,6 +391,10 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - LocalStorageService implements client-side persistence
 - Abstract DataService interface allows future backends
 - JSON serialization with model instances (toJSON/fromJSON)
+- Checklists and templates use separate `packingListApp` and `packingListTemplates` keys. Writes coordinate cooperating tabs with a shared Web Lock, read the latest data inside the lock, and publish only after the destination key is saved.
+- Field-intent updates compare the edited fields with their expected previous values: unrelated field changes can coexist, while stale changes to the same fields are rejected. Batch changes commit together or not at all.
+- Corrupt data or an unsupported schema is preserved as raw storage and blocks writes to that domain. Missing legacy defaults are normalized in memory, not rewritten on read.
+- localStorage is retained to avoid a storage migration; safe writes are rejected when Web Locks are unavailable. Older deployed tabs may not participate in the lock, and single-key writes do not provide cross-key atomic transactions. Reconsider IndexedDB if broader write compatibility or stronger transactions become necessary.
 
 #### State Management
 
@@ -460,6 +464,7 @@ packing-list/
     │   ├── dataService.js            # Abstract data service interface
     │   ├── localStorageService.js    # Checklist localStorage implementation
     │   ├── recommendedListService.js    # Built-in recommended list application
+    │   ├── storageTransaction.js     # Shared storage decoding and write coordination
     │   └── templateService.js        # Personal template localStorage implementation
     └── utils/                        # Utilities
         ├── constants.js              # App constants (color definitions in THEME_COLORS)
