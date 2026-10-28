@@ -57,7 +57,8 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
    headings, options, council, and decision questions.
 4. Apply the tier actions below. T0 is available only after read-only discovery
    and the user's explicit agreement that the scope is trivial. Every tier
-   retains explicit implementation, commit, push, PR, and merge approvals; T0
+   retains explicit implementation, commit, PR, and merge approvals; a PR request
+   also authorizes the ordinary push needed for that PR. T0
    reduces planning and independent-review work only.
 
    | Tier         | Required planning actions                                                                                                       | Milestone evidence and independent review                                                                       | Final local gate                                                       |
@@ -73,7 +74,7 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
    `$feature-completion` gate once after the feature's last implementation
    milestone. Repository CI remains the full merge safeguard for every pull
    request. Tiering reduces planning and independent-review cost without
-   removing the user's implementation, commit, push, PR, or merge approvals.
+   removing the user's implementation, commit, PR, or merge approvals.
 
 5. For a non-trivial user-visible UI or interaction change, invoke
    `$ui-ux-design`: T1 uses its compact applicable checklist, while T2/T3 use
@@ -105,12 +106,13 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
 
 ## 2. Approved Milestones
 
-1. Before changing tracked files, inspect the current branch and worktree. If
-   the work is not already on a suitable feature branch, propose a scoped
-   branch name and obtain explicit approval to create or switch branches unless
-   the user's implementation approval already included that instruction. Record
-   the starting branch, feature branch, and branch-point HEAD in the plan. Never
-   move unrelated working-tree changes while creating or switching branches.
+1. Before changing tracked files, inspect the current branch and worktree. For a
+   new feature branch, follow `AGENTS.md`: switch to `main`, fast-forward pull
+   `origin/main`, then create the branch from updated `main`; use another base
+   only if explicitly requested. Preserve unrelated work and stop if the switch
+   or update is unsafe or fails. Record starting branch, feature branch, and
+   branch-point HEAD in the plan. Obtain authorization for branch creation or
+   switching unless already provided by the user's request.
 2. Implement only an approved checklist milestone. One implementation agent
    owns any given file at a time.
 3. After each meaningful milestone, update the plan with completed checklist
@@ -184,8 +186,9 @@ discovery.
 
 ## 4. Release Controls and Exceptions
 
-Push, pull-request creation, and merge each require separate explicit user
-approval after the relevant result is shown. Report the CI result after a pull
+An explicit request to create a PR authorizes its necessary ordinary push and
+PR creation together; a commit or standalone push approval does not authorize a
+PR, and merge remains separately authorized. Report the CI result after a pull
 request is opened; do not treat CI configuration alone as proof that a feature
 is ready. If CI or external review produces a finding, record it in the plan,
 present its impact and a repair proposal, and wait for user approval before
@@ -200,11 +203,12 @@ approval and unchanged-fingerprint check before committing. Record the resulting
 SHA. The log must include the final candidate's base HEAD SHA, scoped file list,
 `git status --short`, and the output of `npm run fingerprint:candidate --
 <scoped files>`. If no final commit is needed, record that decision instead.
-Then set status to `awaiting push approval`. After an approved push, set status
-to `awaiting PR approval` only after locating the newest CI run for the pushed
-commit and recording its URL and state. A pending run is not a pass; a failed
-run must be diagnosed from that newest run rather than a prior failure. After an
-approved pull request with passing CI and resolved review, set status to
+Then set status to `awaiting PR approval`, or `awaiting push approval` if the
+user requests only a push. A PR request authorizes the necessary push and PR
+creation without an additional approval between them. Locate the newest CI run
+for the pushed commit and record its URL and state. A pending run is not a pass;
+a failed run must be diagnosed from that newest run rather than a prior failure.
+After an approved pull request with passing CI and resolved review, set status to
 `awaiting merge approval`. Record each external URL or commit SHA and user
 decision. Set status to `complete` only after the approved merge, or after the
 user explicitly ends the workflow without a push or pull request.

@@ -1,313 +1,73 @@
 ---
 name: pr-description
-description: Generate Pull Request descriptions from the current branch diff using project conventions for summary, metrics, Key changes, and technical detail.
+description: Generate a pull request title and description from the current branch diff using project conventions.
 argument-hint: '[PR context/branch/issue number]'
 ---
 
 # PR Description Writer
 
-## Role and Mission
-
-You are the project's PR writing specialist, generating Pull Request **titles and descriptions** that **exactly match** team conventions.
-
-## PR Title Format (Conventional Commits)
-
-### Title Structure
-
-```
-type: Concise description (#issue)
-```
-
-### Type Categories (Based on Historical PR Analysis)
-
-1. **test**: Testing infrastructure or comprehensive test additions
-   - Example: `test: Establish automated testing infrastructure with CI/CD`
-
-2. **feat**: New features or significant enhancements
-   - Example: `feat: Enhance accessibility and keyboard navigation`
-   - Example: `feat: Mobile device UIUX`
-
-3. **fix**: Bug fixes or improvements to existing features
-   - Example: `fix: Refactor color system with semantic naming and improve UI interactions`
-   - Example: `fix: Improve IME input handling for Enter key across edit components`
-
-4. **docs**: Documentation updates (if standalone)
-
-5. **refactor**: Code restructuring without behavior change
-
-6. **chore**: Build, dependency, or configuration updates
-
-### Title Standards
-
-- **Length**: 50-80 characters (GitHub best practice)
-- **Language**: English, sentence case; capitalize the first word after `type:`
-- **Style**: Concise but descriptive
-- **Issue link**: Include `(#N)` if PR resolves specific issue
-- **Focus**: Describe primary change, not implementation details
-
-### Title Selection Logic
-
-| Primary Changes                      | Type                              | Example                                            |
-| ------------------------------------ | --------------------------------- | -------------------------------------------------- |
-| Testing infrastructure + CI/CD       | `test`                            | `test: Establish automated testing infrastructure` |
-| New feature or capability            | `feat`                            | `feat: Add agent skills infrastructure`            |
-| Bug fixes or system improvements     | `fix`                             | `fix: Improve IME input handling for Enter key`    |
-| Multiple unrelated changes           | Choose dominant (>60% of changes) |
-| Documentation + minimal code changes | `feat` or `docs`                  | `feat: Update testing documentation`               |
-
-## PR Description Format
-
-### Opening Paragraph (1-2 sentences)
-
-- **Must include**: Concise description of core changes
-- **Should include**: Key metrics or numbers (test count, coverage %, file count, version numbers)
-- Example (PR #14):
-
-  > This PR implements comprehensive test coverage (440 tests, 97.52% statement coverage) across unit, component, and E2E layers. Adds GitHub Actions CI/CD pipeline and complete testing documentation.
-
-- Example (PR #13):
-  > This PR refactors the color management system to use semantic naming conventions (textPrimary, bgPrimary, themePrimary) and improves UI interactions across components. It includes date validation logic, unified element sizing, and default item improvements.
-
-### Fixed Heading: "Key changes:" (Required)
-
-After the summary paragraph, **must use** `Key changes:` as the section heading (note colon and capitalization).
-
-### Section Structure (Select by Priority)
-
-#### Universal Sections (Most PRs)
-
-1. **Components / UI:**
-   - List all Vue component changes, UI adjustments, interaction improvements
-   - Format: `- Verb-led description`
-   - Example:
-     ```
-     - Implement a 200ms delay for drag-and-drop on touch devices
-     - Increase touch targets for buttons, checkboxes, and menu items to 44px
-     - Add ARIA labels and roles for screen reader compatibility
-     ```
-
-2. **Logic & persistence:**
-   - List logic changes, state management, data persistence
-   - Example:
-     ```
-     - Implement bidirectional date protection: changing start date updates end date if end < start
-     - Add scrollIntoView logic when entering edit mode to prevent keyboard occlusion
-     - Prevent premature saving when users are selecting characters via IME
-     ```
-
-3. **Documentation:**
-   - List documentation updates (docs/ directory, README, product specs)
-   - Format: `- Update/Add <filename>: <brief description>`
-   - Example:
-     ```
-     - Update product-spec.md with new color system documentation and date editing logic
-     - Add docs/testing-guide.md: complete test inventory, architecture, conventions
-     ```
-
-#### Topic-Specific Sections (Select as Needed)
-
-4. **Test Infrastructure** (Testing PRs)
-   - List test tools, frameworks, configuration files
-   - Include version numbers and specific file names
-   - Example:
-     ```
-     - Vitest 4.0.18 + @vue/test-utils 2.4.6 for unit/component testing
-     - tests/test-setup/setup.js: global mocks (localStorage, crypto, scrollIntoView)
-     ```
-
-5. **Component Test Suite (N tests)** (If component tests exist)
-   - Mark test count in parentheses
-   - One line per component, format: `- <ComponentName> (<count> tests): <test scope>`
-   - Example:
-     ```
-     - App (42 tests): initialization, state management, event coordination
-     - Checklist (36 tests): CRUD operations, date validation, overflow menu
-     ```
-
-6. **Unit Test Suite (N tests)** (If unit tests exist)
-   - Similar to component test format
-   - Example:
-     ```
-     - localStorageService (100 tests): CRUD, caching, cross-tab sync, concurrency
-     - helpers (21 tests): secure ID generation, date formatting, debounce
-     ```
-
-7. **E2E Test Suite (N tests)** (If E2E tests exist)
-   - List test files and test focus
-   - Example:
-     ```
-     - mobile-workflow (9 tests): sidebar overlay, hamburger menu at 375px
-     - item-packing (7 tests): category management, progress tracking
-     ```
-
-8. **CI/CD Pipeline** (If CI changes exist)
-   - List workflow files and execution steps
-   - Example:
-     ```
-     - GitHub Actions workflow: lint → unit test → E2E test → build
-     - Husky pre-commit hook with lint-staged
-     ```
-
-9. **Configuration** (If config file changes exist)
-   - List new or modified configuration files
-   - Format: `- <filename>: <purpose or change>`
-   - Example:
-     ```
-     - playwright.config.js: Chromium browser, screenshot on failure
-     - package.json scripts: test:run, test:e2e, test:coverage
-     ```
-
-10. **Build & Configuration** (If build-related changes exist)
-    - List build process, bundling configuration changes
-    - Example:
-      ```
-      - Refactor THEME_COLORS in constants.js from SCREAMING_SNAKE_CASE to camelCase
-      - Update build-css-vars.js to generate CSS variables with simplified naming
-      ```
-
-## Writing Standards (Mandatory)
-
-### Bullet Point Format
-
-- **Prefix**: Use `-` (hyphen) + space
-- **Verb**: Start with present tense verbs (Add, Update, Implement, Support, Ensure, Refactor)
-- **Length**: Single line, concise but include key details
-- **Technical terms**:
-  - File names use full relative paths (e.g. `tests/test-setup/setup.js`)
-  - Tools/packages include version numbers (e.g. `Vitest 4.0.18`)
-  - Numbers must be precise (e.g. `440 tests`, `97.52% coverage`)
-
-### Section Order (Recommended)
-
-1. Topic-specific sections (Test Infrastructure, Component Test Suite, etc.)
-2. Components / UI:
-3. Logic & persistence:
-4. CI/CD Pipeline (if present)
-5. Configuration (if present)
-6. Build & Configuration (if present)
-7. Documentation:
-
-### Tone and Style
-
-- Technical, direct, no fluff
-- Describe "what was done", not "why"
-- Use active voice (Add X, not X is added)
-- English primary (unless citing non-English proper nouns)
-
-## Execution Workflow
-
-1. **Determine the comparison base and collect information**:
-   - Use the PR target branch when it is provided.
-   - Otherwise inspect repository metadata and state the assumed base branch; do not hard-code `main`.
-   - Compare the merge-base diff, not only individual branch commits.
-
-   ```bash
-   git log <base>..HEAD --oneline --no-merges
-   git diff <base>...HEAD --stat
-   git diff <base>...HEAD --name-only
-   ```
-
-2. **Classify file changes**:
-   - `source/components/*.vue` → Components / UI
-   - `tests/**/*.test.js` → Component/Unit Test Suite
-   - `tests/**/*.spec.js` → E2E Test Suite
-   - `*.config.js`, `package.json` → Configuration
-   - `docs/*.md` → Documentation
-   - `.github/workflows/*.yml` → CI/CD Pipeline
-
-3. **Calculate key metrics** (if applicable):
-   - Test file count and test case count
-   - Number of new/modified components
-   - Package version numbers (from package.json)
-   - File change statistics (`git diff --stat`)
-
-4. **Generate PR title**:
-   - Determine primary change type (test/feat/fix/etc.)
-   - Write a concise description focusing on impact, capitalizing its first word
-   - Add issue number if referenced in commits
-
-5. **Generate PR description**:
-   - First paragraph: summary + key metrics
-   - Key changes: followed by sections
-   - Each section filled with bullet points based on **actual diff output only**
-   - **CRITICAL**: Do NOT extract bullet points from commit messages - analyze file diffs directly
-   - Follow the established `Key changes:` format while selecting only sections justified by the final diff
-
-6. **Output format**:
-   - Return exactly one fenced `text` block so the chat UI does not render the
-     Markdown description as a preview.
-   - Put `Title` on its own line, followed by the title on the next line.
-   - Leave one blank line, then put `Description` on its own line followed by
-     the complete Markdown body.
-   - Do not add prose outside the `text` block. The user can copy the title and
-     description separately without losing literal Markdown formatting.
-
-   ```text
-   Title
-   type: Concise description (#issue)
-
-   Description
-   This PR [brief summary].
-
-   Key changes:
-
-   Configuration
-   - Add package.json: [change]
-   ```
-
-## Example Templates (Select by PR Type)
-
-### Testing PR Example (Reference PR #14)
-
-```
-This PR implements comprehensive test coverage (440 tests, 97.52% statement coverage) across unit, component, and E2E layers. Adds GitHub Actions CI/CD pipeline and complete testing documentation.
-
-Key changes:
-
-Test Infrastructure
-- Vitest 4.0.18 + @vue/test-utils 2.4.6 for unit/component testing
-- Playwright 1.58.2 for browser-based E2E automation
-- jsdom 25.0.1 for DOM simulation
-- tests/test-setup/setup.js: global mocks (localStorage, crypto, scrollIntoView)
-
-Component Test Suite (202 tests)
-- App (42 tests): initialization, state management, event coordination
-- Checklist (36 tests): CRUD operations, date validation, overflow menu
-- Item (26 tests): checkbox toggle, edit mode, quantity controls
-
-CI/CD Pipeline
-- GitHub Actions workflow: lint → unit test → E2E test → build
-- Husky pre-commit hook with lint-staged
-
-Documentation
-- Add docs/testing-guide.md: complete test inventory, architecture, conventions
-- Update docs/code-quality.md: testing section with coverage metrics
-```
-
-### Feature/Fix PR Example (Reference PR #13, #11, #10)
-
-```
-This PR [brief feature description]. [Include key improvements or problems solved].
+Generate text only; `$create-pr` owns PR creation. Identify the target base from
+the user or repository metadata and analyze the complete merge-base diff, not
+just commit messages. Describe the final change and its user or engineering
+impact, using only evidence from the diff and verified validation results.
+Include an issue number only when its relationship to this PR is confirmed.
+Do not invent test counts, coverage, versions, file names, or results; include
+metrics only when relevant and supported by evidence.
+
+## Project Format
+
+1. **Title**: Use an English Conventional Commit title, e.g.
+   `feat: Add checklist templates`. Choose the type that best describes the
+   change and capitalize the first word after the colon.
+2. **Opening**: Start with `This PR ...` and summarize the main outcome in
+   one or two sentences. When available and relevant, include verified change
+   statistics (files and additions/deletions) or actual test totals and
+   coverage. Distinguish a tracked inventory from an executed test result.
+3. **Heading**: Follow the opening with the exact heading `Key changes:`.
+4. **Sections**: Group the changes by applicable themes, such as
+   `Components / UI:`, `Logic & persistence:`, `Component Test Suite:`,
+   `Unit Test Suite:`, `E2E Test Suite:`, `Documentation:`, `Configuration:`,
+   or `Validation:`. Use relevant custom themes for workflow or tooling
+   changes. Do not include a section that does not apply.
+5. **Details**: Use specific, present-tense, verb-led bullets under each
+   section. Cover the meaningful changes rather than collapsing an entire
+   section into one generic sentence: include actual file paths, component or
+   function names, user-facing behavior, and test scope when they clarify the
+   change. Use multiple bullets when the diff supports them; a single bullet
+   is appropriate for a section with only one meaningful change. Include
+   per-layer or per-file test counts only when verified and useful.
+
+When validation evidence is available, report the commands and outcomes that
+matter, including failures or meaningful limitations. Do not imply that tests
+ran merely because the diff contains tests. Keep the detail proportionate to
+the change and avoid inventing figures to fill the format.
+
+Return exactly one fenced `text` block, with `Title` on its own line, the title
+on the next line, a blank line, then `Description` and the complete Markdown
+body. Do not add prose outside the block:
+
+```text
+Title
+feat: Describe the change
+
+Description
+This PR [main outcome]. [Relevant, verified change or validation statistics.]
 
 Key changes:
 
 Components / UI:
-- [Component change list]
-- [UI adjustment list]
+- Add [component path] to [specific user-facing behavior]
+- Update [component path] to [another relevant behavior]
 
 Logic & persistence:
-- [Logic change list]
-- [State management change list]
+- Update [file path or function] to [specific data or state change]
+
+Tests:
+- Extend [test path] to cover [behavior and failure cases]
 
 Documentation:
-- Update [filename]: [brief description]
+- Update [document path] to describe [changed contract]
+
+Validation:
+- Run [verified command] with [actual outcome]
 ```
-
-## Critical Rules (Mandatory)
-
-1. **Never fabricate data**: All numbers, version numbers, file names must come from actual git diff or package.json
-2. **Use diff output ONLY**: Bullet points describe actual file changes from `git diff` analysis - **NEVER extract descriptions from commit messages** (commit messages may describe intermediate states that don't exist in final diff)
-3. **Maintain format consistency**: Use the established `Key changes:` heading, concise technical tone, and sections selected from the final diff
-4. **Dynamic section adjustment**: Select sections based on actual changes, don't force all sections
-5. **Technical details first**: Prioritize specific technical implementation (file names, function names, version numbers) over abstract descriptions
-6. **If information insufficient**: Clearly indicate what additional information is needed (e.g., "Please provide the issue number this PR resolves")

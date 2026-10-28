@@ -12,19 +12,33 @@ You are the project's GitHub squash commit body specialist. Compose the summary 
 
 GitHub UI supplies the commit title from the Pull Request title and appends the PR number (for example, `feat: Add templates (#16)`). Do not generate, repeat, suggest changes to, or include that title in this skill's output.
 
-## Body Standards
+## Project Format
 
-1. **Summary paragraph**: 1-2 sentences describing scope and impact (starts with "This commit...")
-2. **Bullet points**: Grouped by theme with `-` prefix, technical details
-3. **Language**: English; use present tense verbs for bullets
-4. **Title ownership**: GitHub UI owns the squash commit title from the PR title. Never output a Conventional Commit title or issue/PR number.
+1. **Opening**: Start with `This commit ...` and summarize the main outcome in
+   one or two English sentences.
+2. **Statistics**: When available and relevant, include verified file counts,
+   additions/deletions, test totals, or coverage. Distinguish a tracked inventory
+   from an executed result; never invent figures or imply tests were run.
+3. **Sections**: After a blank line, group actual changes under applicable
+   plain-text themes such as `Components / UI`, `Logic & persistence`, `Tests`,
+   `Documentation`, or relevant workflow and configuration themes. Separate
+   groups with a blank line; omit sections that do not apply. A `Key changes`
+   theme is optional, not a required heading.
+4. **Details**: Under each theme use `-` bullets beginning with an English
+   present-tense verb. Cover meaningful changes with actual paths, components,
+   functions, behavior, or test scope when useful. Use multiple bullets when
+   supported by the diff; one is appropriate for a single meaningful change.
+   Keep the body a concise history summary without inventing detail.
+5. **Output boundary**: Return exactly one fenced `text` block containing the
+   body only, without a title, PR number, leading blank line, or outside prose.
+   GitHub owns the title. Start the first line with the opening paragraph.
 
 ## Execution Workflow
 
 1. **Determine the comparison base and collect commits**:
    - Use the merge target when supplied; otherwise inspect repository metadata and state the assumed base branch rather than hard-coding `main`.
-   - Read branch commits: `git log <base>..HEAD --oneline`
-   - Count changed files from the merge-base diff: `git diff <base>...HEAD --stat`
+   - Inspect the final merge-base diff: `git diff <base>...HEAD` and its stat.
+   - Use branch commits only as context; omit intermediate changes absent from the final diff.
 
 2. **Analyze theme**:
    - Identify the primary change theme
@@ -36,12 +50,7 @@ GitHub UI supplies the commit title from the Pull Request title and appends the 
    - Extract key metrics (file counts, line changes, new features)
 
 4. **Generate squash commit body**:
-   - **Summary**: 1-2 sentences starting with "This commit..." (include key metrics)
-   - **Blank line**
-   - **Grouped bullet points**: Organized by theme (Test Infrastructure, Key changes, Configuration, Documentation)
-   - Use present tense verbs (Add, Update, Implement, Refactor)
-   - Include file paths and specific details
-   - Do not generate a title, PR number, or a leading blank line.
+   - Apply the project format to the actual final diff and verified evidence.
 
 5. **Output format**:
 
@@ -51,41 +60,22 @@ GitHub UI supplies the commit title from the Pull Request title and appends the 
    summary paragraph, never a title:
 
    ```text
-   This commit [summary with metrics].
+   This commit [main outcome]. [Relevant, verified change or test statistics.]
 
-   [Theme heading]
-   - [Specific change with file path]
-   - [Another change]
+   Components / UI
+   - Add [component path] to [specific behavior]
+   - Update [component path] to [another relevant behavior]
 
-   [Another theme heading]
-   - [Change]
+   Logic & persistence
+   - Update [file path or function] to [specific data or state change]
+
+   Tests
+   - Extend [test path] to cover [behavior and failure cases]
    ```
 
 ## Scope Guidance
 
 Use the primary change theme only to organize the body. GitHub UI already owns the title, so do not choose or emit a Conventional Commit type.
-
-## Example Output (Based on Historical Commits)
-
-```text
-This commit implements 440 tests (196 unit, 202 component, 42 E2E), achieving 97.52% statement coverage with GitHub Actions pipeline.
-
-Test Infrastructure
-- Add Vitest 4.0.18 + @vue/test-utils 2.4.6 for unit/component testing
-- Add Playwright 1.58.2 for E2E browser automation with Chromium
-- Add test-setup/setup.js: global mocks (localStorage, crypto, scrollIntoView)
-
-Component Tests (202 tests)
-- Add App.test.js (42): initialization, state management, event coordination
-- Add Checklist.test.js (36): CRUD, date validation, overflow menu
-
-CI/CD Pipeline
-- Add .github/workflows/test.yml: lint → unit test → E2E test → build
-- Add Husky pre-commit hook with lint-staged
-
-Documentation
-- Add docs/testing-guide.md: complete test inventory, architecture
-```
 
 ## Quick Usage
 

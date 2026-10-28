@@ -20,7 +20,7 @@ Do not repeat another Skill's full workflow. Refer to it when the review reveals
 
 ## Review Workflow
 
-1. Read `AGENTS.md`, the relevant specification or acceptance criteria, and the complete scoped diff.
+1. Read `AGENTS.md`, the relevant specification or acceptance criteria, and the complete scoped diff. Identify the base and reviewed HEAD or staged fingerprint; report any unreviewed scope and map acceptance criteria to the changed behavior.
 2. Trace changed user-visible behavior through component events, composables, services, models, persistence, and rendering where applicable.
 3. Check only risks supported by the diff and repository conventions:
    - incorrect state ownership, stale reactive state, event/payload mismatch, or lifecycle cleanup
@@ -29,6 +29,8 @@ Do not repeat another Skill's full workflow. Refer to it when the review reveals
    - Vue props/emits contracts, list keys, and component boundaries
    - changed interactive controls: semantics, labels, focus, keyboard behavior, narrow layouts, and translated UI text
    - unnecessary coupling, duplicated logic, or changes outside the requested scope
+   - architecture fit, ownership, long-term code health, unnecessary complexity, and speculative abstraction in the surrounding system
+   - compatibility and migration, security/privacy, dependency or configuration changes, async races, performance, and resource lifetime when affected by the diff
 4. Inspect related tests, but do not infer correctness merely because they pass. Send broad test-design concerns to `test-analysis`.
 5. Do not run formatting commands, alter files, or change Git state unless separately authorized.
 
@@ -39,7 +41,7 @@ Report a finding only when it has all of the following:
 1. File path and line number.
 2. Concrete condition or reproduction path.
 3. Actual versus expected behavior.
-4. Impact and severity (`blocking`, `important`, or `minor`).
+4. Impact and severity: `blocking` prevents a required flow or creates serious harm; `important` creates a material defect or risk that should be fixed before handoff; `minor` is a smaller evidenced issue.
 5. A narrowly scoped correction direction.
 
 Do not report style preferences already enforced by ESLint, Prettier, or `AGENTS.md` unless the current diff violates them. Do not manufacture blockers from speculative edge cases.
@@ -52,6 +54,7 @@ Return, in order:
 2. **Findings**: only evidenced items, sorted by severity.
 3. **Validation gaps**: commands or test layers that should still be executed, if any.
 4. **Scope note**: unrelated changes or assumptions that need user confirmation.
+   Include the reviewed base and revision or fingerprint, and any acceptance criteria not established by the available evidence.
 
 For a feature handoff, pass this result to `feature-completion`, which returns
 it to `feature-workflow`; do not claim the feature is complete on this review

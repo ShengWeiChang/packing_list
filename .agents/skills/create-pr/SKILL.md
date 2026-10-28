@@ -1,61 +1,51 @@
 ---
 name: create-pr
-description: Safely prepare and, only after explicit approval, create a GitHub Pull Request using the project's pr-description skill and GitHub Connector.
+description: Push the current committed branch if necessary and create a GitHub pull request when explicitly requested.
 argument-hint: '[base branch] [draft | ready]'
 ---
 
 # Pull Request Creator
 
-## Role and Mission
+An explicit request to create a PR authorizes the ordinary push needed for that
+PR and its creation. A commit, standalone push, review, or implementation
+approval alone does not authorize a PR. Do not commit, force-push, merge, switch
+branches, request reviews, comment, or change repository settings under this
+skill. Use `$pr-description` as the source of the PR title and body.
 
-Create a GitHub Pull Request only after a read-only preflight, a complete user-visible draft, and an explicit create-only approval. This skill orchestrates the operation; `$pr-description` remains the sole source of PR title and body content.
+## Preflight
 
-## Non-Negotiable Boundaries
+1. Identify `origin`, repository owner/name, current branch and HEAD. Stop on a
+   detached HEAD or an ambiguous repository. Use the requested base, otherwise
+   the repository's default branch. Preserve unrelated uncommitted work; the PR
+   contains committed changes only.
+2. Check GitHub for an existing open PR with the same repository, head and base.
+   If one exists, report its URL and stop; never create a duplicate.
+3. Query the exact remote head with `git ls-remote --heads origin <branch>` and
+   distinguish a missing branch from a failed query. Do not infer remote state
+   from upstream configuration or a possibly stale remote-tracking ref.
+4. If the remote SHA equals HEAD, skip push even without an upstream. If the
+   remote branch is absent, create it using the scoped push below. If it differs,
+   fetch the exact remote branch and verify that its current commit is an
+   ancestor of local HEAD before the same ordinary fast-forward push. Use
+   `git push --no-follow-tags origin HEAD:refs/heads/<branch>` for either case;
+   never force-push or push unrelated refs. Stop on divergence, a remote change,
+   an unverifiable ancestry, or any failure. Verify the remote head equals the
+   intended HEAD after a push.
+5. Generate the title and body from the final diff using `$pr-description`.
+   Default to a ready PR; use draft only when requested. Surface the intended
+   repository, base, head, SHA, title, body and status before creation without
+   adding another approval prompt to the explicit PR request.
 
-- Do not create a PR merely because a branch is committed, pushed, reviewed, or approved for merge.
-- Do not push commits, create branches, merge, comment, request reviews, add labels, assign people, change rulesets, or change repository settings.
-- Do not use a repository other than the one the user identified and approved in the draft.
-- Do not create a duplicate PR. If an open PR already has the same repository, head branch, and base branch, stop and report its URL.
-- A changed HEAD SHA, base, head, title, body, draft status, or repository invalidates a prior create approval. Regenerate the draft and obtain fresh approval.
+## Create and report
 
-## Read-Only Preflight
+Recheck the intended HEAD, remote head and duplicate PR before creation. Use
+GitHub Connector to create the PR with the prepared fields and
+`maintainer_can_modify: false` unless requested otherwise. If the connector
+cannot create it, report the limitation. Report the PR URL, head SHA, push
+result, and available CI and review status; pending or unavailable is not a
+pass. Merge requires separate authorization.
 
-1. Resolve and display the exact `owner/repository` from the configured `origin`. Verify it is the repository requested by the user; never broaden scope to another repository.
-2. Resolve the target branch from the user's argument. If absent, read repository metadata, state the assumed default branch, and ask for confirmation if the choice is material. Never hard-code `main`.
-3. Resolve the local head branch and HEAD SHA. Stop if detached.
-4. Verify the branch has an upstream remote branch and that the remote branch SHA equals local HEAD. If not pushed or stale, stop and report that a separate explicit push approval is required; never push automatically.
-5. With GitHub Connector read-only calls, verify there is no open PR for the exact repository, head branch, and base branch. If one exists, report it and stop.
-6. Apply `$pr-description` using the selected base. Preserve its generated `Title` and `Description` exactly; do not rewrite or duplicate its writing rules.
-
-## Draft and Approval Gate
-
-1. Determine draft status from the user argument. If unspecified, propose `draft: true` as the conservative default; it remains a visible, editable field in the preview.
-2. Display exactly one complete PR draft with:
-   - Repository
-   - Base branch
-   - Head branch and HEAD SHA
-   - Draft status
-   - Title
-   - Full Markdown body
-3. State plainly that no PR has been created.
-4. Stop and wait for explicit approval such as `建立 PR` or `批准建立 PR`. Approval to commit or push is not approval to create a PR.
-
-## Creation
-
-After explicit create approval, re-run the preflight checks that establish repository, branch SHAs, duplicate status, and the displayed draft. If every value is unchanged, invoke GitHub Connector's `create_pull_request` with exactly the displayed:
-
-- `repository_full_name`
-- `base`
-- `head`
-- `title`
-- `body`
-- `draft`
-- `maintainer_can_modify: false`, unless the user explicitly requests otherwise
-
-Then report the PR number and URL. State that CI, human review, and merge remain separate steps requiring their own results and approvals.
-
-## Failure Handling
-
-- If Connector permissions do not allow PR creation, report the exact limitation and do not use browser automation as a fallback without explicit approval.
-- If any preflight check fails, report the failed condition and the smallest next user decision; do not guess or work around it.
-- Never expose or request secrets, tokens, or credentials.
+Let an already-enabled Codex GitHub auto-review integration run; do not send a
+duplicate review request. If its status is unknown or it is not enabled, report
+that uncertainty and mention `@codex review` as an option. Do not change GitHub
+settings or post a comment without the user's instruction.
