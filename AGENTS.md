@@ -126,6 +126,21 @@ options, a recommendation, and consequences. Record a reversible low-risk
 assumption when no such decision remains. `$feature-workflow` owns the detailed
 tier, role-selection, decision-frontier, and output rules.
 
+Choose engineering solutions for long-term maintainability and evolution:
+consider ownership, compatibility, testing and migration, and avoid speculative
+abstraction. For material architecture or dependency decisions, inspect the
+repository and consult current official platform or framework guidance; use
+relevant mature application examples when they add evidence. Record applicable
+tradeoffs rather than copying patterns from a different context. Keep shared
+instructions in the smallest appropriate owner instead of repeating them across
+skills.
+
+When starting a new feature branch, first check the worktree and branch, switch
+to `main`, update it from `origin/main` with a fast-forward-only pull, and create
+the branch from the updated `main`. Preserve existing work; if switching or
+updating is unsafe or fails, stop and report the blocker. Use another base only
+when the user explicitly requests it.
+
 New evidence may raise a tier immediately. After plan approval, lowering a tier
 requires documented new evidence and explicit user agreement because it reduces
 the approved validation and independent-review budget.
@@ -154,7 +169,8 @@ record at review and immediately before commit; it requires the complete
 candidate to be staged, rejects extra staged changes and scoped unstaged or
 untracked changes, and fingerprints the index content that Git will commit.
 Recompute it before committing. A `commit` approval applies only to that reviewed
-candidate; push, PR, and merge each require separate explicit approval.
+candidate. An explicit request to create a PR also authorizes the ordinary push
+needed for that PR; merge and other Git actions remain separately authorized.
 
 Only after read-only investigation may a user explicitly agree to treat a
 wording, formatting, or documentation-only change as trivial and skip **full**

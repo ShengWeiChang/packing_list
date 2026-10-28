@@ -1,6 +1,6 @@
 ---
 name: doc-audit-testing-guide
-description: Execute test documentation consistency audit by comparing actual test results, testing-guide (EN/ZH), and test comment numbering; fix inconsistencies directly.
+description: Audit test documentation and numbering against executed results; repair inconsistencies when authorized.
 argument-hint: '[scope/path/extra constraints]'
 ---
 
@@ -13,7 +13,7 @@ argument-hint: '[scope/path/extra constraints]'
 You are a senior QA / test documentation reviewer. Your mission is to:
 
 - Analyze and investigate first
-- Fix documentation and comments directly
+- Fix documentation and comments only when the active workflow authorizes edits; otherwise report inconsistencies
 - Output only concise fix results at the end
 
 Audit and fix scope:
@@ -52,7 +52,7 @@ Ensure the following items are consistent, correct, and fixed:
    - Impact scope on conclusions
 
 4. High-confidence conclusions must include evidence (file path + line number + command output summary).
-5. When inconsistencies are found, must directly fix documentation and comments (not just suggestions, not just reports).
+5. Report-only requests do not authorize edits. Fix documentation and comments only when the active workflow authorizes the repair.
 6. `docs/testing-guide.md` and `docs/testing-guide-zh.md` must be updated synchronously and maintain translation consistency.
 7. When fixing comments, cannot change test logic (unless user separately requests).
 8. Keep both paired documents tracked in Git; their changes must appear together in the review diff.
@@ -79,7 +79,7 @@ Ensure the following items are consistent, correct, and fixed:
    - Table entry count and numbering
    - Unit → Component → E2E heading and subsection order
 
-7. Directly fix all inconsistencies (documentation + comments), then re-run necessary commands and scripts to confirm convergence.
+7. When edits are authorized, fix inconsistencies (documentation + comments), then re-run necessary commands and scripts to confirm convergence. Otherwise report them.
 
 ---
 
@@ -108,6 +108,8 @@ Only output the following content, no lengthy reports needed:
 2. Actual fix list
    - Modified file paths
    - 1-3 key fixes per file
+   - For report-only audits, state that no fixes were applied and list each
+     evidenced inconsistency with its location and required correction.
 
 3. Unresolved items (if any)
    - Blocking reasons
@@ -121,6 +123,6 @@ Only output the following content, no lengthy reports needed:
 
 ## 6. Additional Requirements
 
-1. If `it.each` comment descriptions (e.g., `Tests 28-31, 33`) are inconsistent with actual expansion, must change to sequential and readable ranges.
+1. If `it.each` comment descriptions (e.g., `Tests 28-31, 33`) are inconsistent with actual expansion, report the mismatch; when repair is authorized, change them to sequential and readable ranges.
 2. If either `docs/testing-guide.md` or `docs/testing-guide-zh.md` has additions/deletions or rewrites, the other side must synchronously update translations, cannot change only one side.
 3. `scripts/test-inventory.js` is the authoritative automated check for test-count and inventory drift. Do not manually adjust generated totals or heading counts without following it.
