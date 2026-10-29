@@ -1,6 +1,6 @@
 ---
 name: feature-learning
-description: Teach software feature concepts using implementation and test examples, either briefly in conversation or as an explicitly requested detailed learning document. Use for conceptual understanding, not a readiness review or line-by-line walkthrough.
+description: Teach software feature concepts using implementation and test examples, either in conversation or as an explicitly requested detailed learning document. Use for conceptual understanding, not a readiness review or line-by-line walkthrough.
 argument-hint: '[feature scope/learning interests]'
 ---
 
@@ -10,7 +10,7 @@ Turn a recently implemented feature into a focused software-engineering lesson. 
 
 ## Choose a Mode
 
-- **Conversational mode** is the default, including for every `$feature-workflow` milestone. Explain one to three relevant concepts briefly in the conversation, grounded in the reviewed change and a representative code or test example. Explain why the design matters and link to useful local files. Adapt the depth to the change and the user's interests. Do not create a learning document or add exercises unless the user asks for them.
+- **Conversational mode** is the default, including for every `$feature-workflow` milestone. Give a substantive explanation in the conversation, at the depth needed for the user to understand and review the design. Select one to three relevant concepts and develop each with a concrete example from the reviewed code or tests, how it works, why it matters here, and a meaningful alternative or limitation when applicable. Show a small code snippet or before-and-after example when it makes a concept easier to follow. Connect the concepts into the actual data or control flow and link to useful local files. Avoid reducing the lesson to a few summary bullets; scale detail to the milestone and the user's interests rather than enforcing a word count. Do not create a learning document or add exercises unless the user asks for them.
 - **Detailed document mode** applies when the user explicitly asks for a full learning document. Create the personal note in `learning/` and use the guidance below to build a more complete lesson. Include exercises only when useful or requested.
 
 Both modes use the same principles below; their depth and output differ. In conversational mode, do not mechanically include every section, a file tour, or a test-layer survey.

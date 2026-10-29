@@ -149,7 +149,8 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
    Record the explanation scope in the plan.
 8. Set status to `awaiting milestone review` and present the changed scope,
    validation evidence, fingerprint when staged, reviewer verdict or explicit
-   reason it was not required, and the brief milestone explanation. Begin every
+   reason it was not required, and the milestone explanation guided by
+   `$feature-learning`. Begin every
    status update by naming the current state and the one user decision needed.
    Wait for the user's response before continuing to a dependent milestone or
    commit. If this is the final milestone, a user acceptance moves it to
