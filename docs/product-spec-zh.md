@@ -72,7 +72,7 @@
 - CSS Processing: PostCSS with Tailwind CSS
 - Module Bundling: Vite with ES modules
 - 型別檢查：TypeScript 6.0.3 / vue-tsc 3.3.13、typescript-eslint 8.72.1、@vue/tsconfig 0.9.1；共用 feature／CI gate 在 runtime tests 前執行 `npm run typecheck`。
-- 遷移邊界：`typescript-migration.json` 記錄尚未受型別檢查的應用 JS／SFC scripts；compiler-root 涵蓋檢查與精確 allowance 防止漏檢。Models、utilities、seed data 與 services 已完成型別化；仍有 4 個 JS 模組及 16 個 SFC scripts 待遷移。Runtime tests 與 Node 工具保留 JS；localStorage 仍需要 runtime validation。
+- 遷移邊界：`typescript-migration.json` 記錄尚未受型別檢查的應用 JS／SFC scripts；compiler-root 涵蓋檢查與精確 allowance 防止漏檢。Models、utilities、seed data、services 與 composables 已完成型別化；仍有 2 個 JS 模組及 16 個 SFC scripts 待遷移。Runtime tests 與 Node 工具保留 JS；localStorage 仍需要 runtime validation。
 - 宣告相容性：已接受 `skipLibCheck: true` 以處理 vue-i18n 11.4.16 / Vue 3.5.44 的 TS2724 不相容；應用／模板程式與 API 使用仍受檢查。限制與重新評估規則見 Code Quality Guide。
 
 ## 4. Implemented Features 實做功能
@@ -458,8 +458,8 @@ packing-list/
     │   ├── TemplateEditor.vue        # 獨立個人範本 editor
     │   └── Topbar.vue                # 手機版頂部工具欄
     ├── composables/                  # Vue組合式函數
-    │   ├── usePackingLists.js        # 核心業務邏輯組合函數
-    │   └── useTemplates.js           # 範本 state 與 CRUD 邏輯
+    │   ├── usePackingLists.ts        # 核心業務邏輯組合函數
+    │   └── useTemplates.ts           # 範本 state 與 CRUD 邏輯
     ├── i18n/                         # i18n 初始化與語系偵測/持久化
     │   └── index.js                  # 建立 vue-i18n、語言映射與讀寫 localStorage
     ├── locales/                      # 語系翻譯檔
@@ -489,6 +489,7 @@ packing-list/
         ├── focusEditingInput.ts      # 行內編輯焦點與可見性
         ├── helpers.ts                # ID、日期、JSON clone 與 debounce
         ├── instantiateTemplate.ts    # 共用 template-shaped 資料實體化
+        ├── operationErrors.ts        # 將 unknown 失敗縮窄為穩定的操作錯誤
         ├── order.ts                  # 完整與可見槽位排序
         └── positioning.ts            # 下拉選單位置計算
 ```

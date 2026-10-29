@@ -22,9 +22,9 @@ import type {
 } from '../models/contracts';
 import type {
   ChecklistSourceOptions,
+  CommittedItem,
   StoredAppData,
   StoredChecklist,
-  StoredItem,
   StoredRecord,
 } from './storageTypes';
 
@@ -223,7 +223,7 @@ export class DataService {
     _checklistId: string,
     _items: ItemMutation[],
     _expected?: ItemMutation[]
-  ): Promise<StoredItem[]> {
+  ): Promise<CommittedItem[]> {
     throw new Error('Not implemented');
   }
 

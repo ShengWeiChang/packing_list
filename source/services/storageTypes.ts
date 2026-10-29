@@ -31,6 +31,9 @@ export interface StoredItem extends StoredRecord {
   isPending: unknown;
 }
 
+/** Rows touched by a successful batch contain every normalized model field. */
+export type CommittedItem = StoredItem & ItemDTO;
+
 export interface StoredAppData {
   [field: string]: unknown;
   checklists: StoredChecklist[];

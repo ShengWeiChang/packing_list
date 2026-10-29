@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/composables/usePackingLists.js
+File: source/composables/usePackingLists.ts
 Description: Composable to manage checklists, categories and items state and CRUD
              operations using the configured data service.
 Author: Sheng-Wei Chang
@@ -13,24 +13,68 @@ Created: 2025-09-19
 // Imports
 // -----------------------------------------------------------------------------
 
+import type { Ref } from 'vue';
 import { computed, getCurrentInstance, onMounted, onUnmounted, readonly, ref, watch } from 'vue';
 
 import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';
+import type {
+  CategoryDTO,
+  CategoryInput,
+  CategoryMutation,
+  ChecklistDTO,
+  ChecklistInput,
+  ChecklistMutation,
+  ItemDTO,
+  ItemInput,
+  ItemMutation,
+  Mutation,
+} from '../models/contracts';
 import { Item } from '../models/Item';
 import { LocalStorageService } from '../services/localStorageService';
 import { StorageError } from '../services/storageTransaction';
+import type {
+  ChecklistSourceOptions,
+  CommittedItem,
+  StorageErrorCode,
+  StoredChecklist,
+  StoredRecord,
+} from '../services/storageTypes';
 import { STORAGE_KEYS } from '../utils/constants';
 import { debounce } from '../utils/helpers';
+import { describeOperationError } from '../utils/operationErrors';
 
 const PACKING_HISTORY_LIMIT = 50;
+
+/** Initialization uses models; later service reads can supply plain DTOs. */
+type EntityState<T> = T & { toJSON?: () => T };
+type EditBaseline<T extends { id: string }> = Mutation<T> & { toJSON?: () => T };
+type CollectionView<T> = Readonly<Ref<readonly Readonly<EntityState<T>>[]>>;
+
+export type PackingStatus = Readonly<Pick<ItemDTO, 'isPacked' | 'isPending'>>;
+export interface PackingHistoryEntry {
+  readonly checklistId: string;
+  readonly changes: readonly {
+    readonly itemId: string;
+    readonly before: PackingStatus;
+    readonly after: PackingStatus;
+  }[];
+}
+
+export interface ItemBatchOptions {
+  recordHistory?: boolean;
+  fields?: (keyof ItemDTO)[];
+  expectedItems?: EditBaseline<ItemDTO>[];
+}
 
 /**
  * Require the user's observed state before submitting a field-level change.
  * @param {object|undefined} value - Entity observed before editing.
  * @returns {object} Detached baseline.
  */
-function requireEditBaseline(value) {
+function requireEditBaseline<T extends { id: string }>(
+  value: EditBaseline<T> | null | undefined
+): Mutation<T> {
   if (!value) throw new StorageError('conflict', 'The edited record no longer exists');
   return value.toJSON?.() ?? { ...value };
 }
@@ -55,7 +99,7 @@ export function usePackingLists() {
     void initialize();
   }, 50);
 
-  const handleStorageEvent = (e) => {
+  const handleStorageEvent = (e: StorageEvent) => {
     // Only react to app data changes coming from other tabs/windows.
     if (!e || (e.key !== STORAGE_KEYS.APP_DATA && e.key !== null)) return;
 
@@ -88,19 +132,19 @@ export function usePackingLists() {
   // State
   // ---------------------------------------------------------------------------
 
-  const checklists = ref([]);
-  const categories = ref([]);
-  const items = ref([]);
-  const selectedChecklistId = ref(null);
+  const checklists = ref<EntityState<ChecklistDTO>[]>([]);
+  const categories = ref<EntityState<CategoryDTO>[]>([]);
+  const items = ref<EntityState<ItemDTO>[]>([]);
+  const selectedChecklistId = ref<string | null>(null);
   const isLoading = ref(false);
-  const error = ref(null);
-  const storageHealth = ref(null);
-  const operationError = ref(null);
+  const error = ref<string | null>(null);
+  const storageHealth = ref<StorageErrorCode | null>(null);
+  const operationError = ref<StorageErrorCode | null>(null);
   const operationErrorVersion = ref(0);
   const refreshAfterSaveFailed = ref(false);
   let postCommitRefreshes = 0;
-  const packingUndoStack = ref([]);
-  const packingRedoStack = ref([]);
+  const packingUndoStack = ref<PackingHistoryEntry[]>([]);
+  const packingRedoStack = ref<PackingHistoryEntry[]>([]);
   let isApplyingPackingHistory = false;
   let packingHistoryRevision = 0;
   let selectionRevision = 0;
@@ -111,7 +155,7 @@ export function usePackingLists() {
   // Computed properties
   // ---------------------------------------------------------------------------
 
-  const selectedChecklist = computed(() =>
+  const selectedChecklist = computed<Readonly<EntityState<ChecklistDTO>> | undefined>(() =>
     checklists.value.find((cl) => cl.id === selectedChecklistId.value)
   );
   const totalItems = computed(() => items.value.length);
@@ -143,7 +187,7 @@ export function usePackingLists() {
    * Persist or clear the last opened checklist without blocking the current UI.
    * @param {string|null} checklistId - Checklist ID to persist
    */
-  function persistLastOpenedChecklistId(checklistId) {
+  function persistLastOpenedChecklistId(checklistId: string | null) {
     try {
       if (checklistId) {
         localStorage.setItem(STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID, checklistId);
@@ -194,7 +238,11 @@ export function usePackingLists() {
    * @param {boolean} [isRead=false] - Whether this operation reads existing data.
    * @returns {Promise<*>} Result from loader function or null on error
    */
-  async function loadData(loader, errorMessage, isRead = false) {
+  async function loadData<T>(
+    loader: () => T | Promise<T>,
+    errorMessage: string,
+    isRead = false
+  ): Promise<T | null> {
     isLoading.value = true;
     try {
       const result = await loader();
@@ -203,13 +251,14 @@ export function usePackingLists() {
         refreshAfterSaveFailed.value = false;
       }
       return result;
-    } catch (e) {
+    } catch (caught) {
+      const e = describeOperationError(caught);
       error.value = `${errorMessage}: ${e.message}`;
       if (isRead) {
-        storageHealth.value = e.code || 'unavailable';
+        storageHealth.value = e.code;
         if (postCommitRefreshes) refreshAfterSaveFailed.value = true;
       } else {
-        operationError.value = e.code || 'unavailable';
+        operationError.value = e.code;
         operationErrorVersion.value += 1;
       }
       return null;
@@ -221,7 +270,7 @@ export function usePackingLists() {
   /** Refresh visible state after a successful commit without misreporting the write.
    * @param {Function} refresh - Refresh operation to run.
    */
-  async function refreshAfterCommit(refresh) {
+  async function refreshAfterCommit<T>(refresh: () => T | Promise<T>): Promise<void> {
     postCommitRefreshes += 1;
     try {
       await refresh();
@@ -233,7 +282,7 @@ export function usePackingLists() {
   /** Dismiss an error only if it still belongs to the cancelled operation.
    * @param {number} version - Error revision captured by the editor.
    */
-  function clearOperationError(version) {
+  function clearOperationError(version: number) {
     if (operationErrorVersion.value === version) operationError.value = null;
   }
 
@@ -254,8 +303,8 @@ export function usePackingLists() {
    * @param {string|null} [checklistId=selectedChecklistId.value] - Checklist owning the change
    */
   function recordPackingBatchChange(
-    beforeItems,
-    afterItems,
+    beforeItems: readonly ItemDTO[],
+    afterItems: readonly ItemDTO[],
     checklistId = selectedChecklistId.value
   ) {
     const changes = afterItems
@@ -278,7 +327,7 @@ export function usePackingLists() {
 
         return { itemId: afterItem.id, before, after };
       })
-      .filter(Boolean);
+      .filter((entry) => entry !== null);
 
     if (changes.length === 0 || !checklistId) return;
 
@@ -295,7 +344,7 @@ export function usePackingLists() {
    * @param {object|undefined} beforeItem - Item before the update
    * @param {object} afterItem - Item after the update
    */
-  function invalidatePackingRedo(beforeItem, afterItem) {
+  function invalidatePackingRedo(beforeItem: ItemDTO | undefined, afterItem: ItemDTO) {
     if (
       !beforeItem ||
       (beforeItem.isPacked === afterItem.isPacked && beforeItem.isPending === afterItem.isPending)
@@ -314,7 +363,10 @@ export function usePackingLists() {
    * @param {'before'|'after'} direction - State snapshot to apply
    * @returns {Promise<boolean>} Whether the entry was applied
    */
-  async function applyPackingHistoryEntry(entry, direction) {
+  async function applyPackingHistoryEntry(
+    entry: PackingHistoryEntry | undefined,
+    direction: 'before' | 'after'
+  ): Promise<boolean> {
     if (!entry || entry.checklistId !== selectedChecklistId.value) return false;
 
     const updates = entry.changes
@@ -323,7 +375,7 @@ export function usePackingLists() {
         if (!currentItem) return null;
         return new Item({ ...currentItem, ...change[direction] });
       })
-      .filter(Boolean);
+      .filter((entry) => entry !== null);
 
     if (updates.length === 0 || updates.length !== entry.changes.length) return false;
     const result = await updateMultipleItems(updates, { recordHistory: false });
@@ -340,6 +392,7 @@ export function usePackingLists() {
     try {
       const entry = packingUndoStack.value.at(-1);
       const revision = packingHistoryRevision;
+      if (!entry) return false;
       if (!(await applyPackingHistoryEntry(entry, 'before'))) return false;
       if (packingHistoryRevision !== revision || packingUndoStack.value.at(-1) !== entry) {
         return false;
@@ -364,6 +417,7 @@ export function usePackingLists() {
     try {
       const entry = packingRedoStack.value.at(-1);
       const revision = packingHistoryRevision;
+      if (!entry) return false;
       if (!(await applyPackingHistoryEntry(entry, 'after'))) return false;
       if (packingHistoryRevision !== revision || packingRedoStack.value.at(-1) !== entry) {
         return false;
@@ -383,7 +437,7 @@ export function usePackingLists() {
    * @param {object} item - Item object to toggle
    * @returns {Promise<void>}
    */
-  async function toggleItemPacked(item) {
+  async function toggleItemPacked(item: ItemDTO): Promise<void> {
     const updatedItem = new Item({ ...item, isPacked: !item.isPacked });
     await updateItem(updatedItem);
   }
@@ -392,7 +446,7 @@ export function usePackingLists() {
    * Initialize data by loading all checklists, categories and items from storage
    * @returns {Promise<void>}
    */
-  async function initialize() {
+  async function initialize(): Promise<void> {
     // Load the entire storage once to avoid multiple JSON.parse calls
     try {
       isLoading.value = true;
@@ -427,8 +481,9 @@ export function usePackingLists() {
         categories.value = [];
         items.value = [];
       }
-    } catch (e) {
-      storageHealth.value = e.code || 'unavailable';
+    } catch (caught) {
+      const e = describeOperationError(caught);
+      storageHealth.value = e.code;
       error.value = `Error initializing data: ${e.message}`;
     } finally {
       isLoading.value = false;
@@ -445,7 +500,10 @@ export function usePackingLists() {
    * @param {object} [options] - Creation options { source: 'recommended'|'empty'|'template', seedData }
    * @returns {Promise<object|null>} Created checklist object or null on error
    */
-  async function createChecklist(checklistData, options = {}) {
+  async function createChecklist(
+    checklistData: ChecklistInput,
+    options: ChecklistSourceOptions = {}
+  ): Promise<ChecklistDTO | null> {
     const result = await loadData(
       () => dataService.createChecklist(checklistData, options),
       'Error creating checklist'
@@ -462,7 +520,7 @@ export function usePackingLists() {
    * Get all checklists from storage
    * @returns {Promise<Array>} Array of checklist objects sorted by order
    */
-  async function getChecklists() {
+  async function getChecklists(): Promise<EntityState<ChecklistDTO>[]> {
     const result = await loadData(
       () => dataService.getChecklists(),
       'Error getting checklists',
@@ -481,7 +539,10 @@ export function usePackingLists() {
    * @param {object} [editBaseline] - Checklist before editing.
    * @returns {Promise<object|null>} Updated checklist or null on error
    */
-  async function updateChecklist(checklistData, editBaseline) {
+  async function updateChecklist(
+    checklistData: ChecklistMutation,
+    editBaseline?: EditBaseline<ChecklistDTO>
+  ): Promise<ChecklistDTO | null> {
     const expected =
       editBaseline ?? checklists.value.find((checklist) => checklist.id === checklistData.id);
     const result = await loadData(
@@ -502,7 +563,10 @@ export function usePackingLists() {
    * @param {Array<object>} [editBaseline] - Checklists before dragging.
    * @returns {Promise<Array<object>|null>} Array of updated checklists or null on error
    */
-  async function updateMultipleChecklists(checklistsData, editBaseline) {
+  async function updateMultipleChecklists(
+    checklistsData: ChecklistMutation[],
+    editBaseline?: EditBaseline<ChecklistDTO>[]
+  ): Promise<StoredChecklist[] | null> {
     const expected = (editBaseline ?? checklists.value).map((checklist) =>
       requireEditBaseline(checklist)
     );
@@ -529,7 +593,7 @@ export function usePackingLists() {
    * @param {string} checklistId - Checklist ID to delete
    * @returns {Promise<boolean>} Whether the deletion was committed.
    */
-  async function deleteChecklist(checklistId) {
+  async function deleteChecklist(checklistId: string): Promise<boolean> {
     const deleted = await loadData(async () => {
       await dataService.deleteChecklist(checklistId);
       return true;
@@ -544,7 +608,7 @@ export function usePackingLists() {
    * @param {string} checklistId - Checklist ID to duplicate
    * @returns {Promise<object|null>} Duplicated checklist or null on error
    */
-  async function duplicateChecklist(checklistId) {
+  async function duplicateChecklist(checklistId: string): Promise<ChecklistDTO | null> {
     const result = await loadData(
       () => dataService.duplicateChecklist(checklistId),
       'Error duplicating checklist'
@@ -565,10 +629,10 @@ export function usePackingLists() {
    * @param {object} categoryData - Category data to create
    * @returns {Promise<object|null>} Created category or null on error
    */
-  async function createCategory(categoryData) {
+  async function createCategory(categoryData: CategoryInput): Promise<CategoryDTO | null> {
     if (!selectedChecklistId.value) return null;
     const result = await loadData(
-      () => dataService.createCategory(selectedChecklistId.value, categoryData),
+      () => dataService.createCategory(selectedChecklistId.value!, categoryData),
       'Error creating category'
     );
     if (result) {
@@ -582,7 +646,7 @@ export function usePackingLists() {
    * Get all categories for the current checklist
    * @returns {Promise<Array>} Array of category objects sorted by order
    */
-  async function getCategories() {
+  async function getCategories(): Promise<EntityState<CategoryDTO>[]> {
     const checklistId = selectedChecklistId.value;
     const selectionAtStart = selectionRevision;
     const requestRevision = ++categoriesRequestRevision;
@@ -613,7 +677,10 @@ export function usePackingLists() {
    * @param {object} [editBaseline] - Category before editing.
    * @returns {Promise<object|null>} Updated category or null on error
    */
-  async function updateCategory(categoryData, editBaseline) {
+  async function updateCategory(
+    categoryData: CategoryMutation,
+    editBaseline?: EditBaseline<CategoryDTO>
+  ): Promise<CategoryDTO | null> {
     const expected =
       editBaseline ?? categories.value.find((category) => category.id === categoryData.id);
     const result = await loadData(
@@ -633,7 +700,10 @@ export function usePackingLists() {
    * @param {Array<object>} [editBaseline] - Categories before dragging.
    * @returns {Promise<Array<object>|null>} Committed categories or null on failure.
    */
-  async function updateMultipleCategories(categoryData, editBaseline) {
+  async function updateMultipleCategories(
+    categoryData: CategoryMutation[],
+    editBaseline?: EditBaseline<CategoryDTO>[]
+  ): Promise<StoredRecord[] | null> {
     const expected = (editBaseline ?? categories.value).map((category) =>
       requireEditBaseline(category)
     );
@@ -657,7 +727,7 @@ export function usePackingLists() {
    * @param {string} categoryId - Category ID to delete
    * @returns {Promise<boolean>} Whether the deletion was committed.
    */
-  async function deleteCategory(categoryId) {
+  async function deleteCategory(categoryId: string): Promise<boolean> {
     const deleted = await loadData(async () => {
       await dataService.deleteCategory(categoryId);
       return true;
@@ -673,7 +743,7 @@ export function usePackingLists() {
    * @param {string} categoryId - Category ID to duplicate
    * @returns {Promise<object|null>} Duplicated category or null on error
    */
-  async function duplicateCategory(categoryId) {
+  async function duplicateCategory(categoryId: string): Promise<CategoryDTO | null> {
     const result = await loadData(
       () => dataService.duplicateCategory(categoryId),
       'Error duplicating category'
@@ -694,10 +764,10 @@ export function usePackingLists() {
    * @param {object} itemData - Item data to create
    * @returns {Promise<object|null>} Created item or null on error
    */
-  async function createItem(itemData) {
+  async function createItem(itemData: ItemInput): Promise<ItemDTO | null> {
     if (!selectedChecklistId.value) return null;
     const result = await loadData(
-      () => dataService.createItem(selectedChecklistId.value, itemData),
+      () => dataService.createItem(selectedChecklistId.value!, itemData),
       'Error creating item'
     );
     if (result) {
@@ -711,7 +781,7 @@ export function usePackingLists() {
    * Get all items for the current checklist sorted by category and item order
    * @returns {Promise<Array>} Array of item objects
    */
-  async function getItems() {
+  async function getItems(): Promise<EntityState<ItemDTO>[]> {
     const checklistId = selectedChecklistId.value;
     const selectionAtStart = selectionRevision;
     const requestRevision = ++itemsRequestRevision;
@@ -753,7 +823,10 @@ export function usePackingLists() {
    * @param {object} [editBaseline] - Item before editing.
    * @returns {Promise<object|null>} Updated item or null on error
    */
-  async function updateItem(itemData, editBaseline) {
+  async function updateItem(
+    itemData: ItemMutation,
+    editBaseline?: EditBaseline<ItemDTO>
+  ): Promise<ItemDTO | null> {
     const checklistId = selectedChecklistId.value;
     const selectionAtStart = selectionRevision;
     if (!checklistId) return null;
@@ -791,9 +864,9 @@ export function usePackingLists() {
    * @returns {Promise<Array<object>|null>} Updated items or null on error
    */
   async function updateMultipleItems(
-    itemData,
-    { recordHistory = false, fields, expectedItems } = {}
-  ) {
+    itemData: ItemMutation[],
+    { recordHistory = false, fields, expectedItems }: ItemBatchOptions = {}
+  ): Promise<CommittedItem[] | null> {
     const checklistId = selectedChecklistId.value;
     const selectionAtStart = selectionRevision;
     if (!checklistId || itemData.length === 0) return [];
@@ -834,7 +907,10 @@ export function usePackingLists() {
    * @param {boolean} isPacked - Target packed state
    * @returns {Promise<Array<object>|null>} Updated items or null on error
    */
-  async function setCategoryPacked(categoryId, isPacked) {
+  async function setCategoryPacked(
+    categoryId: string,
+    isPacked: boolean
+  ): Promise<CommittedItem[] | null> {
     const categoryItems = items.value
       .filter((item) => item.categoryId === categoryId)
       .filter((item) => item.isPacked !== isPacked || (isPacked && item.isPending))
@@ -856,10 +932,10 @@ export function usePackingLists() {
    * @param {string} itemId - Item ID to delete
    * @returns {Promise<boolean>} Whether the deletion was committed.
    */
-  async function deleteItem(itemId) {
+  async function deleteItem(itemId: string): Promise<boolean> {
     if (!selectedChecklistId.value) return false;
     const deleted = await loadData(async () => {
-      await dataService.deleteItem(selectedChecklistId.value, itemId);
+      await dataService.deleteItem(selectedChecklistId.value!, itemId);
       return true;
     }, 'Error deleting item');
     if (!deleted) return false;
@@ -873,10 +949,10 @@ export function usePackingLists() {
    * @param {string} itemId - Item ID to duplicate
    * @returns {Promise<object|null>} Duplicated item or null on error
    */
-  async function duplicateItem(itemId) {
+  async function duplicateItem(itemId: string): Promise<ItemDTO | null> {
     if (!selectedChecklistId.value) return null;
     const result = await loadData(
-      () => dataService.duplicateItem(selectedChecklistId.value, itemId),
+      () => dataService.duplicateItem(selectedChecklistId.value!, itemId),
       'Error duplicating item'
     );
     if (result) {
@@ -924,11 +1000,16 @@ export function usePackingLists() {
     }
   });
 
+  // Keep unvalidated dates unknown: Vue's generic DeepReadonly narrows unknown to {}.
+  const checklistsView: CollectionView<ChecklistDTO> = readonly(checklists);
+  const categoriesView: CollectionView<CategoryDTO> = readonly(categories);
+  const itemsView: CollectionView<ItemDTO> = readonly(items);
+
   return {
     // State (reactive data)
-    checklists: readonly(checklists),
-    categories: readonly(categories),
-    items: readonly(items),
+    checklists: checklistsView,
+    categories: categoriesView,
+    items: itemsView,
     selectedChecklistId,
     isLoading: readonly(isLoading),
     error: readonly(error),

@@ -44,9 +44,9 @@ import {
 } from './storageTransaction';
 import type {
   ChecklistSourceOptions,
+  CommittedItem,
   StoredAppData,
   StoredChecklist,
-  StoredItem,
   StoredRecord,
 } from './storageTypes';
 
@@ -788,7 +788,7 @@ export class LocalStorageService extends DataService {
     checklistId: string,
     itemsToUpdate: ItemMutation[],
     expectedItems?: ItemMutation[]
-  ): Promise<StoredItem[]> {
+  ): Promise<CommittedItem[]> {
     return this._withWriteLock(async () => {
       const currentData = await this.getData();
       const data = {
@@ -836,7 +836,8 @@ export class LocalStorageService extends DataService {
       });
       data.items = items;
       this._saveData(data);
-      return indexes.map((index) => items[index]!);
+      // Each returned index was overwritten above with the complete Item.toJSON result.
+      return indexes.map((index) => items[index]! as CommittedItem);
     });
   }
 

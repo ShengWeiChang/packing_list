@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/composables/useTemplates.js
+File: source/composables/useTemplates.ts
 Description: Composable to manage personal checklist templates state and CRUD
              operations using the TemplateService.
 Author: Sheng-Wei Chang
@@ -15,8 +15,11 @@ Created: 2026-10-13
 
 import { getCurrentInstance, onMounted, onUnmounted, readonly, ref } from 'vue';
 
+import type { TemplateDTO, TemplateInput } from '../models/contracts';
+import type { StorageErrorCode } from '../services/storageTypes';
 import { TemplateService } from '../services/templateService';
 import { STORAGE_KEYS } from '../utils/constants';
+import { describeOperationError } from '../utils/operationErrors';
 
 /**
  * Composable for managing personal checklist templates
@@ -33,14 +36,14 @@ export function useTemplates() {
   // State
   // ---------------------------------------------------------------------------
 
-  const templates = ref([]);
+  const templates = ref<TemplateDTO[]>([]);
   const isLoading = ref(false);
-  const error = ref(null);
-  const storageHealth = ref(null);
-  const operationError = ref(null);
+  const error = ref<string | null>(null);
+  const storageHealth = ref<StorageErrorCode | null>(null);
+  const operationError = ref<StorageErrorCode | null>(null);
   const refreshAfterSaveFailed = ref(false);
 
-  const handleStorageEvent = (event) => {
+  const handleStorageEvent = (event: StorageEvent) => {
     if (event.key !== STORAGE_KEYS.TEMPLATES && event.key !== null) return;
     templateService.clearCache();
     loadTemplates();
@@ -59,14 +62,15 @@ export function useTemplates() {
    * Load all templates from storage
    * @returns {boolean} Whether the data was read successfully.
    */
-  function loadTemplates() {
+  function loadTemplates(): boolean {
     try {
       templates.value = templateService.getTemplates();
       storageHealth.value = null;
       refreshAfterSaveFailed.value = false;
       return true;
-    } catch (e) {
-      storageHealth.value = e.code || 'unavailable';
+    } catch (caught) {
+      const e = describeOperationError(caught);
+      storageHealth.value = e.code;
       error.value = `Error loading templates: ${e.message}`;
       return false;
     }
@@ -78,14 +82,18 @@ export function useTemplates() {
    * @param {string} templateName - Name for the new template
    * @returns {Promise<object|null>} Created template or null on error
    */
-  async function saveAsTemplate(checklistId, templateName) {
+  async function saveAsTemplate(
+    checklistId: string,
+    templateName: string
+  ): Promise<TemplateDTO | null> {
     try {
       const result = await templateService.createFromChecklist(checklistId, templateName);
       operationError.value = null;
       refreshAfterSaveFailed.value = !loadTemplates();
       return result;
-    } catch (e) {
-      operationError.value = e.code || 'unavailable';
+    } catch (caught) {
+      const e = describeOperationError(caught);
+      operationError.value = e.code;
       error.value = `Error saving template: ${e.message}`;
       return null;
     }
@@ -96,14 +104,15 @@ export function useTemplates() {
    * @param {string} templateId - Template ID to delete
    * @returns {Promise<boolean>} Whether the template was deleted
    */
-  async function deleteTemplate(templateId) {
+  async function deleteTemplate(templateId: string): Promise<boolean> {
     try {
       await templateService.deleteTemplate(templateId);
       operationError.value = null;
       refreshAfterSaveFailed.value = !loadTemplates();
       return true;
-    } catch (e) {
-      operationError.value = e.code || 'unavailable';
+    } catch (caught) {
+      const e = describeOperationError(caught);
+      operationError.value = e.code;
       error.value = `Error deleting template: ${e.message}`;
       return false;
     }
@@ -115,7 +124,7 @@ export function useTemplates() {
    * @param {string} newName - New template name
    * @returns {Promise<object|null>} Updated template or null on error
    */
-  async function renameTemplate(templateId, newName) {
+  async function renameTemplate(templateId: string, newName: string): Promise<TemplateDTO | null> {
     try {
       const existing = templateService.getTemplateById(templateId);
       if (!existing) return null;
@@ -123,8 +132,9 @@ export function useTemplates() {
       operationError.value = null;
       refreshAfterSaveFailed.value = !loadTemplates();
       return result;
-    } catch (e) {
-      operationError.value = e.code || 'unavailable';
+    } catch (caught) {
+      const e = describeOperationError(caught);
+      operationError.value = e.code;
       error.value = `Error renaming template: ${e.message}`;
       return null;
     }
@@ -136,11 +146,12 @@ export function useTemplates() {
    * @param {string} checklistId - Target checklist ID
    * @returns {object|null} Object with categories and items, or null on error
    */
-  function applyTemplate(templateId, checklistId) {
+  function applyTemplate(templateId: string, checklistId: string) {
     try {
       return templateService.applyToNewChecklist(templateId, checklistId);
-    } catch (e) {
-      operationError.value = e.code || 'unavailable';
+    } catch (caught) {
+      const e = describeOperationError(caught);
+      operationError.value = e.code;
       error.value = `Error applying template: ${e.message}`;
       return null;
     }
@@ -152,14 +163,18 @@ export function useTemplates() {
    * @param {object} [expectedTemplate] - Template state at the start of editing
    * @returns {Promise<object|null>} Updated template or null on error
    */
-  async function updateTemplate(templateData, expectedTemplate) {
+  async function updateTemplate(
+    templateData: TemplateInput & { id: string },
+    expectedTemplate?: TemplateInput
+  ): Promise<TemplateDTO | null> {
     try {
       const result = await templateService.updateTemplate(templateData, expectedTemplate);
       operationError.value = null;
       refreshAfterSaveFailed.value = !loadTemplates();
       return result;
-    } catch (e) {
-      operationError.value = e.code || 'unavailable';
+    } catch (caught) {
+      const e = describeOperationError(caught);
+      operationError.value = e.code;
       error.value = `Error updating template: ${e.message}`;
       return null;
     }

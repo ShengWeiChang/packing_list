@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 686    |
-| Unit tests 單元測試           | 301    |
+| Total tests 總測試數          | 690    |
+| Unit tests 單元測試           | 305    |
 | Component tests 組件測試      | 296    |
 | E2E tests E2E 測試            | 89     |
-| Line coverage 行覆蓋率        | 92.91% |
+| Line coverage 行覆蓋率        | 92.97% |
 | Statement coverage 語句覆蓋率 | 91.30% |
-| Branch coverage 分支覆蓋率    | 81.32% |
+| Branch coverage 分支覆蓋率    | 81.22% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,7 +29,7 @@
 
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 301   | models、services、composables、utils 純邏輯 |
+| Unit      | Vitest                   | 305   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 296   | Vue 組件渲染、事件、狀態                    |
 | E2E       | Playwright               | 89    | 真實瀏覽器中的完整使用者流程                |
 
@@ -51,6 +51,8 @@
 
 初始 infrastructure suite 證明數值 ref 推導、null narrowing、indexed-access 安全性與真實 SFC props／emits。兩個隔離 probe 要求刻意無效的 TS 及 Vue template fixture 只產生 TS2322；無關的缺少模組、設定錯誤、crash 或意外成功都會使 probe 失敗。Domain／storage suite 檢查實際 model 正規化、舊資料 unknown 欄位、可攜 snapshot、seed source、mutation baseline、nullable 查詢、lock 結果、JSON clone、debounce 參數與純資料排序與欄位覆寫。
 
+Composable compile-only suites 檢查可寫選取、唯讀集合與巢狀 snapshot、nullable 實體／操作結果、async callbacks、drag baseline／field keys，以及不可變的 packing history。
+
 Gate 明確回報尚未檢查的 JS 與 Vue JavaScript scripts；進入 compiler roots 不代表已完整檢查型別。`skipLibCheck: true` 是已接受的 Vue／i18n 宣告相容性例外，詳見 Code Quality Guide。
 
 ## 3. Test File Structure 測試檔案結構
@@ -62,10 +64,12 @@ tests/
 │
 ├── type-tests/                          # Compile-only; excluded from runtime counts
 │   ├── contracts.test.ts               # Domain／storage、snapshot、callback 契約
+│   ├── usePackingLists.test.ts        # Reactive state／操作／history 契約
+│   ├── useTemplates.test.ts           # 範本 state／snapshot／callback 契約
 │   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
 │   └── fixtures/                        # Typed probe and deliberately invalid inputs
 │
-├── unit-tests/                          # 301 tests
+├── unit-tests/                          # 305 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -78,12 +82,13 @@ tests/
 │   │   ├── templateService.test.js      # 15  tests
 │   │   ├── storageTransaction.test.js  # 27  tests
 │   │   └── recommendedListService.test.js  #  4  tests
-│   ├── composables/                     # 66  tests
+│   ├── composables/                     # 67  tests
 │   │   └── usePackingLists.test.js      # 51  tests
-│   │   └── useTemplates.test.js         # 15  tests
+│   │   └── useTemplates.test.js         # 16  tests
 │   ├── i18n/                            # 12  tests
 │   │   └── index.test.js                # 12  tests
-│   ├── utils/                           # 36  tests
+│   ├── utils/                           # 39  tests
+│       ├── operationErrors.test.js    #  3  tests
 │       ├── helpers.test.js              # 21  tests
 │       ├── positioning.test.js          #  3  tests
 │       ├── order.test.js                #  8  tests
@@ -131,7 +136,7 @@ tests/
 
 - **Unit/Component tests 單元/組件測試** (`.test.js`): 完全匹配 production 檔案名稱
   - `Category.test.js` → 測試 `Category.vue`
-  - `usePackingLists.test.js` → 測試 `usePackingLists.js`
+  - `usePackingLists.test.js` → 測試 `usePackingLists.ts`
 - **E2E tests 端到端測試** (`.spec.js`): 使用 kebab-case 描述使用者流程
   - `item-packing.spec.js`, `checklist-management.spec.js`
 
@@ -150,10 +155,10 @@ tests/
 | scripts/     | 79.22%     | 67.17% | 77.52% |
 | source/      | 82.93%     | 72.29% | 85.50% |
 | components/  | 91.52%     | 82.42% | 94.29% |
-| composables/ | 95.41%     | 87.03% | 97.37% |
+| composables/ | 95.17%     | 85.54% | 97.46% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
-| utils/       | 98.92%     | 89.23% | 100%   |
+| utils/       | 98.98%     | 91.13% | 100%   |
 
 ### By Component 各組件覆蓋率
 
@@ -252,7 +257,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ## 8. Complete Test Inventory 完整測試案例清單
 
-### 8.1 Unit Tests（301）
+### 8.1 Unit Tests（305）
 
 #### 8.1.1 Models（40）
 
@@ -464,7 +469,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 26  | 保留範本巢狀欄位並隔離新建立的 runtime 狀態                                   | Snapshot 保留與全新狀態      |
 | 27  | 複製原始資料時不偷偷修復缺漏的舊名稱                                          | 既有失敗行為與原文保留       |
 
-#### 8.1.3 Composables（66）
+#### 8.1.3 Composables（67）
 
 ##### 8.1.3.1 usePackingLists.test.js（51）
 
@@ -514,33 +519,34 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 42  | should return null when updateCategory throws (real service)                       | throw → null 後備       |
 | 43  | should refresh categories and return updated category on success                   | 成功路徑 + refresh      |
 | 44  | should preserve valid selection and recover deleted selection on app data refresh  | 跨分頁選取復原          |
-| 45  | should treat a category pack-all as one undoable action and restore mixed state    | 群組歷史與重做安全      |
-| 46  | should clear packing history when switching checklists                             | 歷史範圍隔離            |
-| 47  | preserves remote item edits when committing a stale drag payload                   | 明確拖曳意圖            |
-| 48  | 刪除失敗後保留歷史與資料                                                           | 刪除失敗                |
-| 49  | 重新讀取失敗後保留畫面上的分類與物品                                               | 讀取失敗                |
-| 50  | 區分寫入成功與後續更新失敗                                                         | 寫入確認                |
-| 51  | 新清單無法讀取時清除先前清單資料                                                   | 選取歸屬                |
+| 45  | 刪除失敗後保留歷史與資料                                                           | 刪除失敗                |
+| 46  | 重新讀取失敗後保留畫面上的分類與物品                                               | 讀取失敗                |
+| 47  | 區分寫入成功與後續更新失敗                                                         | 寫入確認                |
+| 48  | 新清單無法讀取時清除先前清單資料                                                   | 選取歸屬                |
+| 49  | should treat a category pack-all as one undoable action and restore mixed state    | 群組歷史與重做安全      |
+| 50  | should clear packing history when switching checklists                             | 歷史範圍隔離            |
+| 51  | preserves remote item edits when committing a stale drag payload                   | 明確拖曳意圖            |
 
-##### 8.1.3.2 useTemplates.test.js（15）
+##### 8.1.3.2 useTemplates.test.js（16）
 
-| #   | Test                                                       | 測試重點       |
-| --- | ---------------------------------------------------------- | -------------- |
-| 1   | should load template state                                 | 初始載入       |
-| 2   | should expose a load error                                 | 錯誤狀態       |
-| 3   | should save a template and refresh state                   | 儲存 + refresh |
-| 4   | should expose an apply error                               | 套用失敗       |
-| 5   | should rename a template and refresh state                 | 更新 + refresh |
-| 6   | should expose a delete error                               | 刪除失敗       |
-| 7   | should delete a template and refresh state                 | 刪除 + refresh |
-| 8   | should expose a save error                                 | 儲存失敗       |
-| 9   | should reject renaming a missing template                  | 缺少項目 guard |
-| 10  | should expose a rename error                               | 重命名失敗     |
-| 11  | should return applied template data                        | 套用成功       |
-| 12  | should update a template and refresh state                 | 更新 + refresh |
-| 13  | should expose an update error                              | 更新失敗       |
-| 14  | should expose its service instance                         | Service 存取   |
-| 15  | refreshes for template and clear events only while mounted | 跨分頁生命週期 |
+| #   | Test                                                        | 測試重點           |
+| --- | ----------------------------------------------------------- | ------------------ |
+| 1   | should load template state                                  | 初始載入           |
+| 2   | should expose a load error                                  | 錯誤狀態           |
+| 3   | should save a template and refresh state                    | 儲存 + refresh     |
+| 4   | should expose an apply error                                | 套用失敗           |
+| 5   | should rename a template and refresh state                  | 更新 + refresh     |
+| 6   | should expose a delete error                                | 刪除失敗           |
+| 7   | should delete a template and refresh state                  | 刪除 + refresh     |
+| 8   | should expose a save error                                  | 儲存失敗           |
+| 9   | should reject renaming a missing template                   | 缺少項目 guard     |
+| 10  | should expose a rename error                                | 重命名失敗         |
+| 11  | should return applied template data                         | 套用成功           |
+| 12  | should update a template and refresh state                  | 更新 + refresh     |
+| 13  | should expose an update error                               | 更新失敗           |
+| 14  | should expose its service instance                          | Service 存取       |
+| 15  | refreshes for template and clear events only while mounted  | 跨分頁生命週期     |
+| 16  | 已提交範本在refresh失敗時仍回傳成功，重讀可恢復且不重複寫入 | 提交確認與唯讀重試 |
 
 #### 8.1.4 i18n（12）
 
@@ -561,7 +567,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 11  | should render the English fallback when a Chinese message is missing    | 執行時英文後備顯示 |
 | 12  | storage 拒絕存取時維持 session 語言                                     | 偏好後備           |
 
-#### 8.1.5 Utils（36）
+#### 8.1.5 Utils（39）
 
 ##### 8.1.5.1 helpers.test.js（21）
 
@@ -623,6 +629,14 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | --- | ------------------------------------------------------------------------------------- | -------------------- |
 | 1   | should focus without scrolling, select the name, and keep a visible input in place    | 穩定聚焦與全選       |
 | 2   | should use nearest non-animated scrolling only when the input is outside the viewport | 條件式 viewport 捲動 |
+
+##### 8.1.5.6 operationErrors.test.js（3）
+
+| #   | Test                                                    | 測試重點    |
+| --- | ------------------------------------------------------- | ----------- |
+| 1   | 保留一般錯誤訊息並使用unavailable後備                   | 一般失敗    |
+| 2   | Service errors與error-like records保留支援的storage類別 | 穩定錯誤碼  |
+| 3   | 不信任未知失敗的任意code值                              | Unknown縮窄 |
 
 #### 8.1.6 Data（4）
 

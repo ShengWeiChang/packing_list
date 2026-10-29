@@ -72,7 +72,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - CSS Processing: PostCSS with Tailwind CSS
 - Module Bundling: Vite with ES modules
 - Type Checking: TypeScript 6.0.3 / vue-tsc 3.3.13, typescript-eslint 8.72.1, @vue/tsconfig 0.9.1; `npm run typecheck` runs before runtime tests in the shared feature/CI gate.
-- Migration Boundary: `typescript-migration.json` records unchecked application JS/SFC scripts; compiler-root coverage and explicit allowances prevent silent omissions. Models, utilities, seed data, and services are typed; 4 JS modules and 16 SFC scripts still await migration. Runtime tests and Node tools remain JS; localStorage runtime validation remains required.
+- Migration Boundary: `typescript-migration.json` records unchecked application JS/SFC scripts; compiler-root coverage and explicit allowances prevent silent omissions. Models, utilities, seed data, services, and composables are typed; 2 JS modules and 16 SFC scripts still await migration. Runtime tests and Node tools remain JS; localStorage runtime validation remains required.
 - Declaration Compatibility: `skipLibCheck: true` is accepted for the vue-i18n 11.4.16 / Vue 3.5.44 TS2724 mismatch; app/template code and API usage remain checked. See the Code Quality Guide for the limitation and re-evaluation rule.
 
 ## 4. Implemented Features
@@ -458,8 +458,8 @@ packing-list/
     │   ├── TemplateEditor.vue        # Isolated personal template editor
     │   └── Topbar.vue                # Top bar for mobile
     ├── composables/                  # Vue composables (state + logic)
-    │   ├── usePackingLists.js        # Core state and CRUD logic
-    │   └── useTemplates.js           # Template state and CRUD logic
+    │   ├── usePackingLists.ts        # Core state and CRUD logic
+    │   └── useTemplates.ts           # Template state and CRUD logic
     ├── i18n/                         # i18n initialization and locale detection/persistence
     │   └── index.js                  # create vue-i18n, locale mapping, localStorage read/write
     ├── locales/                      # Translation files
@@ -489,6 +489,7 @@ packing-list/
         ├── focusEditingInput.ts      # Inline edit focus and visibility
         ├── helpers.ts                # IDs, dates, JSON clone and debounce
         ├── instantiateTemplate.ts    # Shared template-shaped materialization
+        ├── operationErrors.ts        # Narrow unknown failures to stable operation errors
         ├── order.ts                  # Complete and visible-slot ordering
         └── positioning.ts            # Dropdown position calculations
 ```

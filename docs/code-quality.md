@@ -41,7 +41,7 @@ Follow industry-standard naming patterns for consistency and IDE compatibility:
 
 - **Classes/Models**: PascalCase (e.g., `Category.ts`, `User.ts`)
 - **Services/Utils**: camelCase (e.g., `dataService.ts`, `helpers.ts`)
-- **Composables**: camelCase with "use" prefix (e.g., `usePackingLists.js`)
+- **Composables**: camelCase with "use" prefix (e.g., `usePackingLists.ts`)
 - **Config files**: kebab-case (e.g., `vite.config.js`, `tailwind.config.js`)
 
 **Test Files**
@@ -183,7 +183,7 @@ JS/TS files should use appropriate grouping based on file type:
 7. Watchers — `watch`, `watchEffect` (Composables only)
 8. Class definition — class definition (Class files)
 
-**Composables** (e.g., `usePackingLists.js`): Use 1 → 3 → 4 → 5 → 6 → 7
+**Composables** (e.g., `usePackingLists.ts`): Use 1 → 3 → 4 → 5 → 6 → 7
 
 **Class Files** (e.g., `localStorageService.ts`, Models): Use 1 → 8
 
@@ -327,12 +327,13 @@ Validation
 
 - `npm run typecheck` runs the application scope guard, `vue-tsc --noEmit`, compile-only contracts, and deliberate-error diagnostic probes. Vite builds transpile without type checking.
 - `strict`, `noUncheckedIndexedAccess`, and `strictTemplates` are enabled. The app project uses browser globals and `vite/client`; Node and Vitest globals are not injected.
-- `typescript-migration.json` lists exactly the remaining 4 JS modules and 16 Vue JavaScript scripts. `allowJs: true` / `checkJs: false` permits their imports without claiming they are checked. Each migration removes its allowance; new unlisted JS, stale allowances, and source files outside compiler roots fail the gate.
+- `typescript-migration.json` lists exactly the remaining 2 JS modules and 16 Vue JavaScript scripts. `allowJs: true` / `checkJs: false` permits their imports without claiming they are checked. Each migration removes its allowance; new unlisted JS, stale allowances, and source files outside compiler roots fail the gate.
 - The final target is all application modules in TS and all SFC scripts in TS. Remove the manifest and set `allowJs: false` when the list is empty. Runtime JS tests, Node configuration/scripts, locale JSON, and visual assets remain intentional exceptions outside that application migration.
 - TS modules retain existing naming stems with `.ts`: classes/models use PascalCase; services, utilities, composables, and type modules use camelCase. Compile-only tests use the owner's stem plus `.test.ts` under `tests/type-tests/`; Vitest excludes that directory.
 - Use `import type` for type-only dependencies. Treat external JSON and caught errors as `unknown` until existing runtime checks or normalization justify narrower contracts; TS never replaces storage validation.
 - Do not use `any`, `@ts-ignore`, `@ts-nocheck`, blanket module shims, or unsupported assertions to pass the gate. Document narrowly justified third-party boundaries. Described `@ts-expect-error` directives belong only in negative type tests.
 - ESLint applies TypeScript recommended rules to TS/Vue with Vue's outer parser preserved. TypeScript unused-variable rules replace overlapping core rules; the manifest's remaining JavaScript SFCs retain JS recommended rules, including `no-undef`, and their JSDoc checks. Remove this temporary lint override/import with the manifest. lint-staged and VSCode ESLint include TS.
+- Composable collections are exposed deeply readonly; the selected ID remains writable as `string | null`, and the computed selected entity may be `undefined`. Generic loaders preserve `T | null`; committed writes and failed refreshes are reported separately, and packing-only history stores immutable status snapshots.
 - Accepted dependency limitation: `skipLibCheck: true` follows the Vue base config because vue-i18n 11.4.16 imports `GenericComponentInstance`, absent from Vue 3.5.44 (TS2724). This skips `.d.ts` internal checking, including local declarations; application/template code and API usage remain checked. Re-evaluate on Vue/i18n upgrades and remove the exception once the declaration mismatch is fixed.
 
 ## 4. Git Hooks (Husky)

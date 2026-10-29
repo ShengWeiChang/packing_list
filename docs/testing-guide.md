@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 686    |
-| Unit tests         | 301    |
+| Total tests        | 690    |
+| Unit tests         | 305    |
 | Component tests    | 296    |
 | E2E tests          | 89     |
-| Line coverage      | 92.91% |
+| Line coverage      | 92.97% |
 | Statement coverage | 91.30% |
-| Branch coverage    | 81.32% |
+| Branch coverage    | 81.22% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -29,7 +29,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 301   | Pure logic in models, services, composables, utils |
+| Unit      | Vitest                   | 305   | Pure logic in models, services, composables, utils |
 | Component | Vitest + @vue/test-utils | 296   | Vue component rendering, events, state             |
 | E2E       | Playwright               | 89    | Full user flows in a real browser                  |
 
@@ -51,6 +51,8 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 The initial infrastructure suite proves numeric ref inference, null narrowing, indexed-access safety, and real SFC props/emits. Two isolated probes require exactly TS2322 in deliberately invalid TS and Vue template fixtures; an unrelated missing module, config error, crash, or unexpected success fails the probe. The domain/storage suite checks real model normalization, legacy unknown fields, portable snapshots, seed sources, mutation baselines, nullable lookups, lock results, JSON cloning, debounce arguments, and plain-data ordering with overwritten fields.
 
+Composable compile-only suites check writable selection, readonly collections and nested snapshots, nullable entities/results, async callbacks, drag baselines/field keys, and immutable packing history.
+
 The gate reports unchecked JS and Vue JavaScript scripts explicitly; their presence in compiler roots is not evidence of full type checking. `skipLibCheck: true` is the accepted Vue/i18n declaration compatibility exception described in the Code Quality Guide.
 
 ## 3. Test File Structure
@@ -62,10 +64,12 @@ tests/
 │
 ├── type-tests/                          # Compile-only; excluded from runtime counts
 │   ├── contracts.test.ts               # Domain/storage, snapshot, and callback contracts
+│   ├── usePackingLists.test.ts        # Reactive state, operation, and history contracts
+│   ├── useTemplates.test.ts           # Template state, snapshot, and callback contracts
 │   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
 │   └── fixtures/                        # Typed probe and deliberately invalid inputs
 │
-├── unit-tests/                          # 301 tests
+├── unit-tests/                          # 305 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -78,12 +82,13 @@ tests/
 │   │   ├── templateService.test.js      # 15  tests
 │   │   ├── storageTransaction.test.js  # 27  tests
 │   │   └── recommendedListService.test.js  #  4  tests
-│   ├── composables/                     # 66  tests
+│   ├── composables/                     # 67  tests
 │   │   └── usePackingLists.test.js      # 51  tests
-│   │   └── useTemplates.test.js         # 15  tests
+│   │   └── useTemplates.test.js         # 16  tests
 │   ├── i18n/                            # 12  tests
 │   │   └── index.test.js                # 12  tests
-│   ├── utils/                           # 36  tests
+│   ├── utils/                           # 39  tests
+│       ├── operationErrors.test.js    #  3  tests
 │       ├── helpers.test.js              # 21  tests
 │       ├── positioning.test.js          #  3  tests
 │       ├── order.test.js                #  8  tests
@@ -131,7 +136,7 @@ tests/
 
 - **Unit/Component tests** (`.test.js`): Match production file names exactly
   - `Category.test.js` → tests `Category.vue`
-  - `usePackingLists.test.js` → tests `usePackingLists.js`
+  - `usePackingLists.test.js` → tests `usePackingLists.ts`
 - **E2E tests** (`.spec.js`): Use kebab-case to describe user workflows
   - `item-packing.spec.js`, `checklist-management.spec.js`
 
@@ -150,10 +155,10 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | scripts/     | 79.22%     | 67.17% | 77.52% |
 | source/      | 82.93%     | 72.29% | 85.50% |
 | components/  | 91.52%     | 82.42% | 94.29% |
-| composables/ | 95.41%     | 87.03% | 97.37% |
+| composables/ | 95.17%     | 85.54% | 97.46% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
-| utils/       | 98.92%     | 89.23% | 100%   |
+| utils/       | 98.98%     | 91.13% | 100%   |
 
 ### By Component
 
@@ -252,7 +257,7 @@ This project uses three layers to balance speed and reliability.
 
 ## 8. Complete Test Inventory
 
-### 8.1 Unit Tests (301 tests)
+### 8.1 Unit Tests (305 tests)
 
 #### 8.1.1 Models (40 tests)
 
@@ -464,7 +469,7 @@ This project uses three layers to balance speed and reliability.
 | 26  | preserves nested template fields and isolates newly materialized runtime state              | Snapshot preservation and fresh state        |
 | 27  | does not silently repair missing legacy names when duplicating raw records                  | Existing failure and byte preservation       |
 
-#### 8.1.3 Composables (66 tests)
+#### 8.1.3 Composables (67 tests)
 
 ##### 8.1.3.1 usePackingLists.test.js (51 tests)
 
@@ -514,33 +519,34 @@ This project uses three layers to balance speed and reliability.
 | 42  | should return null when updateCategory throws (real service)                       | Throw fallback                  |
 | 43  | should refresh categories and return updated category on success                   | Success path + refresh          |
 | 44  | should preserve valid selection and recover deleted selection on app data refresh  | Cross-tab selection recovery    |
-| 45  | should treat a category pack-all as one undoable action and restore mixed state    | Grouped history; redo safety    |
-| 46  | should clear packing history when switching checklists                             | History scope isolation         |
-| 47  | preserves remote item edits when committing a stale drag payload                   | Explicit drag intent            |
-| 48  | preserves history and data after failed deletion                                   | Failed deletion                 |
-| 49  | retains visible categories and items after failed refresh                          | Read failure                    |
-| 50  | distinguishes a committed write from failed refresh                                | Commit acknowledgement          |
-| 51  | clears previous checklist data when the new selection cannot be read               | Selection ownership             |
+| 45  | preserves history and data after failed deletion                                   | Failed deletion                 |
+| 46  | retains visible categories and items after failed refresh                          | Read failure                    |
+| 47  | distinguishes a committed write from failed refresh                                | Commit acknowledgement          |
+| 48  | clears previous checklist data when the new selection cannot be read               | Selection ownership             |
+| 49  | should treat a category pack-all as one undoable action and restore mixed state    | Grouped history; redo safety    |
+| 50  | should clear packing history when switching checklists                             | History scope isolation         |
+| 51  | preserves remote item edits when committing a stale drag payload                   | Explicit drag intent            |
 
-##### 8.1.3.2 useTemplates.test.js (15 tests)
+##### 8.1.3.2 useTemplates.test.js (16 tests)
 
-| #   | Test                                                       | What it verifies    |
-| --- | ---------------------------------------------------------- | ------------------- |
-| 1   | should load template state                                 | Initial loading     |
-| 2   | should expose a load error                                 | Error state         |
-| 3   | should save a template and refresh state                   | Save + refresh      |
-| 4   | should expose an apply error                               | Apply failure       |
-| 5   | should rename a template and refresh state                 | Update + refresh    |
-| 6   | should expose a delete error                               | Delete failure      |
-| 7   | should delete a template and refresh state                 | Delete + refresh    |
-| 8   | should expose a save error                                 | Save failure        |
-| 9   | should reject renaming a missing template                  | Missing guard       |
-| 10  | should expose a rename error                               | Rename failure      |
-| 11  | should return applied template data                        | Apply success       |
-| 12  | should update a template and refresh state                 | Update + refresh    |
-| 13  | should expose an update error                              | Update failure      |
-| 14  | should expose its service instance                         | Service access      |
-| 15  | refreshes for template and clear events only while mounted | Cross-tab lifecycle |
+| #   | Test                                                                         | What it verifies                           |
+| --- | ---------------------------------------------------------------------------- | ------------------------------------------ |
+| 1   | should load template state                                                   | Initial loading                            |
+| 2   | should expose a load error                                                   | Error state                                |
+| 3   | should save a template and refresh state                                     | Save + refresh                             |
+| 4   | should expose an apply error                                                 | Apply failure                              |
+| 5   | should rename a template and refresh state                                   | Update + refresh                           |
+| 6   | should expose a delete error                                                 | Delete failure                             |
+| 7   | should delete a template and refresh state                                   | Delete + refresh                           |
+| 8   | should expose a save error                                                   | Save failure                               |
+| 9   | should reject renaming a missing template                                    | Missing guard                              |
+| 10  | should expose a rename error                                                 | Rename failure                             |
+| 11  | should return applied template data                                          | Apply success                              |
+| 12  | should update a template and refresh state                                   | Update + refresh                           |
+| 13  | should expose an update error                                                | Update failure                             |
+| 14  | should expose its service instance                                           | Service access                             |
+| 15  | refreshes for template and clear events only while mounted                   | Cross-tab lifecycle                        |
+| 16  | returns the committed template when refresh fails and allows read-only retry | Commit acknowledgement and read-only retry |
 
 #### 8.1.4 i18n (12 tests)
 
@@ -561,7 +567,7 @@ This project uses three layers to balance speed and reliability.
 | 11  | should render the English fallback when a Chinese message is missing    | Runtime fallback rendering           |
 | 12  | continues with a session locale when storage is denied                  | Preference fallback                  |
 
-#### 8.1.5 Utils (36 tests)
+#### 8.1.5 Utils (39 tests)
 
 ##### 8.1.5.1 helpers.test.js (21 tests)
 
@@ -623,6 +629,14 @@ This project uses three layers to balance speed and reliability.
 | --- | ------------------------------------------------------------------------------------- | --------------------------- |
 | 1   | should focus without scrolling, select the name, and keep a visible input in place    | Stable focus and selection  |
 | 2   | should use nearest non-animated scrolling only when the input is outside the viewport | Conditional viewport scroll |
+
+##### 8.1.5.6 operationErrors.test.js (3 tests)
+
+| #   | Test                                                                  | What it verifies   |
+| --- | --------------------------------------------------------------------- | ------------------ |
+| 1   | preserves ordinary error messages and uses the unavailable fallback   | Ordinary failure   |
+| 2   | preserves storage categories on service errors and error-like records | Stable error codes |
+| 3   | handles unknown failures without trusting arbitrary codes             | Unknown narrowing  |
 
 #### 8.1.6 Data (4 tests)
 

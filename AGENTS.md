@@ -33,7 +33,7 @@ When creating new files, follow these naming patterns:
 - **Vue components**: PascalCase (e.g., `MyComponent.vue`)
 - **Classes/Models**: PascalCase (e.g., `Category.ts`)
 - **Services/Utils**: camelCase (e.g., `dataService.ts`)
-- **Composables**: camelCase with "use" prefix (e.g., `useAuth.js`)
+- **Composables**: camelCase with "use" prefix (e.g., `useAuth.ts`)
 - **Config files**: kebab-case (e.g., `vite.config.js`)
 - **Test files**:
   - **Unit/Component tests**: Match source file name + `.test.js`

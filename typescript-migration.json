@@ -1,10 +1,5 @@
 {
-  "uncheckedJavaScript": [
-    "source/composables/usePackingLists.js",
-    "source/composables/useTemplates.js",
-    "source/i18n/index.js",
-    "source/main.js"
-  ],
+  "uncheckedJavaScript": ["source/i18n/index.js", "source/main.js"],
   "uncheckedVueScripts": [
     "source/App.vue",
     "source/components/AddCategoryButton.vue",
