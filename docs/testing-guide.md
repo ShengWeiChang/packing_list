@@ -31,7 +31,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
 | Unit      | Vitest                   | 282   | Pure logic in models, services, composables, utils |
 | Component | Vitest + @vue/test-utils | 296   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 82    | Full user flows in a real browser                  |
+| E2E       | Playwright               | 87    | Full user flows in a real browser                  |
 
 ### Toolchain
 

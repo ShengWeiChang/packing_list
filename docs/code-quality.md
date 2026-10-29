@@ -333,6 +333,7 @@ Validation
 - Lint with fixes: `npm run lint:fix`
 - Validate (lint + format check): `npm run validate`
 - Pre-commit: lint-staged runs automatically on staged files
+- GitHub Actions runs `npm run verify:feature` on pull requests and pushes to `main`; see `.github/workflows/test.yml`.
 
 ## 6. Editor Integration (VS Code)
 
@@ -354,8 +355,7 @@ Validation
 
 ## 9. Future Considerations
 
-- Add if needed (optional):
-  - `eslint-plugin-unicorn` (select curated rules) — when code style needs further improvement
-  - GitHub Actions: lightweight Quality Gate (`eslint --quiet`, `prettier --check`) — when you want automated quality checks on PR/push (multi-contributor or public projects)
-  - `stylelint` (currently minimal CSS, Tailwind-first) — when custom CSS grows significantly (>500 lines) or multiple people manage CSS
-  - `eslint-plugin-i18n-json` (currently only 2 locale files, manual maintenance is sufficient) — when language count >2 or i18n keys >100
+- Evaluate optional tools against demonstrated gaps, maintenance cost, and compatibility rather than fixed size thresholds:
+  - `eslint-plugin-unicorn`: select rules that prevent recurring issues without excessive noise.
+  - `stylelint`: consider it when CSS or Vue style defects warrant dedicated checks.
+  - `eslint-plugin-i18n-json`: consider it for uncovered localization risks; existing tests already check locale key parity.

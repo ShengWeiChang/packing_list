@@ -2,7 +2,7 @@
 ================================================================================
 File: scripts/verify-feature.js
 Description: Run the repeatable feature-verification layers used by local
-             development and future CI integration.
+             development and CI integration.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
 Created: 2026-10-21

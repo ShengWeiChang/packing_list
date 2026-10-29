@@ -31,7 +31,7 @@
 | --------- | ------------------------ | ----- | ------------------------------------------- |
 | Unit      | Vitest                   | 282   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 296   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 82    | 真實瀏覽器中的完整使用者流程                |
+| E2E       | Playwright               | 87    | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
