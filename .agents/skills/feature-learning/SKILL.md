@@ -1,6 +1,6 @@
 ---
 name: feature-learning
-description: Teach the concepts behind a software feature through concrete examples from its implementation, architecture, data flow, design patterns, and testing strategy. Use when a developer with basic software-engineering knowledge wants an overview-level learning guide, not a readiness review or line-by-line walkthrough.
+description: Teach software feature concepts using implementation and test examples, either briefly in conversation or as an explicitly requested detailed learning document. Use for conceptual understanding, not a readiness review or line-by-line walkthrough.
 argument-hint: '[feature scope/learning interests]'
 ---
 
@@ -8,10 +8,17 @@ argument-hint: '[feature scope/learning interests]'
 
 Turn a recently implemented feature into a focused software-engineering lesson. The reader should finish with a useful mental model and enough orientation to explore the code independently.
 
+## Choose a Mode
+
+- **Conversational mode** is the default, including for every `$feature-workflow` milestone. Explain one to three relevant concepts briefly in the conversation, grounded in the reviewed change and a representative code or test example. Explain why the design matters and link to useful local files. Adapt the depth to the change and the user's interests. Do not create a learning document or add exercises unless the user asks for them.
+- **Detailed document mode** applies when the user explicitly asks for a full learning document. Create the personal note in `learning/` and use the guidance below to build a more complete lesson. Include exercises only when useful or requested.
+
+Both modes use the same principles below; their depth and output differ. In conversational mode, do not mechanically include every section, a file tour, or a test-layer survey.
+
 ## 1. Choose the Learning Goals
 
 1. Read the feature diff, relevant specification, implementation entry points, and representative tests.
-2. Identify three to five concepts that best explain the feature, such as state ownership, data modeling, snapshot semantics, factories, service boundaries, i18n, persistence, accessibility, or test layering.
+2. Identify the concepts that best explain the feature, such as state ownership, data modeling, snapshot semantics, factories, service boundaries, i18n, persistence, accessibility, or test layering. Select one to three for conversational mode and typically three to five for a detailed document.
 3. Assume the reader knows basic programming and software-engineering vocabulary. Briefly define a concept only when its project-specific use is not obvious.
 4. Follow any learning interests named by the user. Otherwise prioritize concepts with the most architectural or maintenance value.
 
@@ -49,9 +56,9 @@ Provide an ordered path through roughly three to seven files. For each stop, giv
 
 Use exact local links and useful starting lines. Quote only small expressions when they illuminate a concept; never reproduce large source blocks or explain every line.
 
-## 5. Add Progressive Exercises
+## 5. Optional Exercises for a Detailed Document
 
-Offer two to four optional exercises in increasing depth:
+When useful or requested, offer two to four optional exercises in increasing depth:
 
 - **Observe** — trace a user action or inspect persisted/runtime data without editing code.
 - **Modify** — make a small local change to content or behavior and predict the result.
@@ -59,13 +66,13 @@ Offer two to four optional exercises in increasing depth:
 
 For each exercise, state the learning objective and expected observation. Do not perform edits or start services unless the user also asks for execution.
 
-## 6. Recommended Lesson Shape
+## 6. Recommended Detailed Document Shape
 
 1. **30-second concept map** — the feature and the two or three central ideas.
 2. **User flow to data flow** — connect visible behavior to system boundaries.
 3. **Concept lessons** — repository example, reasoning, and tradeoff for each idea.
 4. **Tests as examples** — how different test layers express the design.
 5. **Guided reading path** — key files and questions to investigate.
-6. **Try it yourself** — progressive exercises with expected observations.
+6. **Try it yourself**, when useful or requested — progressive exercises with expected observations.
 
 End with a small glossary only for feature-specific terms actually used. Adapt depth to the feature and the reader's interests; the goal is conceptual ownership, not memorizing implementation details.

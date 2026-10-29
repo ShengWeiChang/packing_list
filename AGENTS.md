@@ -54,7 +54,8 @@ artifacts that result from a plan.
 
 ## Personal Learning Notes
 
-When the user asks for personal learning material, create it in `learning/`.
+When the user asks for a personal learning document, create it in `learning/`.
+Conversational explanations do not need a file unless the user requests one.
 This Git-ignored directory is not product documentation and its contents do
 not require translation, review, or commits.
 

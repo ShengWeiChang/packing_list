@@ -139,15 +139,17 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
    not start a duplicate review cycle for the same candidate without a new
    reason.
 7. After the milestone's required evidence and review are complete, invoke
-   `$feature-learning` for the implemented milestone before asking for the
-   milestone decision. Base the lesson on the reviewed diff, implementation
-   entry points, and representative tests. Keep it focused on the concepts,
-   data flow, tradeoffs, and code-reading path that help the user assess and
-   maintain this milestone; do not repeat command logs or substitute the lesson
-   for validation or a reviewer verdict. Record the lesson scope in the plan.
+   `$feature-learning` in conversational mode for the implemented milestone
+   before asking for the milestone decision. Base the explanation on the
+   reviewed diff, implementation entry points, and representative tests. Focus
+   on the concepts and examples that help the user assess and maintain this
+   milestone; do not repeat command logs or substitute the lesson
+   for validation or a reviewer verdict. Do not create a learning document or
+   exercises for this milestone explanation unless the user requests them.
+   Record the explanation scope in the plan.
 8. Set status to `awaiting milestone review` and present the changed scope,
    validation evidence, fingerprint when staged, reviewer verdict or explicit
-   reason it was not required, and the milestone learning guide. Begin every
+   reason it was not required, and the brief milestone explanation. Begin every
    status update by naming the current state and the one user decision needed.
    Wait for the user's response before continuing to a dependent milestone or
    commit. If this is the final milestone, a user acceptance moves it to
