@@ -17,6 +17,14 @@ Created: 2026-10-13
 import { Template } from '../models/Template';
 import { STORAGE_KEYS } from '../utils/constants.js';
 import { instantiateTemplateContent } from '../utils/instantiateTemplate.js';
+import {
+  decodeAppData,
+  decodeTemplates,
+  readStorage,
+  StorageError,
+  withStorageLock,
+  writeStorage,
+} from './storageTransaction.js';
 
 // -----------------------------------------------------------------------------
 // Class definition
@@ -32,6 +40,7 @@ export class TemplateService {
   constructor() {
     this.STORAGE_KEY = STORAGE_KEYS.TEMPLATES;
     this._cache = null;
+    this._cacheRaw = null;
   }
 
   // ---------------------------------------------------------------------------
@@ -43,17 +52,12 @@ export class TemplateService {
    * @returns {Array} Array of template objects
    */
   _loadTemplates() {
-    if (this._cache) {
-      return this._cache;
+    const raw = readStorage(this.STORAGE_KEY);
+    if (!this._cache || raw !== this._cacheRaw) {
+      this._cache = decodeTemplates(raw);
+      this._cacheRaw = raw;
     }
-    const raw = localStorage.getItem(this.STORAGE_KEY);
-    try {
-      const parsed = JSON.parse(raw || '[]');
-      this._cache = Array.isArray(parsed) ? parsed : [];
-    } catch {
-      this._cache = [];
-    }
-    return this._cache;
+    return JSON.parse(JSON.stringify(this._cache));
   }
 
   /**
@@ -61,8 +65,10 @@ export class TemplateService {
    * @param {Array} templates - Array of template objects
    */
   _saveTemplates(templates) {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(templates));
-    this._cache = templates;
+    const candidate = decodeTemplates(JSON.stringify(templates));
+    const raw = writeStorage(this.STORAGE_KEY, candidate);
+    this._cache = decodeTemplates(raw);
+    this._cacheRaw = raw;
   }
 
   /**
@@ -70,21 +76,7 @@ export class TemplateService {
    * @returns {object} App data object with checklists, categories and items arrays
    */
   _loadAppData() {
-    const raw = localStorage.getItem(STORAGE_KEYS.APP_DATA);
-    try {
-      const parsed = JSON.parse(raw || '{}');
-      return {
-        checklists: Array.isArray(parsed?.checklists) ? parsed.checklists : [],
-        categories: Array.isArray(parsed?.categories) ? parsed.categories : [],
-        items: Array.isArray(parsed?.items) ? parsed.items : [],
-      };
-    } catch {
-      return {
-        checklists: [],
-        categories: [],
-        items: [],
-      };
-    }
+    return decodeAppData(readStorage(STORAGE_KEYS.APP_DATA));
   }
 
   // ---------------------------------------------------------------------------
@@ -115,9 +107,18 @@ export class TemplateService {
   /**
    * Create a new template
    * @param {object} templateData - Template data
-   * @returns {object} Created template
+   * @returns {Promise<object>} Created template
    */
-  createTemplate(templateData) {
+  async createTemplate(templateData) {
+    return withStorageLock(() => this._createTemplate(templateData));
+  }
+
+  /**
+   * Create a template while the caller holds the shared write lock.
+   * @param {object} templateData - Template data.
+   * @returns {object} Created template.
+   */
+  _createTemplate(templateData) {
     const templates = this._loadTemplates();
     const newTemplate = new Template(templateData);
     templates.push(newTemplate.toJSON());
@@ -128,59 +129,77 @@ export class TemplateService {
   /**
    * Update an existing template
    * @param {object} templateData - Updated template data (must include id)
-   * @returns {object} Updated template
+   * @param {object} [expectedTemplate] - Original template state before editing.
+   * @returns {Promise<object>} Updated template
    */
-  updateTemplate(templateData) {
-    const templates = this._loadTemplates();
-    const index = templates.findIndex((t) => t.id === templateData.id);
-    if (index === -1) {
-      throw new Error(`Template with id ${templateData.id} not found`);
-    }
-    const updated = new Template(templateData);
-    templates[index] = updated.toJSON();
-    this._saveTemplates(templates);
-    return updated.toJSON();
+  async updateTemplate(templateData, expectedTemplate) {
+    return withStorageLock(() => {
+      const templates = this._loadTemplates();
+      const index = templates.findIndex((t) => t.id === templateData.id);
+      if (index === -1) {
+        throw new StorageError('conflict', `Template with id ${templateData.id} not found`);
+      }
+      if (!expectedTemplate) {
+        throw new StorageError('conflict', 'A template edit baseline is required');
+      }
+      if (
+        JSON.stringify(Template.fromJSON(templates[index]).toJSON()) !==
+        JSON.stringify(Template.fromJSON(expectedTemplate).toJSON())
+      ) {
+        throw new StorageError('conflict', 'Template changed while it was being edited');
+      }
+      const updated = new Template(templateData);
+      templates[index] = { ...templates[index], ...updated.toJSON() };
+      this._saveTemplates(templates);
+      return updated.toJSON();
+    });
   }
 
   /**
    * Delete a template by ID
    * @param {string} id - Template ID to delete
+   * @returns {Promise<void>} Resolves after the write.
    */
-  deleteTemplate(id) {
-    const templates = this._loadTemplates();
-    const filtered = templates.filter((t) => t.id !== id);
-    if (filtered.length === templates.length) {
-      throw new Error(`Template with id ${id} not found`);
-    }
-    this._saveTemplates(filtered);
+  async deleteTemplate(id) {
+    return withStorageLock(() => {
+      const templates = this._loadTemplates();
+      const filtered = templates.filter((t) => t.id !== id);
+      if (filtered.length === templates.length) {
+        throw new Error(`Template with id ${id} not found`);
+      }
+      this._saveTemplates(filtered);
+    });
   }
 
   /**
    * Reorder templates based on an ordered array of IDs
    * @param {Array<string>} orderedIds - Array of template IDs in desired order
+   * @returns {Promise<void>} Resolves after the write.
    */
-  reorderTemplates(orderedIds) {
-    const templates = this._loadTemplates();
-    const idToTemplate = Object.fromEntries(templates.map((t) => [t.id, t]));
-    const reordered = orderedIds
-      .map((id, index) => {
-        const tpl = idToTemplate[id];
-        if (tpl) {
-          return { ...tpl, order: index };
+  async reorderTemplates(orderedIds) {
+    return withStorageLock(() => {
+      const templates = this._loadTemplates();
+      const idToTemplate = Object.fromEntries(templates.map((t) => [t.id, t]));
+      const reordered = orderedIds
+        .map((id, index) => {
+          const tpl = idToTemplate[id];
+          if (tpl) {
+            return { ...tpl, order: index };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      // Append any templates not in orderedIds at the end
+      const orderedSet = new Set(orderedIds);
+      templates.forEach((t) => {
+        if (!orderedSet.has(t.id)) {
+          reordered.push({ ...t, order: reordered.length });
         }
-        return null;
-      })
-      .filter(Boolean);
+      });
 
-    // Append any templates not in orderedIds at the end
-    const orderedSet = new Set(orderedIds);
-    templates.forEach((t) => {
-      if (!orderedSet.has(t.id)) {
-        reordered.push({ ...t, order: reordered.length });
-      }
+      this._saveTemplates(reordered);
     });
-
-    this._saveTemplates(reordered);
   }
 
   // ---------------------------------------------------------------------------
@@ -193,54 +212,42 @@ export class TemplateService {
    *
    * @param {string} checklistId - Source checklist ID
    * @param {string} templateName - Name for the new template
-   * @param {object} appData - The full app data { checklists, categories, items }
-   * @returns {object} Created template
+   * @returns {Promise<object>} Created template
    */
-  createFromChecklist(checklistId, templateName, appData) {
-    // Prefer the provided appData, but gracefully fall back to persisted app data
-    // when the provided data is partial/stale (e.g., UI only loaded selected checklist).
-    const safeAppData = {
-      checklists: Array.isArray(appData?.checklists) ? appData.checklists : [],
-      categories: Array.isArray(appData?.categories) ? appData.categories : [],
-      items: Array.isArray(appData?.items) ? appData.items : [],
-    };
+  async createFromChecklist(checklistId, templateName) {
+    return withStorageLock(() => {
+      const appData = this._loadAppData();
+      if (!appData.checklists.some((checklist) => checklist.id === checklistId)) {
+        throw new Error(`Checklist with id ${checklistId} not found`);
+      }
+      const srcCategories = appData.categories.filter((c) => c.checklistId === checklistId);
+      const srcItems = appData.items.filter((i) => i.checklistId === checklistId);
 
-    let srcCategories = safeAppData.categories.filter((c) => c.checklistId === checklistId);
-    let srcItems = safeAppData.items.filter((i) => i.checklistId === checklistId);
+      // Snapshot categories: keep id (for internal FK), name, order
+      const snapshotCategories = srcCategories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        order: c.order ?? 0,
+      }));
 
-    const shouldFallbackToStorage =
-      srcCategories.length === 0 && srcItems.length === 0 && checklistId != null;
+      // Snapshot items: keep name, quantity, categoryId, order (strip id, isPacked, isPending, checklistId)
+      const snapshotItems = srcItems.map((i) => ({
+        name: i.name,
+        quantity: i.quantity ?? 1,
+        categoryId: i.categoryId,
+        order: i.order ?? 0,
+      }));
 
-    if (shouldFallbackToStorage) {
-      const persisted = this._loadAppData();
-      srcCategories = persisted.categories.filter((c) => c.checklistId === checklistId);
-      srcItems = persisted.items.filter((i) => i.checklistId === checklistId);
-    }
+      // Determine order for new template
+      const templates = this._loadTemplates();
+      const maxOrder = templates.length > 0 ? Math.max(...templates.map((t) => t.order || 0)) : -1;
 
-    // Snapshot categories: keep id (for internal FK), name, order
-    const snapshotCategories = srcCategories.map((c) => ({
-      id: c.id,
-      name: c.name,
-      order: c.order ?? 0,
-    }));
-
-    // Snapshot items: keep name, quantity, categoryId, order (strip id, isPacked, isPending, checklistId)
-    const snapshotItems = srcItems.map((i) => ({
-      name: i.name,
-      quantity: i.quantity ?? 1,
-      categoryId: i.categoryId,
-      order: i.order ?? 0,
-    }));
-
-    // Determine order for new template
-    const templates = this._loadTemplates();
-    const maxOrder = templates.length > 0 ? Math.max(...templates.map((t) => t.order || 0)) : -1;
-
-    return this.createTemplate({
-      name: templateName,
-      order: maxOrder + 1,
-      categories: snapshotCategories,
-      items: snapshotItems,
+      return this._createTemplate({
+        name: templateName,
+        order: maxOrder + 1,
+        categories: snapshotCategories,
+        items: snapshotItems,
+      });
     });
   }
 
@@ -265,5 +272,6 @@ export class TemplateService {
    */
   clearCache() {
     this._cache = null;
+    this._cacheRaw = null;
   }
 }

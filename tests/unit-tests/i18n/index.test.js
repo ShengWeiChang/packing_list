@@ -109,7 +109,23 @@ describe('i18n locale selection and persistence', () => {
     expect(getLocale()).toBe('zh-TW');
   });
 
-  // Test Case 2: Should map Traditional Chinese variants to zh-TW and persist
+  // Test Case 2: Continue with a session locale when storage is denied.
+  it('continues with a session locale when browser storage is denied', async () => {
+    getItemSpy.mockImplementation(() => {
+      throw new DOMException('Access denied', 'SecurityError');
+    });
+    setItemSpy.mockImplementation(() => {
+      throw new DOMException('Access denied', 'SecurityError');
+    });
+
+    const { getLocale, setLocale } = await loadI18nModule();
+
+    expect(getLocale()).toBe('en');
+    expect(() => setLocale('zh-TW')).not.toThrow();
+    expect(getLocale()).toBe('zh-TW');
+  });
+
+  // Test Case 3: Should map Traditional Chinese variants to zh-TW and persist
   it('should map zh-HK browser language to zh-TW and persist initial locale', async () => {
     Object.defineProperty(window.navigator, 'languages', {
       configurable: true,
@@ -122,7 +138,7 @@ describe('i18n locale selection and persistence', () => {
     expect(setItemSpy).toHaveBeenCalledWith('user-locale', 'zh-TW');
   });
 
-  // Test Case 3: Should fallback to en for unsupported browser language
+  // Test Case 4: Should fallback to en for unsupported browser language
   it('should fallback to en for unsupported browser language', async () => {
     Object.defineProperty(window.navigator, 'languages', {
       configurable: true,
@@ -134,7 +150,7 @@ describe('i18n locale selection and persistence', () => {
     expect(getLocale()).toBe('en');
   });
 
-  // Test Case 4: Should ignore invalid saved locale and use browser language
+  // Test Case 5: Should ignore invalid saved locale and use browser language
   it('should ignore invalid saved locale and detect from browser', async () => {
     mockStorage['user-locale'] = 'xx-INVALID';
 
@@ -148,7 +164,7 @@ describe('i18n locale selection and persistence', () => {
     expect(getLocale()).toBe('zh-TW');
   });
 
-  // Test Case 5: Should fallback to navigator.language when navigator.languages is empty
+  // Test Case 6: Should fallback to navigator.language when navigator.languages is empty
   it('should use navigator.language when navigator.languages is empty', async () => {
     Object.defineProperty(window.navigator, 'languages', {
       configurable: true,
@@ -164,7 +180,7 @@ describe('i18n locale selection and persistence', () => {
     expect(getLocale()).toBe('zh-TW');
   });
 
-  // Test Case 6: Should map bare "zh" to zh-TW
+  // Test Case 7: Should map bare "zh" to zh-TW
   it('should map bare "zh" browser language to zh-TW', async () => {
     Object.defineProperty(window.navigator, 'languages', {
       configurable: true,
@@ -180,7 +196,7 @@ describe('i18n locale selection and persistence', () => {
   // Test Group 2: Locale Update and Guard Behavior
   // ---------------------------------------------------------------------------
 
-  // Test Case 7: Should persist locale when setLocale receives supported value
+  // Test Case 8: Should persist locale when setLocale receives supported value
   it('should persist locale when setLocale receives a supported value', async () => {
     const { getLocale, setLocale } = await loadI18nModule();
 
@@ -190,7 +206,7 @@ describe('i18n locale selection and persistence', () => {
     expect(setItemSpy).toHaveBeenCalledWith('user-locale', 'zh-TW');
   });
 
-  // Test Case 8: Should reject unsupported locale values
+  // Test Case 9: Should reject unsupported locale values
   it('should ignore unsupported setLocale values and keep current locale', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { getLocale, setLocale } = await loadI18nModule();
@@ -207,8 +223,42 @@ describe('locale message parity', () => {
   // Test Group 3: Translation Parity
   // ---------------------------------------------------------------------------
 
-  // Test Case 9: Should keep English and Traditional Chinese translation keys aligned
+  // Test Case 10: Should keep English and Traditional Chinese translation keys aligned
   it('should keep English and Traditional Chinese translation keys aligned', () => {
     expect(getTranslationKeys(zhTW)).toEqual(getTranslationKeys(en));
+  });
+});
+
+describe('locale message rendering', () => {
+  // ---------------------------------------------------------------------------
+  // Test Group 4: Real Translation and Fallback
+  // ---------------------------------------------------------------------------
+
+  // Test Case 11: Should render interpolated and pluralized messages in both locales
+  it('should render real interpolated and pluralized messages in both locales', async () => {
+    const { default: i18n, setLocale } = await loadI18nModule();
+
+    setLocale('en');
+    expect(i18n.global.t('template.editingTemplate', { name: 'Travel' })).toBe(
+      'Editing template: Travel'
+    );
+    expect(i18n.global.t('template.categoryCount', 1)).toBe('1 category');
+    expect(i18n.global.t('template.categoryCount', 2)).toBe('2 categories');
+
+    setLocale('zh-TW');
+    expect(i18n.global.t('template.editingTemplate', { name: '旅行' })).toBe('正在編輯範本：旅行');
+    expect(i18n.global.t('template.categoryCount', 2)).toBe('2 個分類');
+  });
+
+  // Test Case 12: Should fall back to English when a message is missing in Chinese
+  it('should render the English fallback when a Chinese message is missing', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { default: i18n, setLocale } = await loadI18nModule();
+
+    i18n.global.setLocaleMessage('zh-TW', {});
+    setLocale('zh-TW');
+
+    expect(i18n.global.t('sidebar.title')).toBe(en.sidebar.title);
+    warnSpy.mockRestore();
   });
 });

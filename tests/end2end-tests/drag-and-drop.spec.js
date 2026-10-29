@@ -366,5 +366,68 @@ test.describe('Drag & Drop', () => {
         persistedCategories.nth(0).getByTestId('item-name').filter({ hasText: movedItemName })
       ).toHaveCount(0);
     });
+
+    // Test Case 7: A remote rename during a drag must survive the eventual drop
+    test('preserves a remote item rename made while another tab is dragging it', async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1280, height: 1800 });
+      await createAndConfirmChecklist(page);
+      const other = await page.context().newPage();
+      await other.setViewportSize({ width: 1280, height: 1800 });
+      await other.goto('/');
+
+      const source = page.getByTestId('category-card').nth(0).getByTestId('item-row').first();
+      const targetCategory = page.getByTestId('category-card').nth(1);
+      const target = targetCategory.getByTestId('item-row').first();
+      const targetId = await targetCategory.getAttribute('data-category-id');
+      const itemId = await source.evaluate(
+        (element) => element.closest('[data-item-id]').dataset.itemId
+      );
+      const sourceBox = await source.boundingBox();
+      const origin = {
+        x: sourceBox.x + sourceBox.width / 2,
+        y: sourceBox.y + sourceBox.height / 2,
+      };
+
+      await page.mouse.move(origin.x, origin.y);
+      await page.mouse.down();
+      await page.mouse.move(origin.x + 12, origin.y + 12, { steps: 4 });
+      await waitForNextAnimationFrame(page);
+      await other.getByTestId('category-card').nth(0).getByTestId('item-name').first().click();
+      await other.getByTestId('item-edit-input').fill('Renamed in second tab');
+      await other.getByTestId('item-edit-input').press('Enter');
+      await expect(
+        page.getByTestId('item-name').filter({ hasText: 'Renamed in second tab' })
+      ).toBeVisible();
+
+      const targetBox = await target.boundingBox();
+      const destination = {
+        x: targetBox.x + targetBox.width / 2,
+        y: targetBox.y + targetBox.height / 2,
+      };
+
+      for (let index = 1; index <= 40; index++) {
+        await page.mouse.move(
+          origin.x + ((destination.x - origin.x) * index) / 40,
+          origin.y + ((destination.y - origin.y) * index) / 40
+        );
+        await waitForNextAnimationFrame(page);
+      }
+      await page.mouse.up();
+      await expect
+        .poll(() =>
+          page.evaluate(
+            ({ id }) => {
+              const data = JSON.parse(localStorage.getItem('packingListApp'));
+              const item = data.items.find((entry) => entry.id === id);
+              return { name: item.name, categoryId: item.categoryId };
+            },
+            { id: itemId }
+          )
+        )
+        .toEqual({ name: 'Renamed in second tab', categoryId: targetId });
+      await other.close();
+    });
   });
 });

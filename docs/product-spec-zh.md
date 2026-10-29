@@ -46,8 +46,9 @@
 ### Frontend 前端
 
 - Framework: Vue.js 3 (Composition API)
-- Build Tool: Vite 4.4.9
+- Build Tool: Vite 8.3.5
 - CSS Framework: Tailwind CSS 3.4.17
+- 國際化：Vue I18n 11.4.16
 - Drag and Drop: vuedraggable 4.1.0
 - 圖示系統：透過本地 `AppIcon` adapter 使用 `@lucide/vue`；語意名稱、尺寸 slot 與無障礙模式仍由專案管理
 - Additional Tools: PostCSS, Autoprefixer
@@ -390,6 +391,15 @@
 - LocalStorageService 實現資料本地存儲
 - 抽象 DataService 介面支持未來擴展
 - JSON序列化與模型實例化
+- 清單與範本分別使用 `packingListApp` 與 `packingListTemplates` key。寫入透過共用 Web Lock 協調參與此機制的分頁，在鎖內讀取最新資料，並在目的 key 儲存成功後才發布結果。
+- 欄位意圖更新會比較所編輯欄位的預期原值：不同欄位的變更可共存，對相同欄位的過期變更則會被拒絕。批次變更全部寫入或全部不寫入。
+- 物品的打包與待處理狀態屬於同一衝突群組：變更任一狀態時，若任一欄位已改變便拒絕過期操作，且狀態編輯不得產生同時打包與待處理的物品。無關編輯不會改寫舊有狀態值。
+- 損壞資料或不支援的 schema 會保留原始 storage 內容，並拒絕對該 domain 寫入。舊資料缺少的預設值只在記憶體正規化，讀取時不重寫。
+- 讀取失敗會指出受影響的 domain 並提供重試；storage 可讀取時，可下載損壞或不支援資料的原始內容。要求下載不代表備份已確實存入磁碟。
+- 清單與範本 domain 分別回報狀態。儲存失敗時保留目前的行內名稱／日期或 dialog 草稿並顯示錯誤；若寫入成功但重新讀取失敗，會另行提示以避免重複寫入。
+- 行內編輯器在變更儲存前消失時，草稿會另行顯示供複製或關閉；這份復原文字只存在記憶體中，不會重新建立已刪除的資料。
+- 範本儲存失敗後，切換到另一個範本前必須明確確認放棄草稿；範本儲存進行中則不能切換編輯器。
+- 保留 localStorage 以避免儲存遷移；Web Locks 不可用時拒絕安全寫入。舊版部署的分頁可能不參與鎖，單一 key 寫入也不提供跨 key 原子交易。若需要更廣的寫入相容性或更強的交易能力，可重新評估 IndexedDB。
 
 #### State Management 狀態管理
 
@@ -405,6 +415,7 @@ packing-list/
 ├── LICENSE                           # 授權條款
 ├── package.json                      # 專案依賴配置
 ├── package-lock.json                 # 鎖定檔
+├── .nvmrc                            # 本機開發與 CI 共用的 Node.js 版本
 ├── vercel.json                       # Vercel 部署配置（SPA 路由、快取設定）
 ├── build-css-vars.js                 # CLI 腳本：從 source/utils/constants.js 生成 CSS 變數
 ├── postcss.config.js                 # PostCSS配置
@@ -458,6 +469,7 @@ packing-list/
     │   ├── dataService.js            # 抽象資料服務介面
     │   ├── localStorageService.js    # 清單 localStorage 實現
     │   ├── recommendedListService.js # 內建推薦清單套用邏輯
+    │   ├── storageTransaction.js     # 共用 storage 解碼與寫入協調
     │   └── templateService.js        # 個人範本 localStorage 實現
     └── utils/                        # 工具函數
         ├── constants.js              # 應用常數定義（顏色定義在 THEME_COLORS）

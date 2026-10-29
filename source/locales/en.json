@@ -6,11 +6,30 @@
     "cancel": "Cancel",
     "back": "Back",
     "save": "Save",
+    "saveFailed": "Could not save. Your selection or draft is still here; please try again.",
     "confirm": "Confirm",
     "copySuffix": " (Copy)",
     "moreOptions": "More options",
     "packingUpdated": "Packing status updated",
     "undo": "Undo"
+  },
+  "storage": {
+    "mainHeading": "Packing List",
+    "checklists": "Checklist storage",
+    "templates": "Template storage",
+    "corrupt": "The stored data cannot be read. It has not been replaced. Export the original data before repairing it outside the app, then retry.",
+    "unsupported": "This data uses an unsupported format. It has not been replaced. Export the original data and open it with a compatible version, then retry.",
+    "unavailable": "Browser storage could not be read. Check browser settings and retry.",
+    "conflict": "This data changed in another tab. Your change was not saved; review the latest data before trying again.",
+    "quota": "The browser could not save because storage is full. Free space and try again.",
+    "lock-unavailable": "Safe writing is unavailable in this browser context. Open the app in a supported, secure browser context.",
+    "writeFailed": "The change could not be saved. Check browser storage and try again.",
+    "savedRefreshFailed": "Your change was saved, but the display could not be refreshed. Retry reading instead of repeating the change.",
+    "retry": "Retry reading",
+    "export": "Download original data",
+    "exportFailed": "The original data could not be downloaded. Check browser permissions and try again.",
+    "displacedDraft": "An unsaved draft was left behind when its editor closed. Copy these values before dismissing them.",
+    "dismissDraft": "Dismiss draft"
   },
   "completion": {
     "ready": "Ready to go!",
@@ -85,6 +104,7 @@
     "deleteTemplate": "Delete template",
     "saveTemplateConfirm": "Save as template",
     "deleteConfirm": "Are you sure you want to delete this template?",
+    "discardFailedDraftConfirm": "Your template changes were not saved. Discard this draft and open another template?",
     "noTemplates": "No templates yet",
     "rename": "Rename"
   },

@@ -20,6 +20,7 @@ Created: 2026-10-13
         <button
           class="rounded-lg px-3 py-2 text-sm text-secondary hover:bg-interactive-hover"
           type="button"
+          :disabled="saving"
           @click="$emit('cancel')"
         >
           {{ $t('common.cancel') }}
@@ -28,6 +29,7 @@ Created: 2026-10-13
           class="rounded-lg bg-danger-text px-3 py-2 text-sm text-white hover:opacity-90"
           type="button"
           data-testid="template-editor-delete"
+          :disabled="saving"
           @click="$emit('delete', template.id)"
         >
           {{ $t('template.deleteTemplate') }}
@@ -36,6 +38,7 @@ Created: 2026-10-13
           class="rounded-lg bg-theme-primary px-3 py-2 text-sm text-white hover:opacity-90"
           type="button"
           data-testid="template-editor-save"
+          :disabled="saving"
           @click="saveTemplate"
         >
           {{ $t('template.saveChanges') }}
@@ -43,27 +46,48 @@ Created: 2026-10-13
       </div>
     </div>
 
-    <Checklist
-      :checklist="draftChecklist"
-      :categories="draftCategories"
-      :items="draftItems"
-      :newly-created-item-id="newlyCreatedItemId"
-      :newly-created-category-id="newlyCreatedCategoryId"
-      :show-dates="false"
-      :show-item-filter="false"
-      :show-overflow-menu="false"
-      @update:checklist="updateChecklist"
-      @create:item="createItem"
-      @update:item="updateItem"
-      @copy:item="copyItem"
-      @delete:item="deleteItem"
-      @create:category="createCategory"
-      @update:category="updateCategory"
-      @copy:category="copyCategory"
-      @delete:category="deleteCategory"
-      @reorder:categories="reorderCategories"
-      @move:item="moveItem"
-    />
+    <p
+      v-if="saveError"
+      class="mb-4 text-sm text-danger-text"
+      role="alert"
+    >
+      {{
+        $t(
+          errorCode === 'conflict' || errorCode === 'quota' || errorCode === 'lock-unavailable'
+            ? `storage.${errorCode}`
+            : 'common.saveFailed'
+        )
+      }}
+    </p>
+
+    <div
+      :inert="saving || undefined"
+      @compositionstart="isComposing = true"
+      @compositionend="isComposing = false"
+    >
+      <Checklist
+        :checklist="draftChecklist"
+        :categories="draftCategories"
+        :items="draftItems"
+        :newly-created-item-id="newlyCreatedItemId"
+        :newly-created-category-id="newlyCreatedCategoryId"
+        :show-dates="false"
+        :show-item-filter="false"
+        :show-overflow-menu="false"
+        :commit-edit-on-blur="true"
+        @update:checklist="updateChecklist"
+        @create:item="createItem"
+        @update:item="updateItem"
+        @copy:item="copyItem"
+        @delete:item="deleteItem"
+        @create:category="createCategory"
+        @update:category="updateCategory"
+        @copy:category="copyCategory"
+        @delete:category="deleteCategory"
+        @reorder:categories="reorderCategories"
+        @move:item="moveItem"
+      />
+    </div>
   </div>
 </template>
 
@@ -91,6 +115,9 @@ const { t } = useI18n();
 // ------------------------------------------------------------------------------
 
 const props = defineProps({
+  saving: { type: Boolean, default: false },
+  saveError: { type: Boolean, default: false },
+  errorCode: { type: String, default: null },
   template: {
     type: Object,
     required: true,
@@ -108,6 +135,7 @@ const draftCategories = ref([]);
 const draftItems = ref([]);
 const newlyCreatedItemId = ref(null);
 const newlyCreatedCategoryId = ref(null);
+const isComposing = ref(false);
 
 // ------------------------------------------------------------------------------
 // Functions
@@ -270,6 +298,7 @@ function reorderCategories(categories) {
 
 /** Emit a storage-safe template snapshot. */
 function saveTemplate() {
+  if (props.saving || isComposing.value) return;
   emit('save', {
     ...props.template,
     name: draftChecklist.value.name,

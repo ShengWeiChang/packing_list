@@ -71,12 +71,18 @@ export function deepClone(obj) {
  */
 export function debounce(func, wait = 300) {
   let timeout;
-  return function executedFunction(...args) {
+  /**
+   * Schedule the latest invocation.
+   * @param {...*} args - Arguments for the debounced function.
+   */
+  function executedFunction(...args) {
     const later = () => {
       clearTimeout(timeout);
       func(...args);
     };
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
-  };
+  }
+  executedFunction.cancel = () => clearTimeout(timeout);
+  return executedFunction;
 }

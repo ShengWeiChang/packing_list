@@ -386,7 +386,11 @@ const currentLocale = computed({
   get: () => locale.value,
   set: (val) => {
     locale.value = val;
-    localStorage.setItem('user-locale', val);
+    try {
+      localStorage.setItem('user-locale', val);
+    } catch {
+      // Keep the selected locale for this session if the preference cannot be stored.
+    }
   },
 });
 
@@ -412,7 +416,11 @@ const draggableChecklists = computed({
       order: newChecklists.length - index - 1,
     }));
 
-    emit('move:checklists', checklistsWithNewOrder);
+    emit(
+      'move:checklists',
+      checklistsWithNewOrder,
+      newChecklists.map((checklist) => ({ ...checklist }))
+    );
   },
 });
 

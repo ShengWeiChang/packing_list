@@ -102,21 +102,116 @@ Created: 2025-09-19
         },
       ]"
     >
+      <h1
+        ref="mainHeading"
+        class="sr-only"
+        tabindex="-1"
+      >
+        {{ $t('storage.mainHeading') }}
+      </h1>
+      <section
+        v-for="problem in storageProblems"
+        :key="problem.domain"
+        class="mb-4 rounded-lg border border-border-color-medium bg-white p-4"
+        role="alert"
+      >
+        <h2 class="font-semibold text-primary">
+          {{ $t(`storage.${problem.domain}`) }}
+        </h2>
+        <p class="mt-1 text-sm text-secondary">
+          {{
+            $t(
+              `storage.${problem.code === 'corrupt' || problem.code === 'unsupported' ? problem.code : 'unavailable'}`
+            )
+          }}
+        </p>
+        <p
+          v-if="exportFailure === problem.domain"
+          class="mt-2 text-sm text-danger-text"
+        >
+          {{ $t('storage.exportFailed') }}
+        </p>
+        <div class="mt-3 flex flex-wrap gap-3">
+          <button
+            type="button"
+            class="rounded-lg bg-theme-primary px-3 py-2 text-sm text-white"
+            @click="retryStorage(problem.domain, $event)"
+          >
+            {{ $t('storage.retry') }}
+          </button>
+          <button
+            v-if="problem.code === 'corrupt' || problem.code === 'unsupported'"
+            type="button"
+            class="rounded-lg px-3 py-2 text-sm text-primary underline"
+            @click="exportStorage(problem.domain)"
+          >
+            {{ $t('storage.export') }}
+          </button>
+        </div>
+      </section>
+      <p
+        v-if="visibleOperationError"
+        class="mb-4 rounded-lg bg-white p-4 text-sm text-danger-text"
+        role="alert"
+      >
+        {{ $t(`storage.${visibleOperationError}`) }}
+      </p>
+      <p
+        v-if="checklistRefreshAfterSaveFailed || templateRefreshAfterSaveFailed"
+        class="mb-4 rounded-lg bg-white p-4 text-sm text-primary"
+        role="status"
+      >
+        {{ $t('storage.savedRefreshFailed') }}
+      </p>
+      <section
+        v-for="draft in displacedDrafts"
+        :key="draft.id"
+        class="mb-4 rounded-lg border border-border-color-medium bg-white p-4"
+        role="status"
+      >
+        <p>{{ $t('storage.displacedDraft') }}</p>
+        <p class="mt-2 break-words font-semibold">{{ draft.name }}</p>
+        <p
+          v-if="draft.startDate || draft.endDate"
+          class="text-sm text-secondary"
+        >
+          {{ draft.startDate }} – {{ draft.endDate }}
+        </p>
+        <button
+          type="button"
+          class="mt-2 underline"
+          @click="dismissDraft(draft.id)"
+        >
+          {{ $t('storage.dismissDraft') }}
+        </button>
+      </section>
       <TemplateEditor
         v-if="templateEditing"
         :template="templateEditing"
+        :saving="isSavingTemplateEdit"
+        :save-error="templateEditSaveFailed"
+        :error-code="templateOperationError"
         @cancel="handleTemplateEditCancel"
         @delete="handleTemplateEditDelete"
         @save="handleTemplateEditSave"
       />
       <div v-else-if="selectedChecklist">
         <ChecklistComponent
+          :key="selectedChecklist.id"
           :checklist="selectedChecklist"
           :categories="categories"
           :items="items"
           :newly-created-item-id="newlyCreatedItemId"
           :newly-created-category-id="newlyCreatedCategoryId"
           :newly-created-checklist-id="newlyCreatedChecklistId"
+          :save-checklist-edit="handleChecklistUpdate"
+          :save-category-edit="handleCategoryUpdate"
+          :save-item-edit="handleItemUpdate"
+          :edit-error-code="checklistOperationError"
+          :set-category-packed-action="handleCategoryPacked"
+          :update-item-action="handleItemUpdate"
+          :retain-draft="retainDisplacedDraft"
+          :edit-cancelled="clearInlineFailure"
           @update:checklist="handleChecklistUpdate"
           @copy:checklist="handleChecklistCopy"
           @delete:checklist="handleChecklistDelete"
@@ -135,7 +230,7 @@ Created: 2025-09-19
         />
       </div>
       <div
-        v-else
+        v-else-if="!checklistStorageHealth"
         class="mt-20 text-center text-secondary"
         data-testid="empty-state"
       >
@@ -148,12 +243,18 @@ Created: 2025-09-19
       :visible="showNewChecklistDialog"
       :templates="templates"
       :recommended-lists="recommendedLists"
+      :saving="isCreatingChecklist"
+      :save-error="checklistCreateFailed"
+      :error-code="checklistOperationError"
       @close="showNewChecklistDialog = false"
       @select="handleNewChecklistSelect"
     />
     <SaveTemplateDialog
       :initial-name="templateChecklistName"
       :visible="showSaveTemplateDialog"
+      :saving="isSavingTemplate"
+      :save-error="templateSaveFailed"
+      :error-code="templateOperationError"
       @close="showSaveTemplateDialog = false"
       @save="handleTemplateSave"
     />
@@ -204,7 +305,7 @@ import Topbar from './components/Topbar.vue';
 import { usePackingLists } from './composables/usePackingLists';
 import { useTemplates } from './composables/useTemplates';
 import { RecommendedListService } from './services/recommendedListService.js';
-import { VALIDATION } from './utils/constants.js';
+import { STORAGE_KEYS, VALIDATION } from './utils/constants.js';
 import { generateSecureId } from './utils/helpers.js';
 
 // ------------------------------------------------------------------------------
@@ -238,7 +339,13 @@ const {
   selectedChecklistId,
   selectedChecklist,
   initialize,
+  storageHealth: checklistStorageHealth,
+  operationError: checklistOperationError,
+  operationErrorVersion: checklistOperationErrorVersion,
+  clearOperationError: clearChecklistOperationError,
+  refreshAfterSaveFailed: checklistRefreshAfterSaveFailed,
   createChecklist,
+  getChecklists,
   updateChecklist,
   updateMultipleChecklists,
   deleteChecklist,
@@ -246,9 +353,11 @@ const {
   createCategory,
   getCategories,
   updateCategory,
+  updateMultipleCategories,
   deleteCategory,
   duplicateCategory,
   createItem,
+  getItems,
   updateItem,
   updateMultipleItems,
   deleteItem,
@@ -261,8 +370,16 @@ const {
 } = usePackingLists();
 
 // Initialize templates composable
-const { templates, loadTemplates, saveAsTemplate, applyTemplate, deleteTemplate, updateTemplate } =
-  useTemplates();
+const {
+  templates,
+  loadTemplates,
+  saveAsTemplate,
+  deleteTemplate,
+  updateTemplate,
+  storageHealth: templateStorageHealth,
+  operationError: templateOperationError,
+  refreshAfterSaveFailed: templateRefreshAfterSaveFailed,
+} = useTemplates();
 const recommendedListService = new RecommendedListService();
 
 // ------------------------------------------------------------------------------
@@ -277,7 +394,23 @@ const showNewChecklistDialog = ref(false);
 const showSaveTemplateDialog = ref(false);
 const templateChecklistId = ref(null);
 const templateChecklistName = ref('');
+const isSavingTemplate = ref(false);
+const templateSaveFailed = ref(false);
+const isCreatingChecklist = ref(false);
+const checklistCreateFailed = ref(false);
+const inlineSaveFailed = ref(false);
+let inlineFailureVersion = null;
+let inlineFailureOwner = null;
+// A displaced editor cannot display an async failure; leave that error global.
+let inlineDraftGeneration = 0;
+const displacedDrafts = ref([]);
+let nextDisplacedDraftId = 0;
+const exportFailure = ref(null);
+const mainHeading = ref(null);
 const templateEditing = ref(null);
+const isSavingTemplateEdit = ref(false);
+const templateEditSaveFailed = ref(false);
+const templateDraftAtRisk = ref(false);
 const showPackingUndo = ref(false);
 const showPackingCompletion = ref(false);
 const packingCompletion = ref(null);
@@ -301,6 +434,94 @@ const isOverlayVisible = computed(
     (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value)) && isSidebarOpen.value
 );
 const recommendedLists = computed(() => recommendedListService.getRecommendedLists(locale.value));
+const storageProblems = computed(() =>
+  [
+    { domain: 'checklists', code: checklistStorageHealth?.value },
+    { domain: 'templates', code: templateStorageHealth?.value },
+  ].filter((problem) => problem.code)
+);
+const visibleOperationError = computed(() => {
+  if (
+    showNewChecklistDialog.value ||
+    showSaveTemplateDialog.value ||
+    inlineSaveFailed.value ||
+    templateEditSaveFailed.value
+  )
+    return null;
+  const code = checklistOperationError?.value || templateOperationError?.value;
+  return ['conflict', 'quota', 'lock-unavailable'].includes(code)
+    ? code
+    : code
+      ? 'writeFailed'
+      : null;
+});
+
+/** Preserve unsaved text when its editor is removed or selection changes.
+ * @param {object} draft - Unsaved values from the disappearing editor.
+ */
+function retainDisplacedDraft(draft) {
+  displacedDrafts.value.push({ ...draft, id: ++nextDisplacedDraftId });
+  inlineDraftGeneration++;
+  inlineSaveFailed.value = false;
+}
+
+/** Clear the suppression for an inline editor that was cancelled or removed.
+ * @param {string} kind - Type of edited entity.
+ * @param {string} id - ID of the edited entity.
+ */
+function clearInlineFailure(kind, id) {
+  if (inlineFailureOwner !== `${kind}:${id}`) return;
+  inlineSaveFailed.value = false;
+  if (inlineFailureVersion !== null) clearChecklistOperationError?.(inlineFailureVersion);
+  inlineFailureVersion = null;
+  inlineFailureOwner = null;
+}
+
+/** Dismiss a displayed, locally retained draft.
+ * @param {number} id - Draft identifier.
+ */
+function dismissDraft(id) {
+  displacedDrafts.value = displacedDrafts.value.filter((draft) => draft.id !== id);
+}
+
+/** Retry decoding one storage domain without modifying its data.
+ * @param {string} domain - Domain to read again.
+ * @param {Event} event - Event from the retry control.
+ */
+async function retryStorage(domain, event) {
+  const focusedRetry = document.activeElement === event.currentTarget;
+  if (domain === 'checklists') await initialize();
+  else loadTemplates();
+  const remaining =
+    domain === 'checklists' ? checklistStorageHealth?.value : templateStorageHealth?.value;
+  if (!remaining && focusedRetry) {
+    await nextTick();
+    mainHeading.value?.focus();
+  }
+}
+
+/** Offer the original stored bytes for download without changing storage.
+ * @param {string} domain - Domain whose original data is exported.
+ */
+function exportStorage(domain) {
+  exportFailure.value = null;
+  try {
+    const key = domain === 'checklists' ? STORAGE_KEYS.APP_DATA : STORAGE_KEYS.TEMPLATES;
+    const raw = localStorage.getItem(key);
+    if (raw === null) {
+      exportFailure.value = domain;
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${key}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  } catch {
+    exportFailure.value = domain;
+  }
+}
 
 // ------------------------------------------------------------------------------
 // Functions
@@ -310,6 +531,8 @@ const recommendedLists = computed(() => recommendedListService.getRecommendedLis
 
 // Generic error handler for async operations
 const handleAsyncAction = async (action, ...args) => {
+  inlineSaveFailed.value = false;
+  templateEditSaveFailed.value = false;
   return await action(...args);
 };
 
@@ -405,7 +628,13 @@ function checkScreenSize() {
     isSidebarOpen.value = false;
   } else {
     // Auto-expand on desktop if not manually collapsed
-    if (!localStorage.getItem(SIDEBAR_COLLAPSED_KEY)) {
+    let manuallyCollapsed = false;
+    try {
+      manuallyCollapsed = Boolean(localStorage.getItem(SIDEBAR_COLLAPSED_KEY));
+    } catch {
+      // Keep the default layout when the preference cannot be read.
+    }
+    if (!manuallyCollapsed) {
       isSidebarOpen.value = true;
     }
   }
@@ -426,10 +655,14 @@ function toggleSidebar() {
 
   // Remember manual toggle on desktop
   if (!isMobileViewport.value) {
-    if (isSidebarOpen.value) {
-      localStorage.removeItem(SIDEBAR_COLLAPSED_KEY);
-    } else {
-      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, 'true');
+    try {
+      if (isSidebarOpen.value) {
+        localStorage.removeItem(SIDEBAR_COLLAPSED_KEY);
+      } else {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, 'true');
+      }
+    } catch {
+      // The current session still retains the selected sidebar state.
     }
   }
 }
@@ -463,18 +696,27 @@ async function handleItemCreate(categoryId) {
 /**
  * Update an existing item with new data
  * @param {object} item - The item object with updated properties
+ * @param {object} [expected] - Item before editing.
+ * @returns {Promise<object|null>} Committed item or null on failure.
  */
-async function handleItemUpdate(item) {
+async function handleItemUpdate(item, expected) {
   const before = getPackingCompletionSnapshot();
-  const updatedItem = await handleAsyncAction(updateItem, item);
+  const draftGeneration = inlineDraftGeneration;
+  const updatedItem = await handleAsyncAction(updateItem, item, expected);
+  if (expected && !updatedItem && draftGeneration === inlineDraftGeneration) {
+    inlineSaveFailed.value = true;
+    inlineFailureVersion = checklistOperationErrorVersion?.value ?? null;
+    inlineFailureOwner = `item:${item.id}`;
+  }
   if (updatedItem) {
     showPackingCompletionForTransition(before);
   }
 
   // Clear the newly created flag if this was the item being edited
-  if (newlyCreatedItemId.value === item.id) {
+  if (updatedItem && newlyCreatedItemId.value === item.id) {
     newlyCreatedItemId.value = null;
   }
+  return updatedItem;
 }
 
 /**
@@ -499,7 +741,11 @@ async function handleItemDelete(itemId) {
  */
 async function handleItemMove(moveData) {
   if (!['move', 'reorder'].includes(moveData.type) || !moveData.items?.length) return;
-  await handleAsyncAction(updateMultipleItems, moveData.items);
+  const result = await handleAsyncAction(updateMultipleItems, moveData.items, {
+    fields: ['order', 'categoryId'],
+    expectedItems: moveData.expectedItems,
+  });
+  if (!result) await getItems?.();
 }
 
 // ---------- Category Handlers ----------
@@ -526,14 +772,23 @@ async function handleCategoryCreate() {
 /**
  * Update an existing category with new data
  * @param {object} category - The category object with updated properties
+ * @param {object} [expected] - Category before editing.
+ * @returns {Promise<object|null>} Committed category or null on failure.
  */
-async function handleCategoryUpdate(category) {
-  await handleAsyncAction(updateCategory, category);
+async function handleCategoryUpdate(category, expected) {
+  const draftGeneration = inlineDraftGeneration;
+  const updatedCategory = await handleAsyncAction(updateCategory, category, expected);
+  if (expected && !updatedCategory && draftGeneration === inlineDraftGeneration) {
+    inlineSaveFailed.value = true;
+    inlineFailureVersion = checklistOperationErrorVersion?.value ?? null;
+    inlineFailureOwner = `category:${category.id}`;
+  }
 
   // Clear the newly-created flag if this was the category being edited
-  if (newlyCreatedCategoryId.value === category.id) {
+  if (updatedCategory && newlyCreatedCategoryId.value === category.id) {
     newlyCreatedCategoryId.value = null;
   }
+  return updatedCategory;
 }
 
 /**
@@ -641,15 +896,15 @@ function handlePackingHistoryKeydown(event) {
 /**
  * Handle category drag-and-drop reordering
  * @param {Array<object>} reorderedCategories - Array of categories with updated order properties
+ * @param {Array<object>} [expectedCategories] - Categories before the drag.
  */
-async function handleCategoryReorder(reorderedCategories) {
-  // Update all categories with new order
-  for (const category of reorderedCategories) {
-    await handleAsyncAction(updateCategory, category);
-  }
-
-  // Refresh categories after all updates to ensure consistency
-  await getCategories();
+async function handleCategoryReorder(reorderedCategories, expectedCategories) {
+  const result = await handleAsyncAction(
+    updateMultipleCategories,
+    reorderedCategories,
+    expectedCategories
+  );
+  if (!result) await getCategories?.();
 }
 
 // ---------- Checklist Handlers ----------
@@ -674,6 +929,7 @@ function buildSourceAwareChecklistName(source, sourceName = '') {
  * Open the new checklist dialog to let user choose source
  */
 function handleChecklistCreate() {
+  checklistCreateFailed.value = false;
   showNewChecklistDialog.value = true;
 }
 
@@ -682,74 +938,98 @@ function handleChecklistCreate() {
  * @param {object} selection - Selected source and optional template/list ID.
  */
 async function handleNewChecklistSelect(selection) {
-  showNewChecklistDialog.value = false;
+  if (isCreatingChecklist.value) return;
+  isCreatingChecklist.value = true;
+  checklistCreateFailed.value = false;
+  try {
+    // Find the highest order among all checklists
+    const maxOrder =
+      checklists.value.length > 0 ? Math.max(...checklists.value.map((cl) => cl.order || 0)) : -1;
 
-  // Find the highest order among all checklists
-  const maxOrder =
-    checklists.value.length > 0 ? Math.max(...checklists.value.map((cl) => cl.order || 0)) : -1;
+    if (
+      (selection.source === 'template' && selection.templateId) ||
+      (selection.source === 'recommended' && selection.recommendedListId)
+    ) {
+      const checklistId = generateSecureId('checklist-');
+      let seedData = null;
+      let sourceName = '';
+      let expectedTemplate = null;
 
-  if (
-    (selection.source === 'template' && selection.templateId) ||
-    (selection.source === 'recommended' && selection.recommendedListId)
-  ) {
-    const checklistId = generateSecureId('checklist-');
-    let seedData = null;
-    let sourceName = '';
-
-    if (selection.source === 'template') {
-      const selectedTemplate = templates.value.find(
-        (template) => template.id === selection.templateId
-      );
-      if (!selectedTemplate) return;
-      sourceName = selectedTemplate.name;
-      seedData = applyTemplate(selection.templateId, checklistId);
-    } else {
-      const selectedRecommendedList = recommendedLists.value.find(
-        (list) => list.id === selection.recommendedListId
-      );
-      if (!selectedRecommendedList) return;
-      sourceName = selectedRecommendedList.name;
-      try {
-        seedData = recommendedListService.applyToNewChecklist(
-          selection.recommendedListId,
-          checklistId,
-          locale.value
+      if (selection.source === 'template') {
+        const selectedTemplate = templates.value.find(
+          (template) => template.id === selection.templateId
         );
-      } catch {
-        return;
+        if (!selectedTemplate) return;
+        sourceName = selectedTemplate.name;
+        expectedTemplate = selectedTemplate;
+      } else {
+        const selectedRecommendedList = recommendedLists.value.find(
+          (list) => list.id === selection.recommendedListId
+        );
+        if (!selectedRecommendedList) return;
+        sourceName = selectedRecommendedList.name;
+        try {
+          seedData = recommendedListService.applyToNewChecklist(
+            selection.recommendedListId,
+            checklistId,
+            locale.value
+          );
+        } catch {
+          return;
+        }
+      }
+      if (selection.source === 'recommended' && !seedData) return;
+
+      const checklistWithId = {
+        id: checklistId,
+        name: buildSourceAwareChecklistName(selection.source, sourceName),
+        order: maxOrder + 1,
+      };
+      const options =
+        selection.source === 'template'
+          ? { source: 'template', templateId: selection.templateId, expectedTemplate }
+          : { source: selection.source, seedData };
+      const newChecklist = await handleAsyncAction(createChecklist, checklistWithId, options);
+      if (newChecklist) {
+        newlyCreatedChecklistId.value = newChecklist.id;
+        showNewChecklistDialog.value = false;
+      } else {
+        checklistCreateFailed.value = true;
+      }
+    } else if (selection.source === 'empty') {
+      const newChecklistData = {
+        name: buildSourceAwareChecklistName('empty'),
+        order: maxOrder + 1,
+      };
+      const options = { source: 'empty' };
+      const newChecklist = await handleAsyncAction(createChecklist, newChecklistData, options);
+      if (newChecklist) {
+        newlyCreatedChecklistId.value = newChecklist.id;
+        showNewChecklistDialog.value = false;
+      } else {
+        checklistCreateFailed.value = true;
       }
     }
-    if (!seedData) return;
-
-    const checklistWithId = {
-      id: checklistId,
-      name: buildSourceAwareChecklistName(selection.source, sourceName),
-      order: maxOrder + 1,
-    };
-    const options = { source: selection.source, seedData };
-    const newChecklist = await handleAsyncAction(createChecklist, checklistWithId, options);
-    if (newChecklist) {
-      newlyCreatedChecklistId.value = newChecklist.id;
-    }
-  } else if (selection.source === 'empty') {
-    const newChecklistData = {
-      name: buildSourceAwareChecklistName('empty'),
-      order: maxOrder + 1,
-    };
-    const options = { source: 'empty' };
-    const newChecklist = await handleAsyncAction(createChecklist, newChecklistData, options);
-    if (newChecklist) {
-      newlyCreatedChecklistId.value = newChecklist.id;
-    }
+  } finally {
+    isCreatingChecklist.value = false;
   }
 }
 
 /**
  * Update an existing checklist with new data
  * @param {object} checklist - The checklist object with updated properties
+ * @param {object} [expected] - Checklist before editing.
+ * @returns {Promise<object|null>} Committed checklist or null on failure.
  */
-async function handleChecklistUpdate(checklist) {
-  await handleAsyncAction(updateChecklist, checklist);
+async function handleChecklistUpdate(checklist, expected) {
+  const draftGeneration = inlineDraftGeneration;
+  const result = await handleAsyncAction(updateChecklist, checklist, expected);
+  if (expected && !result && draftGeneration === inlineDraftGeneration) {
+    inlineSaveFailed.value = true;
+    inlineFailureVersion = checklistOperationErrorVersion?.value ?? null;
+    inlineFailureOwner = `checklist:${checklist.id}`;
+  }
+  return result;
 }
 
 /**
@@ -769,7 +1049,7 @@ function handleChecklistEdit(checklistId) {
  */
 async function handleChecklistCopy(checklistId) {
   const result = await handleAsyncAction(duplicateChecklist, checklistId);
-  if (result) {
+  if (result && !checklistRefreshAfterSaveFailed?.value) {
     // Select the new checklist
     // Note: duplicateChecklist internally calls getChecklists() via await,
     // ensuring all data is loaded before this assignment executes
@@ -791,10 +1071,16 @@ async function handleChecklistDelete(checklistId) {
 /**
  * Handle checklist drag-and-drop movement or reordering
  * @param {Array} reorderedChecklists - Array of checklists with updated order
+ * @param {Array<object>} [expectedChecklists] - Checklists before the drag.
  */
-async function handleChecklistMove(reorderedChecklists) {
+async function handleChecklistMove(reorderedChecklists, expectedChecklists) {
   // Update all checklists in a single transaction to avoid race conditions
-  await handleAsyncAction(updateMultipleChecklists, reorderedChecklists);
+  const result = await handleAsyncAction(
+    updateMultipleChecklists,
+    reorderedChecklists,
+    expectedChecklists
+  );
+  if (!result) await getChecklists?.();
 }
 
 // ---------- Template Handlers ----------
@@ -807,6 +1093,7 @@ function handleSaveAsTemplate(checklistId) {
   const checklist = checklists.value.find((item) => item.id === checklistId);
   templateChecklistId.value = checklistId;
   templateChecklistName.value = checklist?.name || '';
+  templateSaveFailed.value = false;
   showSaveTemplateDialog.value = true;
 }
 
@@ -814,12 +1101,21 @@ function handleSaveAsTemplate(checklistId) {
  * Persist the named template snapshot and clear the dialog source state.
  * @param {string} templateName - User-supplied template name
  */
-function handleTemplateSave(templateName) {
-  if (templateChecklistId.value) {
-    saveAsTemplate(templateChecklistId.value, templateName);
+async function handleTemplateSave(templateName) {
+  if (isSavingTemplate.value || !templateChecklistId.value) return;
+  isSavingTemplate.value = true;
+  templateSaveFailed.value = false;
+  try {
+    const saved = await saveAsTemplate(templateChecklistId.value, templateName);
+    if (!saved) {
+      templateSaveFailed.value = true;
+      return;
+    }
     templateChecklistId.value = null;
+    showSaveTemplateDialog.value = false;
+  } finally {
+    isSavingTemplate.value = false;
   }
-  showSaveTemplateDialog.value = false;
 }
 
 /**
@@ -827,8 +1123,17 @@ function handleTemplateSave(templateName) {
  * @param {string} templateId - Template ID to edit
  */
 function handleTemplateEdit(templateId) {
+  if (isSavingTemplateEdit.value || templateEditing.value?.id === templateId) return;
+  if (
+    templateDraftAtRisk.value &&
+    templateEditing.value?.id !== templateId &&
+    !confirm(t('template.discardFailedDraftConfirm'))
+  )
+    return;
   const template = templates.value.find((item) => item.id === templateId);
   if (!template) return;
+  templateEditSaveFailed.value = false;
+  templateDraftAtRisk.value = false;
   templateEditing.value = template;
 }
 
@@ -836,13 +1141,29 @@ function handleTemplateEdit(templateId) {
  * Save the isolated editor snapshot to the active template.
  * @param {object} template - Complete template snapshot from the editor
  */
-function handleTemplateEditSave(template) {
-  const updated = updateTemplate(template);
-  if (updated) templateEditing.value = null;
+async function handleTemplateEditSave(template) {
+  if (isSavingTemplateEdit.value) return;
+  isSavingTemplateEdit.value = true;
+  templateEditSaveFailed.value = false;
+  try {
+    const updated = await updateTemplate(template, templateEditing.value);
+    if (updated) {
+      templateDraftAtRisk.value = false;
+      templateEditing.value = null;
+    } else {
+      templateEditSaveFailed.value = true;
+      templateDraftAtRisk.value = true;
+    }
+  } finally {
+    isSavingTemplateEdit.value = false;
+  }
 }
 
 /** Discard the in-memory template draft. */
 function handleTemplateEditCancel() {
+  if (isSavingTemplateEdit.value) return;
+  templateEditSaveFailed.value = false;
+  templateDraftAtRisk.value = false;
   templateEditing.value = null;
 }
 
@@ -850,18 +1171,23 @@ function handleTemplateEditCancel() {
  * Delete the active template from the editor after confirmation.
  * @param {string} templateId - Active template ID
  */
-function handleTemplateEditDelete(templateId) {
-  handleTemplateDelete(templateId);
+async function handleTemplateEditDelete(templateId) {
+  await handleTemplateDelete(templateId);
 }
 
 /**
  * Delete a personal template after confirmation.
  * @param {string} templateId - Template ID to delete
  */
-function handleTemplateDelete(templateId) {
+async function handleTemplateDelete(templateId) {
+  if (isSavingTemplateEdit.value) return;
+  templateEditSaveFailed.value = false;
   if (confirm(t('template.deleteConfirm'))) {
-    const deleted = deleteTemplate(templateId);
-    if (deleted && templateEditing.value?.id === templateId) templateEditing.value = null;
+    const deleted = await deleteTemplate(templateId);
+    if (deleted && templateEditing.value?.id === templateId) {
+      templateDraftAtRisk.value = false;
+      templateEditing.value = null;
+    }
   }
 }
 

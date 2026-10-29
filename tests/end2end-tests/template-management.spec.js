@@ -94,6 +94,7 @@ test.describe('Template Management', () => {
     await page.getByTestId('checklist-name-input').press('Enter');
     await page.getByTestId('template-editor-save').click();
 
+    await expect(page.getByText('Editing template: Weekend')).toHaveCount(0);
     await expect(page.getByTestId('sidebar-checklist-item')).toHaveCount(checklistCountBefore);
     const persisted = await page.evaluate(() => ({
       appData: localStorage.getItem('packingListApp'),

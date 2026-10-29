@@ -79,7 +79,7 @@ Validation 驗證
 ### 3.3 Tailwind CSS Conventions Tailwind CSS 規範
 
 - 設計系統優先順序：標準 Tailwind classes → 自訂設定擴展 → 任意值（最後手段）
-- Spacing 刻度：使用 4px 倍數（0.25rem/1px、0.5rem/2px、0.75rem/3px 等）；非標準值在 `tailwind.config.js` 中擴展
+- Spacing 刻度：使用 4px 倍數；非標準值在 `tailwind.config.js` 中擴展
 - Class 組織：依功能分組（layout → spacing → colors → states）；Prettier 自動排序
 - CSS Modules：用於複雜佈局（masonry、動畫）；kebab-case 命名；優先使用 CSS 變數
 
@@ -207,8 +207,8 @@ Validation 驗證
 /*
 ================================================================================
 File: source/path/fileName.js
-Description: 檔案功能的簡要說明
-Author: 你的名字
+Description: Brief description of the file's purpose
+Author: Your Name
 License: MIT (SPDX: MIT)
 Created: YYYY-MM-DD
 ================================================================================
@@ -221,8 +221,8 @@ Created: YYYY-MM-DD
 <!--
 ================================================================================
 File: source/components/ComponentName.vue
-Description: 元件功能的簡要說明
-Author: 你的名字
+Description: Brief description of the component's purpose
+Author: Your Name
 License: MIT (SPDX: MIT)
 Created: YYYY-MM-DD
 ================================================================================
@@ -243,9 +243,9 @@ Created: YYYY-MM-DD
 
 ```javascript
 export function useExample() {
-  // -----------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // Service initialization
-  // -----------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
 
   const service = new Service();
 }
@@ -266,9 +266,9 @@ export function useExample() {
 
 ```javascript
 /**
- * 計算已打包項目的總數
- * @param {Array<Item>} items - 待計算的項目陣列
- * @returns {number} 已打包項目總數
+ * Calculate the total number of packed items
+ * @param {Array<Item>} items - Array of items to count
+ * @returns {number} Total count of packed items
  */
 function countPackedItems(items) {
   return items.filter((item) => item.packed).length;
@@ -280,13 +280,13 @@ function countPackedItems(items) {
 僅用於複雜邏輯、臨時解法或待辦事項：
 
 ```javascript
-// 計算指數移動平均（α = 0.3）
+// Calculate exponential moving average (α = 0.3)
 const ema = currentValue * 0.3 + previousEma * 0.7;
 
-// WORKAROUND: Safari 需要在 300ms 延遲後明確設定 focus
+// WORKAROUND: Safari requires explicit focus after 300ms delay
 setTimeout(() => input.focus(), 300);
 
-// TODO: 待辦事項
+// TODO: Implement pagination when list exceeds 100 items
 ```
 
 避免僅重述程式碼的註解。
@@ -333,6 +333,7 @@ Validation 驗證
 - 自動修正：`npm run lint:fix`
 - 驗證（lint + format 檢查）：`npm run validate`
 - Pre-commit：對已暫存檔案自動執行 lint-staged
+- GitHub Actions 在 pull request 與 push 到 `main` 時執行 `npm run verify:feature`；參見 `.github/workflows/test.yml`。
 
 ## 6. Editor Integration (VS Code) 編輯器整合
 
@@ -354,8 +355,7 @@ Validation 驗證
 
 ## 9. Future Considerations 未來考量
 
-- 視需要加入（可選）
-  - `eslint-plugin-unicorn`（挑選精選規則）程式風格想進一步提升時加入
-  - GitHub Actions：輕量 Quality Gate（`eslint --quiet`、`prettier --check`）當你希望 PR/Push 有自動 Quality Gate 時加入（多人協作或公開專案時）
-  - `stylelint`（目前 CSS 少且以 Tailwind 為主）當自訂 CSS 明顯增加（> 500 行）或多人管理 CSS 時加入
-  - `eslint-plugin-i18n-json`（目前只有中/英兩個檔案，手動維護即可）當語言數量 > 2 或 i18n key > 100 時加入
+- 依已觀察到的缺口、維護成本及相容性評估可選工具，不使用固定規模門檻：
+  - `eslint-plugin-unicorn`：挑選能防止反覆問題且不產生過多噪音的規則。
+  - `stylelint`：當 CSS 或 Vue style 缺陷需要專屬檢查時評估。
+  - `eslint-plugin-i18n-json`：針對尚未涵蓋的本地化風險評估；現有測試已檢查語系 key 一致性。

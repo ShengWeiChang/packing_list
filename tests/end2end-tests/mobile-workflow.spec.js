@@ -181,8 +181,7 @@ test.describe('Mobile Workflow (375px)', () => {
         }
       }
 
-      const updatedText = await progressBar.textContent();
-      expect(updatedText).not.toBe(initialText);
+      await expect.poll(() => progressBar.textContent()).not.toBe(initialText);
     });
 
     // Test Case 10: Should filter packed items with the icon-only toolbar button

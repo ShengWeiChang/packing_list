@@ -117,6 +117,16 @@ export class DataService {
   }
 
   /**
+   * Update categories together in one transaction.
+   * @param {Array<object>} _categories - Updated categories.
+   * @param {Array<object>} _expected - Categories before editing.
+   * @returns {Promise<Array<object>>} Updated categories.
+   */
+  async updateMultipleCategories(_categories, _expected) {
+    throw new Error('Not implemented');
+  }
+
+  /**
    * Delete a category
    * @param {string} _categoryId - Category ID to delete
    * @returns {Promise<void>}

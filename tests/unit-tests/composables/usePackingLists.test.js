@@ -139,7 +139,7 @@ describe('usePackingLists', () => {
     });
 
     // Test Case 5: Legacy checklist order repair should restore the saved checklist
-    it('should repair missing checklist order and restore the saved checklist', async () => {
+    it('should normalize missing checklist order in memory and restore the saved checklist', async () => {
       vi.spyOn(LocalStorageService.prototype, 'getData').mockResolvedValue({
         checklists: [
           {
@@ -191,10 +191,8 @@ describe('usePackingLists', () => {
       const { initialize, checklists, selectedChecklistId, categories, items } = usePackingLists();
       await initialize();
 
-      expect(updateChecklistSpy).toHaveBeenCalledTimes(1);
-      expect(updateChecklistSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'cl-legacy', order: 0 })
-      );
+      expect(updateChecklistSpy).not.toHaveBeenCalled();
+      expect(checklists.value[0].order).toBe(0);
       expect(checklists.value.map((c) => c.id)).toEqual(['cl-legacy', 'cl-ordered']);
       expect(selectedChecklistId.value).toBe('cl-legacy');
       expect(categories.value).toEqual([expect.objectContaining({ id: 'cat-legacy' })]);
@@ -511,10 +509,10 @@ describe('usePackingLists', () => {
 
       await initialize();
 
-      // The service handles corrupted JSON by resetting to empty arrays
-      // so the composable should not see an error
+      // Corrupt content must be reported rather than treated as missing data.
       expect(checklists.value).toEqual([]);
-      expect(error.value).toBeNull();
+      expect(error.value).toContain('Stored data is not valid JSON');
+      expect(mockStorage['packingListApp']).toBe('invalid json {{{');
     });
   });
 
@@ -904,7 +902,91 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('packing history', () => {
-    // Test Case 45: Category pack-all should be one undoable mixed-state action
+    // Test Case 45: Preserve data and history after a failed deletion.
+    it('keeps history and visible data when item or category deletion fails', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      await flushPromises();
+      const category = await api.createCategory({ name: 'Clothing' });
+      const item = await api.createItem({ name: 'Hat', categoryId: category.id });
+      await api.setCategoryPacked(category.id, true);
+      vi.spyOn(LocalStorageService.prototype, 'deleteItem').mockRejectedValue(new Error('denied'));
+      vi.spyOn(LocalStorageService.prototype, 'deleteCategory').mockRejectedValue(
+        new Error('denied')
+      );
+
+      expect(await api.deleteItem(item.id)).toBe(false);
+      expect(await api.deleteCategory(category.id)).toBe(false);
+      expect(api.canUndoPackingChange.value).toBe(true);
+      expect(api.items.value.some((entry) => entry.id === item.id)).toBe(true);
+      expect(api.categories.value.some((entry) => entry.id === category.id)).toBe(true);
+      expect(api.error.value).toContain('denied');
+    });
+
+    // Test Case 46: Preserve visible data when refresh fails.
+    it('retains visible categories and items if a later refresh fails', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      await flushPromises();
+      const category = await api.createCategory({ name: 'Clothing' });
+      const item = await api.createItem({ name: 'Hat', categoryId: category.id });
+      vi.spyOn(LocalStorageService.prototype, 'getCategories').mockRejectedValue(
+        new Error('denied')
+      );
+      vi.spyOn(LocalStorageService.prototype, 'getItems').mockRejectedValue(new Error('denied'));
+
+      await api.getCategories();
+      await api.getItems();
+      expect(api.categories.value.some((entry) => entry.id === category.id)).toBe(true);
+      expect(api.items.value.some((entry) => entry.id === item.id)).toBe(true);
+    });
+
+    // Test Case 47: Distinguish a committed write from a failed refresh.
+    it('reports a committed change separately when the subsequent refresh fails', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      await flushPromises();
+      const category = await api.createCategory({ name: 'Clothing' });
+      vi.spyOn(LocalStorageService.prototype, 'getCategories').mockRejectedValue(
+        new Error('denied')
+      );
+
+      const result = await api.updateCategory({ ...category, name: 'Clothes' }, category);
+
+      expect(result.name).toBe('Clothes');
+      expect(api.refreshAfterSaveFailed.value).toBe(true);
+      expect(api.operationError.value).toBeNull();
+      expect(JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).categories[0].name).toBe('Clothes');
+    });
+
+    // Test Case 48: Never show a previous checklist's data under a new selection.
+    it('clears the previous checklist data when switching and the new read fails', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      const first = await api.createChecklist({ name: 'First' }, { source: 'empty' });
+      await flushPromises();
+      const category = await api.createCategory({ name: 'First category' });
+      await api.createItem({ name: 'First item', categoryId: category.id });
+      const second = await api.createChecklist({ name: 'Second' }, { source: 'empty' });
+      api.selectedChecklistId.value = first.id;
+      await flushPromises();
+      expect(api.items.value).toHaveLength(1);
+      vi.spyOn(LocalStorageService.prototype, 'getCategories').mockRejectedValue(
+        new Error('denied')
+      );
+      vi.spyOn(LocalStorageService.prototype, 'getItems').mockRejectedValue(new Error('denied'));
+
+      api.selectedChecklistId.value = second.id;
+      await flushPromises();
+      expect(api.categories.value).toEqual([]);
+      expect(api.items.value).toEqual([]);
+      expect(api.storageHealth.value).toBe('unavailable');
+    });
+
+    // Test Case 49: Category pack-all should be one undoable mixed-state action
     it('should treat a category pack-all as one undoable action and restore mixed state', async () => {
       const api = usePackingLists();
       await api.initialize();
@@ -962,7 +1044,7 @@ describe('usePackingLists', () => {
       );
     });
 
-    // Test Case 46: Switching checklists should clear packing history
+    // Test Case 50: Switching checklists should clear packing history
     it('should clear packing history when switching checklists', async () => {
       const api = usePackingLists();
       await api.initialize();
@@ -1032,5 +1114,53 @@ describe('usePackingLists', () => {
 
       expect(api.canUndoPackingChange.value).toBe(false);
     });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Test Group 15: Drag Intent and Concurrent Edits
+  // ---------------------------------------------------------------------------
+
+  // Test Case 51: A stale drag must not overwrite unrelated remote edits
+  it('preserves remote item edits when committing a stale drag payload', async () => {
+    const api = usePackingLists();
+    await api.initialize();
+    const checklist = await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+    const source = await api.createCategory({ name: 'Source' });
+    const destination = await api.createCategory({ name: 'Destination' });
+    const item = await api.createItem({ name: 'Old name', categoryId: source.id, quantity: 1 });
+    const dragBaseline = { ...item };
+
+    const remote = new LocalStorageService();
+    await remote.updateItem(checklist.id, { ...item, name: 'Remote name', quantity: 2 }, item);
+    await api.initialize();
+    const result = await api.updateMultipleItems(
+      [{ ...dragBaseline, categoryId: destination.id, order: 0 }],
+      { fields: ['order', 'categoryId'], expectedItems: [dragBaseline] }
+    );
+
+    expect(result[0]).toMatchObject({
+      name: 'Remote name',
+      quantity: 2,
+      categoryId: destination.id,
+    });
+    expect(await remote.getItemById(checklist.id, item.id)).toMatchObject({
+      name: 'Remote name',
+      quantity: 2,
+      categoryId: destination.id,
+    });
+
+    await remote.updateCategory({ ...source, name: 'Remote category' }, source);
+    await api.initialize();
+    const categories = await api.updateMultipleCategories([{ ...source, order: 3 }], [source]);
+    expect(categories[0]).toMatchObject({ name: 'Remote category', order: 3 });
+
+    await remote.updateChecklist({ ...checklist, name: 'Remote trip' }, checklist);
+    await api.initialize();
+    const checklists = await api.updateMultipleChecklists(
+      [{ ...checklist, order: 3 }],
+      [checklist]
+    );
+    expect(checklists[0]).toMatchObject({ name: 'Remote trip', order: 3 });
+    remote.dispose();
   });
 });

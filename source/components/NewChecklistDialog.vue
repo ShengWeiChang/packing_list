@@ -16,7 +16,7 @@ Created: 2026-10-13
     class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm"
     role="presentation"
     data-testid="new-checklist-dialog-backdrop"
-    @click.self="$emit('close')"
+    @click.self="close"
   >
     <!-- Dialog -->
     <div
@@ -33,6 +33,19 @@ Created: 2026-10-13
       >
         {{ $t('template.newChecklistFrom') }}
       </h2>
+      <p
+        v-if="saveError"
+        class="mb-4 text-sm text-danger-text"
+        role="alert"
+      >
+        {{
+          $t(
+            errorCode === 'conflict' || errorCode === 'quota' || errorCode === 'lock-unavailable'
+              ? `storage.${errorCode}`
+              : 'common.saveFailed'
+          )
+        }}
+      </p>
 
       <!-- Step 1: Choose source -->
       <div
@@ -45,6 +58,7 @@ Created: 2026-10-13
           class="flex w-full items-center rounded-lg border border-border-color-light px-4 py-3 text-left transition-colors hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus"
           type="button"
           data-testid="new-checklist-option-empty"
+          :disabled="saving"
           @click="$emit('select', { source: 'empty' })"
         >
           <AppIcon
@@ -63,7 +77,7 @@ Created: 2026-10-13
         <button
           ref="templateOptionRef"
           class="flex w-full items-center rounded-lg border border-border-color-light px-4 py-3 text-left transition-colors hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus"
-          :disabled="templates.length === 0"
+          :disabled="saving || templates.length === 0"
           :class="{ 'cursor-not-allowed opacity-50': templates.length === 0 }"
           type="button"
           data-testid="new-checklist-option-template"
@@ -91,6 +105,7 @@ Created: 2026-10-13
           class="flex w-full items-center rounded-lg border border-border-color-light px-4 py-3 text-left transition-colors hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus"
           type="button"
           data-testid="new-checklist-option-recommended"
+          :disabled="saving"
           @click="showList('recommended')"
         >
           <AppIcon
@@ -112,6 +127,7 @@ Created: 2026-10-13
           class="mb-3 flex items-center text-sm text-secondary hover:text-primary"
           type="button"
           data-testid="new-checklist-back"
+          :disabled="saving"
           @click="showSources"
         >
           <AppIcon
@@ -141,6 +157,7 @@ Created: 2026-10-13
             class="flex w-full items-center rounded-lg border border-border-color-light px-4 py-3 text-left transition-colors hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus"
             type="button"
             :data-testid="`new-checklist-template-${template.id}`"
+            :disabled="saving"
             @click="$emit('select', { source: 'template', templateId: template.id })"
           >
             <span class="truncate text-primary">{{ template.name }}</span>
@@ -161,6 +178,7 @@ Created: 2026-10-13
             class="w-full rounded-lg border border-border-color-light px-4 py-3 text-left transition-colors hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus"
             type="button"
             :data-testid="`new-checklist-recommended-${recommendedList.id}`"
+            :disabled="saving"
             @click="
               $emit('select', { source: 'recommended', recommendedListId: recommendedList.id })
             "
@@ -182,7 +200,8 @@ Created: 2026-10-13
           class="rounded-lg px-4 py-2 text-sm text-secondary hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus"
           type="button"
           data-testid="new-checklist-cancel"
-          @click="$emit('close')"
+          :disabled="saving"
+          @click="close"
         >
           {{ $t('common.cancel') }}
         </button>
@@ -205,6 +224,9 @@ import AppIcon from './AppIcon.vue';
 // ------------------------------------------------------------------------------
 
 const props = defineProps({
+  saving: { type: Boolean, default: false },
+  saveError: { type: Boolean, default: false },
+  errorCode: { type: String, default: null },
   visible: {
     type: Boolean,
     default: false,
@@ -233,6 +255,11 @@ const recommendedOptionRef = ref(null);
 const templateButtonRefs = ref([]);
 const recommendedListButtonRefs = ref([]);
 const previouslyFocusedElement = ref(null);
+
+/** Close only when no creation is in flight. */
+function close() {
+  if (!props.saving) emit('close');
+}
 
 // ------------------------------------------------------------------------------
 // Functions
@@ -270,7 +297,7 @@ async function showSources() {
 function handleDialogKeydown(event) {
   if (!props.visible) return;
   if (event.key === 'Escape') {
-    emit('close');
+    close();
     return;
   }
   if (event.key !== 'Tab') return;

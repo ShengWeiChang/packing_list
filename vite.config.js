@@ -13,7 +13,7 @@ Created: 2025-09-19
 // -----------------------------------------------------------------------------
 
 import vue from '@vitejs/plugin-vue';
-import path from 'path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 // -----------------------------------------------------------------------------
@@ -22,9 +22,13 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [vue()],
+  build: {
+    target: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'],
+    cssTarget: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'],
+  },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './source'),
+      '@': fileURLToPath(new URL('./source', import.meta.url)),
     },
   },
 });

@@ -35,6 +35,7 @@ Created: 2025-09-19
             type="checkbox"
             :aria-label="isCompleted ? $t('category.unpackAll') : $t('category.packAll')"
             :aria-checked="isPartiallyCompleted ? 'mixed' : isCompleted ? 'true' : 'false'"
+            :aria-disabled="isSavingPacked || undefined"
             data-testid="category-checkbox"
             :class="[
               'size-5 flex-none shrink-0 cursor-pointer focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:size-4',
@@ -55,6 +56,7 @@ Created: 2025-09-19
             :id="`category-${category.id}-name`"
             ref="editInput"
             v-model="editedName"
+            :disabled="isSavingEdit"
             :name="`category-${category.id}-name`"
             :aria-label="$t('category.name')"
             data-testid="category-name-input"
@@ -79,6 +81,21 @@ Created: 2025-09-19
           >
             {{ category.name }}
           </h3>
+          <p
+            v-if="editSaveFailed"
+            class="text-sm text-danger-text"
+            role="alert"
+          >
+            {{
+              $t(
+                editErrorCode === 'conflict' ||
+                  editErrorCode === 'quota' ||
+                  editErrorCode === 'lock-unavailable'
+                  ? `storage.${editErrorCode}`
+                  : 'common.saveFailed'
+              )
+            }}
+          </p>
         </div>
       </div>
 
@@ -171,7 +188,13 @@ Created: 2025-09-19
                   :newly-created-item-id="newlyCreatedItemId"
                   :category-completed="isCompleted"
                   :is-dragging="draggingItemId === item.id"
-                  @update:item="$emit('update:item', $event)"
+                  :save-item-edit="saveItemEdit"
+                  :commit-edit-on-blur="commitEditOnBlur"
+                  :edit-error-code="editErrorCode"
+                  :update-item-action="updateItemAction"
+                  :retain-draft="retainDraft"
+                  :edit-cancelled="editCancelled"
+                  @update:item="(...args) => $emit('update:item', ...args)"
                   @copy:item="$emit('copy:item', $event)"
                   @delete:item="$emit('delete:item', $event)"
                 />
@@ -194,7 +217,7 @@ Created: 2025-09-19
 // Imports
 // ------------------------------------------------------------------------------
 
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
 
 import { Category } from '../models/Category';
@@ -213,6 +236,14 @@ import ProgressBar from './ProgressBar.vue';
 
 // Props
 const props = defineProps({
+  commitEditOnBlur: { type: Boolean, default: false },
+  retainDraft: { type: Function, default: null },
+  editCancelled: { type: Function, default: null },
+  saveCategoryEdit: { type: Function, default: null },
+  saveItemEdit: { type: Function, default: null },
+  editErrorCode: { type: String, default: null },
+  setCategoryPackedAction: { type: Function, default: null },
+  updateItemAction: { type: Function, default: null },
   category: {
     type: Object,
     required: true,
@@ -263,7 +294,11 @@ const emit = defineEmits([
 
 // Editing state
 const isEditing = ref(false);
+const isSavingEdit = ref(false);
+const isSavingPacked = ref(false);
+const editSaveFailed = ref(false);
 const editedName = ref('');
+let editBaseline = null;
 const editInput = ref(null);
 const isComposing = ref(false);
 let cleanupEditingFocus = () => {};
@@ -348,11 +383,28 @@ function toggleCollapse() {
  * Request one atomic packed-state change for all items in this category.
  * @param {Event} event - Checkbox change event
  */
-function toggleCategoryPacked(event) {
-  emit('set-category-packed', {
+async function toggleCategoryPacked(event) {
+  if (isSavingPacked.value) {
+    event.target.checked = isCompleted.value;
+    return;
+  }
+  const requested = event.target.checked;
+  // Keep the control aligned with committed state until the asynchronous write succeeds.
+  event.target.checked = isCompleted.value;
+  const change = {
     categoryId: props.category.id,
-    isPacked: event.target.checked,
-  });
+    isPacked: requested,
+  };
+  if (!props.setCategoryPackedAction) {
+    emit('set-category-packed', change);
+    return;
+  }
+  isSavingPacked.value = true;
+  try {
+    await props.setCategoryPackedAction(change);
+  } finally {
+    isSavingPacked.value = false;
+  }
 }
 
 // ---------- Editing Functions ----------
@@ -369,6 +421,8 @@ function handleCompositionStart() {
  */
 function handleCompositionEnd() {
   isComposing.value = false;
+  if (props.commitEditOnBlur && isEditing.value && document.activeElement !== editInput.value)
+    saveEdit();
 }
 
 /**
@@ -391,7 +445,7 @@ function handleEnterKey(event) {
  * this check provides defensive programming against edge cases
  */
 function handleBlur() {
-  if (!isComposing.value) {
+  if (!isComposing.value && !editSaveFailed.value) {
     saveEdit();
   }
 }
@@ -402,6 +456,8 @@ function handleBlur() {
 async function startEdit() {
   cleanupEditingFocus();
   isEditing.value = true;
+  editSaveFailed.value = false;
+  editBaseline = { ...props.category };
   editedName.value = props.category.name;
 
   await nextTick();
@@ -411,16 +467,38 @@ async function startEdit() {
 /**
  * Save the edited category name if changed
  */
-function saveEdit() {
+async function saveEdit() {
+  if (isSavingEdit.value) return;
   cleanupEditingFocus();
-  const hasNameChanged = editedName.value.trim() && editedName.value !== props.category.name;
+  const hasNameChanged = editedName.value.trim() && editedName.value !== editBaseline.name;
 
   if (hasNameChanged) {
     const updatedCategory = new Category({
-      ...props.category,
+      ...editBaseline,
       name: editedName.value.trim(),
     });
-    emit('update:category', updatedCategory);
+    if (props.saveCategoryEdit) {
+      const restoreFocus = document.activeElement === editInput.value;
+      isSavingEdit.value = true;
+      editSaveFailed.value = false;
+      try {
+        if (!(await props.saveCategoryEdit(updatedCategory, editBaseline))) {
+          editSaveFailed.value = true;
+          isSavingEdit.value = false;
+          await nextTick();
+          if (restoreFocus) editInput.value?.focus({ preventScroll: true });
+          return;
+        }
+      } finally {
+        isSavingEdit.value = false;
+      }
+    } else {
+      emit('update:category', updatedCategory, editBaseline);
+    }
+  }
+  if (editSaveFailed.value) {
+    editSaveFailed.value = false;
+    props.editCancelled?.('category', props.category.id);
   }
   isEditing.value = false;
 }
@@ -429,7 +507,10 @@ function saveEdit() {
  * Cancel editing and restore original category name
  */
 function cancelEdit() {
+  if (isSavingEdit.value) return;
   cleanupEditingFocus();
+  editSaveFailed.value = false;
+  props.editCancelled?.('category', props.category.id);
   isEditing.value = false;
   editedName.value = props.category.name;
 }
@@ -496,6 +577,9 @@ function onItemChange(event) {
     emit('move:item', {
       type: 'move',
       items: [...reorderedSourceItems, ...reorderedTargetItems],
+      expectedItems: props.items.map((entry) =>
+        entry.id === item.id ? { ...item } : { ...entry }
+      ),
     });
   }
 
@@ -516,6 +600,9 @@ function onItemChange(event) {
 
     emit('move:item', {
       items: itemsWithNewOrder,
+      expectedItems: props.items.map((entry) =>
+        entry.id === event.moved.element?.id ? { ...event.moved.element } : { ...entry }
+      ),
       categoryId: props.category.id,
       type: 'reorder',
     });
@@ -538,6 +625,12 @@ watch(
   }
 );
 
+onBeforeUnmount(() => {
+  if (isEditing.value && editBaseline && editedName.value !== editBaseline.name) {
+    props.retainDraft?.({ name: editedName.value });
+  }
+  if (editSaveFailed.value) props.editCancelled?.('category', props.category.id);
+});
 onUnmounted(() => cleanupEditingFocus());
 </script>
 

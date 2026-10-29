@@ -34,6 +34,19 @@ Object.defineProperty(globalThis, 'localStorage', {
   configurable: true,
 });
 
+// Coordinate storage writes in jsdom, which does not implement Web Locks.
+let storageLockTail = Promise.resolve();
+Object.defineProperty(navigator, 'locks', {
+  configurable: true,
+  value: {
+    request: (name, callback) => {
+      const result = storageLockTail.then(() => callback({ name }));
+      storageLockTail = result.catch(() => {});
+      return result;
+    },
+  },
+});
+
 // Mock scrollIntoView (not implemented in jsdom)
 Element.prototype.scrollIntoView = vi.fn();
 

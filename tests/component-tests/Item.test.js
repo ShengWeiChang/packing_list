@@ -14,7 +14,7 @@ Created: 2026-02-06
 // Imports
 // -----------------------------------------------------------------------------
 
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Item from '../../source/components/Item.vue';
@@ -98,20 +98,38 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('rendering', () => {
-    // Test Case 1: Should display the item name
+    // Test Case 1: Retain the item name draft until save succeeds.
+    it('keeps an item name draft on failed save and closes only after a successful retry', async () => {
+      const saveItemEdit = vi
+        .fn()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'item-1' });
+      const w = createWrapper({ saveItemEdit });
+      await w.get('[data-testid="item-name"]').trigger('click');
+      await w.get('[data-testid="item-edit-input"]').setValue('Draft name');
+      await w.get('[data-testid="item-edit-input"]').trigger('keydown.enter');
+      await flushPromises();
+      expect(w.get('[data-testid="item-edit-input"]').element.value).toBe('Draft name');
+      expect(w.find('[role="alert"]').exists()).toBe(true);
+      await w.get('[data-testid="item-edit-input"]').trigger('keydown.enter');
+      await flushPromises();
+      expect(w.find('[data-testid="item-edit-input"]').exists()).toBe(false);
+      expect(saveItemEdit).toHaveBeenCalledTimes(2);
+    });
+    // Test Case 2: Should display the item name
     it('should display the item name', () => {
       const w = createWrapper();
       expect(w.text()).toContain('Passport');
     });
 
-    // Test Case 2: Should render a checkbox input
+    // Test Case 3: Should render a checkbox input
     it('should render a checkbox input', () => {
       const w = createWrapper();
       const checkbox = w.get('input[type="checkbox"]');
       expect(checkbox.attributes('type')).toBe('checkbox');
     });
 
-    // Test Case 3: Should check the checkbox when item is packed
+    // Test Case 4: Should check the checkbox when item is packed
     it('should check the checkbox when item is packed', () => {
       const w = createWrapper({
         item: createMockItem({ isPacked: true }),
@@ -120,7 +138,7 @@ describe('Item', () => {
       expect(checkbox.element.checked).toBe(true);
     });
 
-    // Test Case 4: Should apply line-through styling when item is packed
+    // Test Case 5: Should apply line-through styling when item is packed
     it('should apply line-through styling when item is packed', () => {
       const w = createWrapper({
         item: createMockItem({ isPacked: true }),
@@ -129,7 +147,7 @@ describe('Item', () => {
       expect(nameSpan.classes()).toContain('line-through');
     });
 
-    // Test Case 5: Should display quantity
+    // Test Case 6: Should display quantity
     it('should display quantity value', () => {
       const w = createWrapper({
         item: createMockItem({ quantity: 3 }),
@@ -144,7 +162,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('checkbox interaction', () => {
-    // Test Case 6: Should emit update:item with toggled isPacked
+    // Test Case 7: Should emit update:item with toggled isPacked
     it('should emit "update:item" with toggled isPacked when checkbox is clicked', async () => {
       const w = createWrapper();
       const checkbox = w.find('input[type="checkbox"]');
@@ -155,7 +173,7 @@ describe('Item', () => {
       expect(emitted[0][0].isPacked).toBe(true);
     });
 
-    // Test Case 7: Should clear isPending when item becomes packed
+    // Test Case 8: Should clear isPending when item becomes packed
     it('should clear isPending when item becomes packed', async () => {
       const w = createWrapper({
         item: createMockItem({ isPending: true }),
@@ -174,7 +192,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('edit mode', () => {
-    // Test Case 8: Should show input field when item name is clicked
+    // Test Case 9: Should show input field when item name is clicked
     it('should enter edit mode when item name is clicked', async () => {
       const w = createWrapper();
       const nameSpan = w.get('span[role="button"]');
@@ -187,7 +205,7 @@ describe('Item', () => {
       expect(input.element.selectionEnd).toBe('Passport'.length);
     });
 
-    // Test Case 9: Should save edited name on Enter key
+    // Test Case 10: Should save edited name on Enter key
     it('should save edited name on Enter key', async () => {
       const w = createWrapper();
       await w.find('span[role="button"]').trigger('click');
@@ -201,7 +219,7 @@ describe('Item', () => {
       expect(emitted[0][0].name).toBe('Updated Passport');
     });
 
-    // Test Case 10: Should cancel edit mode on Escape key
+    // Test Case 11: Should cancel edit mode on Escape key
     it('should cancel edit mode on Escape key', async () => {
       const w = createWrapper();
       await w.find('span[role="button"]').trigger('click');
@@ -221,7 +239,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('quantity controls', () => {
-    // Test Case 11: Should increment quantity
+    // Test Case 12: Should increment quantity
     it('should emit "update:item" with incremented quantity', async () => {
       const w = createWrapper({
         item: createMockItem({ quantity: 2 }),
@@ -237,7 +255,7 @@ describe('Item', () => {
       expect(emitted[0][0].quantity).toBe(3);
     });
 
-    // Test Case 12: Should decrement quantity
+    // Test Case 13: Should decrement quantity
     it('should emit "update:item" with decremented quantity', async () => {
       const w = createWrapper({
         item: createMockItem({ quantity: 3 }),
@@ -253,7 +271,7 @@ describe('Item', () => {
       expect(emitted[0][0].quantity).toBe(2);
     });
 
-    // Test Case 13: Should emit delete:item when quantity is 1 and delete button clicked
+    // Test Case 14: Should emit delete:item when quantity is 1 and delete button clicked
     it('should emit "delete:item" when quantity is 1 and delete button is clicked', async () => {
       const w = createWrapper({
         item: createMockItem({ quantity: 1 }),
@@ -274,7 +292,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('pending state', () => {
-    // Test Case 14: Should toggle pending state
+    // Test Case 15: Should toggle pending state
     it('should emit "update:item" with toggled isPending', async () => {
       const w = createWrapper();
 
@@ -289,7 +307,7 @@ describe('Item', () => {
       expect(emitted[0][0].isPacked).toBe(false);
     });
 
-    // Test Case 15: Should clear isPacked when item is marked as pending
+    // Test Case 16: Should clear isPacked when item is marked as pending
     it('should clear isPacked when item is marked as pending', async () => {
       const w = createWrapper({
         item: createMockItem({ isPacked: true }),
@@ -311,7 +329,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('copy event', () => {
-    // Test Case 16: Should emit copy:item from OverflowMenu
+    // Test Case 17: Should emit copy:item from OverflowMenu
     it('should emit "copy:item" when OverflowMenu triggers copy', async () => {
       const w = createWrapper();
       const menu = w.findComponent({ name: 'OverflowMenu' });
@@ -327,7 +345,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('blur save', () => {
-    // Test Case 17: Should save on blur when name is changed
+    // Test Case 18: Should save on blur when name is changed
     it('should emit "update:item" on blur with changed name', async () => {
       vi.useFakeTimers();
       const w = createWrapper();
@@ -354,7 +372,7 @@ describe('Item', () => {
       vi.useRealTimers();
     });
 
-    // Test Case 18: Should not save empty name on blur
+    // Test Case 19: Should not save empty name on blur
     it('should not emit "update:item" on blur with empty name', async () => {
       vi.useFakeTimers();
       const w = createWrapper();
@@ -382,7 +400,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('delete from overflow menu', () => {
-    // Test Case 19: Should emit delete:item from OverflowMenu
+    // Test Case 20: Should emit delete:item from OverflowMenu
     it('should emit "delete:item" when OverflowMenu triggers delete', async () => {
       const w = createWrapper();
       const menu = w.findComponent({ name: 'OverflowMenu' });
@@ -398,7 +416,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('hover and visibility', () => {
-    // Test Case 20: Should show controls on mouseenter
+    // Test Case 21: Should show controls on mouseenter
     it('should show action buttons on mouseenter', async () => {
       const w = createWrapper();
       const mainDiv = w.get('[data-testid="item-row"]');
@@ -409,7 +427,7 @@ describe('Item', () => {
       expect(menu.props('forceVisible')).toBe(true);
     });
 
-    // Test Case 21: Should hide controls on mouseleave
+    // Test Case 22: Should hide controls on mouseleave
     it('should hide action buttons on mouseleave', async () => {
       const w = createWrapper();
       const mainDiv = w.get('[data-testid="item-row"]');
@@ -426,7 +444,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('IME composition', () => {
-    // Test Case 22: Should not save on Enter during IME composition
+    // Test Case 23: Should not save on Enter during IME composition
     it('should not save during IME composition', async () => {
       const w = createWrapper();
       await w.find('span[role="button"]').trigger('click');
@@ -453,7 +471,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('newly created item watcher', () => {
-    // Test Case 23: Should auto-start edit when newlyCreatedItemId matches
+    // Test Case 24: Should auto-start edit when newlyCreatedItemId matches
     it('should enter edit mode when newlyCreatedItemId matches', async () => {
       const w = createWrapper({ newlyCreatedItemId: null });
 
@@ -469,7 +487,7 @@ describe('Item', () => {
       expect(input.element.selectionEnd).toBe('Passport'.length);
     });
 
-    // Test Case 24: Should not start edit for non-matching item ID
+    // Test Case 25: Should not start edit for non-matching item ID
     it('should not enter edit mode when newlyCreatedItemId does not match', async () => {
       const w = createWrapper({ newlyCreatedItemId: null });
       await w.setProps({ newlyCreatedItemId: 'item-other' });
@@ -484,7 +502,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('quantity edge cases', () => {
-    // Test Case 25: Should not decrement below 1
+    // Test Case 26: Should not decrement below 1
     it('should not decrement quantity below 1', async () => {
       const w = createWrapper({
         item: createMockItem({ quantity: 1 }),
@@ -507,7 +525,7 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('dragging state', () => {
-    // Test Case 26: Should apply dragging class when isDragging is true
+    // Test Case 27: Should apply dragging class when isDragging is true
     it('should apply cursor-grabbing when isDragging is true', () => {
       const w = createWrapper({ isDragging: true });
       const mainDiv = w.get('[data-testid="item-row"]');
