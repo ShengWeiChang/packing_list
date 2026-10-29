@@ -33,7 +33,7 @@ export default {
       },
       colors: {
         // ====================================================================
-        // Semantic Colors (mapped to CSS variables from constants.js)
+        // Semantic Colors (mapped to CSS variables from constants.ts)
         // Usage: text-primary, text-secondary, bg-primary, bg-secondary
         // ====================================================================
 

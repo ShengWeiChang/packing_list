@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/utils/instantiateTemplate.js
+File: source/utils/instantiateTemplate.ts
 Description: Create isolated runtime categories and items from template-shaped
              source content.
 Author: Sheng-Wei Chang
@@ -10,8 +10,9 @@ Created: 2026-10-15
 */
 
 import { Category } from '../models/Category';
+import type { TemplateContent } from '../models/contracts';
 import { Item } from '../models/Item';
-import { generateSecureId } from './helpers.js';
+import { generateSecureId } from './helpers';
 
 /**
  * Materialize template-shaped content for a newly created checklist.
@@ -19,8 +20,8 @@ import { generateSecureId } from './helpers.js';
  * @param {string} checklistId - Target checklist ID.
  * @returns {object} Fresh { categories, items } runtime data.
  */
-export function instantiateTemplateContent(source, checklistId) {
-  const categoryIdMap = {};
+export function instantiateTemplateContent(source: TemplateContent, checklistId: string) {
+  const categoryIdMap: Record<string, string> = {};
   const categories = (source.categories || []).map((category) => {
     const newCategory = new Category({
       name: category.name,
@@ -38,7 +39,7 @@ export function instantiateTemplateContent(source, checklistId) {
         name: item.name,
         quantity: item.quantity ?? 1,
         checklistId,
-        categoryId: categoryIdMap[item.categoryId] || item.categoryId,
+        categoryId: categoryIdMap[String(item.categoryId)] || item.categoryId,
         order: item.order ?? 0,
         isPacked: false,
         isPending: false,

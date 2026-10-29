@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/services/localStorageService.js
+File: source/services/localStorageService.ts
 Description: LocalStorage implementation of DataService providing persistent
              storage for checklists, categories and items.
 Author: Sheng-Wei Chang
@@ -17,12 +17,23 @@ import en from '../locales/en.json';
 import zhTW from '../locales/zh-TW.json';
 import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';
+import type {
+  CategoryDTO,
+  CategoryInput,
+  CategoryMutation,
+  ChecklistDTO,
+  ChecklistInput,
+  ChecklistMutation,
+  ItemDTO,
+  ItemInput,
+  ItemMutation,
+} from '../models/contracts';
 import { Item } from '../models/Item';
 import { Template } from '../models/Template';
-import { STORAGE_KEYS, VALIDATION } from '../utils/constants.js';
-import { instantiateTemplateContent } from '../utils/instantiateTemplate.js';
+import { STORAGE_KEYS, VALIDATION } from '../utils/constants';
+import { instantiateTemplateContent } from '../utils/instantiateTemplate';
 import { DataService } from './dataService';
-import { RecommendedListService } from './recommendedListService.js';
+import { RecommendedListService } from './recommendedListService';
 import {
   decodeAppData,
   decodeTemplates,
@@ -30,7 +41,14 @@ import {
   StorageError,
   withStorageLock,
   writeStorage,
-} from './storageTransaction.js';
+} from './storageTransaction';
+import type {
+  ChecklistSourceOptions,
+  StoredAppData,
+  StoredChecklist,
+  StoredItem,
+  StoredRecord,
+} from './storageTypes';
 
 /**
  * Merge only fields changed by the caller, rejecting stale same-field edits.
@@ -39,12 +57,16 @@ import {
  * @param {object} expected - Entity observed before editing.
  * @returns {object} Merged entity.
  */
-function mergeIntent(current, desired, expected) {
+function mergeIntent<T extends object>(
+  current: T,
+  desired: Partial<T>,
+  expected?: Partial<T>
+): Partial<T> {
   if (!expected) {
     throw new StorageError('conflict', 'An edit baseline is required');
   }
-  const merged = { ...current };
-  for (const key of Object.keys(desired)) {
+  const merged: Partial<T> = { ...current };
+  for (const key of Object.keys(desired) as (keyof T & string)[]) {
     if (key === 'id' || key === 'checklistId' || desired[key] === expected[key]) continue;
     if (current[key] !== expected[key]) {
       throw new StorageError('conflict', `The ${key} field changed in another tab`);
@@ -61,9 +83,13 @@ function mergeIntent(current, desired, expected) {
  * @param {object} expected - Item observed before editing.
  * @returns {object} Merged item.
  */
-function mergeItemIntent(current, desired, expected) {
+function mergeItemIntent(
+  current: ItemDTO,
+  desired: ItemMutation,
+  expected?: ItemMutation
+): Partial<ItemDTO> {
   if (!expected) return mergeIntent(current, desired, expected);
-  const statusFields = ['isPacked', 'isPending'];
+  const statusFields = ['isPacked', 'isPending'] as const;
   const statusChanged = statusFields.some(
     (field) => Object.hasOwn(desired, field) && desired[field] !== expected[field]
   );
@@ -85,6 +111,11 @@ function mergeItemIntent(current, desired, expected) {
  * LocalStorage implementation of the DataService
  */
 export class LocalStorageService extends DataService {
+  declare STORAGE_KEY: string;
+  declare _cache: StoredAppData | null;
+  declare _cacheRaw: string | null;
+  declare _initialized: boolean;
+  declare _storageListener?: ((event: StorageEvent) => void) | null;
   /**
    * Initialize the LocalStorage service with caching and cross-tab sync
    */
@@ -132,7 +163,7 @@ export class LocalStorageService extends DataService {
    * Save all data to localStorage and update cache
    * @param {object} data - Data object to save
    */
-  _saveData(data) {
+  _saveData(data: StoredAppData) {
     const candidate = decodeAppData(JSON.stringify(data));
     const raw = writeStorage(this.STORAGE_KEY, candidate);
     this._cache = decodeAppData(raw);
@@ -144,7 +175,7 @@ export class LocalStorageService extends DataService {
    * @param {Function} operation - Mutation to execute.
    * @returns {Promise<*>} Mutation result.
    */
-  async _withWriteLock(operation) {
+  async _withWriteLock<T>(operation: () => T | Promise<T>): Promise<T> {
     return withStorageLock(async () => {
       this._cache = null;
       this._cacheRaw = null;
@@ -157,7 +188,7 @@ export class LocalStorageService extends DataService {
    * @param {string} checklistId - The checklist ID
    * @returns {object} Object containing { categories: Array, items: Array }
    */
-  _createRecommendedListData(checklistId) {
+  _createRecommendedListData(checklistId: string) {
     const userLocale = this._getLocalePreference();
     return new RecommendedListService().applyGeneralToNewChecklist(checklistId, userLocale);
   }
@@ -170,7 +201,7 @@ export class LocalStorageService extends DataService {
    * Get all data with automatic caching
    * @returns {Promise<object>} Object containing { checklists: Array, categories: Array, items: Array }
    */
-  async getData() {
+  async getData(): Promise<StoredAppData> {
     await this._ensureInitialized();
     const raw = readStorage(this.STORAGE_KEY);
     if (!this._cache || raw !== this._cacheRaw) {
@@ -194,7 +225,10 @@ export class LocalStorageService extends DataService {
    * @param {object} [options.expectedTemplate] - Template observed when selected.
    * @returns {Promise<object>} Created checklist
    */
-  async createChecklist(checklist, options = {}) {
+  async createChecklist(
+    checklist: ChecklistInput,
+    options: ChecklistSourceOptions = {}
+  ): Promise<ChecklistDTO> {
     return this._withWriteLock(async () => {
       const { source = 'recommended', templateId, expectedTemplate } = options;
       let { seedData = null } = options;
@@ -251,7 +285,7 @@ export class LocalStorageService extends DataService {
    * Get all checklists
    * @returns {Promise<Array>} Array of Checklist objects
    */
-  async getChecklists() {
+  async getChecklists(): Promise<ChecklistDTO[]> {
     const data = await this.getData();
     return (data.checklists || []).map((cl) => Checklist.fromJSON(cl).toJSON());
   }
@@ -261,7 +295,7 @@ export class LocalStorageService extends DataService {
    * @param {string} id - Checklist ID
    * @returns {Promise<object | null>} Checklist object or null if not found
    */
-  async getChecklistById(id) {
+  async getChecklistById(id: string): Promise<ChecklistDTO | null> {
     const data = await this.getData();
     const checklistData = (data.checklists || []).find((cl) => cl.id === id);
     return checklistData ? Checklist.fromJSON(checklistData).toJSON() : null;
@@ -273,7 +307,10 @@ export class LocalStorageService extends DataService {
    * @param {object} [expectedChecklist] - Checklist before editing.
    * @returns {Promise<object>} Updated checklist
    */
-  async updateChecklist(checklist, expectedChecklist) {
+  async updateChecklist(
+    checklist: ChecklistMutation,
+    expectedChecklist?: ChecklistMutation
+  ): Promise<ChecklistDTO> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       const checklists = data.checklists || [];
@@ -285,9 +322,9 @@ export class LocalStorageService extends DataService {
 
       // Create a proper Checklist instance to ensure consistent structure
       const updatedChecklist = new Checklist(
-        mergeIntent(Checklist.fromJSON(checklists[index]).toJSON(), checklist, expectedChecklist)
+        mergeIntent(Checklist.fromJSON(checklists[index]!).toJSON(), checklist, expectedChecklist)
       );
-      checklists[index] = { ...checklists[index], ...updatedChecklist.toJSON() };
+      checklists[index]! = { ...checklists[index]!, ...updatedChecklist.toJSON() };
       data.checklists = checklists;
       this._saveData(data);
       return updatedChecklist.toJSON();
@@ -299,7 +336,7 @@ export class LocalStorageService extends DataService {
    * @param {string} id - Checklist ID to delete
    * @returns {Promise<void>}
    */
-  async deleteChecklist(id) {
+  async deleteChecklist(id: string): Promise<void> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       data.checklists = (data.checklists || []).filter((cl) => cl.id !== id);
@@ -317,7 +354,10 @@ export class LocalStorageService extends DataService {
    * @param {Array<object>} [expectedChecklists] - Checklists before editing.
    * @returns {Promise<Array<object>>} Array of updated checklists
    */
-  async updateMultipleChecklists(checklists, expectedChecklists) {
+  async updateMultipleChecklists(
+    checklists: ChecklistMutation[],
+    expectedChecklists?: ChecklistMutation[]
+  ): Promise<StoredChecklist[]> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       const checklistsArray = data.checklists || [];
@@ -338,19 +378,19 @@ export class LocalStorageService extends DataService {
         }
         const checklist = new Checklist(
           mergeIntent(
-            Checklist.fromJSON(checklistsArray[index]).toJSON(),
+            Checklist.fromJSON(checklistsArray[index]!).toJSON(),
             updatedChecklist,
             expected
           )
         );
-        checklistsArray[index] = { ...checklistsArray[index], ...checklist.toJSON() };
+        checklistsArray[index]! = { ...checklistsArray[index]!, ...checklist.toJSON() };
       });
 
       data.checklists = checklistsArray;
       this._saveData(data);
 
       // Return the updated checklists
-      return checklists.map((cl) => checklistsArray.find((stored) => stored.id === cl.id));
+      return checklists.map((cl) => checklistsArray.find((stored) => stored.id === cl.id)!);
     });
   }
 
@@ -359,7 +399,7 @@ export class LocalStorageService extends DataService {
    * @param {string} id - Checklist ID to duplicate
    * @returns {Promise<object>} Duplicated checklist
    */
-  async duplicateChecklist(id) {
+  async duplicateChecklist(id: string): Promise<ChecklistDTO> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       const originalChecklist = (data.checklists || []).find((cl) => cl.id === id);
@@ -371,11 +411,12 @@ export class LocalStorageService extends DataService {
       // Get the copy suffix from i18n
       const copySuffix = this._getCopySuffix();
 
+      // Raw names remain optional: preserve the existing failure if one is absent.
       // Truncate name if necessary to fit within max length constraint
       const maxLength = VALIDATION.NAME_MAX_LENGTH;
       const truncatedName =
-        originalChecklist.name.length + copySuffix.length > maxLength
-          ? originalChecklist.name.slice(0, maxLength - copySuffix.length)
+        originalChecklist.name!.length + copySuffix.length > maxLength
+          ? originalChecklist.name!.slice(0, maxLength - copySuffix.length)
           : originalChecklist.name;
 
       // Create new checklist with original name + copy suffix and NEW ID
@@ -403,7 +444,7 @@ export class LocalStorageService extends DataService {
       const originalItems = (data.items || []).filter((item) => item.checklistId === id);
 
       // Create mapping of old category IDs to new ones
-      const categoryIdMap = {};
+      const categoryIdMap: Record<string, string> = {};
       const newCategories = originalCategories.map((cat) => {
         const newCategory = new Category({
           name: cat.name,
@@ -420,7 +461,7 @@ export class LocalStorageService extends DataService {
           name: item.name,
           quantity: item.quantity,
           checklistId: newChecklist.id,
-          categoryId: categoryIdMap[item.categoryId] || item.categoryId,
+          categoryId: categoryIdMap[String(item.categoryId)] || item.categoryId,
           order: item.order,
           isPacked: false, // Reset packed status for new checklist
         });
@@ -446,7 +487,7 @@ export class LocalStorageService extends DataService {
    * @param {object} category - Category to create
    * @returns {Promise<object>} Created category
    */
-  async createCategory(checklistId, category) {
+  async createCategory(checklistId: string, category: CategoryInput): Promise<CategoryDTO> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       if (!data.checklists.some((checklist) => checklist.id === checklistId)) {
@@ -469,7 +510,7 @@ export class LocalStorageService extends DataService {
    * @param {string} [checklistId] - Optional checklist ID to filter by
    * @returns {Promise<Array>} Array of Category objects
    */
-  async getCategories(checklistId) {
+  async getCategories(checklistId?: string): Promise<CategoryDTO[]> {
     const data = await this.getData();
     return (data.categories || [])
       .map((cat) => Category.fromJSON(cat))
@@ -482,7 +523,7 @@ export class LocalStorageService extends DataService {
    * @param {string} categoryId - Category ID
    * @returns {Promise<object | null>} Category object or null if not found
    */
-  async getCategoryById(categoryId) {
+  async getCategoryById(categoryId: string): Promise<CategoryDTO | null> {
     const data = await this.getData();
     const catData = (data.categories || []).find((c) => c.id === categoryId);
     return catData ? Category.fromJSON(catData).toJSON() : null;
@@ -494,7 +535,10 @@ export class LocalStorageService extends DataService {
    * @param {object} [expectedCategory] - Category before editing.
    * @returns {Promise<object>} Updated category
    */
-  async updateCategory(category, expectedCategory) {
+  async updateCategory(
+    category: CategoryMutation,
+    expectedCategory?: CategoryMutation
+  ): Promise<CategoryDTO> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       const categories = data.categories || [];
@@ -505,9 +549,9 @@ export class LocalStorageService extends DataService {
       }
 
       const updatedCategory = new Category(
-        mergeIntent(Category.fromJSON(categories[index]).toJSON(), category, expectedCategory)
+        mergeIntent(Category.fromJSON(categories[index]!).toJSON(), category, expectedCategory)
       );
-      categories[index] = { ...categories[index], ...updatedCategory.toJSON() };
+      categories[index]! = { ...categories[index]!, ...updatedCategory.toJSON() };
       data.categories = categories;
       this._saveData(data);
       return updatedCategory.toJSON();
@@ -520,7 +564,10 @@ export class LocalStorageService extends DataService {
    * @param {Array<object>} expectedCategories - Categories before editing.
    * @returns {Promise<Array<object>>} Committed categories.
    */
-  async updateMultipleCategories(categories, expectedCategories) {
+  async updateMultipleCategories(
+    categories: CategoryMutation[],
+    expectedCategories: CategoryMutation[]
+  ): Promise<StoredRecord[]> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       const updated = categories.map((category) => {
@@ -529,12 +576,12 @@ export class LocalStorageService extends DataService {
         if (index === -1 || !expected) {
           throw new StorageError('conflict', `Category with id ${category.id} no longer exists`);
         }
-        const current = data.categories[index];
+        const current = data.categories[index]!;
         const merged = new Category(
           mergeIntent(Category.fromJSON(current).toJSON(), category, expected)
         );
-        data.categories[index] = { ...current, ...merged.toJSON() };
-        return data.categories[index];
+        data.categories[index]! = { ...current, ...merged.toJSON() };
+        return data.categories[index]!;
       });
       this._saveData(data);
       return updated;
@@ -546,7 +593,7 @@ export class LocalStorageService extends DataService {
    * @param {string} categoryId - Category ID to delete
    * @returns {Promise<void>}
    */
-  async deleteCategory(categoryId) {
+  async deleteCategory(categoryId: string): Promise<void> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       data.categories = (data.categories || []).filter((cat) => cat.id !== categoryId);
@@ -561,7 +608,7 @@ export class LocalStorageService extends DataService {
    * @param {string} categoryId - Category ID to duplicate
    * @returns {Promise<object>} Duplicated category
    */
-  async duplicateCategory(categoryId) {
+  async duplicateCategory(categoryId: string): Promise<CategoryDTO> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       const originalCategory = (data.categories || []).find((cat) => cat.id === categoryId);
@@ -573,11 +620,12 @@ export class LocalStorageService extends DataService {
       // Get the copy suffix from i18n
       const copySuffix = this._getCopySuffix();
 
+      // Raw names remain optional: preserve the existing failure if one is absent.
       // Truncate name if necessary to fit within max length constraint
       const maxLength = VALIDATION.NAME_MAX_LENGTH;
       const truncatedName =
-        originalCategory.name.length + copySuffix.length > maxLength
-          ? originalCategory.name.slice(0, maxLength - copySuffix.length)
+        originalCategory.name!.length + copySuffix.length > maxLength
+          ? originalCategory.name!.slice(0, maxLength - copySuffix.length)
           : originalCategory.name;
 
       // Create new category with original name + copy suffix and NEW ID
@@ -585,16 +633,16 @@ export class LocalStorageService extends DataService {
       const newCategory = new Category({
         name: `${truncatedName}${copySuffix}`,
         checklistId: originalCategory.checklistId,
-        order: originalCategory.order + 1,
+        order: Number(originalCategory.order) + 1,
       });
 
       // Reorder all categories in the same checklist that come after the original
       data.categories = (data.categories || []).map((cat) => {
         if (
           cat.checklistId === originalCategory.checklistId &&
-          cat.order > originalCategory.order
+          Number(cat.order) > Number(originalCategory.order)
         ) {
-          return { ...cat, order: cat.order + 1 };
+          return { ...cat, order: Number(cat.order) + 1 };
         }
         return cat;
       });
@@ -633,7 +681,7 @@ export class LocalStorageService extends DataService {
    * @param {object} item - Item to create
    * @returns {Promise<object>} Created Item object
    */
-  async createItem(checklistId, item) {
+  async createItem(checklistId: string, item: ItemInput): Promise<ItemDTO> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       if (!data.checklists.some((checklist) => checklist.id === checklistId)) {
@@ -663,7 +711,7 @@ export class LocalStorageService extends DataService {
    * @param {string} checklistId - Checklist ID
    * @returns {Promise<Array>} Array of Item objects
    */
-  async getItems(checklistId) {
+  async getItems(checklistId: string): Promise<ItemDTO[]> {
     const data = await this.getData();
     return (data.items || [])
       .filter((item) => item.checklistId === checklistId)
@@ -676,7 +724,7 @@ export class LocalStorageService extends DataService {
    * @param {string} itemId - Item ID
    * @returns {Promise<object | null>} Item object or null if not found
    */
-  async getItemById(checklistId, itemId) {
+  async getItemById(checklistId: string, itemId: string): Promise<ItemDTO | null> {
     const data = await this.getData();
     const itemData = (data.items || []).find(
       (i) => i.checklistId === checklistId && i.id === itemId
@@ -691,7 +739,11 @@ export class LocalStorageService extends DataService {
    * @param {object} [expectedItem] - Item before editing.
    * @returns {Promise<object>} Updated Item object
    */
-  async updateItem(checklistId, item, expectedItem) {
+  async updateItem(
+    checklistId: string,
+    item: ItemMutation,
+    expectedItem?: ItemMutation
+  ): Promise<ItemDTO> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       const items = data.items || [];
@@ -706,11 +758,11 @@ export class LocalStorageService extends DataService {
 
       // Create a proper Item instance to ensure consistent structure
       const updatedItem = new Item({
-        ...mergeItemIntent(Item.fromJSON(items[index]).toJSON(), item, expectedItem),
+        ...mergeItemIntent(Item.fromJSON(items[index]!).toJSON(), item, expectedItem),
         checklistId,
       });
       if (
-        updatedItem.categoryId !== items[index].categoryId &&
+        updatedItem.categoryId !== items[index]!.categoryId &&
         !data.categories.some(
           (category) =>
             category.id === updatedItem.categoryId && category.checklistId === checklistId
@@ -718,7 +770,7 @@ export class LocalStorageService extends DataService {
       ) {
         throw new StorageError('conflict', 'The destination category no longer exists');
       }
-      items[index] = { ...items[index], ...updatedItem.toJSON() };
+      items[index]! = { ...items[index]!, ...updatedItem.toJSON() };
       data.items = items;
       this._saveData(data);
       return updatedItem.toJSON();
@@ -732,7 +784,11 @@ export class LocalStorageService extends DataService {
    * @param {Array<object>} [expectedItems] - Items before editing.
    * @returns {Promise<Array<object>>} Updated Item objects
    */
-  async updateMultipleItems(checklistId, itemsToUpdate, expectedItems) {
+  async updateMultipleItems(
+    checklistId: string,
+    itemsToUpdate: ItemMutation[],
+    expectedItems?: ItemMutation[]
+  ): Promise<StoredItem[]> {
     return this._withWriteLock(async () => {
       const currentData = await this.getData();
       const data = {
@@ -749,7 +805,7 @@ export class LocalStorageService extends DataService {
 
       const missingItemIndex = indexes.findIndex((index) => index === -1);
       if (missingItemIndex !== -1) {
-        const missingItem = updatedItems[missingItemIndex];
+        const missingItem = updatedItems[missingItemIndex]!;
         throw new StorageError(
           'conflict',
           `Item with id ${missingItem.id} not found in checklist ${checklistId}`
@@ -762,10 +818,10 @@ export class LocalStorageService extends DataService {
           throw new StorageError('conflict', `Item with id ${item.id} has no baseline`);
         }
         const candidate = new Item(
-          mergeItemIntent(Item.fromJSON(items[indexes[index]]).toJSON(), item.toJSON(), expected)
+          mergeItemIntent(Item.fromJSON(items[indexes[index]!]!).toJSON(), item.toJSON(), expected)
         ).toJSON();
         if (
-          candidate.categoryId !== items[indexes[index]].categoryId &&
+          candidate.categoryId !== items[indexes[index]!]!.categoryId &&
           !data.categories.some(
             (category) =>
               category.id === candidate.categoryId && category.checklistId === checklistId
@@ -773,14 +829,14 @@ export class LocalStorageService extends DataService {
         ) {
           throw new StorageError('conflict', 'The destination category no longer exists');
         }
-        items[indexes[index]] = {
-          ...items[indexes[index]],
+        items[indexes[index]!]! = {
+          ...items[indexes[index]!]!,
           ...candidate,
         };
       });
       data.items = items;
       this._saveData(data);
-      return indexes.map((index) => items[index]);
+      return indexes.map((index) => items[index]!);
     });
   }
 
@@ -790,7 +846,7 @@ export class LocalStorageService extends DataService {
    * @param {string} itemId - Item ID to delete
    * @returns {Promise<void>}
    */
-  async deleteItem(checklistId, itemId) {
+  async deleteItem(checklistId: string, itemId: string): Promise<void> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       data.items = (data.items || []).filter(
@@ -806,7 +862,7 @@ export class LocalStorageService extends DataService {
    * @param {string} itemId - Item ID to duplicate
    * @returns {Promise<object>} Duplicated item
    */
-  async duplicateItem(checklistId, itemId) {
+  async duplicateItem(checklistId: string, itemId: string): Promise<ItemDTO> {
     return this._withWriteLock(async () => {
       const data = await this.getData();
       const originalItem = (data.items || []).find(
@@ -820,6 +876,7 @@ export class LocalStorageService extends DataService {
       // Get the copy suffix from i18n
       const copySuffix = this._getCopySuffix();
 
+      // Raw names remain optional: preserve the existing failure if one is absent.
       // Truncate name if necessary to fit within max length constraint
       const maxLength = VALIDATION.NAME_MAX_LENGTH;
       const truncatedName =
@@ -834,7 +891,7 @@ export class LocalStorageService extends DataService {
         quantity: originalItem.quantity,
         checklistId: checklistId,
         categoryId: originalItem.categoryId,
-        order: originalItem.order + 1,
+        order: Number(originalItem.order) + 1,
         isPacked: false, // Reset packed status for new item
       });
 
@@ -843,9 +900,9 @@ export class LocalStorageService extends DataService {
         if (
           item.checklistId === checklistId &&
           item.categoryId === originalItem.categoryId &&
-          item.order > originalItem.order
+          Number(item.order) > Number(originalItem.order)
         ) {
-          return { ...item, order: item.order + 1 };
+          return { ...item, order: Number(item.order) + 1 };
         }
         return item;
       });
@@ -864,9 +921,9 @@ export class LocalStorageService extends DataService {
    * @returns {string} The localized copy suffix
    * @private
    */
-  _getCopySuffix(locale) {
+  _getCopySuffix(locale?: string) {
     const userLocale = locale || this._getLocalePreference();
-    const messages = {
+    const messages: Record<string, typeof en | undefined> = {
       en,
       'zh-TW': zhTW,
     };
@@ -892,7 +949,7 @@ export class LocalStorageService extends DataService {
     const isBrowser =
       typeof window !== 'undefined' && typeof window.addEventListener === 'function';
     if (isBrowser) {
-      window.removeEventListener('storage', this._storageListener);
+      window.removeEventListener('storage', this._storageListener!);
       this._storageListener = null;
     }
 

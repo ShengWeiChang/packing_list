@@ -16,7 +16,7 @@ Created: 2026-10-13
 import { getCurrentInstance, onMounted, onUnmounted, readonly, ref } from 'vue';
 
 import { TemplateService } from '../services/templateService';
-import { STORAGE_KEYS } from '../utils/constants.js';
+import { STORAGE_KEYS } from '../utils/constants';
 
 /**
  * Composable for managing personal checklist templates

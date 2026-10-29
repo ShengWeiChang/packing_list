@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/models/Template.js
+File: source/models/Template.ts
 Description: Template model class with validation, serialization and
              secure ID generation for personal checklist templates.
 Author: Sheng-Wei Chang
@@ -13,8 +13,9 @@ Created: 2026-10-13
 // Imports
 // -----------------------------------------------------------------------------
 
-import { VALIDATION } from '../utils/constants.js';
-import { generateSecureId } from '../utils/helpers.js';
+import { VALIDATION } from '../utils/constants';
+import { generateSecureId } from '../utils/helpers';
+import type { CategorySnapshot, ItemSnapshot, TemplateDTO, TemplateInput } from './contracts';
 
 // -----------------------------------------------------------------------------
 // Class definition
@@ -23,7 +24,13 @@ import { generateSecureId } from '../utils/helpers.js';
 /**
  * Represents a personal checklist template containing categories and items
  */
-export class Template {
+export class Template implements TemplateDTO {
+  declare id: string;
+  declare name: string;
+  declare order: number;
+  declare categories: CategorySnapshot[];
+  declare items: ItemSnapshot[];
+
   /**
    * Template class constructor
    * @param {object} root0 - Template configuration object
@@ -39,7 +46,7 @@ export class Template {
     order = 0,
     categories = [],
     items = [],
-  } = {}) {
+  }: TemplateInput = {}) {
     this.id = id;
     this.name = this.validateName(name);
     this.order = Number(order) || 0;
@@ -52,7 +59,7 @@ export class Template {
    * @param {string} name - The name to validate
    * @returns {string} Validated name
    */
-  validateName(name) {
+  validateName(name: unknown): string {
     if (typeof name !== 'string') {
       throw new Error('Template name must be a string');
     }
@@ -71,7 +78,7 @@ export class Template {
    * @param {object} json - The JSON data to create the template from
    * @returns {Template} A new Template instance
    */
-  static fromJSON(json) {
+  static fromJSON(json: TemplateInput): Template {
     return new Template(json);
   }
 
@@ -79,7 +86,7 @@ export class Template {
    * Converts the template instance to JSON format
    * @returns {object} The JSON representation of the template
    */
-  toJSON() {
+  toJSON(): TemplateDTO {
     return {
       id: this.id,
       name: this.name,

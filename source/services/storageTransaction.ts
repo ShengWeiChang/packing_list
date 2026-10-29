@@ -1,24 +1,39 @@
 /*
 ================================================================================
-File: source/services/storageTransaction.js
+File: source/services/storageTransaction.ts
 Description: Shared localStorage decoding and cross-context write coordination.
 License: MIT (SPDX: MIT)
 ================================================================================
 */
 
-import { VALIDATION } from '../utils/constants.js';
+import type { ItemSnapshot } from '../models/contracts';
+import { VALIDATION } from '../utils/constants';
+import type {
+  StorageErrorCode,
+  StoredAppData,
+  StoredChecklist,
+  StoredItem,
+  StoredRecord,
+  StoredTemplate,
+} from './storageTypes';
+
+/** Narrow a JSON object before examining its fields. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
 
 const STORAGE_LOCK_NAME = 'packing-list-storage-write';
 
 /** A storage failure that can be translated at the application boundary. */
 export class StorageError extends Error {
+  declare code: StorageErrorCode;
   /**
    * Create a storage error.
    * @param {string} code - Stable error category.
    * @param {string} message - Diagnostic message.
    * @param {Error} [cause] - Original failure, if present.
    */
-  constructor(code, message, cause) {
+  constructor(code: StorageErrorCode, message: string, cause?: unknown) {
     super(message, cause ? { cause } : undefined);
     this.name = 'StorageError';
     this.code = code;
@@ -30,7 +45,7 @@ export class StorageError extends Error {
  * @param {string} key - Storage key.
  * @returns {string|null} Original stored string, or null for a missing key.
  */
-export function readStorage(key) {
+export function readStorage(key: string) {
   try {
     return localStorage.getItem(key);
   } catch (error) {
@@ -43,7 +58,7 @@ export function readStorage(key) {
  * @param {string} raw - Original stored string.
  * @returns {*} Parsed JSON value.
  */
-function parseStoredJson(raw) {
+function parseStoredJson(raw: string): unknown {
   try {
     return JSON.parse(raw);
   } catch (error) {
@@ -56,16 +71,10 @@ function parseStoredJson(raw) {
  * @param {Array<object>} records - Stored records.
  * @param {string} label - Collection name for diagnostics.
  */
-function validateRecords(records, label) {
+function validateRecords(records: unknown[], label: string): asserts records is StoredRecord[] {
   const ids = new Set();
   for (const record of records) {
-    if (
-      !record ||
-      typeof record !== 'object' ||
-      Array.isArray(record) ||
-      typeof record.id !== 'string' ||
-      record.id.length === 0
-    ) {
+    if (!record || !isRecord(record) || typeof record.id !== 'string' || record.id.length === 0) {
       throw new StorageError('corrupt', `Stored ${label} contains an invalid record`);
     }
     if (ids.has(record.id)) {
@@ -75,7 +84,7 @@ function validateRecords(records, label) {
     if (record.name !== undefined && typeof record.name !== 'string') {
       throw new StorageError('corrupt', `Stored ${label} contains an invalid name`);
     }
-    if (record.name?.length > VALIDATION.NAME_MAX_LENGTH) {
+    if ((record.name?.length ?? 0) > VALIDATION.NAME_MAX_LENGTH) {
       throw new StorageError('corrupt', `Stored ${label} contains an invalid name`);
     }
     if (
@@ -96,7 +105,9 @@ function validateRecords(records, label) {
  * Validate persisted item fields without changing their legacy boolean semantics.
  * @param {object} item - Stored item or template snapshot.
  */
-function validateItem(item) {
+function validateItem(
+  item: Record<string, unknown>
+): asserts item is ItemSnapshot & Record<string, unknown> {
   if (
     typeof item.name !== 'string' ||
     item.name.length < VALIDATION.NAME_MIN_LENGTH ||
@@ -130,11 +141,11 @@ function validateItem(item) {
  * @param {string|null} raw - Original application storage value.
  * @returns {object} Application data with its legacy collections normalized.
  */
-export function decodeAppData(raw) {
+export function decodeAppData(raw: string | null): StoredAppData {
   if (raw === null) return { checklists: [], categories: [], items: [] };
 
   const data = parseStoredJson(raw);
-  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+  if (!isRecord(data)) {
     throw new StorageError('corrupt', 'Stored application data has an invalid shape');
   }
   if (Object.prototype.hasOwnProperty.call(data, 'schemaVersion')) {
@@ -145,19 +156,23 @@ export function decodeAppData(raw) {
     if (data[key] !== undefined && !Array.isArray(data[key])) {
       throw new StorageError('corrupt', `Stored ${key} must be an array`);
     }
-    validateRecords(data[key] ?? [], key);
+    validateRecords((data[key] ?? []) as unknown[], key);
   }
-  for (const item of data.items ?? []) validateItem(item);
+  // The loop above validates every collection; item validation adds its narrower fields.
+  const checklists = (data.checklists ?? []) as StoredRecord[];
+  const categories = (data.categories ?? []) as StoredRecord[];
+  const items = (data.items ?? []) as StoredRecord[];
+  for (const item of items) validateItem(item);
 
   return {
     ...data,
-    checklists: (data.checklists ?? []).map((checklist, index) =>
+    checklists: checklists.map((checklist, index) =>
       checklist.order === undefined ? { ...checklist, order: index } : checklist
-    ),
-    categories: data.categories ?? [],
-    items: (data.items ?? []).map((item) =>
+    ) as StoredChecklist[],
+    categories,
+    items: items.map((item) =>
       item.isPending === undefined ? { ...item, isPending: false } : item
-    ),
+    ) as StoredItem[],
   };
 }
 
@@ -166,7 +181,7 @@ export function decodeAppData(raw) {
  * @param {string|null} raw - Original template storage value.
  * @returns {Array<object>} Stored templates.
  */
-export function decodeTemplates(raw) {
+export function decodeTemplates(raw: string | null): StoredTemplate[] {
   if (raw === null) return [];
   const data = parseStoredJson(raw);
   if (data && typeof data === 'object' && !Array.isArray(data) && 'schemaVersion' in data) {
@@ -182,14 +197,9 @@ export function decodeTemplates(raw) {
         throw new StorageError('corrupt', `Stored template ${key} must be an array`);
       }
     }
-    validateRecords(template.categories ?? [], 'template categories');
-    for (const item of template.items ?? []) {
-      if (
-        !item ||
-        typeof item !== 'object' ||
-        Array.isArray(item) ||
-        typeof item.name !== 'string'
-      ) {
+    validateRecords((template.categories ?? []) as unknown[], 'template categories');
+    for (const item of (template.items ?? []) as unknown[]) {
+      if (!isRecord(item) || typeof item.name !== 'string') {
         throw new StorageError('corrupt', 'Stored template items contain an invalid record');
       }
       validateItem(item);
@@ -198,7 +208,8 @@ export function decodeTemplates(raw) {
       }
     }
   }
-  return data;
+  // Nested arrays, references, and item fields have all been checked above.
+  return data as StoredTemplate[];
 }
 
 /**
@@ -207,14 +218,15 @@ export function decodeTemplates(raw) {
  * @param {*} value - Complete candidate data.
  * @returns {string} Serialized value committed to storage.
  */
-export function writeStorage(key, value) {
+export function writeStorage(key: string, value: object): string {
   try {
     const raw = JSON.stringify(value);
     localStorage.setItem(key, raw);
     return raw;
   } catch (error) {
-    const code = error?.name === 'QuotaExceededError' ? 'quota' : 'unavailable';
-    throw new StorageError(code, `Storage operation failed: ${error.message}`, error);
+    const code = isRecord(error) && error.name === 'QuotaExceededError' ? 'quota' : 'unavailable';
+    const message = isRecord(error) ? error.message : undefined;
+    throw new StorageError(code, `Storage operation failed: ${message}`, error);
   }
 }
 
@@ -223,7 +235,7 @@ export function writeStorage(key, value) {
  * @param {Function} operation - Operation performed while holding the lock.
  * @returns {Promise<*>} The operation result.
  */
-export async function withStorageLock(operation) {
+export async function withStorageLock<T>(operation: () => T | Promise<T>): Promise<T> {
   if (typeof navigator === 'undefined' || typeof navigator.locks?.request !== 'function') {
     throw new StorageError('lock-unavailable', 'Safe browser storage writes are unavailable');
   }

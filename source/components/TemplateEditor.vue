@@ -101,7 +101,7 @@ import { useI18n } from 'vue-i18n';
 
 import { Category } from '../models/Category';
 import { Item } from '../models/Item';
-import { generateSecureId } from '../utils/helpers.js';
+import { generateSecureId } from '../utils/helpers';
 import Checklist from './Checklist.vue';
 
 // ------------------------------------------------------------------------------

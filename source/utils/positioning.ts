@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/utils/positioning.js
+File: source/utils/positioning.ts
 Description: Positioning helpers for dropdowns/popovers.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
@@ -19,9 +19,9 @@ Created: 2026-02-11
  * @returns {number} Clamped left position in pixels.
  */
 export function clampDropdownLeft(
-  anchorRect,
-  dropdownRect,
-  viewportWidth,
+  anchorRect: { left: number; top: number },
+  dropdownRect: { width: number; height: number },
+  viewportWidth: number,
   { minPadding = 8 } = {}
 ) {
   let left = anchorRect.left;
@@ -45,16 +45,16 @@ export function clampDropdownLeft(
  * @returns {{ position: 'fixed', left: string, top: string, zIndex: number }} CSS positioning object for inline style binding.
  */
 export function positionDropdownAbove(
-  anchorRect,
-  dropdownRect,
-  viewport,
+  anchorRect: { left: number; top: number },
+  dropdownRect: { width: number; height: number },
+  viewport: { width: number },
   { gap = 8, minPadding = 8 } = {}
 ) {
   const left = clampDropdownLeft(anchorRect, dropdownRect, viewport.width, { minPadding });
   const top = anchorRect.top - dropdownRect.height - gap;
 
   return {
-    position: 'fixed',
+    position: 'fixed' as const,
     left: `${left}px`,
     top: `${top}px`,
     zIndex: 9999,

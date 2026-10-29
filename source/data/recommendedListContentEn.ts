@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/data/recommendedListContentEn.js
+File: source/data/recommendedListContentEn.ts
 Description: English display content for built-in recommended packing lists.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)

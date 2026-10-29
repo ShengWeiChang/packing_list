@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 683    |
-| Unit tests 單元測試           | 298    |
+| Total tests 總測試數          | 686    |
+| Unit tests 單元測試           | 301    |
 | Component tests 組件測試      | 296    |
 | E2E tests E2E 測試            | 89     |
-| Line coverage 行覆蓋率        | 92.90% |
-| Statement coverage 語句覆蓋率 | 91.28% |
-| Branch coverage 分支覆蓋率    | 81.31% |
+| Line coverage 行覆蓋率        | 92.91% |
+| Statement coverage 語句覆蓋率 | 91.30% |
+| Branch coverage 分支覆蓋率    | 81.32% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,7 +29,7 @@
 
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 298   | models、services、composables、utils 純邏輯 |
+| Unit      | Vitest                   | 301   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 296   | Vue 組件渲染、事件、狀態                    |
 | E2E       | Playwright               | 89    | 真實瀏覽器中的完整使用者流程                |
 
@@ -49,7 +49,7 @@
 
 `npm run typecheck` 是獨立的靜態 gate，不是第四個 runtime 測試層。它先檢查 source／compiler 範圍，再檢查應用與 `tests/type-tests/` 契約。Vitest 排除此目錄；compile-only assertions 與預期錯誤診斷 probes 不計入 runtime 總數或 runtime coverage。
 
-初始 infrastructure suite 證明數值 ref 推導、null narrowing、indexed-access 安全性與真實 SFC props／emits。兩個隔離 probe 要求刻意無效的 TS 及 Vue template fixture 只產生 TS2322；無關的缺少模組、設定錯誤、crash 或意外成功都會使 probe 失敗。後續遷移 milestone 會針對真實 owner 加入 domain／operation 契約。
+初始 infrastructure suite 證明數值 ref 推導、null narrowing、indexed-access 安全性與真實 SFC props／emits。兩個隔離 probe 要求刻意無效的 TS 及 Vue template fixture 只產生 TS2322；無關的缺少模組、設定錯誤、crash 或意外成功都會使 probe 失敗。Domain／storage suite 檢查實際 model 正規化、舊資料 unknown 欄位、可攜 snapshot、seed source、mutation baseline、nullable 查詢、lock 結果、JSON clone、debounce 參數與純資料排序與欄位覆寫。
 
 Gate 明確回報尚未檢查的 JS 與 Vue JavaScript scripts；進入 compiler roots 不代表已完整檢查型別。`skipLibCheck: true` 是已接受的 Vue／i18n 宣告相容性例外，詳見 Code Quality Guide。
 
@@ -61,10 +61,11 @@ tests/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
 ├── type-tests/                          # Compile-only; excluded from runtime counts
+│   ├── contracts.test.ts               # Domain／storage、snapshot、callback 契約
 │   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
 │   └── fixtures/                        # Typed probe and deliberately invalid inputs
 │
-├── unit-tests/                          # 298 tests
+├── unit-tests/                          # 301 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -72,10 +73,10 @@ tests/
 │   │   ├── Category.test.js             #  9  tests
 │   │   └── Checklist.test.js            # 11  tests
 │   │   └── Template.test.js             #  3  tests
-│   ├── services/                        # 123 tests
+│   ├── services/                        # 126 tests
 │   │   ├── localStorageService.test.js  # 80  tests
 │   │   ├── templateService.test.js      # 15  tests
-│   │   ├── storageTransaction.test.js  # 24  tests
+│   │   ├── storageTransaction.test.js  # 27  tests
 │   │   └── recommendedListService.test.js  #  4  tests
 │   ├── composables/                     # 66  tests
 │   │   └── usePackingLists.test.js      # 51  tests
@@ -102,7 +103,7 @@ tests/
 │   ├── Item.test.js                     # 27  tests
 │   ├── Sidebar.test.js                  # 33  tests
 │   ├── Category.test.js                 # 31  tests
-│   ├── OverflowMenu.test.js             # 24  tests
+│   ├── OverflowMenu.test.js             # 27  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
 │   ├── Topbar.test.js                   #  2  tests
@@ -151,8 +152,8 @@ tests/
 | components/  | 91.52%     | 82.42% | 94.29% |
 | composables/ | 95.41%     | 87.03% | 97.37% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 95.50%     | 83.06% | 95.22% |
-| utils/       | 98.92%     | 87.69% | 100%   |
+| services/    | 95.55%     | 82.84% | 95.28% |
+| utils/       | 98.92%     | 89.23% | 100%   |
 
 ### By Component 各組件覆蓋率
 
@@ -251,7 +252,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ## 8. Complete Test Inventory 完整測試案例清單
 
-### 8.1 Unit Tests（298）
+### 8.1 Unit Tests（301）
 
 #### 8.1.1 Models（40）
 
@@ -315,7 +316,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | trims its name and round-trips snapshot content  | 序列化     |
 | 3   | rejects a non-string or too-long name            | 名稱驗證   |
 
-#### 8.1.2 Services（123）
+#### 8.1.2 Services（126）
 
 ##### 8.1.2.1 localStorageService.test.js（80）
 
@@ -431,34 +432,37 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 3   | rejects missing recommended lists                                    | 缺少推薦清單防護       |
 | 4   | applies the localized general recommended list                       | 一般推薦清單與語系選擇 |
 
-##### 8.1.2.4 storageTransaction.test.js（24）
+##### 8.1.2.4 storageTransaction.test.js（27）
 
-| #   | Test                                                                          | 測試重點         |
-| --- | ----------------------------------------------------------------------------- | ---------------- |
-| 1   | keeps durable and readable data unchanged after a failed write                | 寫入失敗隔離     |
-| 2   | preserves app and template data when any supported mutation cannot be saved   | 各種修改失敗覆蓋 |
-| 3   | does not expose mutable references to committed data                          | 獨立快照         |
-| 4   | preserves corrupted application data and rejects writes                       | 損壞資料保留     |
-| 5   | rejects an unsupported application schema without replacing it                | 版本防護         |
-| 6   | rejects records without identity instead of generating a new id               | 身分防護         |
-| 7   | preserves malformed template snapshots and refuses to overwrite them          | 模板資料保留     |
-| 8   | rejects wrong-typed persisted fields without normalizing them into new values | 型別防護         |
-| 9   | refuses writes when safe cross-tab locking is unavailable                     | 唯讀後備         |
-| 10  | normalizes legacy defaults in memory without rewriting the stored bytes       | 非破壞性讀取     |
-| 11  | keeps both templates when an earlier reader creates after another writer      | 最新模板寫入     |
-| 12  | serializes simultaneous checklist creation across service instances           | 併發寫入         |
-| 13  | merges unrelated field changes and rejects stale edits to the same field      | 欄位意圖與衝突   |
-| 14  | does not create a category or item after its owner was deleted                | 所屬對象防護     |
-| 15  | rejects an entire batch when one item conflicts                               | 原子物品批次     |
-| 16  | does not partially reorder categories if a category was deleted               | 原子類別批次     |
-| 17  | rejects a template draft if another tab changed its original snapshot         | 模板衝突         |
-| 18  | rejects a queued item move after another writer deletes its destination       | 目的地衝突       |
-| 19  | rejects queued checklist creation after the selected template is deleted      | 已刪除模板防護   |
-| 20  | preserves corrupted template data and refuses queued checklist creation       | 損壞模板防護     |
-| 21  | 任一順序都拒絕過期打包與待處理變更                                            | 關聯狀態衝突     |
-| 22  | 關聯狀態衝突時拒絕整個批次                                                    | 原子批次狀態     |
-| 23  | 兩種順序都可合併狀態與無關編輯                                                | 無關欄位合併     |
-| 24  | 拒絕矛盾狀態寫入並保留舊資料值                                                | 舊資料相容       |
+| #   | Test                                                                          | 測試重點                     |
+| --- | ----------------------------------------------------------------------------- | ---------------------------- |
+| 1   | keeps durable and readable data unchanged after a failed write                | 寫入失敗隔離                 |
+| 2   | preserves app and template data when any supported mutation cannot be saved   | 各種修改失敗覆蓋             |
+| 3   | does not expose mutable references to committed data                          | 獨立快照                     |
+| 4   | preserves corrupted application data and rejects writes                       | 損壞資料保留                 |
+| 5   | rejects an unsupported application schema without replacing it                | 版本防護                     |
+| 6   | rejects records without identity instead of generating a new id               | 身分防護                     |
+| 7   | preserves malformed template snapshots and refuses to overwrite them          | 模板資料保留                 |
+| 8   | rejects wrong-typed persisted fields without normalizing them into new values | 型別防護                     |
+| 9   | refuses writes when safe cross-tab locking is unavailable                     | 唯讀後備                     |
+| 10  | normalizes legacy defaults in memory without rewriting the stored bytes       | 非破壞性讀取                 |
+| 11  | keeps both templates when an earlier reader creates after another writer      | 最新模板寫入                 |
+| 12  | serializes simultaneous checklist creation across service instances           | 併發寫入                     |
+| 13  | merges unrelated field changes and rejects stale edits to the same field      | 欄位意圖與衝突               |
+| 14  | does not create a category or item after its owner was deleted                | 所屬對象防護                 |
+| 15  | rejects an entire batch when one item conflicts                               | 原子物品批次                 |
+| 16  | does not partially reorder categories if a category was deleted               | 原子類別批次                 |
+| 17  | rejects a template draft if another tab changed its original snapshot         | 模板衝突                     |
+| 18  | rejects a queued item move after another writer deletes its destination       | 目的地衝突                   |
+| 19  | rejects queued checklist creation after the selected template is deleted      | 已刪除模板防護               |
+| 20  | preserves corrupted template data and refuses queued checklist creation       | 損壞模板防護                 |
+| 21  | 任一順序都拒絕過期打包與待處理變更                                            | 關聯狀態衝突                 |
+| 22  | 關聯狀態衝突時拒絕整個批次                                                    | 原子批次狀態                 |
+| 23  | 兩種順序都可合併狀態與無關編輯                                                | 無關欄位合併                 |
+| 24  | 拒絕矛盾狀態寫入並保留舊資料值                                                | 舊資料相容                   |
+| 25  | 讀寫保留舊日期、數量字串、truthiness 與額外欄位                               | 原始／model 邊界與讀取不寫回 |
+| 26  | 保留範本巢狀欄位並隔離新建立的 runtime 狀態                                   | Snapshot 保留與全新狀態      |
+| 27  | 複製原始資料時不偷偷修復缺漏的舊名稱                                          | 既有失敗行為與原文保留       |
 
 #### 8.1.3 Composables（66）
 

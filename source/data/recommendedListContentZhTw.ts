@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/data/recommendedListContentZhTw.js
+File: source/data/recommendedListContentZhTw.ts
 Description: Traditional Chinese display content for built-in recommended
              packing lists.
 Author: Sheng-Wei Chang
@@ -8,6 +8,8 @@ License: MIT (SPDX: MIT)
 Created: 2026-10-15
 ================================================================================
 */
+
+import type { recommendedListContentEn } from './recommendedListContentEn';
 
 export const recommendedListContentZhTw = {
   recommendedLists: {
@@ -118,4 +120,4 @@ export const recommendedListContentZhTw = {
     internetAccess: '網路（eSIM／Wi-Fi）',
     umbrella: '雨傘',
   },
-};
+} satisfies typeof recommendedListContentEn;

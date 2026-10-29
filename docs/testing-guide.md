@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 683    |
-| Unit tests         | 298    |
+| Total tests        | 686    |
+| Unit tests         | 301    |
 | Component tests    | 296    |
 | E2E tests          | 89     |
-| Line coverage      | 92.90% |
-| Statement coverage | 91.28% |
-| Branch coverage    | 81.31% |
+| Line coverage      | 92.91% |
+| Statement coverage | 91.30% |
+| Branch coverage    | 81.32% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -29,7 +29,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 298   | Pure logic in models, services, composables, utils |
+| Unit      | Vitest                   | 301   | Pure logic in models, services, composables, utils |
 | Component | Vitest + @vue/test-utils | 296   | Vue component rendering, events, state             |
 | E2E       | Playwright               | 89    | Full user flows in a real browser                  |
 
@@ -49,7 +49,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 `npm run typecheck` is a separate static gate, not a fourth runtime test layer. It checks source/compiler scope, then the application and `tests/type-tests/` contracts. Vitest excludes this directory; compile-only assertions and expected diagnostic probes do not count toward runtime totals or runtime coverage.
 
-The initial infrastructure suite proves numeric ref inference, null narrowing, indexed-access safety, and real SFC props/emits. Two isolated probes require exactly TS2322 in deliberately invalid TS and Vue template fixtures; an unrelated missing module, config error, crash, or unexpected success fails the probe. Later migration milestones add domain/operation contracts against their real owners.
+The initial infrastructure suite proves numeric ref inference, null narrowing, indexed-access safety, and real SFC props/emits. Two isolated probes require exactly TS2322 in deliberately invalid TS and Vue template fixtures; an unrelated missing module, config error, crash, or unexpected success fails the probe. The domain/storage suite checks real model normalization, legacy unknown fields, portable snapshots, seed sources, mutation baselines, nullable lookups, lock results, JSON cloning, debounce arguments, and plain-data ordering with overwritten fields.
 
 The gate reports unchecked JS and Vue JavaScript scripts explicitly; their presence in compiler roots is not evidence of full type checking. `skipLibCheck: true` is the accepted Vue/i18n declaration compatibility exception described in the Code Quality Guide.
 
@@ -61,10 +61,11 @@ tests/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
 ├── type-tests/                          # Compile-only; excluded from runtime counts
+│   ├── contracts.test.ts               # Domain/storage, snapshot, and callback contracts
 │   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
 │   └── fixtures/                        # Typed probe and deliberately invalid inputs
 │
-├── unit-tests/                          # 298 tests
+├── unit-tests/                          # 301 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -72,10 +73,10 @@ tests/
 │   │   ├── Category.test.js             #  9  tests
 │   │   └── Checklist.test.js            # 11  tests
 │   │   └── Template.test.js             #  3  tests
-│   ├── services/                        # 123 tests
+│   ├── services/                        # 126 tests
 │   │   ├── localStorageService.test.js  # 80  tests
 │   │   ├── templateService.test.js      # 15  tests
-│   │   ├── storageTransaction.test.js  # 24  tests
+│   │   ├── storageTransaction.test.js  # 27  tests
 │   │   └── recommendedListService.test.js  #  4  tests
 │   ├── composables/                     # 66  tests
 │   │   └── usePackingLists.test.js      # 51  tests
@@ -102,7 +103,7 @@ tests/
 │   ├── Item.test.js                     # 27  tests
 │   ├── Sidebar.test.js                  # 33  tests
 │   ├── Category.test.js                 # 31  tests
-│   ├── OverflowMenu.test.js             # 24  tests
+│   ├── OverflowMenu.test.js             # 27  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
 │   ├── Topbar.test.js                   #  2  tests
@@ -151,8 +152,8 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | components/  | 91.52%     | 82.42% | 94.29% |
 | composables/ | 95.41%     | 87.03% | 97.37% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 95.50%     | 83.06% | 95.22% |
-| utils/       | 98.92%     | 87.69% | 100%   |
+| services/    | 95.55%     | 82.84% | 95.28% |
+| utils/       | 98.92%     | 89.23% | 100%   |
 
 ### By Component
 
@@ -251,7 +252,7 @@ This project uses three layers to balance speed and reliability.
 
 ## 8. Complete Test Inventory
 
-### 8.1 Unit Tests (298 tests)
+### 8.1 Unit Tests (301 tests)
 
 #### 8.1.1 Models (40 tests)
 
@@ -315,7 +316,7 @@ This project uses three layers to balance speed and reliability.
 | 2   | trims its name and round-trips snapshot content  | Serialization        |
 | 3   | rejects a non-string or too-long name            | Name validation      |
 
-#### 8.1.2 Services (123 tests)
+#### 8.1.2 Services (126 tests)
 
 ##### 8.1.2.1 localStorageService.test.js (80 tests)
 
@@ -431,34 +432,37 @@ This project uses three layers to balance speed and reliability.
 | 3   | rejects missing recommended lists                                    | Missing recommended-list guard    |
 | 4   | applies the localized general recommended list                       | General list and locale selection |
 
-##### 8.1.2.4 storageTransaction.test.js (24 tests)
+##### 8.1.2.4 storageTransaction.test.js (27 tests)
 
-| #   | Test                                                                          | What it verifies           |
-| --- | ----------------------------------------------------------------------------- | -------------------------- |
-| 1   | keeps durable and readable data unchanged after a failed write                | Failed-write isolation     |
-| 2   | preserves app and template data when any supported mutation cannot be saved   | Mutation failure coverage  |
-| 3   | does not expose mutable references to committed data                          | Detached snapshots         |
-| 4   | preserves corrupted application data and rejects writes                       | Corrupt-data preservation  |
-| 5   | rejects an unsupported application schema without replacing it                | Version guard              |
-| 6   | rejects records without identity instead of generating a new id               | Identity guard             |
-| 7   | preserves malformed template snapshots and refuses to overwrite them          | Template-data preservation |
-| 8   | rejects wrong-typed persisted fields without normalizing them into new values | Type guard                 |
-| 9   | refuses writes when safe cross-tab locking is unavailable                     | Read-only fallback         |
-| 10  | normalizes legacy defaults in memory without rewriting the stored bytes       | Non-destructive reads      |
-| 11  | keeps both templates when an earlier reader creates after another writer      | Fresh template writes      |
-| 12  | serializes simultaneous checklist creation across service instances           | Concurrent writes          |
-| 13  | merges unrelated field changes and rejects stale edits to the same field      | Field intent and conflicts |
-| 14  | does not create a category or item after its owner was deleted                | Owner guard                |
-| 15  | rejects an entire batch when one item conflicts                               | Atomic item batch          |
-| 16  | does not partially reorder categories if a category was deleted               | Atomic category batch      |
-| 17  | rejects a template draft if another tab changed its original snapshot         | Template conflict          |
-| 18  | rejects a queued item move after another writer deletes its destination       | Destination conflict       |
-| 19  | rejects queued checklist creation after the selected template is deleted      | Deleted template guard     |
-| 20  | preserves corrupted template data and refuses queued checklist creation       | Corrupt template guard     |
-| 21  | Reject stale packed and pending changes in either order                       | Coupled status conflict    |
-| 22  | Reject a whole batch on coupled status conflict                               | Atomic batch status        |
-| 23  | Merge status and unrelated edits in both orders                               | Unrelated field merge      |
-| 24  | Reject contradictory status writes and preserve legacy values                 | Legacy compatibility       |
+| #   | Test                                                                                        | What it verifies                             |
+| --- | ------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| 1   | keeps durable and readable data unchanged after a failed write                              | Failed-write isolation                       |
+| 2   | preserves app and template data when any supported mutation cannot be saved                 | Mutation failure coverage                    |
+| 3   | does not expose mutable references to committed data                                        | Detached snapshots                           |
+| 4   | preserves corrupted application data and rejects writes                                     | Corrupt-data preservation                    |
+| 5   | rejects an unsupported application schema without replacing it                              | Version guard                                |
+| 6   | rejects records without identity instead of generating a new id                             | Identity guard                               |
+| 7   | preserves malformed template snapshots and refuses to overwrite them                        | Template-data preservation                   |
+| 8   | rejects wrong-typed persisted fields without normalizing them into new values               | Type guard                                   |
+| 9   | refuses writes when safe cross-tab locking is unavailable                                   | Read-only fallback                           |
+| 10  | normalizes legacy defaults in memory without rewriting the stored bytes                     | Non-destructive reads                        |
+| 11  | keeps both templates when an earlier reader creates after another writer                    | Fresh template writes                        |
+| 12  | serializes simultaneous checklist creation across service instances                         | Concurrent writes                            |
+| 13  | merges unrelated field changes and rejects stale edits to the same field                    | Field intent and conflicts                   |
+| 14  | does not create a category or item after its owner was deleted                              | Owner guard                                  |
+| 15  | rejects an entire batch when one item conflicts                                             | Atomic item batch                            |
+| 16  | does not partially reorder categories if a category was deleted                             | Atomic category batch                        |
+| 17  | rejects a template draft if another tab changed its original snapshot                       | Template conflict                            |
+| 18  | rejects a queued item move after another writer deletes its destination                     | Destination conflict                         |
+| 19  | rejects queued checklist creation after the selected template is deleted                    | Deleted template guard                       |
+| 20  | preserves corrupted template data and refuses queued checklist creation                     | Corrupt template guard                       |
+| 21  | Reject stale packed and pending changes in either order                                     | Coupled status conflict                      |
+| 22  | Reject a whole batch on coupled status conflict                                             | Atomic batch status                          |
+| 23  | Merge status and unrelated edits in both orders                                             | Unrelated field merge                        |
+| 24  | Reject contradictory status writes and preserve legacy values                               | Legacy compatibility                         |
+| 25  | preserves legacy dates, numeric strings, truthiness, and extensions across reads and writes | Raw/model boundaries and no read-time writes |
+| 26  | preserves nested template fields and isolates newly materialized runtime state              | Snapshot preservation and fresh state        |
+| 27  | does not silently repair missing legacy names when duplicating raw records                  | Existing failure and byte preservation       |
 
 #### 8.1.3 Composables (66 tests)
 

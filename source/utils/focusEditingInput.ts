@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/utils/focusEditingInput.js
+File: source/utils/focusEditingInput.ts
 Description: Focus and select inline-edit inputs without unnecessary page
              movement while preserving mobile keyboard visibility.
 Author: Sheng-Wei Chang
@@ -15,7 +15,7 @@ Created: 2026-10-20
  * @param {HTMLInputElement|null} input - Input to focus and select
  * @returns {Function} Cleanup function for scheduled work and viewport listeners
  */
-export function focusEditingInput(input) {
+export function focusEditingInput(input: HTMLInputElement | null) {
   if (!input) return () => {};
 
   let disposed = false;

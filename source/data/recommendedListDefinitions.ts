@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/data/recommendedListDefinitions.js
+File: source/data/recommendedListDefinitions.ts
 Description: Locale-independent category and item membership for built-in
              recommended packing lists.
 Author: Sheng-Wei Chang
@@ -8,6 +8,10 @@ License: MIT (SPDX: MIT)
 Created: 2026-10-15
 ================================================================================
 */
+
+import type { recommendedListContentEn } from './recommendedListContentEn';
+
+type Content = typeof recommendedListContentEn;
 
 export const GENERAL_RECOMMENDED_LIST_ID = 'general';
 
@@ -382,4 +386,7 @@ export const recommendedListDefinitions = [
       },
     ],
   },
-];
+] satisfies {
+  id: keyof Content['recommendedLists'];
+  categories: { id: keyof Content['categories']; itemIds: (keyof Content['items'])[] }[];
+}[];

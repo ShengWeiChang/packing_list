@@ -304,9 +304,9 @@ import TemplateEditor from './components/TemplateEditor.vue';
 import Topbar from './components/Topbar.vue';
 import { usePackingLists } from './composables/usePackingLists';
 import { useTemplates } from './composables/useTemplates';
-import { RecommendedListService } from './services/recommendedListService.js';
-import { STORAGE_KEYS, VALIDATION } from './utils/constants.js';
-import { generateSecureId } from './utils/helpers.js';
+import { RecommendedListService } from './services/recommendedListService';
+import { STORAGE_KEYS, VALIDATION } from './utils/constants';
+import { generateSecureId } from './utils/helpers';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)

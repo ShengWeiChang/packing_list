@@ -37,10 +37,10 @@ Source of Truth 權威設定來源：
 - 使用 **PascalCase**：`MyComponent.vue`、`UserProfile.vue`
 - Vue.js 官方風格指南建議
 
-**JavaScript 模組**
+**JavaScript/TypeScript 模組**
 
-- **Classes/Models 類別/模型**：PascalCase（例如 `Category.js`、`User.js`）
-- **Services/Utils 服務/工具**：camelCase（例如 `dataService.js`、`helpers.js`）
+- **Classes/Models 類別/模型**：PascalCase（例如 `Category.ts`、`User.ts`）
+- **Services/Utils 服務/工具**：camelCase（例如 `dataService.ts`、`helpers.ts`）
 - **Composables 組合式函式**：camelCase 搭配 "use" 前綴（例如 `usePackingLists.js`）
 - **Config files 設定檔**：kebab-case（例如 `vite.config.js`、`tailwind.config.js`）
 
@@ -48,7 +48,7 @@ Source of Truth 權威設定來源：
 
 - **Unit/Component tests 單元/元件測試**：對應原始檔 + `.test.js`
   - `MyComponent.vue` → `MyComponent.test.js`
-  - `helpers.js` → `helpers.test.js`
+  - `helpers.ts` → `helpers.test.js`
 - **E2E tests 端對端測試**：kebab-case + `.spec.js`
   - `app-loading.spec.js`、`user-login.spec.js`
   - Playwright 官方慣例
@@ -61,7 +61,7 @@ Source of Truth 權威設定來源：
 **資料/語系檔案**
 
 - 語系後綴使用 **camelCase**
-- `recommendedListContentEn.js`、`recommendedListContentZhTw.js`
+- `recommendedListContentEn.ts`、`recommendedListContentZhTw.ts`
 - 避免底線或混合分隔符號
 
 ### 3.2 Prettier Formatting 格式化
@@ -170,9 +170,9 @@ Validation 驗證
 
 - 風格建議，非 ESLint 強制；匯入排序由 `simple-import-sort` 自動處理，區塊順序依團隊習慣/Code Review 維持。
 
-### 3.8 JavaScript File Section Order JS 檔案區段順序
+### 3.8 JavaScript/TypeScript File Section Order JS／TS 檔案區段順序
 
-JS 檔案應根據類型採用適當的分組：
+JS／TS 檔案應根據類型採用適當的分組：
 
 1. Imports（vue、外部庫、本地模組）— 自動排序：side-effects (CSS) → vue → 外部套件 → 本地模組
 2. Constants — 模組層級常數、配置
@@ -185,7 +185,7 @@ JS 檔案應根據類型採用適當的分組：
 
 **Composables** (如 `usePackingLists.js`)：採用 1 → 3 → 4 → 5 → 6 → 7
 
-**Class 檔案** (如 `localStorageService.js`, Models)：採用 1 → 8
+**Class 檔案** (如 `localStorageService.ts`, Models)：採用 1 → 8
 
 **Utility/Configuration 檔案**：採用 1 → 2 → 6
 
@@ -327,7 +327,7 @@ Validation 驗證
 
 - `npm run typecheck` 執行應用範圍 guard、`vue-tsc --noEmit`、compile-only contracts 與故意錯誤的診斷 probes。Vite build 只轉譯而不檢查型別。
 - 啟用 `strict`、`noUncheckedIndexedAccess` 與 `strictTemplates`。應用 project 使用瀏覽器 globals 與 `vite/client`，不注入 Node 或 Vitest globals。
-- `typescript-migration.json` 精確列出尚未遷移的 24 個 JS 模組與 16 個 Vue JavaScript scripts。`allowJs: true` / `checkJs: false` 允許匯入，但不表示已檢查型別。每次遷移移除對應 allowance；新增未列管 JS、殘留 allowance 或未進入 compiler roots 的 source 檔會使 gate 失敗。
+- `typescript-migration.json` 精確列出尚未遷移的 4 個 JS 模組與 16 個 Vue JavaScript scripts。`allowJs: true` / `checkJs: false` 允許匯入，但不表示已檢查型別。每次遷移移除對應 allowance；新增未列管 JS、殘留 allowance 或未進入 compiler roots 的 source 檔會使 gate 失敗。
 - 最終目標是全部應用模組及 SFC scripts 使用 TS；清單清空後移除 manifest 並設 `allowJs: false`。Runtime JS tests、Node 設定／scripts、locale JSON 與視覺資產是此次應用遷移之外的明確例外。
 - TS 模組沿用既有命名 stem 並改為 `.ts`：類別／模型用 PascalCase，services、utilities、composables 與型別模組用 camelCase。Compile-only tests 放在 `tests/type-tests/`，以 owner stem 加 `.test.ts` 命名；Vitest 排除此目錄。
 - 純型別依賴使用 `import type`。外部 JSON 與捕獲錯誤先視為 `unknown`，直到既有 runtime 檢查或正規化足以縮窄契約；TS 不能取代 storage validation。

@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/utils/helpers.js
+File: source/utils/helpers.ts
 Description: Utility helper functions for ID generation, validation and
              common operations.
 Author: Sheng-Wei Chang
@@ -18,7 +18,7 @@ Created: 2025-09-19
  * @param {string} dateString - ISO date string
  * @returns {string} Formatted date string
  */
-export function formatDate(dateString) {
+export function formatDate(dateString: string) {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -49,17 +49,25 @@ export function generateSecureId(prefix = '') {
  * @param {number} denominator - The denominator
  * @returns {number} Percentage rounded to nearest integer
  */
-export function calculatePercentage(numerator, denominator) {
+export function calculatePercentage(numerator: number, denominator: number) {
   if (denominator === 0) return 0;
   return Math.round((numerator / denominator) * 100);
 }
 
+export type JsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
 /**
- * Deep clone an object
- * @param {object} obj - Object to clone
- * @returns {object} Cloned object
+ * Clone JSON-compatible data, without retaining prototypes or methods.
+ * Dates, functions and undefined are intentionally outside the input contract;
+ * numbers must be finite and object graphs must be acyclic for JSON round-tripping.
  */
-export function deepClone(obj) {
+export function deepClone<T extends JsonValue>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
@@ -69,13 +77,13 @@ export function deepClone(obj) {
  * @param {number} wait - Wait time in milliseconds
  * @returns {Function} Debounced function
  */
-export function debounce(func, wait = 300) {
-  let timeout;
+export function debounce<Args extends unknown[]>(func: (...args: Args) => unknown, wait = 300) {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
   /**
    * Schedule the latest invocation.
    * @param {...*} args - Arguments for the debounced function.
    */
-  function executedFunction(...args) {
+  function executedFunction(...args: Args) {
     const later = () => {
       clearTimeout(timeout);
       func(...args);

@@ -259,9 +259,9 @@ import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vu
 import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 
-import { putOnlyFromGroup } from '../utils/dragDrop.js';
-import { focusEditingInput } from '../utils/focusEditingInput.js';
-import { renumberOrder } from '../utils/order.js';
+import { putOnlyFromGroup } from '../utils/dragDrop';
+import { focusEditingInput } from '../utils/focusEditingInput';
+import { renumberOrder } from '../utils/order';
 import AddCategoryButton from './AddCategoryButton.vue';
 import AppIcon from './AppIcon.vue';
 import Category from './Category.vue';

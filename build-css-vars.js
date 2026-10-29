@@ -4,7 +4,7 @@
 ================================================================================
 File: build-css-vars.js
 Description: Automatically generates CSS custom properties (variables) from
-             JavaScript theme constants. This ensures single source of truth
+             TypeScript theme constants. This ensures single source of truth
              for all color definitions.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
@@ -26,14 +26,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Import theme colors from constants
-const constantsPath = join(__dirname, 'source', 'utils', 'constants.js');
+const constantsPath = join(__dirname, 'source', 'utils', 'constants.ts');
 const constantsContent = readFileSync(constantsPath, 'utf-8');
 
 // Extract THEME_COLORS object using regex
 const themeColorsMatch = constantsContent.match(/export const THEME_COLORS = \{([\s\S]*?)\n\};/m);
 
 if (!themeColorsMatch) {
-  console.error('Could not find THEME_COLORS in constants.js');
+  console.error('Could not find THEME_COLORS in constants.ts');
   process.exit(1);
 }
 
@@ -113,7 +113,7 @@ const cssVars = parseThemeColors(themeColorsContent);
 // Generate CSS variables string
 let cssVarsString =
   '  /* ============================================================================\n';
-cssVarsString += '   * Theme Colors - Auto-generated from constants.js\n';
+cssVarsString += '   * Theme Colors - Auto-generated from constants.ts\n';
 cssVarsString += '   * DO NOT EDIT THIS SECTION MANUALLY\n';
 cssVarsString += '   * Run: npm run build:css-vars to regenerate\n';
 cssVarsString +=

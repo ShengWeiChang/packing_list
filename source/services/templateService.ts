@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/services/templateService.js
+File: source/services/templateService.ts
 Description: Service for managing personal checklist templates in localStorage.
              Provides CRUD, snapshot from existing checklists, and template
              application to create new checklists.
@@ -14,9 +14,10 @@ Created: 2026-10-13
 // Imports
 // -----------------------------------------------------------------------------
 
+import type { TemplateDTO, TemplateInput } from '../models/contracts';
 import { Template } from '../models/Template';
-import { STORAGE_KEYS } from '../utils/constants.js';
-import { instantiateTemplateContent } from '../utils/instantiateTemplate.js';
+import { STORAGE_KEYS } from '../utils/constants';
+import { instantiateTemplateContent } from '../utils/instantiateTemplate';
 import {
   decodeAppData,
   decodeTemplates,
@@ -24,7 +25,8 @@ import {
   StorageError,
   withStorageLock,
   writeStorage,
-} from './storageTransaction.js';
+} from './storageTransaction';
+import type { StoredTemplate } from './storageTypes';
 
 // -----------------------------------------------------------------------------
 // Class definition
@@ -34,6 +36,9 @@ import {
  * Service for managing personal checklist templates in localStorage
  */
 export class TemplateService {
+  declare STORAGE_KEY: string;
+  declare _cache: StoredTemplate[] | null;
+  declare _cacheRaw: string | null;
   /**
    * Create a new TemplateService instance
    */
@@ -51,7 +56,7 @@ export class TemplateService {
    * Read all templates from localStorage (with caching)
    * @returns {Array} Array of template objects
    */
-  _loadTemplates() {
+  _loadTemplates(): StoredTemplate[] {
     const raw = readStorage(this.STORAGE_KEY);
     if (!this._cache || raw !== this._cacheRaw) {
       this._cache = decodeTemplates(raw);
@@ -64,7 +69,7 @@ export class TemplateService {
    * Persist templates to localStorage and update cache
    * @param {Array} templates - Array of template objects
    */
-  _saveTemplates(templates) {
+  _saveTemplates(templates: StoredTemplate[]) {
     const candidate = decodeTemplates(JSON.stringify(templates));
     const raw = writeStorage(this.STORAGE_KEY, candidate);
     this._cache = decodeTemplates(raw);
@@ -98,7 +103,7 @@ export class TemplateService {
    * @param {string} id - Template ID
    * @returns {object|null} Template object or null
    */
-  getTemplateById(id) {
+  getTemplateById(id: string): TemplateDTO | null {
     const templates = this._loadTemplates();
     const found = templates.find((t) => t.id === id);
     return found ? Template.fromJSON(found).toJSON() : null;
@@ -109,7 +114,7 @@ export class TemplateService {
    * @param {object} templateData - Template data
    * @returns {Promise<object>} Created template
    */
-  async createTemplate(templateData) {
+  async createTemplate(templateData: TemplateInput): Promise<TemplateDTO> {
     return withStorageLock(() => this._createTemplate(templateData));
   }
 
@@ -118,7 +123,7 @@ export class TemplateService {
    * @param {object} templateData - Template data.
    * @returns {object} Created template.
    */
-  _createTemplate(templateData) {
+  _createTemplate(templateData: TemplateInput): TemplateDTO {
     const templates = this._loadTemplates();
     const newTemplate = new Template(templateData);
     templates.push(newTemplate.toJSON());
@@ -132,7 +137,10 @@ export class TemplateService {
    * @param {object} [expectedTemplate] - Original template state before editing.
    * @returns {Promise<object>} Updated template
    */
-  async updateTemplate(templateData, expectedTemplate) {
+  async updateTemplate(
+    templateData: TemplateInput & { id: string },
+    expectedTemplate?: TemplateInput
+  ): Promise<TemplateDTO> {
     return withStorageLock(() => {
       const templates = this._loadTemplates();
       const index = templates.findIndex((t) => t.id === templateData.id);
@@ -143,13 +151,13 @@ export class TemplateService {
         throw new StorageError('conflict', 'A template edit baseline is required');
       }
       if (
-        JSON.stringify(Template.fromJSON(templates[index]).toJSON()) !==
+        JSON.stringify(Template.fromJSON(templates[index]!).toJSON()) !==
         JSON.stringify(Template.fromJSON(expectedTemplate).toJSON())
       ) {
         throw new StorageError('conflict', 'Template changed while it was being edited');
       }
       const updated = new Template(templateData);
-      templates[index] = { ...templates[index], ...updated.toJSON() };
+      templates[index]! = { ...templates[index]!, ...updated.toJSON() };
       this._saveTemplates(templates);
       return updated.toJSON();
     });
@@ -160,7 +168,7 @@ export class TemplateService {
    * @param {string} id - Template ID to delete
    * @returns {Promise<void>} Resolves after the write.
    */
-  async deleteTemplate(id) {
+  async deleteTemplate(id: string): Promise<void> {
     return withStorageLock(() => {
       const templates = this._loadTemplates();
       const filtered = templates.filter((t) => t.id !== id);
@@ -176,7 +184,7 @@ export class TemplateService {
    * @param {Array<string>} orderedIds - Array of template IDs in desired order
    * @returns {Promise<void>} Resolves after the write.
    */
-  async reorderTemplates(orderedIds) {
+  async reorderTemplates(orderedIds: string[]): Promise<void> {
     return withStorageLock(() => {
       const templates = this._loadTemplates();
       const idToTemplate = Object.fromEntries(templates.map((t) => [t.id, t]));
@@ -188,7 +196,7 @@ export class TemplateService {
           }
           return null;
         })
-        .filter(Boolean);
+        .filter((template) => template !== null);
 
       // Append any templates not in orderedIds at the end
       const orderedSet = new Set(orderedIds);
@@ -214,7 +222,7 @@ export class TemplateService {
    * @param {string} templateName - Name for the new template
    * @returns {Promise<object>} Created template
    */
-  async createFromChecklist(checklistId, templateName) {
+  async createFromChecklist(checklistId: string, templateName: string): Promise<TemplateDTO> {
     return withStorageLock(() => {
       const appData = this._loadAppData();
       if (!appData.checklists.some((checklist) => checklist.id === checklistId)) {
@@ -259,7 +267,7 @@ export class TemplateService {
    * @param {string} checklistId - Target checklist ID
    * @returns {object} { categories: Category[], items: Item[] }
    */
-  applyToNewChecklist(templateId, checklistId) {
+  applyToNewChecklist(templateId: string, checklistId: string) {
     const template = this.getTemplateById(templateId);
     if (!template) {
       throw new Error(`Template with id ${templateId} not found`);

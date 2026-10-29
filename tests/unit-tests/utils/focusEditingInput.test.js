@@ -10,7 +10,7 @@ Created: 2026-10-20
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { focusEditingInput } from '../../../source/utils/focusEditingInput.js';
+import { focusEditingInput } from '../../../source/utils/focusEditingInput';
 
 describe('focusEditingInput', () => {
   afterEach(() => {

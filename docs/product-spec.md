@@ -72,7 +72,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - CSS Processing: PostCSS with Tailwind CSS
 - Module Bundling: Vite with ES modules
 - Type Checking: TypeScript 6.0.3 / vue-tsc 3.3.13, typescript-eslint 8.72.1, @vue/tsconfig 0.9.1; `npm run typecheck` runs before runtime tests in the shared feature/CI gate.
-- Migration Boundary: `typescript-migration.json` records unchecked application JS/SFC scripts; compiler-root coverage and explicit allowances prevent silent omissions. Existing 24 JS modules and 16 SFC scripts are not yet fully type-checked. Runtime tests and Node tools remain JS; localStorage runtime validation remains required.
+- Migration Boundary: `typescript-migration.json` records unchecked application JS/SFC scripts; compiler-root coverage and explicit allowances prevent silent omissions. Models, utilities, seed data, and services are typed; 4 JS modules and 16 SFC scripts still await migration. Runtime tests and Node tools remain JS; localStorage runtime validation remains required.
 - Declaration Compatibility: `skipLibCheck: true` is accepted for the vue-i18n 11.4.16 / Vue 3.5.44 TS2724 mismatch; app/template code and API usage remain checked. See the Code Quality Guide for the limitation and re-evaluation rule.
 
 ## 4. Implemented Features
@@ -420,7 +420,7 @@ packing-list/
 ├── package-lock.json                 # Lockfile
 ├── .nvmrc                            # Shared Node.js version for local development and CI
 ├── vercel.json                       # Vercel deployment configuration (SPA routing, caching)
-├── build-css-vars.js                 # CLI script: generates CSS custom properties from source/utils/constants.js
+├── build-css-vars.js                 # CLI script: generates CSS custom properties from source/utils/constants.ts
 ├── postcss.config.js                 # PostCSS config
 ├── tailwind.config.js                # Tailwind CSS config
 ├── vite.config.js                    # Vite build config
@@ -466,31 +466,37 @@ packing-list/
     │   ├── en.json                   # English strings
     │   └── zh-TW.json                # Traditional Chinese strings
     ├── data/                         # Static data
-    │   ├── recommendedListContentEn.js  # English recommended list content
-    │   ├── recommendedListContentZhTw.js # Traditional Chinese recommended list content
-    │   ├── recommendedListDefinitions.js # Locale-independent recommended list membership
-    │   └── recommendedLists.js          # Locale-aware recommended list resolver
+    │   ├── recommendedListContentEn.ts  # English recommended list content
+    │   ├── recommendedListContentZhTw.ts # Traditional Chinese recommended list content
+    │   ├── recommendedListDefinitions.ts # Locale-independent recommended list membership
+    │   └── recommendedLists.ts          # Locale-aware recommended list resolver
     ├── models/                       # Domain models
-    │   ├── Category.js               # Category model
-    │   ├── Checklist.js              # Checklist model
-    │   ├── Item.js                   # Item model
-    │   └── Template.js               # Personal template model
+    │   ├── contracts.ts              # DTO, constructor, mutation and snapshot contracts
+    │   ├── Category.ts               # Category model
+    │   ├── Checklist.ts              # Checklist model
+    │   ├── Item.ts                   # Item model
+    │   └── Template.ts               # Personal template model
     ├── services/                     # Data access layer
-    │   ├── dataService.js            # Abstract data service interface
-    │   ├── localStorageService.js    # Checklist localStorage implementation
-    │   ├── recommendedListService.js    # Built-in recommended list application
-    │   ├── storageTransaction.js     # Shared storage decoding and write coordination
-    │   └── templateService.js        # Personal template localStorage implementation
+    │   ├── storageTypes.ts           # Legacy decoder guarantees and service boundary types
+    │   ├── dataService.ts            # Abstract data service interface
+    │   ├── localStorageService.ts    # Checklist localStorage implementation
+    │   ├── recommendedListService.ts    # Built-in recommended list application
+    │   ├── storageTransaction.ts     # Shared storage decoding and write coordination
+    │   └── templateService.ts        # Personal template localStorage implementation
     └── utils/                        # Utilities
-        ├── constants.js              # App constants (color definitions in THEME_COLORS)
-        ├── instantiateTemplate.js    # Shared template-shaped data materialization
-        └── helpers.js                # Helper functions (e.g., ID generation)
+        ├── constants.ts              # App constants and THEME_COLORS
+        ├── dragDrop.ts               # Drag source group guard
+        ├── focusEditingInput.ts      # Inline edit focus and visibility
+        ├── helpers.ts                # IDs, dates, JSON clone and debounce
+        ├── instantiateTemplate.ts    # Shared template-shaped materialization
+        ├── order.ts                  # Complete and visible-slot ordering
+        └── positioning.ts            # Dropdown position calculations
 ```
 
 Notes:
 
-- Colors defined in `source/utils/constants.js` (`THEME_COLORS`) are auto-generated to CSS variables in `source/index.css` by running `npm run build:css-vars`.
-- Workflow: edit `constants.js` → run `npm run build:css-vars` → commit updated `index.css`.
+- Colors defined in `source/utils/constants.ts` (`THEME_COLORS`) are auto-generated to CSS variables in `source/index.css` by running `npm run build:css-vars`.
+- Workflow: edit `constants.ts` → run `npm run build:css-vars` → commit updated `index.css`.
 
 ## 6. UI/UX Design
 
@@ -524,7 +530,7 @@ The application uses a centralized color management system with semantic naming:
 
 **Implementation:**
 
-- Single Source of Truth: All colors defined in `source/utils/constants.js` (`THEME_COLORS` object)
+- Single Source of Truth: All colors defined in `source/utils/constants.ts` (`THEME_COLORS` object)
 - Build Pipeline: `npm run build:css-vars` generates CSS variables in `source/index.css`
 - Usage:
   - CSS: `var(--text-primary)`, `var(--bg-primary)`, `var(--theme-primary)`
@@ -576,6 +582,8 @@ The application uses a centralized color management system with semantic naming:
 | TemplateEditor           | Isolated template editing          | Edit template content; explicitly save, cancel, or delete without creating a checklist               |
 
 ## 7. Data Models
+
+The examples below describe normal UI-created data. `contracts.ts` and `storageTypes.ts` distinguish model DTOs from legacy decoder guarantees: unvalidated dates remain `unknown`; numeric strings and arbitrary status values are normalized only by the Item model, and nested template snapshots are not automatically normalized. Reads preserve extension fields without writing back to storage.
 
 ### Checklist Model
 

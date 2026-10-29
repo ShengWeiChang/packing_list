@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/models/Category.js
+File: source/models/Category.ts
 Description: Category model class with validation, serialization and
              secure ID generation.
 Author: Sheng-Wei Chang
@@ -13,8 +13,9 @@ Created: 2025-09-19
 // Imports
 // -----------------------------------------------------------------------------
 
-import { VALIDATION } from '../utils/constants.js';
-import { generateSecureId } from '../utils/helpers.js';
+import { VALIDATION } from '../utils/constants';
+import { generateSecureId } from '../utils/helpers';
+import type { CategoryDTO, CategoryInput } from './contracts';
 
 // -----------------------------------------------------------------------------
 // Class definition
@@ -23,7 +24,12 @@ import { generateSecureId } from '../utils/helpers.js';
 /**
  * Represents a category of items in a checklist
  */
-export class Category {
+export class Category implements CategoryDTO {
+  declare id: string;
+  declare name: string;
+  declare checklistId: string | null;
+  declare order: number;
+
   /**
    * Category class constructor
    * @param {object} root0 - Category configuration object
@@ -37,7 +43,7 @@ export class Category {
     name = '',
     checklistId = null,
     order = 0,
-  } = {}) {
+  }: CategoryInput = {}) {
     this.id = id;
     this.name = this.validateName(name);
     this.checklistId = checklistId;
@@ -49,7 +55,7 @@ export class Category {
    * @param {string} name - The name to validate
    * @returns {string} Validated name
    */
-  validateName(name) {
+  validateName(name: unknown): string {
     if (typeof name !== 'string') {
       throw new Error('Category name must be a string');
     }
@@ -65,7 +71,7 @@ export class Category {
    * @param {object} json - The JSON data to create the category from
    * @returns {Category} A new Category instance
    */
-  static fromJSON(json) {
+  static fromJSON(json: CategoryInput): Category {
     return new Category(json);
   }
 
@@ -73,7 +79,7 @@ export class Category {
    * Converts the category instance to JSON format
    * @returns {object} The JSON representation of the category
    */
-  toJSON() {
+  toJSON(): CategoryDTO {
     return {
       id: this.id,
       name: this.name,

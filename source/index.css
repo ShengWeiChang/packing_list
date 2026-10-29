@@ -3,7 +3,7 @@
 File: source/index.css
 Description: Global CSS styles with Tailwind directives and semantic color
              system. CSS variables in :root are auto-generated from
-             source/utils/constants.js - run `npm run build:css-vars` to update.
+             source/utils/constants.ts - run `npm run build:css-vars` to update.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
 Created: 2025-09-19
@@ -16,7 +16,7 @@ Created: 2025-09-19
 
 :root {
   /* ============================================================================
-   * Theme Colors - Auto-generated from constants.js
+   * Theme Colors - Auto-generated from constants.ts
    * DO NOT EDIT THIS SECTION MANUALLY
    * Run: npm run build:css-vars to regenerate
    * ============================================================================ */

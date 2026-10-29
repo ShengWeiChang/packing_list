@@ -72,7 +72,7 @@
 - CSS Processing: PostCSS with Tailwind CSS
 - Module Bundling: Vite with ES modules
 - 型別檢查：TypeScript 6.0.3 / vue-tsc 3.3.13、typescript-eslint 8.72.1、@vue/tsconfig 0.9.1；共用 feature／CI gate 在 runtime tests 前執行 `npm run typecheck`。
-- 遷移邊界：`typescript-migration.json` 記錄尚未受型別檢查的應用 JS／SFC scripts；compiler-root 涵蓋檢查與精確 allowance 防止漏檢。既有 24 個 JS 模組及 16 個 SFC scripts 尚未完成型別化。Runtime tests 與 Node 工具保留 JS；localStorage 仍需要 runtime validation。
+- 遷移邊界：`typescript-migration.json` 記錄尚未受型別檢查的應用 JS／SFC scripts；compiler-root 涵蓋檢查與精確 allowance 防止漏檢。Models、utilities、seed data 與 services 已完成型別化；仍有 4 個 JS 模組及 16 個 SFC scripts 待遷移。Runtime tests 與 Node 工具保留 JS；localStorage 仍需要 runtime validation。
 - 宣告相容性：已接受 `skipLibCheck: true` 以處理 vue-i18n 11.4.16 / Vue 3.5.44 的 TS2724 不相容；應用／模板程式與 API 使用仍受檢查。限制與重新評估規則見 Code Quality Guide。
 
 ## 4. Implemented Features 實做功能
@@ -420,7 +420,7 @@ packing-list/
 ├── package-lock.json                 # 鎖定檔
 ├── .nvmrc                            # 本機開發與 CI 共用的 Node.js 版本
 ├── vercel.json                       # Vercel 部署配置（SPA 路由、快取設定）
-├── build-css-vars.js                 # CLI 腳本：從 source/utils/constants.js 生成 CSS 變數
+├── build-css-vars.js                 # CLI 腳本：從 source/utils/constants.ts 生成 CSS 變數
 ├── postcss.config.js                 # PostCSS配置
 ├── tailwind.config.js                # Tailwind CSS配置
 ├── vite.config.js                    # Vite建置配置
@@ -466,31 +466,37 @@ packing-list/
     │   ├── en.json                   # 英文翻譯字串
     │   └── zh-TW.json                # 繁體中文翻譯字串
     ├── data/                         # 資料檔案
-    │   ├── recommendedListContentEn.js   # 英文推薦清單內容
-    │   ├── recommendedListContentZhTw.js # 繁體中文推薦清單內容
-    │   ├── recommendedListDefinitions.js # 語系無關的推薦清單歸屬規則
-    │   └── recommendedLists.js           # 依語系解析推薦清單
+    │   ├── recommendedListContentEn.ts   # 英文推薦清單內容
+    │   ├── recommendedListContentZhTw.ts # 繁體中文推薦清單內容
+    │   ├── recommendedListDefinitions.ts # 語系無關的推薦清單歸屬規則
+    │   └── recommendedLists.ts           # 依語系解析推薦清單
     ├── models/                       # 資料模型層
-    │   ├── Category.js               # 分類模型類別
-    │   ├── Checklist.js              # 清單模型類別
-    │   ├── Item.js                   # 物品模型類別
-    │   └── Template.js               # 個人範本模型
+    │   ├── contracts.ts              # DTO、constructor、mutation 與 snapshot 契約
+    │   ├── Category.ts               # 分類模型類別
+    │   ├── Checklist.ts              # 清單模型類別
+    │   ├── Item.ts                   # 物品模型類別
+    │   └── Template.ts               # 個人範本模型
     ├── services/                     # 服務層
-    │   ├── dataService.js            # 抽象資料服務介面
-    │   ├── localStorageService.js    # 清單 localStorage 實現
-    │   ├── recommendedListService.js # 內建推薦清單套用邏輯
-    │   ├── storageTransaction.js     # 共用 storage 解碼與寫入協調
-    │   └── templateService.js        # 個人範本 localStorage 實現
+    │   ├── storageTypes.ts           # 舊資料解碼保證與 service 邊界型別
+    │   ├── dataService.ts            # 抽象資料服務介面
+    │   ├── localStorageService.ts    # 清單 localStorage 實現
+    │   ├── recommendedListService.ts # 內建推薦清單套用邏輯
+    │   ├── storageTransaction.ts     # 共用 storage 解碼與寫入協調
+    │   └── templateService.ts        # 個人範本 localStorage 實現
     └── utils/                        # 工具函數
-        ├── constants.js              # 應用常數定義（顏色定義在 THEME_COLORS）
-        ├── instantiateTemplate.js    # 共用 template-shaped 資料實體化
-        └── helpers.js                # 通用工具函數
+        ├── constants.ts              # 應用常數與 THEME_COLORS
+        ├── dragDrop.ts               # 拖曳來源群組防護
+        ├── focusEditingInput.ts      # 行內編輯焦點與可見性
+        ├── helpers.ts                # ID、日期、JSON clone 與 debounce
+        ├── instantiateTemplate.ts    # 共用 template-shaped 資料實體化
+        ├── order.ts                  # 完整與可見槽位排序
+        └── positioning.ts            # 下拉選單位置計算
 ```
 
 備註：
 
-- `source/utils/constants.js` 中的 `THEME_COLORS` 顏色定義會透過執行 `npm run build:css-vars` 自動生成至 `source/index.css` 的 CSS 變數。
-- 工作流程：編輯 `constants.js` → 執行 `npm run build:css-vars` → 提交更新後的 `index.css`。
+- `source/utils/constants.ts` 中的 `THEME_COLORS` 顏色定義會透過執行 `npm run build:css-vars` 自動生成至 `source/index.css` 的 CSS 變數。
+- 工作流程：編輯 `constants.ts` → 執行 `npm run build:css-vars` → 提交更新後的 `index.css`。
 
 ## 6. UI/UX Design 使用者介面設計
 
@@ -524,7 +530,7 @@ packing-list/
 
 **實作方式：**
 
-- 單一資料來源：所有顏色定義於 `source/utils/constants.js`（`THEME_COLORS` 物件）
+- 單一資料來源：所有顏色定義於 `source/utils/constants.ts`（`THEME_COLORS` 物件）
 - 建置流程：執行 `npm run build:css-vars` 會在 `source/index.css` 生成 CSS 變數
 - 使用方式：
   - CSS: `var(--text-primary)`、`var(--bg-primary)`、`var(--theme-primary)`
@@ -576,6 +582,8 @@ packing-list/
 | TemplateEditor           | 獨立範本編輯         | 編輯範本內容；明確儲存、取消或刪除且不建立清單                             |
 
 ## 7. Data Models 資料模型
+
+以下範例描述一般 UI 建立的資料。`contracts.ts` 與 `storageTypes.ts` 區分 model DTO 與 decoder 的舊資料保證：日期未受驗證，型別保留 `unknown`；數量字串與任意狀態值只在 Item model 正規化，範本的巢狀快照不會自動正規化。讀取保留額外欄位且不寫回 storage。
 
 ### Checklist 清單模型
 

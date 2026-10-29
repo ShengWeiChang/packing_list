@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/models/Checklist.js
+File: source/models/Checklist.ts
 Description: Checklist model class with validation, serialization and
              secure ID generation.
 Author: Sheng-Wei Chang
@@ -13,8 +13,9 @@ Created: 2025-09-19
 // Imports
 // -----------------------------------------------------------------------------
 
-import { VALIDATION } from '../utils/constants.js';
-import { generateSecureId } from '../utils/helpers.js';
+import { VALIDATION } from '../utils/constants';
+import { generateSecureId } from '../utils/helpers';
+import type { ChecklistDTO, ChecklistInput } from './contracts';
 
 // -----------------------------------------------------------------------------
 // Class definition
@@ -23,7 +24,13 @@ import { generateSecureId } from '../utils/helpers.js';
 /**
  * Represents a packing list with basic information and metadata
  */
-export class Checklist {
+export class Checklist implements ChecklistDTO {
+  declare id: string;
+  declare name: string;
+  declare startDate: unknown;
+  declare endDate: unknown;
+  declare order: number;
+
   /**
    * Checklist class constructor
    * @param {object} root0 - Checklist configuration object
@@ -39,7 +46,7 @@ export class Checklist {
     startDate = new Date().toISOString().slice(0, 10),
     endDate = new Date().toISOString().slice(0, 10),
     order = 0,
-  } = {}) {
+  }: ChecklistInput = {}) {
     this.id = id;
     this.name = this.validateName(name);
     this.startDate = startDate;
@@ -52,7 +59,7 @@ export class Checklist {
    * @param {string} name - The name to validate
    * @returns {string} Validated name
    */
-  validateName(name) {
+  validateName(name: unknown): string {
     if (typeof name !== 'string') {
       throw new Error('Name must be a string');
     }
@@ -73,7 +80,7 @@ export class Checklist {
    * @param {object} json - The JSON data to create the checklist from
    * @returns {Checklist} A new Checklist instance
    */
-  static fromJSON(json) {
+  static fromJSON(json: ChecklistInput): Checklist {
     return new Checklist(json);
   }
 
@@ -81,7 +88,7 @@ export class Checklist {
    * Converts the checklist instance to JSON format
    * @returns {object} The JSON representation of the checklist
    */
-  toJSON() {
+  toJSON(): ChecklistDTO {
     return {
       id: this.id,
       name: this.name,

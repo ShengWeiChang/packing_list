@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/utils/constants.js
+File: source/utils/constants.ts
 Description: Application constants including theme colors, storage keys and
              configuration values.
 Author: Sheng-Wei Chang

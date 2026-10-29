@@ -221,9 +221,9 @@ import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vu
 import draggable from 'vuedraggable';
 
 import { Category } from '../models/Category';
-import { putOnlyFromGroup } from '../utils/dragDrop.js';
-import { focusEditingInput } from '../utils/focusEditingInput.js';
-import { insertAtVisibleIndex, renumberOrder, reorderVisibleSlots } from '../utils/order.js';
+import { putOnlyFromGroup } from '../utils/dragDrop';
+import { focusEditingInput } from '../utils/focusEditingInput';
+import { insertAtVisibleIndex, renumberOrder, reorderVisibleSlots } from '../utils/order';
 import AddItemButton from './AddItemButton.vue';
 import AppIcon from './AppIcon.vue';
 import Item from './Item.vue';

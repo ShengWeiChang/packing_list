@@ -19,9 +19,9 @@ import { Category } from '../models/Category';
 import { Checklist } from '../models/Checklist';
 import { Item } from '../models/Item';
 import { LocalStorageService } from '../services/localStorageService';
-import { StorageError } from '../services/storageTransaction.js';
-import { STORAGE_KEYS } from '../utils/constants.js';
-import { debounce } from '../utils/helpers.js';
+import { StorageError } from '../services/storageTransaction';
+import { STORAGE_KEYS } from '../utils/constants';
+import { debounce } from '../utils/helpers';
 
 const PACKING_HISTORY_LIMIT = 50;
 

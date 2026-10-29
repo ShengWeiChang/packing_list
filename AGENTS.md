@@ -31,14 +31,14 @@ correct position among OTHER_ATTR, but do **not** move other attributes.
 When creating new files, follow these naming patterns:
 
 - **Vue components**: PascalCase (e.g., `MyComponent.vue`)
-- **Classes/Models**: PascalCase (e.g., `Category.js`)
-- **Services/Utils**: camelCase (e.g., `dataService.js`)
+- **Classes/Models**: PascalCase (e.g., `Category.ts`)
+- **Services/Utils**: camelCase (e.g., `dataService.ts`)
 - **Composables**: camelCase with "use" prefix (e.g., `useAuth.js`)
 - **Config files**: kebab-case (e.g., `vite.config.js`)
 - **Test files**:
   - **Unit/Component tests**: Match source file name + `.test.js`
     - `Category.test.js` tests `Category.vue` (PascalCase)
-    - `helpers.test.js` tests `helpers.js` (camelCase)
+    - `helpers.test.js` tests `helpers.ts` (camelCase)
   - **E2E tests**: kebab-case + `.spec.js` (describe workflows)
     - `item-packing.spec.js`, `user-login.spec.js`
 - **Documentation**: kebab-case (e.g., `user-guide.md`)

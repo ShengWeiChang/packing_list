@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/services/recommendedListService.js
+File: source/services/recommendedListService.ts
 Description: Read and apply immutable built-in recommended packing lists.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
@@ -12,8 +12,8 @@ import {
   getGeneralRecommendedList,
   getRecommendedList,
   getRecommendedLists,
-} from '../data/recommendedLists.js';
-import { instantiateTemplateContent } from '../utils/instantiateTemplate.js';
+} from '../data/recommendedLists';
+import { instantiateTemplateContent } from '../utils/instantiateTemplate';
 
 /** Service for reading and applying immutable built-in recommended lists. */
 export class RecommendedListService {
@@ -33,7 +33,7 @@ export class RecommendedListService {
    * @param {string} locale - Active application locale.
    * @returns {object} Fresh { categories, items } runtime data.
    */
-  applyToNewChecklist(recommendedListId, checklistId, locale = 'en') {
+  applyToNewChecklist(recommendedListId: string, checklistId: string, locale = 'en') {
     const recommendedList = getRecommendedList(recommendedListId, locale);
     if (!recommendedList) {
       throw new Error(`Recommended list with id ${recommendedListId} not found`);
@@ -47,7 +47,7 @@ export class RecommendedListService {
    * @param {string} locale - Active application locale.
    * @returns {object} Fresh { categories, items } runtime data.
    */
-  applyGeneralToNewChecklist(checklistId, locale = 'en') {
+  applyGeneralToNewChecklist(checklistId: string, locale = 'en') {
     return instantiateTemplateContent(getGeneralRecommendedList(locale), checklistId);
   }
 }

@@ -120,7 +120,7 @@ vi.mock('../../source/composables/useTemplates', () => ({
   }),
 }));
 
-vi.mock('../../source/services/recommendedListService.js', () => ({
+vi.mock('../../source/services/recommendedListService', () => ({
   RecommendedListService: class {
     /** @returns {Array<object>} Mocked recommended lists. */
     getRecommendedLists() {

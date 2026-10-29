@@ -43,7 +43,7 @@ export default defineConfig({
         'tests/',
         'source/locales/',
         'source/data/',
-        'source/services/dataService.js',
+        'source/services/dataService.ts',
         'docs/',
         '*.config.js',
       ],

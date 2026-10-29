@@ -37,10 +37,10 @@ Follow industry-standard naming patterns for consistency and IDE compatibility:
 - Use **PascalCase**: `MyComponent.vue`, `UserProfile.vue`
 - Official Vue.js Style Guide recommendation
 
-**JavaScript Modules**
+**JavaScript/TypeScript Modules**
 
-- **Classes/Models**: PascalCase (e.g., `Category.js`, `User.js`)
-- **Services/Utils**: camelCase (e.g., `dataService.js`, `helpers.js`)
+- **Classes/Models**: PascalCase (e.g., `Category.ts`, `User.ts`)
+- **Services/Utils**: camelCase (e.g., `dataService.ts`, `helpers.ts`)
 - **Composables**: camelCase with "use" prefix (e.g., `usePackingLists.js`)
 - **Config files**: kebab-case (e.g., `vite.config.js`, `tailwind.config.js`)
 
@@ -48,7 +48,7 @@ Follow industry-standard naming patterns for consistency and IDE compatibility:
 
 - **Unit/Component tests**: Match source file + `.test.js`
   - `MyComponent.vue` → `MyComponent.test.js`
-  - `helpers.js` → `helpers.test.js`
+  - `helpers.ts` → `helpers.test.js`
 - **E2E tests**: kebab-case + `.spec.js`
   - `app-loading.spec.js`, `user-login.spec.js`
   - Playwright official convention
@@ -61,7 +61,7 @@ Follow industry-standard naming patterns for consistency and IDE compatibility:
 **Data/Locale Files**
 
 - Use **camelCase** for locale suffixes
-- `recommendedListContentEn.js`, `recommendedListContentZhTw.js`
+- `recommendedListContentEn.ts`, `recommendedListContentZhTw.ts`
 - Avoid underscores or mixed separators
 
 ### 3.2 Prettier Formatting
@@ -170,9 +170,9 @@ Validation
 
 - Guideline only (not enforced by ESLint). Import sorting is automatically handled by `simple-import-sort`; section order relies on team practice/code review.
 
-### 3.8 JavaScript File Section Order
+### 3.8 JavaScript/TypeScript File Section Order
 
-JS files should use appropriate grouping based on file type:
+JS/TS files should use appropriate grouping based on file type:
 
 1. Imports (vue, libs, local) — Auto-sorted: side-effects (CSS) → vue → external packages → local modules
 2. Constants — module-level constants, config
@@ -185,7 +185,7 @@ JS files should use appropriate grouping based on file type:
 
 **Composables** (e.g., `usePackingLists.js`): Use 1 → 3 → 4 → 5 → 6 → 7
 
-**Class Files** (e.g., `localStorageService.js`, Models): Use 1 → 8
+**Class Files** (e.g., `localStorageService.ts`, Models): Use 1 → 8
 
 **Utility/Configuration Files**: Use 1 → 2 → 6
 
@@ -327,7 +327,7 @@ Validation
 
 - `npm run typecheck` runs the application scope guard, `vue-tsc --noEmit`, compile-only contracts, and deliberate-error diagnostic probes. Vite builds transpile without type checking.
 - `strict`, `noUncheckedIndexedAccess`, and `strictTemplates` are enabled. The app project uses browser globals and `vite/client`; Node and Vitest globals are not injected.
-- `typescript-migration.json` lists exactly the remaining 24 JS modules and 16 Vue JavaScript scripts. `allowJs: true` / `checkJs: false` permits their imports without claiming they are checked. Each migration removes its allowance; new unlisted JS, stale allowances, and source files outside compiler roots fail the gate.
+- `typescript-migration.json` lists exactly the remaining 4 JS modules and 16 Vue JavaScript scripts. `allowJs: true` / `checkJs: false` permits their imports without claiming they are checked. Each migration removes its allowance; new unlisted JS, stale allowances, and source files outside compiler roots fail the gate.
 - The final target is all application modules in TS and all SFC scripts in TS. Remove the manifest and set `allowJs: false` when the list is empty. Runtime JS tests, Node configuration/scripts, locale JSON, and visual assets remain intentional exceptions outside that application migration.
 - TS modules retain existing naming stems with `.ts`: classes/models use PascalCase; services, utilities, composables, and type modules use camelCase. Compile-only tests use the owner's stem plus `.test.ts` under `tests/type-tests/`; Vitest excludes that directory.
 - Use `import type` for type-only dependencies. Treat external JSON and caught errors as `unknown` until existing runtime checks or normalization justify narrower contracts; TS never replaces storage validation.

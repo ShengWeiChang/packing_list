@@ -233,7 +233,7 @@ Created: 2025-09-19
 import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue';
 
 import { Item } from '../models/Item';
-import { focusEditingInput } from '../utils/focusEditingInput.js';
+import { focusEditingInput } from '../utils/focusEditingInput';
 import AppIcon from './AppIcon.vue';
 import OverflowMenu from './OverflowMenu.vue';
 

@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/models/Item.js
+File: source/models/Item.ts
 Description: Item model class with validation, serialization and
              secure ID generation.
 Author: Sheng-Wei Chang
@@ -13,8 +13,9 @@ Created: 2025-09-19
 // Imports
 // -----------------------------------------------------------------------------
 
-import { VALIDATION } from '../utils/constants.js';
-import { generateSecureId } from '../utils/helpers.js';
+import { VALIDATION } from '../utils/constants';
+import { generateSecureId } from '../utils/helpers';
+import type { ItemDTO, ItemInput } from './contracts';
 
 // -----------------------------------------------------------------------------
 // Class definition
@@ -23,7 +24,16 @@ import { generateSecureId } from '../utils/helpers.js';
 /**
  * Represents an item in a checklist
  */
-export class Item {
+export class Item implements ItemDTO {
+  declare id: string;
+  declare name: string;
+  declare quantity: number;
+  declare categoryId: string | null;
+  declare isPacked: boolean;
+  declare isPending: boolean;
+  declare checklistId: string | null;
+  declare order: number;
+
   /**
    * Item class constructor
    * @param {object} root0 - Item configuration object
@@ -45,7 +55,7 @@ export class Item {
     isPending = false,
     checklistId = null,
     order = 0,
-  } = {}) {
+  }: ItemInput = {}) {
     this.id = id;
     this.name = this.validateName(name);
     this.quantity = this.validateQuantity(quantity);
@@ -61,7 +71,7 @@ export class Item {
    * @param {string} name - The name to validate
    * @returns {string} Validated name
    */
-  validateName(name) {
+  validateName(name: unknown): string {
     if (typeof name !== 'string') {
       throw new Error('Item name must be a string');
     }
@@ -79,7 +89,7 @@ export class Item {
    * @param {number} quantity - The quantity to validate
    * @returns {number} Validated quantity
    */
-  validateQuantity(quantity) {
+  validateQuantity(quantity: number | string): number {
     const num = Number(quantity);
     if (!Number.isInteger(num) || num < VALIDATION.MIN_QUANTITY || num > VALIDATION.MAX_QUANTITY) {
       throw new Error(
@@ -94,7 +104,7 @@ export class Item {
    * @param {object} json - The JSON data to create the item from
    * @returns {Item} A new Item instance
    */
-  static fromJSON(json) {
+  static fromJSON(json: ItemInput): Item {
     // Ensure isPacked and isPending are properly converted to boolean
     const itemData = {
       ...json,
@@ -108,7 +118,7 @@ export class Item {
    * Converts the item instance to JSON format
    * @returns {object} The JSON representation of the item
    */
-  toJSON() {
+  toJSON(): ItemDTO {
     return {
       id: this.id,
       name: this.name,
