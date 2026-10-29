@@ -31,11 +31,12 @@ Created: 2025-09-19
     >
       <input
         :id="`item-${item.id}-packed`"
-        v-model="isItemPacked"
+        :checked="isItemPacked"
         :name="`item-${item.id}-packed`"
         type="checkbox"
         data-testid="item-checkbox"
         :aria-label="$t('item.togglePacked')"
+        :aria-disabled="isSavingPacked || undefined"
         :class="[
           'size-5 flex-none shrink-0 cursor-pointer focus:outline-none md:size-4',
           isItemPacked
@@ -43,6 +44,7 @@ Created: 2025-09-19
             : 'border-border-color-medium accent-control-accent',
         ]"
         :style="isItemPacked ? { accentColor: 'var(--theme-primary)' } : {}"
+        @change="handlePackedChange"
       />
     </div>
 
@@ -57,6 +59,7 @@ Created: 2025-09-19
         :id="`item-${item.id}-name`"
         ref="editInput"
         v-model="editedName"
+        :disabled="isSavingEdit"
         :name="`item-${item.id}-name`"
         :aria-label="$t('item.name')"
         data-testid="item-edit-input"
@@ -91,6 +94,21 @@ Created: 2025-09-19
       >
         {{ item.name }}
       </span>
+      <p
+        v-if="editSaveFailed"
+        class="text-sm text-danger-text"
+        role="alert"
+      >
+        {{
+          $t(
+            editErrorCode === 'conflict' ||
+              editErrorCode === 'quota' ||
+              editErrorCode === 'lock-unavailable'
+              ? `storage.${editErrorCode}`
+              : 'common.saveFailed'
+          )
+        }}
+      </p>
     </div>
 
     <!-- Pending (to-buy / to-do) icon button - always visible; toggling will clear packed state to keep states mutually exclusive -->
@@ -212,7 +230,7 @@ Created: 2025-09-19
 // Imports
 // ------------------------------------------------------------------------------
 
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue';
 
 import { Item } from '../models/Item';
 import { focusEditingInput } from '../utils/focusEditingInput.js';
@@ -225,6 +243,12 @@ import OverflowMenu from './OverflowMenu.vue';
 
 // Props
 const props = defineProps({
+  commitEditOnBlur: { type: Boolean, default: false },
+  retainDraft: { type: Function, default: null },
+  editCancelled: { type: Function, default: null },
+  saveItemEdit: { type: Function, default: null },
+  editErrorCode: { type: String, default: null },
+  updateItemAction: { type: Function, default: null },
   item: {
     type: Object,
     required: true,
@@ -264,6 +288,9 @@ const emit = defineEmits(['update:item', 'copy:item', 'delete:item']);
 // ------------------------------------------------------------------------------
 
 const isEditing = ref(false);
+const isSavingEdit = ref(false);
+const isSavingPacked = ref(false);
+const editSaveFailed = ref(false);
 const isHovered = ref(false);
 const isQuantityHovered = ref(false);
 const editedName = ref('');
@@ -315,6 +342,34 @@ const isItemPacked = computed({
   },
 });
 
+/** Keep the checkbox at its committed value until the update is reflected in props.
+ * @param {Event} event - Checkbox change event.
+ */
+async function handlePackedChange(event) {
+  if (isSavingPacked.value) {
+    event.target.checked = props.item.isPacked;
+    return;
+  }
+  const requested = event.target.checked;
+  event.target.checked = props.item.isPacked;
+  if (!props.updateItemAction) {
+    isItemPacked.value = requested;
+    return;
+  }
+  isSavingPacked.value = true;
+  try {
+    await props.updateItemAction(
+      new Item({
+        ...props.item,
+        isPacked: requested,
+        isPending: requested ? false : props.item.isPending,
+      })
+    );
+  } finally {
+    isSavingPacked.value = false;
+  }
+}
+
 // ------------------------------------------------------------------------------
 // Functions
 // ------------------------------------------------------------------------------
@@ -343,6 +398,8 @@ function handleCompositionStart() {
  */
 function handleCompositionEnd() {
   isComposing.value = false;
+  if (props.commitEditOnBlur && isEditing.value && document.activeElement !== editInput.value)
+    saveEdit();
 }
 
 /**
@@ -362,9 +419,14 @@ function handleEnterKey(event) {
 /**
  * Save edit when focus moves outside the edit area
  * Includes IME composition check for defensive programming
- * @param {Event} _event - Blur event (unused)
+ * @param {FocusEvent} event - Focus change from the edit area.
  */
-function handleEditBlur(_event) {
+function handleEditBlur(event) {
+  if (props.commitEditOnBlur) {
+    if (event.target !== editInput.value) return;
+    if (isEditing.value && !isComposing.value) saveEdit();
+    return;
+  }
   // Use a small timeout to allow focus to move to another element
   setTimeout(() => {
     // Check if focus is still within the name input
@@ -372,7 +434,7 @@ function handleEditBlur(_event) {
     const isStillEditing = activeElement === editInput.value;
 
     // Only save if not editing and not in IME composition
-    if (!isStillEditing && isEditing.value && !isComposing.value) {
+    if (!isStillEditing && isEditing.value && !isComposing.value && !editSaveFailed.value) {
       saveEdit();
     }
   }, 50); // 50ms: balance between focus transfer reliability and user responsiveness
@@ -384,6 +446,7 @@ function handleEditBlur(_event) {
 async function startEdit() {
   cleanupEditingFocus();
   isEditing.value = true;
+  editSaveFailed.value = false;
   editBaseline = { ...props.item };
   editedName.value = props.item.name;
 
@@ -394,7 +457,8 @@ async function startEdit() {
 /**
  * Save changes to item if name was modified
  */
-function saveEdit() {
+async function saveEdit() {
+  if (isSavingEdit.value) return;
   cleanupEditingFocus();
   const hasNameChanged = editedName.value.trim() && editedName.value !== editBaseline.name;
 
@@ -403,7 +467,28 @@ function saveEdit() {
       ...editBaseline,
       name: editedName.value.trim() || editBaseline.name,
     });
-    emit('update:item', updatedItem, editBaseline);
+    if (props.saveItemEdit) {
+      const restoreFocus = document.activeElement === editInput.value;
+      isSavingEdit.value = true;
+      editSaveFailed.value = false;
+      try {
+        if (!(await props.saveItemEdit(updatedItem, editBaseline))) {
+          editSaveFailed.value = true;
+          isSavingEdit.value = false;
+          await nextTick();
+          if (restoreFocus) editInput.value?.focus({ preventScroll: true });
+          return;
+        }
+      } finally {
+        isSavingEdit.value = false;
+      }
+    } else {
+      emit('update:item', updatedItem, editBaseline);
+    }
+  }
+  if (editSaveFailed.value) {
+    editSaveFailed.value = false;
+    props.editCancelled?.('item', props.item.id);
   }
   isEditing.value = false;
 }
@@ -412,7 +497,10 @@ function saveEdit() {
  * Cancel editing and restore original values
  */
 function cancelEdit() {
+  if (isSavingEdit.value) return;
   cleanupEditingFocus();
+  editSaveFailed.value = false;
+  props.editCancelled?.('item', props.item.id);
   isEditing.value = false;
   editedName.value = props.item.name;
 }
@@ -480,5 +568,11 @@ watch(
   }
 );
 
+onBeforeUnmount(() => {
+  if (isEditing.value && editBaseline && editedName.value !== editBaseline.name) {
+    props.retainDraft?.({ name: editedName.value });
+  }
+  if (editSaveFailed.value) props.editCancelled?.('item', props.item.id);
+});
 onUnmounted(() => cleanupEditingFocus());
 </script>

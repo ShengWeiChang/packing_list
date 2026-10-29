@@ -13,7 +13,7 @@ Created: 2026-10-13
     v-if="visible"
     class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm"
     role="presentation"
-    @click.self="$emit('close')"
+    @click.self="close"
   >
     <form
       ref="dialogRef"
@@ -35,6 +35,7 @@ Created: 2026-10-13
       <input
         ref="nameInput"
         v-model="name"
+        :disabled="saving"
         class="mt-1 w-full rounded-lg border border-border-color-light px-3 py-2 text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus"
         maxlength="100"
         type="text"
@@ -47,11 +48,25 @@ Created: 2026-10-13
       >
         {{ $t('template.nameRequired') }}
       </p>
+      <p
+        v-if="saveError"
+        class="mt-2 text-sm text-danger-text"
+        role="alert"
+      >
+        {{
+          $t(
+            errorCode === 'conflict' || errorCode === 'quota' || errorCode === 'lock-unavailable'
+              ? `storage.${errorCode}`
+              : 'common.saveFailed'
+          )
+        }}
+      </p>
       <div class="mt-6 flex justify-end gap-2">
         <button
           class="rounded-lg px-4 py-2 text-sm text-secondary hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus"
           type="button"
-          @click="$emit('close')"
+          :disabled="saving"
+          @click="close"
         >
           {{ $t('common.cancel') }}
         </button>
@@ -59,6 +74,7 @@ Created: 2026-10-13
           class="rounded-lg bg-theme-primary px-4 py-2 text-sm text-white hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus"
           data-testid="save-template-confirm"
           type="submit"
+          :disabled="saving"
         >
           {{ $t('common.save') }}
         </button>
@@ -81,6 +97,9 @@ import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 const props = defineProps({
   initialName: { type: String, default: '' },
   visible: { type: Boolean, default: false },
+  saving: { type: Boolean, default: false },
+  saveError: { type: Boolean, default: false },
+  errorCode: { type: String, default: null },
 });
 
 const emit = defineEmits(['close', 'save']);
@@ -103,11 +122,17 @@ const previouslyFocusedElement = ref(null);
  * Validate and emit the requested template name.
  */
 function save() {
+  if (props.saving) return;
   if (!name.value.trim()) {
     showError.value = true;
     return;
   }
   emit('save', name.value.trim());
+}
+
+/** Close only when no save is in flight. */
+function close() {
+  if (!props.saving) emit('close');
 }
 
 /**
@@ -117,7 +142,7 @@ function save() {
 function handleDialogKeydown(event) {
   if (!props.visible) return;
   if (event.key === 'Escape') {
-    emit('close');
+    close();
     return;
   }
   if (event.key !== 'Tab') return;

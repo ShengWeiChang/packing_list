@@ -394,6 +394,10 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Checklists and templates use separate `packingListApp` and `packingListTemplates` keys. Writes coordinate cooperating tabs with a shared Web Lock, read the latest data inside the lock, and publish only after the destination key is saved.
 - Field-intent updates compare the edited fields with their expected previous values: unrelated field changes can coexist, while stale changes to the same fields are rejected. Batch changes commit together or not at all.
 - Corrupt data or an unsupported schema is preserved as raw storage and blocks writes to that domain. Missing legacy defaults are normalized in memory, not rewritten on read.
+- Read failures identify the affected domain and offer retry; corrupt or unsupported data can be downloaded as its original content when storage is readable. A download request is not proof that a backup was saved.
+- Checklist and template domains are reported independently. A failed save retains the active inline name/date or dialog draft and reports the error; a successful write followed by a failed refresh is reported separately to discourage duplicate writes.
+- If an inline editor disappears before its changes are saved, its draft is displayed separately for copying or dismissal; this recovery text is in-memory only and does not recreate deleted records.
+- After a template save fails, switching to another template requires explicit confirmation before discarding its draft; a template save in progress blocks switching editors.
 - localStorage is retained to avoid a storage migration; safe writes are rejected when Web Locks are unavailable. Older deployed tabs may not participate in the lock, and single-key writes do not provide cross-key atomic transactions. Reconsider IndexedDB if broader write compatibility or stronger transactions become necessary.
 
 #### State Management

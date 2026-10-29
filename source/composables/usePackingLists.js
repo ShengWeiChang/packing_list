@@ -94,6 +94,11 @@ export function usePackingLists() {
   const selectedChecklistId = ref(null);
   const isLoading = ref(false);
   const error = ref(null);
+  const storageHealth = ref(null);
+  const operationError = ref(null);
+  const operationErrorVersion = ref(0);
+  const refreshAfterSaveFailed = ref(false);
+  let postCommitRefreshes = 0;
   const packingUndoStack = ref([]);
   const packingRedoStack = ref([]);
   let isApplyingPackingHistory = false;
@@ -186,20 +191,50 @@ export function usePackingLists() {
    * Generic wrapper for async data operations with error handling and loading state
    * @param {Function} loader - Async function to execute
    * @param {string} errorMessage - Error message prefix for failures
+   * @param {boolean} [isRead=false] - Whether this operation reads existing data.
    * @returns {Promise<*>} Result from loader function or null on error
    */
-  async function loadData(loader, errorMessage) {
+  async function loadData(loader, errorMessage, isRead = false) {
     isLoading.value = true;
-    error.value = null;
     try {
       const result = await loader();
+      if (!isRead) {
+        operationError.value = null;
+        refreshAfterSaveFailed.value = false;
+      }
       return result;
     } catch (e) {
       error.value = `${errorMessage}: ${e.message}`;
+      if (isRead) {
+        storageHealth.value = e.code || 'unavailable';
+        if (postCommitRefreshes) refreshAfterSaveFailed.value = true;
+      } else {
+        operationError.value = e.code || 'unavailable';
+        operationErrorVersion.value += 1;
+      }
       return null;
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /** Refresh visible state after a successful commit without misreporting the write.
+   * @param {Function} refresh - Refresh operation to run.
+   */
+  async function refreshAfterCommit(refresh) {
+    postCommitRefreshes += 1;
+    try {
+      await refresh();
+    } finally {
+      postCommitRefreshes -= 1;
+    }
+  }
+
+  /** Dismiss an error only if it still belongs to the cancelled operation.
+   * @param {number} version - Error revision captured by the editor.
+   */
+  function clearOperationError(version) {
+    if (operationErrorVersion.value === version) operationError.value = null;
   }
 
   /**
@@ -363,6 +398,8 @@ export function usePackingLists() {
       isLoading.value = true;
       error.value = null;
       const raw = await dataService.getData();
+      storageHealth.value = null;
+      refreshAfterSaveFailed.value = false;
 
       // Normalize legacy defaults in memory without modifying stored data.
       const rawChecklists = raw.checklists || [];
@@ -391,6 +428,7 @@ export function usePackingLists() {
         items.value = [];
       }
     } catch (e) {
+      storageHealth.value = e.code || 'unavailable';
       error.value = `Error initializing data: ${e.message}`;
     } finally {
       isLoading.value = false;
@@ -413,8 +451,8 @@ export function usePackingLists() {
       'Error creating checklist'
     );
     if (result) {
-      await getChecklists();
-      selectedChecklistId.value = result.id;
+      await refreshAfterCommit(getChecklists);
+      if (!refreshAfterSaveFailed.value) selectedChecklistId.value = result.id;
       return result;
     }
     return null;
@@ -425,7 +463,11 @@ export function usePackingLists() {
    * @returns {Promise<Array>} Array of checklist objects sorted by order
    */
   async function getChecklists() {
-    const result = await loadData(() => dataService.getChecklists(), 'Error getting checklists');
+    const result = await loadData(
+      () => dataService.getChecklists(),
+      'Error getting checklists',
+      true
+    );
     if (!result) return checklists.value;
 
     checklists.value = result.sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -447,7 +489,7 @@ export function usePackingLists() {
       'Error updating checklist'
     );
     if (result) {
-      await getChecklists();
+      await refreshAfterCommit(getChecklists);
       return result;
     }
     return null;
@@ -476,7 +518,7 @@ export function usePackingLists() {
       'Error updating checklists'
     );
     if (result) {
-      await getChecklists();
+      await refreshAfterCommit(getChecklists);
       return result;
     }
     return null;
@@ -485,11 +527,16 @@ export function usePackingLists() {
   /**
    * Delete a checklist and update selection if needed
    * @param {string} checklistId - Checklist ID to delete
-   * @returns {Promise<void>}
+   * @returns {Promise<boolean>} Whether the deletion was committed.
    */
   async function deleteChecklist(checklistId) {
-    await loadData(() => dataService.deleteChecklist(checklistId), 'Error deleting checklist');
-    await getChecklists();
+    const deleted = await loadData(async () => {
+      await dataService.deleteChecklist(checklistId);
+      return true;
+    }, 'Error deleting checklist');
+    if (!deleted) return false;
+    await refreshAfterCommit(getChecklists);
+    return true;
   }
 
   /**
@@ -503,7 +550,7 @@ export function usePackingLists() {
       'Error duplicating checklist'
     );
     if (result) {
-      await getChecklists();
+      await refreshAfterCommit(getChecklists);
       return result;
     }
     return null;
@@ -525,7 +572,7 @@ export function usePackingLists() {
       'Error creating category'
     );
     if (result) {
-      await getCategories();
+      await refreshAfterCommit(getCategories);
       return result;
     }
     return null;
@@ -545,7 +592,8 @@ export function usePackingLists() {
     }
     const result = await loadData(
       () => dataService.getCategories(checklistId),
-      'Error getting categories'
+      'Error getting categories',
+      true
     );
     if (
       selectedChecklistId.value !== checklistId ||
@@ -554,6 +602,7 @@ export function usePackingLists() {
     ) {
       return categories.value;
     }
+    if (!result) return categories.value;
     categories.value = (result || []).sort((a, b) => (a.order || 0) - (b.order || 0));
     return categories.value;
   }
@@ -574,7 +623,7 @@ export function usePackingLists() {
     if (!result) {
       return null;
     }
-    await getCategories();
+    await refreshAfterCommit(getCategories);
     return result;
   }
 
@@ -599,19 +648,24 @@ export function usePackingLists() {
         ),
       'Error updating categories'
     );
-    if (result) await getCategories();
+    if (result) await refreshAfterCommit(getCategories);
     return result;
   }
 
   /**
    * Delete a category and all its items
    * @param {string} categoryId - Category ID to delete
-   * @returns {Promise<void>}
+   * @returns {Promise<boolean>} Whether the deletion was committed.
    */
   async function deleteCategory(categoryId) {
+    const deleted = await loadData(async () => {
+      await dataService.deleteCategory(categoryId);
+      return true;
+    }, 'Error deleting category');
+    if (!deleted) return false;
     clearPackingHistory();
-    await loadData(() => dataService.deleteCategory(categoryId), 'Error deleting category');
-    await Promise.all([getCategories(), getItems()]);
+    await refreshAfterCommit(() => Promise.all([getCategories(), getItems()]));
+    return true;
   }
 
   /**
@@ -625,7 +679,7 @@ export function usePackingLists() {
       'Error duplicating category'
     );
     if (result) {
-      await Promise.all([getCategories(), getItems()]);
+      await refreshAfterCommit(() => Promise.all([getCategories(), getItems()]));
       return result;
     }
     return null;
@@ -647,7 +701,7 @@ export function usePackingLists() {
       'Error creating item'
     );
     if (result) {
-      await getItems();
+      await refreshAfterCommit(getItems);
       return result;
     }
     return null;
@@ -665,7 +719,11 @@ export function usePackingLists() {
       items.value = [];
       return [];
     }
-    const result = await loadData(() => dataService.getItems(checklistId), 'Error getting items');
+    const result = await loadData(
+      () => dataService.getItems(checklistId),
+      'Error getting items',
+      true
+    );
     if (
       selectedChecklistId.value !== checklistId ||
       selectionRevision !== selectionAtStart ||
@@ -673,6 +731,7 @@ export function usePackingLists() {
     ) {
       return items.value;
     }
+    if (!result) return items.value;
     items.value = (result || []).sort((a, b) => {
       // First sort by category order, then by item order within category
       const catA = categories.value.find((c) => c.id === a.categoryId);
@@ -712,7 +771,7 @@ export function usePackingLists() {
       if (selectedChecklistId.value !== checklistId || selectionRevision !== selectionAtStart) {
         return result;
       }
-      await getItems();
+      await refreshAfterCommit(getItems);
       if (selectedChecklistId.value !== checklistId || selectionRevision !== selectionAtStart) {
         return result;
       }
@@ -757,7 +816,7 @@ export function usePackingLists() {
       if (selectedChecklistId.value !== checklistId || selectionRevision !== selectionAtStart) {
         return null;
       }
-      await getItems();
+      await refreshAfterCommit(getItems);
       if (selectedChecklistId.value !== checklistId || selectionRevision !== selectionAtStart) {
         return null;
       }
@@ -795,16 +854,18 @@ export function usePackingLists() {
   /**
    * Delete an item from the current checklist
    * @param {string} itemId - Item ID to delete
-   * @returns {Promise<void>}
+   * @returns {Promise<boolean>} Whether the deletion was committed.
    */
   async function deleteItem(itemId) {
-    if (!selectedChecklistId.value) return;
+    if (!selectedChecklistId.value) return false;
+    const deleted = await loadData(async () => {
+      await dataService.deleteItem(selectedChecklistId.value, itemId);
+      return true;
+    }, 'Error deleting item');
+    if (!deleted) return false;
     clearPackingHistory();
-    await loadData(
-      () => dataService.deleteItem(selectedChecklistId.value, itemId),
-      'Error deleting item'
-    );
-    await getItems();
+    await refreshAfterCommit(getItems);
+    return true;
   }
 
   /**
@@ -819,7 +880,7 @@ export function usePackingLists() {
       'Error duplicating item'
     );
     if (result) {
-      await getItems();
+      await refreshAfterCommit(getItems);
       return result;
     }
     return null;
@@ -834,6 +895,9 @@ export function usePackingLists() {
     selectedChecklistId,
     (newId, oldId) => {
       if (newId !== oldId) {
+        // Scoped arrays belong to the previous checklist until their new reads succeed.
+        categories.value = [];
+        items.value = [];
         persistLastOpenedChecklistId(newId);
         selectionRevision += 1;
         clearPackingHistory();
@@ -868,6 +932,11 @@ export function usePackingLists() {
     selectedChecklistId,
     isLoading: readonly(isLoading),
     error: readonly(error),
+    storageHealth: readonly(storageHealth),
+    operationError: readonly(operationError),
+    operationErrorVersion: readonly(operationErrorVersion),
+    clearOperationError,
+    refreshAfterSaveFailed: readonly(refreshAfterSaveFailed),
 
     // Computed
     selectedChecklist,

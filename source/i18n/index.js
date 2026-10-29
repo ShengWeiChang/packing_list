@@ -73,7 +73,12 @@ function mapToSupportedLocale(lang) {
  */
 function getPreferredLocale() {
   // 1. Check saved preference first
-  const savedLocale = localStorage.getItem(LOCALE_STORAGE_KEY);
+  let savedLocale;
+  try {
+    savedLocale = localStorage.getItem(LOCALE_STORAGE_KEY);
+  } catch {
+    // Locale is an optional preference; browser detection remains available.
+  }
   if (savedLocale && SUPPORTED_LOCALES.includes(savedLocale)) {
     return savedLocale;
   }
@@ -113,8 +118,12 @@ const i18n = createI18n({
 });
 
 // Persist initial detection to localStorage if not already saved
-if (!localStorage.getItem(LOCALE_STORAGE_KEY)) {
-  localStorage.setItem(LOCALE_STORAGE_KEY, initialLocale);
+try {
+  if (!localStorage.getItem(LOCALE_STORAGE_KEY)) {
+    localStorage.setItem(LOCALE_STORAGE_KEY, initialLocale);
+  }
+} catch {
+  // The app can continue with the detected locale for this session.
 }
 
 /**
@@ -129,7 +138,11 @@ export function setLocale(newLocale) {
 
   if (i18n.global.locale) {
     i18n.global.locale.value = newLocale;
-    localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
+    try {
+      localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
+    } catch {
+      // Keep the in-memory locale even when persistence is unavailable.
+    }
   }
 }
 

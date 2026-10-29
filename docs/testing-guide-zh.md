@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 629    |
-| Unit tests 單元測試           | 277    |
-| Component tests 組件測試      | 291    |
-| E2E tests E2E 測試            | 61     |
-| Line coverage 行覆蓋率        | 95.22% |
-| Statement coverage 語句覆蓋率 | 94.30% |
-| Branch coverage 分支覆蓋率    | 87.02% |
+| Total tests 總測試數          | 665    |
+| Unit tests 單元測試           | 282    |
+| Component tests 組件測試      | 296    |
+| E2E tests E2E 測試            | 87     |
+| Line coverage 行覆蓋率        | 92.09% |
+| Statement coverage 語句覆蓋率 | 90.60% |
+| Branch coverage 分支覆蓋率    | 81.09% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,9 +29,9 @@
 
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 277   | models、services、composables、utils 純邏輯 |
-| Component | Vitest + @vue/test-utils | 291   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 61    | 真實瀏覽器中的完整使用者流程                |
+| Unit      | Vitest                   | 282   | models、services、composables、utils 純邏輯 |
+| Component | Vitest + @vue/test-utils | 296   | Vue 組件渲染、事件、狀態                    |
+| E2E       | Playwright               | 82    | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
@@ -50,7 +50,7 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 277 tests
+├── unit-tests/                          # 282 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -63,11 +63,11 @@ tests/
 │   │   ├── templateService.test.js      # 15  tests
 │   │   ├── storageTransaction.test.js  # 20  tests
 │   │   └── recommendedListService.test.js  #  4  tests
-│   ├── composables/                     # 62  tests
-│   │   └── usePackingLists.test.js      # 47  tests
+│   ├── composables/                     # 66  tests
+│   │   └── usePackingLists.test.js      # 51  tests
 │   │   └── useTemplates.test.js         # 15  tests
-│   ├── i18n/                            # 11  tests
-│   │   └── index.test.js                # 11  tests
+│   ├── i18n/                            # 12  tests
+│   │   └── index.test.js                # 12  tests
 │   ├── utils/                           # 36  tests
 │       ├── helpers.test.js              # 21  tests
 │       ├── positioning.test.js          #  3  tests
@@ -78,14 +78,14 @@ tests/
 │       ├── candidateFingerprint.test.js #  2  tests
 │       └── verifyFeature.test.js        #  3  tests
 │
-├── component-tests/                     # 291 tests
-│   ├── App.test.js                      # 66  tests
+├── component-tests/                     # 296 tests
+│   ├── App.test.js                      # 68  tests
 │   ├── PackingCompletionOverlay.test.js # 10  tests
 │   ├── AppIcon.test.js                  #  4  tests
-│   ├── Checklist.test.js                # 38  tests
-│   ├── Item.test.js                     # 26  tests
+│   ├── Checklist.test.js                # 39  tests
+│   ├── Item.test.js                     # 27  tests
 │   ├── Sidebar.test.js                  # 33  tests
-│   ├── Category.test.js                 # 30  tests
+│   ├── Category.test.js                 # 31  tests
 │   ├── OverflowMenu.test.js             # 24  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
@@ -96,7 +96,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 13  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 61  tests
+└── end2end-tests/                       # 82  tests
     ├── mobile-workflow.spec.js          # 10  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
@@ -106,7 +106,8 @@ tests/
     ├── drag-and-drop.spec.js            #  7  tests
     ├── multi-tab-sync.spec.js           #  6  tests
     ├── template-management.spec.js      #  7  tests
-    └── recommended-lists.spec.js           #  1  test
+    ├── recommended-lists.spec.js        #  1  test
+    └── storage-recovery.spec.js         # 26  tests
 ```
 
 ### Naming Conventions 命名慣例
@@ -130,18 +131,18 @@ tests/
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
 | scripts/     | 57.48%     | 50.00% | 53.04% |
-| source/      | 97.59%     | 88.61% | 99.55% |
-| components/  | 96.60%     | 92.33% | 98.40% |
-| composables/ | 95.47%     | 86.58% | 97.26% |
+| source/      | 82.93%     | 72.29% | 85.50% |
+| components/  | 91.52%     | 82.42% | 94.29% |
+| composables/ | 95.41%     | 87.03% | 97.37% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 95.77%     | 82.77% | 95.31% |
+| services/    | 95.60%     | 82.72% | 95.12% |
 | utils/       | 98.92%     | 87.69% | 100%   |
 
 ### By Component 各組件覆蓋率
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 97.59%     | 99.55% | 66    |
+| App.vue                      | 82.93%     | 85.50% | 68    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
@@ -150,13 +151,13 @@ tests/
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
 | Sidebar.vue                  | 100%       | 100%   | 33    |
 | OverflowMenu.vue             | 95.12%     | 96.20% | 24    |
-| Category.vue                 | 97.29%     | 98.00% | 30    |
-| Checklist.vue                | 93.52%     | 98.43% | 38    |
-| Item.vue                     | 92.40%     | 93.50% | 26    |
+| Category.vue                 | 87.82%     | 90.07% | 31    |
+| Checklist.vue                | 85.95%     | 91.97% | 39    |
+| Item.vue                     | 81.39%     | 85.12% | 27    |
 | NewChecklistDialog.vue       | 97.36%     | 100%   | 12    |
 | PackingCompletionOverlay.vue | 97.18%     | 100%   | 10    |
-| SaveTemplateDialog.vue       | 97.95%     | 100%   | 10    |
-| TemplateEditor.vue           | 98.73%     | 100%   | 13    |
+| SaveTemplateDialog.vue       | 96.07%     | 100%   | 10    |
+| TemplateEditor.vue           | 95.23%     | 97.10% | 13    |
 
 ### Coverage Metrics Explained 覆蓋率指標說明
 
@@ -233,7 +234,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ## 8. Complete Test Inventory 完整測試案例清單
 
-### 8.1 Unit Tests（253）
+### 8.1 Unit Tests（282）
 
 #### 8.1.1 Models（40）
 
@@ -438,9 +439,9 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 19  | rejects queued checklist creation after the selected template is deleted      | 已刪除模板防護   |
 | 20  | preserves corrupted template data and refuses queued checklist creation       | 損壞模板防護     |
 
-#### 8.1.3 Composables（62）
+#### 8.1.3 Composables（66）
 
-##### 8.1.3.1 usePackingLists.test.js（47）
+##### 8.1.3.1 usePackingLists.test.js（51）
 
 | #   | Test                                                                               | 測試重點                |
 | --- | ---------------------------------------------------------------------------------- | ----------------------- |
@@ -491,6 +492,10 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 45  | should treat a category pack-all as one undoable action and restore mixed state    | 群組歷史與重做安全      |
 | 46  | should clear packing history when switching checklists                             | 歷史範圍隔離            |
 | 47  | preserves remote item edits when committing a stale drag payload                   | 明確拖曳意圖            |
+| 48  | 刪除失敗後保留歷史與資料                                                           | 刪除失敗                |
+| 49  | 重新讀取失敗後保留畫面上的分類與物品                                               | 讀取失敗                |
+| 50  | 區分寫入成功與後續更新失敗                                                         | 寫入確認                |
+| 51  | 新清單無法讀取時清除先前清單資料                                                   | 選取歸屬                |
 
 ##### 8.1.3.2 useTemplates.test.js（15）
 
@@ -512,9 +517,9 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 14  | should expose its service instance                         | Service 存取   |
 | 15  | refreshes for template and clear events only while mounted | 跨分頁生命週期 |
 
-#### 8.1.4 i18n（11）
+#### 8.1.4 i18n（12）
 
-##### 8.1.4.1 index.test.js（11）
+##### 8.1.4.1 index.test.js（12）
 
 | #   | Test                                                                    | 測試重點           |
 | --- | ----------------------------------------------------------------------- | ------------------ |
@@ -529,6 +534,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 9   | should keep English and Traditional Chinese translation keys aligned    | 翻譯 key 一致性    |
 | 10  | should render real interpolated and pluralized messages in both locales | 實際插值與複數形式 |
 | 11  | should render the English fallback when a Chinese message is missing    | 執行時英文後備顯示 |
+| 12  | storage 拒絕存取時維持 session 語言                                     | 偏好後備           |
 
 #### 8.1.5 Utils（36）
 
@@ -621,9 +627,9 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | should report missing individual errors                      | reporter 後備訊息        |
 | 3   | should summarize top-level Playwright runner failures        | 測試前 runner 診斷       |
 
-### 8.2 Component Tests（291）
+### 8.2 Component Tests（296）
 
-#### 8.2.1 App.test.js（66）
+#### 8.2.1 App.test.js（68）
 
 | #   | Test                                                                             | 測試重點                             |
 | --- | -------------------------------------------------------------------------------- | ------------------------------------ |
@@ -693,6 +699,8 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 64  | shows the completion overlay only when redo completes the checklist              | redo 轉場、sidebar 隔離與 guard      |
 | 65  | keeps completed initialization and checklist switching silent                    | 被動轉場排除                         |
 | 66  | should defer an existing category undo window when a final item opens completion | 跨路徑完整 Undo 時窗                 |
+| 67  | 範本 dialog 保持開啟直到重試成功                                                 | 範本草稿與重試                       |
+| 68  | 清單來源選擇保持開啟直到重試成功                                                 | 建立清單重試                         |
 
 #### 8.2.2 Topbar.test.js（2）
 
@@ -744,7 +752,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 4   | should show quantity badge when quantity > 1                 | 數量顯示       |
 | 5   | should emit "update:item" with isPending=false on completion | 清除 pending   |
 
-#### 8.2.7 Item.test.js（26）
+#### 8.2.7 Item.test.js（27）
 
 | #   | Test                                                   | 測試重點            |
 | --- | ------------------------------------------------------ | ------------------- |
@@ -774,6 +782,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 24  | should not enter edit mode when ID doesn't match       | 無誤觸發            |
 | 25  | should not decrement quantity below 1                  | 最小數量檢查        |
 | 26  | should apply cursor-grabbing when isDragging           | 拖曳視覺狀態        |
+| 27  | 儲存失敗後保留物品草稿直到重試                         | 行內寫入確認        |
 
 #### 8.2.8 OverflowMenu.test.js（24）
 
@@ -804,7 +813,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 23  | should clamp position within viewport                             | 視窗邊界限制              |
 | 24  | should fall back to createEvent                                   | 舊瀏覽器相容              |
 
-#### 8.2.9 Category.test.js（30）
+#### 8.2.9 Category.test.js（31）
 
 | #   | Test                                                                                | 測試重點       |
 | --- | ----------------------------------------------------------------------------------- | -------------- |
@@ -838,8 +847,9 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 28  | should not save during IME composition                                              | IME 檢查       |
 | 29  | should expose a mixed category checkbox and request packing all items               | 三態批次意圖   |
 | 30  | should expose checked, unchecked, and disabled category checkbox states             | 狀態渲染       |
+| 31  | 儲存失敗後保留分類草稿直到重試                                                      | 行內寫入確認   |
 
-#### 8.2.10 Checklist.test.js（38）
+#### 8.2.10 Checklist.test.js（39）
 
 | #   | Test                                                                        | 測試重點             |
 | --- | --------------------------------------------------------------------------- | -------------------- |
@@ -881,6 +891,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 36  | should clear drag state on drag end                                         | 拖曳清理             |
 | 37  | should emit "reorder:categories" with renumbered order when v-model changes | 分類重排事件         |
 | 38  | should save when focus leaves all editing inputs                            | 全域 blur 儲存       |
+| 39  | 儲存失敗後保留清單名稱與日期直到重試                                        | 行內寫入確認         |
 
 #### 8.2.11 Sidebar.test.js（33）
 
@@ -994,7 +1005,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 9   | renders localized Traditional Chinese sticker copy                     | 語系文字與緊湊日期範圍 |
 | 10  | exposes one synchronized timeline to JavaScript and CSS                | 共用時間軸契約         |
 
-### 8.3 E2E Tests（59）
+### 8.3 E2E Tests（82）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1106,3 +1117,34 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | #   | Test                                                          | 測試重點               |
 | --- | ------------------------------------------------------------- | ---------------------- |
 | 1   | should create and persist a checklist from a recommended list | 來源識別名稱與重新載入 |
+
+#### 8.3.11 storage-recovery.spec.js（26）
+
+| #   | Test                                 | 測試重點             |
+| --- | ------------------------------------ | -------------------- |
+| 1   | 儲存失敗後保留清單草稿               | 寫入失敗與重試       |
+| 2   | 儲存失敗後保留新範本草稿             | Dialog 來源與重試    |
+| 3   | 儲存失敗後保留範本編輯草稿           | 範本 editor 重試     |
+| 4   | 拒絕跨分頁的同欄位過期編輯           | 衝突與保留草稿       |
+| 5   | 合併跨分頁不同欄位編輯               | 欄位意圖             |
+| 6   | 回報瀏覽器 storage 無法存取          | 明確阻擋狀態         |
+| 7   | 拒絕失敗的分類打包                   | 不誤報完成或復原     |
+| 8   | 範本不支援時保留清單可用性           | Domain 隔離          |
+| 9   | 說明 Web Locks 無法使用              | 安全寫入後備行為     |
+| 10  | 切換清單時保留失敗草稿               | 草稿歸屬             |
+| 11  | 拒絕遠端刪除後排隊的編輯             | 不復活資料並保留草稿 |
+| 12  | 回報寫入成功但重新讀取失敗           | 區分寫入與讀取失敗   |
+| 13  | 取消編輯後顯示後續範本失敗           | 錯誤歸屬             |
+| 14  | 複製成功但重新讀取失敗時保留原選取   | 選取與寫入確認       |
+| 15  | 取消舊草稿時保留較新的錯誤           | 錯誤歸屬             |
+| 16  | 取消失敗的範本編輯後顯示後續清單錯誤 | 錯誤歸屬             |
+| 17  | 儲存等待鎖時阻止切換範本             | 等待中的編輯器歸屬   |
+| 18  | 拒絕切換時保留儲存失敗的範本草稿     | 明確放棄決策         |
+| 19  | 還原物品原名稱後顯示後續錯誤         | 無變更退出的錯誤歸屬 |
+| 20  | 英文桌面匯出損壞資料並重試           | 原始資料與鍵盤復原   |
+| 21  | 繁中 390px 匯出損壞資料並重試        | 本地化窄版復原       |
+| 22  | 切換清單後顯示排隊儲存失敗           | 已移除編輯器錯誤可見 |
+| 23  | 儲存正在編輯的範本標題               | 不按 Enter 直接儲存  |
+| 24  | 儲存正在編輯的範本分類               | 不按 Enter 直接儲存  |
+| 25  | 儲存正在編輯的範本物品               | 不按 Enter 直接儲存  |
+| 26  | 完成範本標題組字後才儲存             | 輸入法事件與最終文字 |

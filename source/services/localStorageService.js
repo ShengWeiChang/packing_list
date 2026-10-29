@@ -135,7 +135,7 @@ export class LocalStorageService extends DataService {
    * @returns {object} Object containing { categories: Array, items: Array }
    */
   _createRecommendedListData(checklistId) {
-    const userLocale = localStorage.getItem('user-locale') || 'en';
+    const userLocale = this._getLocalePreference();
     return new RecommendedListService().applyGeneralToNewChecklist(checklistId, userLocale);
   }
 
@@ -842,12 +842,23 @@ export class LocalStorageService extends DataService {
    * @private
    */
   _getCopySuffix(locale) {
-    const userLocale = locale || localStorage.getItem('user-locale') || 'en';
+    const userLocale = locale || this._getLocalePreference();
     const messages = {
       en,
       'zh-TW': zhTW,
     };
     return messages[userLocale]?.common?.copySuffix || ' (Copy)';
+  }
+
+  /** Read an optional locale preference without blocking data operations.
+   * @returns {string} Preferred locale or the default.
+   */
+  _getLocalePreference() {
+    try {
+      return localStorage.getItem('user-locale') || 'en';
+    } catch {
+      return 'en';
+    }
   }
 
   /**

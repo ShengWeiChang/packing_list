@@ -36,6 +36,9 @@ export function useTemplates() {
   const templates = ref([]);
   const isLoading = ref(false);
   const error = ref(null);
+  const storageHealth = ref(null);
+  const operationError = ref(null);
+  const refreshAfterSaveFailed = ref(false);
 
   const handleStorageEvent = (event) => {
     if (event.key !== STORAGE_KEYS.TEMPLATES && event.key !== null) return;
@@ -54,12 +57,18 @@ export function useTemplates() {
 
   /**
    * Load all templates from storage
+   * @returns {boolean} Whether the data was read successfully.
    */
   function loadTemplates() {
     try {
       templates.value = templateService.getTemplates();
+      storageHealth.value = null;
+      refreshAfterSaveFailed.value = false;
+      return true;
     } catch (e) {
+      storageHealth.value = e.code || 'unavailable';
       error.value = `Error loading templates: ${e.message}`;
+      return false;
     }
   }
 
@@ -72,9 +81,11 @@ export function useTemplates() {
   async function saveAsTemplate(checklistId, templateName) {
     try {
       const result = await templateService.createFromChecklist(checklistId, templateName);
-      loadTemplates();
+      operationError.value = null;
+      refreshAfterSaveFailed.value = !loadTemplates();
       return result;
     } catch (e) {
+      operationError.value = e.code || 'unavailable';
       error.value = `Error saving template: ${e.message}`;
       return null;
     }
@@ -88,9 +99,11 @@ export function useTemplates() {
   async function deleteTemplate(templateId) {
     try {
       await templateService.deleteTemplate(templateId);
-      loadTemplates();
+      operationError.value = null;
+      refreshAfterSaveFailed.value = !loadTemplates();
       return true;
     } catch (e) {
+      operationError.value = e.code || 'unavailable';
       error.value = `Error deleting template: ${e.message}`;
       return false;
     }
@@ -107,9 +120,11 @@ export function useTemplates() {
       const existing = templateService.getTemplateById(templateId);
       if (!existing) return null;
       const result = await templateService.updateTemplate({ ...existing, name: newName }, existing);
-      loadTemplates();
+      operationError.value = null;
+      refreshAfterSaveFailed.value = !loadTemplates();
       return result;
     } catch (e) {
+      operationError.value = e.code || 'unavailable';
       error.value = `Error renaming template: ${e.message}`;
       return null;
     }
@@ -125,6 +140,7 @@ export function useTemplates() {
     try {
       return templateService.applyToNewChecklist(templateId, checklistId);
     } catch (e) {
+      operationError.value = e.code || 'unavailable';
       error.value = `Error applying template: ${e.message}`;
       return null;
     }
@@ -139,9 +155,11 @@ export function useTemplates() {
   async function updateTemplate(templateData, expectedTemplate) {
     try {
       const result = await templateService.updateTemplate(templateData, expectedTemplate);
-      loadTemplates();
+      operationError.value = null;
+      refreshAfterSaveFailed.value = !loadTemplates();
       return result;
     } catch (e) {
+      operationError.value = e.code || 'unavailable';
       error.value = `Error updating template: ${e.message}`;
       return null;
     }
@@ -160,6 +178,9 @@ export function useTemplates() {
     templates: readonly(templates),
     isLoading: readonly(isLoading),
     error: readonly(error),
+    storageHealth: readonly(storageHealth),
+    operationError: readonly(operationError),
+    refreshAfterSaveFailed: readonly(refreshAfterSaveFailed),
 
     // Operations
     loadTemplates,

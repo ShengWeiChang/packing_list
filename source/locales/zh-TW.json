@@ -6,11 +6,30 @@
     "cancel": "取消",
     "back": "上一步",
     "save": "儲存",
+    "saveFailed": "儲存失敗。你的選擇或草稿仍在，請再試一次。",
     "confirm": "確認",
     "copySuffix": " (複製)",
     "moreOptions": "更多選項",
     "packingUpdated": "打包狀態已更新",
     "undo": "復原"
+  },
+  "storage": {
+    "mainHeading": "打包清單",
+    "checklists": "清單儲存空間",
+    "templates": "範本儲存空間",
+    "corrupt": "無法讀取已儲存的資料，原始內容未被取代。請先下載原始資料，在應用程式外修復後再重試。",
+    "unsupported": "資料格式不受支援，原始內容未被取代。請下載原始資料並使用相容版本開啟，再重試。",
+    "unavailable": "無法讀取瀏覽器儲存空間。請檢查瀏覽器設定後重試。",
+    "conflict": "資料已在另一個分頁變更。你的修改尚未儲存；請確認最新資料後再試。",
+    "quota": "瀏覽器儲存空間已滿，無法儲存。請清出空間後再試。",
+    "lock-unavailable": "目前的瀏覽器環境無法安全寫入。請使用支援的安全瀏覽器環境開啟應用程式。",
+    "writeFailed": "無法儲存變更。請檢查瀏覽器儲存空間後再試。",
+    "savedRefreshFailed": "變更已儲存，但畫面無法更新。請重新讀取，不要重複執行變更。",
+    "retry": "重新讀取",
+    "export": "下載原始資料",
+    "exportFailed": "無法下載原始資料。請檢查瀏覽器權限後再試。",
+    "displacedDraft": "編輯器關閉時留下了一份未儲存草稿。請在關閉提示前複製這些內容。",
+    "dismissDraft": "關閉草稿提示"
   },
   "completion": {
     "ready": "準備出發！",
@@ -85,6 +104,7 @@
     "deleteTemplate": "刪除範本",
     "saveTemplateConfirm": "儲存為範本",
     "deleteConfirm": "確定要刪除這個範本嗎？",
+    "discardFailedDraftConfirm": "範本變更尚未儲存。要放棄這份草稿並開啟另一個範本嗎？",
     "noTemplates": "尚無範本",
     "rename": "重新命名"
   },

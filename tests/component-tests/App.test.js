@@ -358,7 +358,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('packing completion feedback', () => {
-    // Test Case 62: Should show the journey overlay after the final local item is packed
+    // Test Case 4: Should show the journey overlay after the final local item is packed
     it('shows the completion overlay after the final local item is packed', async () => {
       mockUpdateItem.mockImplementation(async (item) => {
         mockItems.value = mockItems.value.map((existing) =>
@@ -383,7 +383,7 @@ describe('App', () => {
       });
     });
 
-    // Test Case 64: Should show the journey only when redo successfully completes the checklist
+    // Test Case 5: Should show the journey only when redo successfully completes the checklist
     it('shows the completion overlay only when redo completes the checklist', async () => {
       mockCanRedoPackingChange.value = true;
       mockRedoPackingChange.mockImplementationOnce(async () => {
@@ -445,7 +445,7 @@ describe('App', () => {
       );
     });
 
-    // Test Case 65: Should not show the journey for passive completed-state changes
+    // Test Case 6: Should not show the journey for passive completed-state changes
     it('keeps completed initialization and checklist switching silent', async () => {
       mockItems.value = mockItems.value.map((item) => ({ ...item, isPacked: true }));
       setInnerWidth(1280);
@@ -477,7 +477,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('responsive behavior — checkScreenSize', () => {
-    // Test Case 4: Should detect mobile viewport
+    // Test Case 7: Should detect mobile viewport
     it('should set isMobileViewport to true for narrow screens', async () => {
       setInnerWidth(375);
       const wrapper = createWrapper();
@@ -488,7 +488,7 @@ describe('App', () => {
       expect(wrapper.getComponent({ name: 'Topbar' }).props('title')).toBe('Trip A');
     });
 
-    // Test Case 5: Should hide sidebar on mobile
+    // Test Case 8: Should hide sidebar on mobile
     it('should auto-collapse sidebar on mobile viewport', async () => {
       setInnerWidth(375);
       const wrapper = createWrapper();
@@ -502,7 +502,7 @@ describe('App', () => {
       expect(overlay.exists()).toBe(false);
     });
 
-    // Test Case 6: Should auto-expand sidebar on wide desktop if not manually collapsed
+    // Test Case 9: Should auto-expand sidebar on wide desktop if not manually collapsed
     it('should auto-expand sidebar on wide desktop when not manually collapsed', async () => {
       // localStorage returns null for collapsed key (not manually collapsed)
       setViewportWidth(1280);
@@ -514,7 +514,7 @@ describe('App', () => {
       expect(sidebar.props('isMobile')).toBe(false);
     });
 
-    // Test Case 7: Should NOT auto-expand sidebar on desktop when manually collapsed key exists
+    // Test Case 10: Should NOT auto-expand sidebar on desktop when manually collapsed key exists
     it('should not auto-expand sidebar when manually collapsed key exists after resize from mobile', async () => {
       // Start on mobile so checkScreenSize collapses the sidebar
       setInnerWidth(500);
@@ -544,7 +544,7 @@ describe('App', () => {
       expect(sidebar.props('isExpanded')).toBe(false);
     });
 
-    // Test Case 8: Should detect small desktop (overlay zone)
+    // Test Case 11: Should detect small desktop (overlay zone)
     it('should detect small desktop viewport as overlay zone', async () => {
       setInnerWidth(800);
       const wrapper = createWrapper();
@@ -561,7 +561,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('toggleSidebar', () => {
-    // Test Case 9: Should toggle sidebar open/closed on Sidebar emit
+    // Test Case 12: Should toggle sidebar open/closed on Sidebar emit
     it('should toggle sidebar when sidebar emits toggle-sidebar', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -579,7 +579,7 @@ describe('App', () => {
       expect(sidebarAfter.props('isExpanded')).toBe(false);
     });
 
-    // Test Case 10: Should persist sidebar collapse to localStorage on desktop
+    // Test Case 13: Should persist sidebar collapse to localStorage on desktop
     it('should persist sidebar collapse to localStorage on desktop', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -594,7 +594,7 @@ describe('App', () => {
       expect(localStorage.setItem).toHaveBeenCalledWith('sidebar-manually-collapsed', 'true');
     });
 
-    // Test Case 11: Should remove localStorage key when sidebar re-opened on desktop
+    // Test Case 14: Should remove localStorage key when sidebar re-opened on desktop
     it('should remove collapsed key from localStorage when sidebar re-opened', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -612,7 +612,7 @@ describe('App', () => {
       expect(localStorage.removeItem).toHaveBeenCalledWith('sidebar-manually-collapsed');
     });
 
-    // Test Case 12: Should toggle sidebar from Topbar on mobile
+    // Test Case 15: Should toggle sidebar from Topbar on mobile
     it('should toggle sidebar from Topbar on mobile', async () => {
       setInnerWidth(375);
       const wrapper = createWrapper();
@@ -636,7 +636,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('checklist handlers', () => {
-    // Test Case 13: Should open source selection from Sidebar without creating immediately
+    // Test Case 16: Should open source selection from Sidebar without creating immediately
     it('should open source selection from Sidebar without creating immediately', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -651,7 +651,7 @@ describe('App', () => {
       expect(mockCreateChecklist).not.toHaveBeenCalled();
     });
 
-    // Test Case 14: Should open source selection from Topbar on mobile
+    // Test Case 17: Should open source selection from Topbar on mobile
     it('should open source selection from Topbar on mobile', async () => {
       setInnerWidth(375);
       const wrapper = createWrapper();
@@ -666,7 +666,7 @@ describe('App', () => {
       expect(mockCreateChecklist).not.toHaveBeenCalled();
     });
 
-    // Test Case 15: handleChecklistEdit should select checklist and mark for edit
+    // Test Case 18: handleChecklistEdit should select checklist and mark for edit
     it('should select and mark checklist for editing on handleChecklistEdit', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -680,7 +680,7 @@ describe('App', () => {
       expect(mockSelectedChecklistId.value).toBe('cl-2');
     });
 
-    // Test Case 16: handleChecklistCopy should duplicate and select the new checklist
+    // Test Case 19: handleChecklistCopy should duplicate and select the new checklist
     it('should duplicate checklist and select the copy on handleChecklistCopy', async () => {
       mockDuplicateChecklist.mockResolvedValue({ id: 'cl-copy', name: 'Trip A (Copy)', order: 2 });
 
@@ -697,7 +697,7 @@ describe('App', () => {
       expect(mockSelectedChecklistId.value).toBe('cl-copy');
     });
 
-    // Test Case 17: handleChecklistDelete should confirm and delete
+    // Test Case 20: handleChecklistDelete should confirm and delete
     it('should delete checklist after user confirms the dialog', async () => {
       vi.spyOn(window, 'confirm').mockReturnValue(true);
       mockDeleteChecklist.mockResolvedValue(undefined);
@@ -717,7 +717,7 @@ describe('App', () => {
       expect(mockDeleteChecklist).toHaveBeenCalledWith('cl-1');
     });
 
-    // Test Case 18: handleChecklistDelete should not delete when user cancels
+    // Test Case 21: handleChecklistDelete should not delete when user cancels
     it('should not delete checklist when user cancels the dialog', async () => {
       vi.spyOn(window, 'confirm').mockReturnValue(false);
 
@@ -733,7 +733,7 @@ describe('App', () => {
       expect(mockDeleteChecklist).not.toHaveBeenCalled();
     });
 
-    // Test Case 19: handleChecklistDelete should delegate selection recovery to the composable
+    // Test Case 22: handleChecklistDelete should delegate selection recovery to the composable
     it('should delegate selected checklist deletion to the composable', async () => {
       vi.spyOn(window, 'confirm').mockReturnValue(true);
       mockDeleteChecklist.mockResolvedValue(undefined);
@@ -750,7 +750,7 @@ describe('App', () => {
       expect(mockDeleteChecklist).toHaveBeenCalledWith('cl-1');
     });
 
-    // Test Case 20: handleChecklistUpdate should call updateChecklist
+    // Test Case 23: handleChecklistUpdate should call updateChecklist
     it('should update checklist via ChecklistComponent emit', async () => {
       mockUpdateChecklist.mockResolvedValue(undefined);
 
@@ -767,7 +767,7 @@ describe('App', () => {
       expect(mockUpdateChecklist).toHaveBeenCalledWith(updatedData, undefined);
     });
 
-    // Test Case 21: handleChecklistMove should call updateMultipleChecklists
+    // Test Case 24: handleChecklistMove should call updateMultipleChecklists
     it('should call updateMultipleChecklists on handleChecklistMove', async () => {
       mockUpdateMultipleChecklists.mockResolvedValue(undefined);
 
@@ -787,7 +787,7 @@ describe('App', () => {
       expect(mockUpdateMultipleChecklists).toHaveBeenCalledWith(reordered, undefined);
     });
 
-    // Test Case 22: Overlay sidebar should update selected checklist on select event
+    // Test Case 25: Overlay sidebar should update selected checklist on select event
     it('should update selectedChecklistId from overlay sidebar select-checklist event', async () => {
       setInnerWidth(375);
       const wrapper = createWrapper();
@@ -806,7 +806,7 @@ describe('App', () => {
       expect(mockSelectedChecklistId.value).toBe('cl-2');
     });
 
-    // Test Case 23: Inline sidebar should update selected checklist on select event
+    // Test Case 26: Inline sidebar should update selected checklist on select event
     it('should update selectedChecklistId from inline sidebar select-checklist event', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -826,7 +826,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('item handlers', () => {
-    // Test Case 24: handleItemCreate should create item with correct order
+    // Test Case 27: handleItemCreate should create item with correct order
     it('should create item with maxOrder + 1 in the target category', async () => {
       mockCreateItem.mockResolvedValue({ id: 'item-new', name: 'New Item', order: 2 });
 
@@ -847,7 +847,7 @@ describe('App', () => {
       );
     });
 
-    // Test Case 25: handleItemCreate should handle empty category
+    // Test Case 28: handleItemCreate should handle empty category
     it('should create item with order 0 in an empty category', async () => {
       mockCreateItem.mockResolvedValue({ id: 'item-new', name: 'New Item', order: 0 });
 
@@ -868,7 +868,7 @@ describe('App', () => {
       );
     });
 
-    // Test Case 26: handleItemUpdate should update item and clear newly created flag
+    // Test Case 29: handleItemUpdate should update item and clear newly created flag
     it('should update item and clear newlyCreatedItemId if matching', async () => {
       mockCreateItem.mockResolvedValue({ id: 'item-new', name: 'New Item', order: 2 });
       mockUpdateItem.mockResolvedValue(undefined);
@@ -891,7 +891,7 @@ describe('App', () => {
       expect(mockUpdateItem).toHaveBeenCalledWith(updatedItem, undefined);
     });
 
-    // Test Case 27: handleItemCopy should call duplicateItem
+    // Test Case 30: handleItemCopy should call duplicateItem
     it('should call duplicateItem on copy:item emit', async () => {
       mockDuplicateItem.mockResolvedValue({ id: 'item-copy' });
 
@@ -907,7 +907,7 @@ describe('App', () => {
       expect(mockDuplicateItem).toHaveBeenCalledWith('item-1');
     });
 
-    // Test Case 28: handleItemDelete should call deleteItem
+    // Test Case 31: handleItemDelete should call deleteItem
     it('should call deleteItem on delete:item emit', async () => {
       mockDeleteItem.mockResolvedValue(undefined);
 
@@ -929,7 +929,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('handleItemMove', () => {
-    // Test Case 29: Should handle cross-category item move
+    // Test Case 32: Should handle cross-category item move
     it('should batch all source and target item updates on move type', async () => {
       mockUpdateMultipleItems.mockResolvedValue([]);
 
@@ -957,7 +957,7 @@ describe('App', () => {
       });
     });
 
-    // Test Case 30: Should handle same-category reorder
+    // Test Case 33: Should handle same-category reorder
     it('should update all items with new order on reorder type', async () => {
       mockUpdateMultipleItems.mockResolvedValue([]);
 
@@ -985,7 +985,7 @@ describe('App', () => {
       });
     });
 
-    // Test Case 31: Should ignore incomplete move payloads
+    // Test Case 34: Should ignore incomplete move payloads
     it('should ignore a move payload without item updates', async () => {
       mockUpdateMultipleItems.mockResolvedValue([]);
 
@@ -1012,7 +1012,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('category handlers', () => {
-    // Test Case 32: handleCategoryCreate should create with maxOrder + 1
+    // Test Case 35: handleCategoryCreate should create with maxOrder + 1
     it('should create category with correct order', async () => {
       mockCreateCategory.mockResolvedValue({ id: 'cat-new', name: 'New Category', order: 1 });
 
@@ -1033,7 +1033,7 @@ describe('App', () => {
       );
     });
 
-    // Test Case 33: handleCategoryUpdate should call updateCategory
+    // Test Case 36: handleCategoryUpdate should call updateCategory
     it('should update category and clear newlyCreatedCategoryId if matching', async () => {
       mockCreateCategory.mockResolvedValue({ id: 'cat-new', name: 'New Category', order: 1 });
       mockUpdateCategory.mockResolvedValue(undefined);
@@ -1059,7 +1059,7 @@ describe('App', () => {
       );
     });
 
-    // Test Case 34: handleCategoryCopy should call duplicateCategory
+    // Test Case 37: handleCategoryCopy should call duplicateCategory
     it('should call duplicateCategory on copy:category emit', async () => {
       mockDuplicateCategory.mockResolvedValue({ id: 'cat-copy' });
 
@@ -1075,7 +1075,7 @@ describe('App', () => {
       expect(mockDuplicateCategory).toHaveBeenCalledWith('cat-1');
     });
 
-    // Test Case 35: handleCategoryDelete should call deleteCategory
+    // Test Case 38: handleCategoryDelete should call deleteCategory
     it('should call deleteCategory on delete:category emit', async () => {
       mockDeleteCategory.mockResolvedValue(undefined);
 
@@ -1097,7 +1097,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('handleCategoryReorder', () => {
-    // Test Case 36: Should update all categories and refresh
+    // Test Case 39: Should update all categories and refresh
     it('should submit all categories in one operation', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -1123,7 +1123,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('overlay and body scroll lock', () => {
-    // Test Case 37: Should show overlay on mobile when sidebar is open
+    // Test Case 40: Should show overlay on mobile when sidebar is open
     it('should display overlay backdrop when sidebar is open on mobile', async () => {
       setInnerWidth(375);
       const wrapper = createWrapper();
@@ -1139,7 +1139,7 @@ describe('App', () => {
       expect(overlay.attributes('role')).toBe('button');
     });
 
-    // Test Case 38: Should close sidebar when overlay is clicked
+    // Test Case 41: Should close sidebar when overlay is clicked
     it('should close sidebar when overlay backdrop is clicked', async () => {
       setInnerWidth(375);
       const wrapper = createWrapper();
@@ -1159,7 +1159,7 @@ describe('App', () => {
       expect(wrapper.find('[role="button"][aria-label="Close sidebar"]').exists()).toBe(false);
     });
 
-    // Test Case 39: Should lock body scroll when overlay is active
+    // Test Case 42: Should lock body scroll when overlay is active
     it('should set body overflow hidden when overlay is active', async () => {
       setInnerWidth(375);
       const wrapper = createWrapper();
@@ -1180,7 +1180,7 @@ describe('App', () => {
       expect(document.body.style.overflow).toBe('');
     });
 
-    // Test Case 40: Should lock body scroll on small desktop overlay
+    // Test Case 43: Should lock body scroll on small desktop overlay
     it('should set body overflow hidden when sidebar opens on small desktop', async () => {
       // Reset body style from previous tests
       document.body.style.overflow = '';
@@ -1218,14 +1218,14 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('lifecycle', () => {
-    // Test Case 41: Should call initialize on mount
+    // Test Case 44: Should call initialize on mount
     it('should call initialize on mount', () => {
       setInnerWidth(1280);
       createWrapper();
       expect(mockInitialize).toHaveBeenCalledWith();
     });
 
-    // Test Case 42: Should remove resize listener on unmount
+    // Test Case 45: Should remove resize listener on unmount
     it('should clean up resize event listener on unmount', async () => {
       const removeSpy = vi.spyOn(window, 'removeEventListener');
 
@@ -1244,7 +1244,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('template editing', () => {
-    // Test Case 43: Should open an isolated editor without creating a checklist
+    // Test Case 46: Should open an isolated editor without creating a checklist
     it('should open an isolated editor without creating a checklist', async () => {
       mockTemplates.value = [
         { id: 'template-1', name: 'Weekend', order: 0, categories: [], items: [] },
@@ -1263,7 +1263,7 @@ describe('App', () => {
       expect(mockDeleteChecklist).not.toHaveBeenCalled();
     });
 
-    // Test Case 44: Should save only through the templates composable
+    // Test Case 47: Should save only through the templates composable
     it('should save only through the templates composable', async () => {
       const template = {
         id: 'template-1',
@@ -1285,7 +1285,7 @@ describe('App', () => {
       expect(mockCreateChecklist).not.toHaveBeenCalled();
     });
 
-    // Test Case 45: Should save a selected checklist through the named template dialog
+    // Test Case 48: Should save a selected checklist through the named template dialog
     it('opens the named template dialog and saves its selected checklist', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -1298,7 +1298,25 @@ describe('App', () => {
       expect(mockSaveAsTemplate).toHaveBeenCalledWith('cl-1', 'Trip Template');
     });
 
-    // Test Case 46: Should create a checklist from a selected personal template
+    // Test Case 49: Preserve the template dialog until retry succeeds.
+    it('keeps the template dialog open after failure and closes after retry succeeds', async () => {
+      mockSaveAsTemplate.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'template-1' });
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('save-as-template', 'cl-1');
+      const dialog = wrapper.findComponent({ name: 'SaveTemplateDialog' });
+
+      dialog.vm.$emit('save', 'My draft');
+      await flushPromises();
+      expect(dialog.props('visible')).toBe(true);
+      expect(dialog.props('saveError')).toBe(true);
+      dialog.vm.$emit('save', 'My draft');
+      await flushPromises();
+      expect(mockSaveAsTemplate).toHaveBeenLastCalledWith('cl-1', 'My draft');
+      expect(dialog.props('visible')).toBe(false);
+    });
+
+    // Test Case 50: Should create a checklist from a selected personal template
     it('creates a checklist from a selected personal template', async () => {
       const longTemplateName = 'W'.repeat(100);
       mockTemplates.value = [
@@ -1331,7 +1349,7 @@ describe('App', () => {
       expect(mockCreateChecklist.mock.calls[0][0].name).toHaveLength(100);
     });
 
-    // Test Case 47: Should delete the active template and leave the editor
+    // Test Case 51: Should delete the active template and leave the editor
     it('deletes the active template and leaves the editor', async () => {
       const template = {
         id: 'template-1',
@@ -1355,7 +1373,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(false);
     });
 
-    // Test Case 48: Should create an explicitly empty checklist
+    // Test Case 52: Should create an explicitly empty checklist
     it('creates an explicitly empty checklist', async () => {
       mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
       mockCreateChecklist.mockResolvedValue({ id: 'cl-empty' });
@@ -1373,7 +1391,7 @@ describe('App', () => {
       );
     });
 
-    // Test Case 49: Should handle a failed template creation and ignore missing sources
+    // Test Case 53: Should handle a failed template creation and ignore missing sources
     it('handles failed template creation and ignores missing sources', async () => {
       mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
       mockCreateChecklist.mockResolvedValue(null);
@@ -1396,7 +1414,25 @@ describe('App', () => {
       expect(mockApplyTemplate).not.toHaveBeenCalled();
     });
 
-    // Test Case 50: Should ignore requests to edit a missing template
+    // Test Case 54: Preserve the checklist source selection until retry succeeds.
+    it('keeps checklist source selection open after a failed creation and closes on retry', async () => {
+      mockCreateChecklist.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'cl-retry' });
+      setInnerWidth(1280);
+      const wrapper = createWrapper();
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('create-checklist');
+      const dialog = wrapper.findComponent({ name: 'NewChecklistDialog' });
+
+      dialog.vm.$emit('select', { source: 'empty' });
+      await flushPromises();
+      expect(dialog.props('visible')).toBe(true);
+      expect(dialog.props('saveError')).toBe(true);
+      dialog.vm.$emit('select', { source: 'empty' });
+      await flushPromises();
+      expect(dialog.props('visible')).toBe(false);
+      expect(mockCreateChecklist).toHaveBeenCalledTimes(2);
+    });
+
+    // Test Case 55: Should ignore requests to edit a missing template
     it('ignores requests to edit a missing template', async () => {
       mockTemplates.value = [];
       setInnerWidth(1280);
@@ -1407,7 +1443,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(false);
     });
 
-    // Test Case 51: Should keep the editor open when saving a template fails
+    // Test Case 56: Should keep the editor open when saving a template fails
     it('keeps the editor open when saving a template fails', async () => {
       const template = { id: 'template-1', name: 'Weekend', categories: [], items: [] };
       mockTemplates.value = [template];
@@ -1422,7 +1458,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(true);
     });
 
-    // Test Case 52: Should discard a template draft when editing is canceled
+    // Test Case 57: Should discard a template draft when editing is canceled
     it('discards a template draft when editing is canceled', async () => {
       const template = { id: 'template-1', name: 'Weekend', categories: [], items: [] };
       mockTemplates.value = [template];
@@ -1437,7 +1473,7 @@ describe('App', () => {
       expect(mockUpdateTemplate).not.toHaveBeenCalled();
     });
 
-    // Test Case 53: Should preserve a template when deletion is canceled
+    // Test Case 58: Should preserve a template when deletion is canceled
     it('preserves a template when deletion is canceled', async () => {
       const template = { id: 'template-1', name: 'Weekend', categories: [], items: [] };
       mockTemplates.value = [template];
@@ -1453,7 +1489,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(true);
     });
 
-    // Test Case 54: Should close both template dialogs without performing an operation
+    // Test Case 59: Should close both template dialogs without performing an operation
     it('closes both template dialogs without performing an operation', async () => {
       mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
       setInnerWidth(1280);
@@ -1468,7 +1504,7 @@ describe('App', () => {
       expect(mockSaveAsTemplate).not.toHaveBeenCalled();
     });
 
-    // Test Case 55: Should leave checklist state unchanged when empty creation fails
+    // Test Case 60: Should leave checklist state unchanged when empty creation fails
     it('leaves checklist state unchanged when empty creation fails', async () => {
       mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
       mockCreateChecklist.mockResolvedValue(null);
@@ -1484,7 +1520,7 @@ describe('App', () => {
       expect(mockSelectedChecklistId.value).toBe('cl-1');
     });
 
-    // Test Case 56: Should keep the editor open when template deletion fails
+    // Test Case 61: Should keep the editor open when template deletion fails
     it('keeps the editor open when template deletion fails', async () => {
       const template = { id: 'template-1', name: 'Weekend', categories: [], items: [] };
       mockTemplates.value = [template];
@@ -1501,7 +1537,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(true);
     });
 
-    // Test Case 57: Should use an empty initial name for an unknown checklist
+    // Test Case 62: Should use an empty initial name for an unknown checklist
     it('uses an empty initial name for an unknown checklist', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -1511,7 +1547,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'SaveTemplateDialog' }).props('initialName')).toBe('');
     });
 
-    // Test Case 58: Should ignore duplicate template save events after source state is cleared
+    // Test Case 63: Should ignore duplicate template save events after source state is cleared
     it('ignores duplicate template save events after source state is cleared', async () => {
       mockSaveAsTemplate.mockResolvedValue({ id: 'template-1' });
       setInnerWidth(1280);
@@ -1526,7 +1562,7 @@ describe('App', () => {
       expect(mockSaveAsTemplate).toHaveBeenCalledTimes(1);
     });
 
-    // Test Case 59: Should create a checklist from a selected recommended list
+    // Test Case 64: Should create a checklist from a selected recommended list
     it('creates a checklist from a selected recommended list', async () => {
       const seedData = { categories: [{ id: 'category-new' }], items: [] };
       mockApplyRecommendedList.mockReturnValue(seedData);
@@ -1559,7 +1595,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('packing undo', () => {
-    // Test Case 60: Should offer one-click undo after a category packing change
+    // Test Case 65: Should offer one-click undo after a category packing change
     it('should apply a category packing change and offer one-click undo', async () => {
       mockSetCategoryPacked.mockResolvedValue([{ id: 'item-1', isPacked: true }]);
       mockUndoPackingChange.mockResolvedValue(true);
@@ -1609,7 +1645,7 @@ describe('App', () => {
       expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
     });
 
-    // Test Case 61: Should preserve native undo inside an input
+    // Test Case 66: Should preserve native undo inside an input
     it('should use Ctrl+Z for packing undo but preserve input-native undo', async () => {
       mockUndoPackingChange.mockResolvedValue(true);
       setInnerWidth(1280);
@@ -1661,7 +1697,7 @@ describe('App', () => {
       wrapper.unmount();
     });
 
-    // Test Case 63: Should defer the complete undo window until the completion overlay closes
+    // Test Case 67: Should defer the complete undo window until the completion overlay closes
     it('should defer the complete undo window until the completion overlay closes', async () => {
       vi.useFakeTimers();
       mockCanUndoPackingChange.value = true;
@@ -1719,7 +1755,7 @@ describe('App', () => {
       focusTrigger.remove();
     });
 
-    // Test Case 66: Should restart a visible category Undo window after item completion closes
+    // Test Case 68: Should restart a visible category Undo window after item completion closes
     it('should defer an existing category undo window when a final item opens completion', async () => {
       vi.useFakeTimers();
       mockCanUndoPackingChange.value = true;

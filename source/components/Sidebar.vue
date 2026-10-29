@@ -386,7 +386,11 @@ const currentLocale = computed({
   get: () => locale.value,
   set: (val) => {
     locale.value = val;
-    localStorage.setItem('user-locale', val);
+    try {
+      localStorage.setItem('user-locale', val);
+    } catch {
+      // Keep the selected locale for this session if the preference cannot be stored.
+    }
   },
 });
 

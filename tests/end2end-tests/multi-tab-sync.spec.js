@@ -150,7 +150,9 @@ test.describe('Multi-tab sync', () => {
       await expect(pageB.getByTestId('sidebar-checklist-item').first()).toBeVisible();
 
       await renameSelectedChecklist(pageA, 'A1');
+      await expect(pageB.getByTestId('checklist-name')).toHaveText('A1');
       await renameSelectedChecklist(pageB, 'B1');
+      await expect(pageA.getByTestId('checklist-name')).toHaveText('B1');
       await renameSelectedChecklist(pageA, 'A2');
 
       // Final writer is tab A; both tabs should match

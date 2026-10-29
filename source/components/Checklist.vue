@@ -27,6 +27,7 @@ Created: 2025-09-19
               :id="`checklist-${checklist.id}-name`"
               ref="nameInput"
               v-model="editedName"
+              :disabled="isSavingEdit"
               :name="`checklist-${checklist.id}-name`"
               :placeholder="$t('checklist.name')"
               :aria-label="$t('checklist.name')"
@@ -67,6 +68,7 @@ Created: 2025-09-19
                 :id="`checklist-${checklist.id}-start-date`"
                 ref="startDateInput"
                 v-model="editedStartDate"
+                :disabled="isSavingEdit"
                 :name="`checklist-${checklist.id}-start-date`"
                 type="date"
                 :aria-label="$t('checklist.startDate')"
@@ -79,6 +81,7 @@ Created: 2025-09-19
                 :id="`checklist-${checklist.id}-end-date`"
                 ref="endDateInput"
                 v-model="editedEndDate"
+                :disabled="isSavingEdit"
                 :name="`checklist-${checklist.id}-end-date`"
                 type="date"
                 :min="editedStartDate"
@@ -152,6 +155,22 @@ Created: 2025-09-19
         </div>
       </div>
 
+      <p
+        v-if="editSaveFailed"
+        class="text-sm text-danger-text"
+        role="alert"
+      >
+        {{
+          $t(
+            editErrorCode === 'conflict' ||
+              editErrorCode === 'quota' ||
+              editErrorCode === 'lock-unavailable'
+              ? `storage.${editErrorCode}`
+              : 'common.saveFailed'
+          )
+        }}
+      </p>
+
       <!-- Progress bar -->
       <ProgressBar
         class="px-1"
@@ -202,6 +221,14 @@ Created: 2025-09-19
               :show-unpacked-only="showUnpackedOnly"
               :newly-created-item-id="newlyCreatedItemId"
               :newly-created-category-id="newlyCreatedCategoryId"
+              :save-category-edit="saveCategoryEdit"
+              :save-item-edit="saveItemEdit"
+              :commit-edit-on-blur="commitEditOnBlur"
+              :edit-error-code="editErrorCode"
+              :set-category-packed-action="setCategoryPackedAction"
+              :update-item-action="updateItemAction"
+              :retain-draft="retainDraft"
+              :edit-cancelled="editCancelled"
               @update:item="(...args) => $emit('update:item', ...args)"
               @copy:item="$emit('copy:item', $event)"
               @delete:item="$emit('delete:item', $event)"
@@ -228,7 +255,7 @@ Created: 2025-09-19
 // Imports
 // ------------------------------------------------------------------------------
 
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 
@@ -254,6 +281,15 @@ const { t } = useI18n();
 
 // Props validation
 const props = defineProps({
+  commitEditOnBlur: { type: Boolean, default: false },
+  retainDraft: { type: Function, default: null },
+  editCancelled: { type: Function, default: null },
+  saveChecklistEdit: { type: Function, default: null },
+  saveCategoryEdit: { type: Function, default: null },
+  saveItemEdit: { type: Function, default: null },
+  editErrorCode: { type: String, default: null },
+  setCategoryPackedAction: { type: Function, default: null },
+  updateItemAction: { type: Function, default: null },
   checklist: {
     type: Object,
     required: true,
@@ -328,6 +364,8 @@ const emit = defineEmits([
 
 // Editing state
 const isEditing = ref(false);
+const isSavingEdit = ref(false);
+const editSaveFailed = ref(false);
 const editedName = ref('');
 let editBaseline = null;
 const editedStartDate = ref('');
@@ -395,6 +433,12 @@ function handleCompositionStart() {
  */
 function handleCompositionEnd() {
   isComposing.value = false;
+  if (
+    props.commitEditOnBlur &&
+    isEditing.value &&
+    ![nameInput.value, startDateInput.value, endDateInput.value].includes(document.activeElement)
+  )
+    saveEdit();
 }
 
 /**
@@ -414,9 +458,18 @@ function handleEnterKey(event) {
 /**
  * Save edit when focus moves outside the edit area
  * Includes IME composition check for defensive programming
- * @param {Event} _event - Blur event (unused)
+ * @param {FocusEvent} event - Focus change from the edit area.
  */
-function handleEditBlur(_event) {
+function handleEditBlur(event) {
+  if (props.commitEditOnBlur) {
+    if (![nameInput.value, startDateInput.value, endDateInput.value].includes(event.target)) return;
+    const next = event.relatedTarget;
+    const movingWithinEditor =
+      next &&
+      (next === nameInput.value || next === startDateInput.value || next === endDateInput.value);
+    if (!movingWithinEditor && isEditing.value && !isComposing.value) saveEdit();
+    return;
+  }
   // Use a small timeout to allow focus to move to the other input
   setTimeout(() => {
     // Check if focus is still within editing elements
@@ -427,7 +480,7 @@ function handleEditBlur(_event) {
       activeElement === endDateInput.value;
 
     // Only save if not editing and not in IME composition
-    if (!isStillEditing && isEditing.value && !isComposing.value) {
+    if (!isStillEditing && isEditing.value && !isComposing.value && !editSaveFailed.value) {
       saveEdit();
     }
   }, 50); // 50ms: balance between focus transfer reliability and user responsiveness
@@ -439,6 +492,7 @@ function handleEditBlur(_event) {
 async function startEdit() {
   cleanupEditingFocus();
   isEditing.value = true;
+  editSaveFailed.value = false;
   editBaseline = { ...props.checklist };
   editedName.value = props.checklist.name;
   editedStartDate.value = props.checklist.startDate;
@@ -451,7 +505,8 @@ async function startEdit() {
 /**
  * Save changes to checklist if any values were modified
  */
-function saveEdit() {
+async function saveEdit() {
+  if (isSavingEdit.value) return;
   cleanupEditingFocus();
   const hasNameChanged = editedName.value.trim() !== editBaseline.name;
   const hasStartDateChanged = editedStartDate.value !== editBaseline.startDate;
@@ -464,7 +519,32 @@ function saveEdit() {
       startDate: editedStartDate.value,
       endDate: editedEndDate.value,
     };
-    emit('update:checklist', updatedChecklist, editBaseline);
+    if (props.saveChecklistEdit) {
+      const restoreFocus = [nameInput.value, startDateInput.value, endDateInput.value].includes(
+        document.activeElement
+      )
+        ? document.activeElement
+        : null;
+      isSavingEdit.value = true;
+      editSaveFailed.value = false;
+      try {
+        if (!(await props.saveChecklistEdit(updatedChecklist, editBaseline))) {
+          editSaveFailed.value = true;
+          isSavingEdit.value = false;
+          await nextTick();
+          restoreFocus?.focus({ preventScroll: true });
+          return;
+        }
+      } finally {
+        isSavingEdit.value = false;
+      }
+    } else {
+      emit('update:checklist', updatedChecklist, editBaseline);
+    }
+  }
+  if (editSaveFailed.value) {
+    editSaveFailed.value = false;
+    props.editCancelled?.('checklist', props.checklist.id);
   }
   isEditing.value = false;
 }
@@ -473,7 +553,10 @@ function saveEdit() {
  * Cancel editing and restore original values
  */
 function cancelEdit() {
+  if (isSavingEdit.value) return;
   cleanupEditingFocus();
+  editSaveFailed.value = false;
+  props.editCancelled?.('checklist', props.checklist.id);
   isEditing.value = false;
   editedName.value = props.checklist.name;
   editedStartDate.value = props.checklist.startDate;
@@ -627,6 +710,22 @@ watch(editedEndDate, (newEndDate) => {
   }
 });
 
+onBeforeUnmount(() => {
+  if (
+    isEditing.value &&
+    editBaseline &&
+    (editedName.value !== editBaseline.name ||
+      editedStartDate.value !== editBaseline.startDate ||
+      editedEndDate.value !== editBaseline.endDate)
+  ) {
+    props.retainDraft?.({
+      name: editedName.value,
+      startDate: editedStartDate.value,
+      endDate: editedEndDate.value,
+    });
+  }
+  if (editSaveFailed.value) props.editCancelled?.('checklist', props.checklist.id);
+});
 onUnmounted(() => cleanupEditingFocus());
 </script>
 

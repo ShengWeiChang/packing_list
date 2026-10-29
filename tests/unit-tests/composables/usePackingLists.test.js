@@ -902,7 +902,91 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('packing history', () => {
-    // Test Case 45: Category pack-all should be one undoable mixed-state action
+    // Test Case 45: Preserve data and history after a failed deletion.
+    it('keeps history and visible data when item or category deletion fails', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      await flushPromises();
+      const category = await api.createCategory({ name: 'Clothing' });
+      const item = await api.createItem({ name: 'Hat', categoryId: category.id });
+      await api.setCategoryPacked(category.id, true);
+      vi.spyOn(LocalStorageService.prototype, 'deleteItem').mockRejectedValue(new Error('denied'));
+      vi.spyOn(LocalStorageService.prototype, 'deleteCategory').mockRejectedValue(
+        new Error('denied')
+      );
+
+      expect(await api.deleteItem(item.id)).toBe(false);
+      expect(await api.deleteCategory(category.id)).toBe(false);
+      expect(api.canUndoPackingChange.value).toBe(true);
+      expect(api.items.value.some((entry) => entry.id === item.id)).toBe(true);
+      expect(api.categories.value.some((entry) => entry.id === category.id)).toBe(true);
+      expect(api.error.value).toContain('denied');
+    });
+
+    // Test Case 46: Preserve visible data when refresh fails.
+    it('retains visible categories and items if a later refresh fails', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      await flushPromises();
+      const category = await api.createCategory({ name: 'Clothing' });
+      const item = await api.createItem({ name: 'Hat', categoryId: category.id });
+      vi.spyOn(LocalStorageService.prototype, 'getCategories').mockRejectedValue(
+        new Error('denied')
+      );
+      vi.spyOn(LocalStorageService.prototype, 'getItems').mockRejectedValue(new Error('denied'));
+
+      await api.getCategories();
+      await api.getItems();
+      expect(api.categories.value.some((entry) => entry.id === category.id)).toBe(true);
+      expect(api.items.value.some((entry) => entry.id === item.id)).toBe(true);
+    });
+
+    // Test Case 47: Distinguish a committed write from a failed refresh.
+    it('reports a committed change separately when the subsequent refresh fails', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      await flushPromises();
+      const category = await api.createCategory({ name: 'Clothing' });
+      vi.spyOn(LocalStorageService.prototype, 'getCategories').mockRejectedValue(
+        new Error('denied')
+      );
+
+      const result = await api.updateCategory({ ...category, name: 'Clothes' }, category);
+
+      expect(result.name).toBe('Clothes');
+      expect(api.refreshAfterSaveFailed.value).toBe(true);
+      expect(api.operationError.value).toBeNull();
+      expect(JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).categories[0].name).toBe('Clothes');
+    });
+
+    // Test Case 48: Never show a previous checklist's data under a new selection.
+    it('clears the previous checklist data when switching and the new read fails', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      const first = await api.createChecklist({ name: 'First' }, { source: 'empty' });
+      await flushPromises();
+      const category = await api.createCategory({ name: 'First category' });
+      await api.createItem({ name: 'First item', categoryId: category.id });
+      const second = await api.createChecklist({ name: 'Second' }, { source: 'empty' });
+      api.selectedChecklistId.value = first.id;
+      await flushPromises();
+      expect(api.items.value).toHaveLength(1);
+      vi.spyOn(LocalStorageService.prototype, 'getCategories').mockRejectedValue(
+        new Error('denied')
+      );
+      vi.spyOn(LocalStorageService.prototype, 'getItems').mockRejectedValue(new Error('denied'));
+
+      api.selectedChecklistId.value = second.id;
+      await flushPromises();
+      expect(api.categories.value).toEqual([]);
+      expect(api.items.value).toEqual([]);
+      expect(api.storageHealth.value).toBe('unavailable');
+    });
+
+    // Test Case 49: Category pack-all should be one undoable mixed-state action
     it('should treat a category pack-all as one undoable action and restore mixed state', async () => {
       const api = usePackingLists();
       await api.initialize();
@@ -960,7 +1044,7 @@ describe('usePackingLists', () => {
       );
     });
 
-    // Test Case 46: Switching checklists should clear packing history
+    // Test Case 50: Switching checklists should clear packing history
     it('should clear packing history when switching checklists', async () => {
       const api = usePackingLists();
       await api.initialize();
@@ -1036,7 +1120,7 @@ describe('usePackingLists', () => {
   // Test Group 15: Drag Intent and Concurrent Edits
   // ---------------------------------------------------------------------------
 
-  // Test Case 47: A stale drag must not overwrite unrelated remote edits
+  // Test Case 51: A stale drag must not overwrite unrelated remote edits
   it('preserves remote item edits when committing a stale drag payload', async () => {
     const api = usePackingLists();
     await api.initialize();
