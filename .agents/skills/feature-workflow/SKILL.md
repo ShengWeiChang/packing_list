@@ -9,7 +9,9 @@ argument-hint: '[feature or bug request]'
 Coordinate the delivery lifecycle for every feature, bug fix, or behavior
 change. `$feature-completion` owns verification and independent review; this
 skill owns planning, implementation milestones, progress reporting, and human
-approval boundaries. Do not require users to remember workflow prompt keywords.
+approval boundaries. `$feature-learning` explains each completed milestone so
+the user can review the result with an accurate mental model of its design and
+tests. Do not require users to remember workflow prompt keywords.
 
 ## README Impact Rule
 
@@ -136,14 +138,22 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
    triggered `$test-analysis`, and applicable UI/UX conformance evidence. Do
    not start a duplicate review cycle for the same candidate without a new
    reason.
-7. Set status to `awaiting milestone review` and present the changed scope,
-   validation evidence, fingerprint when staged, and reviewer verdict or
-   explicit reason it was not required. Begin every status update by naming the
-   current state and the one user decision needed. Wait for the user's response
-   before continuing to a dependent milestone or commit. If this is the final
-   milestone, a user acceptance moves it to `final verification` and runs the
-   tier's final gate; do not present a normal milestone commit candidate first.
-8. Treat partial, truncated, or still-running command output as **unknown**, not
+7. After the milestone's required evidence and review are complete, invoke
+   `$feature-learning` for the implemented milestone before asking for the
+   milestone decision. Base the lesson on the reviewed diff, implementation
+   entry points, and representative tests. Keep it focused on the concepts,
+   data flow, tradeoffs, and code-reading path that help the user assess and
+   maintain this milestone; do not repeat command logs or substitute the lesson
+   for validation or a reviewer verdict. Record the lesson scope in the plan.
+8. Set status to `awaiting milestone review` and present the changed scope,
+   validation evidence, fingerprint when staged, reviewer verdict or explicit
+   reason it was not required, and the milestone learning guide. Begin every
+   status update by naming the current state and the one user decision needed.
+   Wait for the user's response before continuing to a dependent milestone or
+   commit. If this is the final milestone, a user acceptance moves it to
+   `final verification` and runs the tier's final gate; do not present a normal
+   milestone commit candidate first.
+9. Treat partial, truncated, or still-running command output as **unknown**, not
    as a pass. Record a completed command's exit result and its applicable
    success marker before reporting validation as passed. For
    `npm run verify:feature`, the evidence must include exit code 0 and the
