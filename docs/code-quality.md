@@ -16,6 +16,7 @@ Applies to this project’s stack: Vue 3 + Vite + Tailwind, ES Modules.
 - Prettier with prettier-plugin-tailwindcss
 - simple-import-sort (imports/exports ordering)
 - husky + lint-staged (pre-commit automation)
+- TypeScript 6.0.3 + vue-tsc 3.3.13, typescript-eslint 8.72.1, @vue/tsconfig 0.9.1
 
 Authoritative configuration files:
 
@@ -23,6 +24,7 @@ Authoritative configuration files:
 - Prettier: `.prettierrc`, `.prettierignore`
 - Editor: `.vscode/settings.json`
 - Scripts: `package.json` (lint, format, validate)
+- Types: `tsconfig.app.json`, `tsconfig.type-tests.json`; `tsconfig.json` is the editor entry point
 
 ## 3. Conventions
 
@@ -258,11 +260,13 @@ export function useExample() {
 
 **JSDoc Comments**
 
-Required for all exported functions, methods, and classes. Must include:
+Required descriptions for exported functions, methods, and classes. JavaScript modules include:
 
 - Brief description
 - `@param {Type} name - description` for each parameter
 - `@returns {Type} description` for non-void returns
+
+TypeScript and Vue scripts retain behavioral descriptions without requiring duplicate JSDoc type tags; TypeScript annotations describe the checked contracts.
 
 ```javascript
 /**
@@ -319,6 +323,18 @@ Validation
 - Static analysis: `npm run lint` (via `eslint-plugin-vuejs-accessibility`)
 - Manual testing: Navigate all features using only the `Tab` key to ensure no focus traps and full operability.
 
+### 3.11 TypeScript Migration and Checking
+
+- `npm run typecheck` runs the application scope guard, `vue-tsc --noEmit`, compile-only contracts, and deliberate-error diagnostic probes. Vite builds transpile without type checking.
+- `strict`, `noUncheckedIndexedAccess`, and `strictTemplates` are enabled. The app project uses browser globals and `vite/client`; Node and Vitest globals are not injected.
+- `typescript-migration.json` lists exactly the remaining 24 JS modules and 16 Vue JavaScript scripts. `allowJs: true` / `checkJs: false` permits their imports without claiming they are checked. Each migration removes its allowance; new unlisted JS, stale allowances, and source files outside compiler roots fail the gate.
+- The final target is all application modules in TS and all SFC scripts in TS. Remove the manifest and set `allowJs: false` when the list is empty. Runtime JS tests, Node configuration/scripts, locale JSON, and visual assets remain intentional exceptions outside that application migration.
+- TS modules retain existing naming stems with `.ts`: classes/models use PascalCase; services, utilities, composables, and type modules use camelCase. Compile-only tests use the owner's stem plus `.test.ts` under `tests/type-tests/`; Vitest excludes that directory.
+- Use `import type` for type-only dependencies. Treat external JSON and caught errors as `unknown` until existing runtime checks or normalization justify narrower contracts; TS never replaces storage validation.
+- Do not use `any`, `@ts-ignore`, `@ts-nocheck`, blanket module shims, or unsupported assertions to pass the gate. Document narrowly justified third-party boundaries. Described `@ts-expect-error` directives belong only in negative type tests.
+- ESLint applies TypeScript recommended rules to TS/Vue with Vue's outer parser preserved. TypeScript unused-variable rules replace overlapping core rules; the manifest's remaining JavaScript SFCs retain JS recommended rules, including `no-undef`, and their JSDoc checks. Remove this temporary lint override/import with the manifest. lint-staged and VSCode ESLint include TS.
+- Accepted dependency limitation: `skipLibCheck: true` follows the Vue base config because vue-i18n 11.4.16 imports `GenericComponentInstance`, absent from Vue 3.5.44 (TS2724). This skips `.d.ts` internal checking, including local declarations; application/template code and API usage remain checked. Re-evaluate on Vue/i18n upgrades and remove the exception once the declaration mismatch is fixed.
+
 ## 4. Git Hooks (Husky)
 
 - Purpose: Enforce quality checks before commit.
@@ -332,6 +348,7 @@ Validation
 - Lint check: `npm run lint`
 - Lint with fixes: `npm run lint:fix`
 - Validate (lint + format check): `npm run validate`
+- Check application types and checker contracts: `npm run typecheck`
 - Pre-commit: lint-staged runs automatically on staged files
 - GitHub Actions runs `npm run verify:feature` on pull requests and pushes to `main`; see `.github/workflows/test.yml`.
 

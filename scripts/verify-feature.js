@@ -200,6 +200,7 @@ function reportResult(scope, executed, skipped) {
 function runDocumentationVerification() {
   const executed = ['npm run validate', 'npm run docs:check-pairs'];
   const skipped = [
+    'TypeScript checks (documentation-only scope)',
     'Vitest coverage (documentation-only scope)',
     'Playwright E2E (documentation-only scope)',
     'test inventory (documentation-only scope)',
@@ -215,10 +216,11 @@ function runDocumentationVerification() {
  * Run all validation layers required for a user-visible feature change.
  * @returns {void}
  */
-function runFeatureVerification() {
+export function runFeatureVerification() {
   const executed = [
     'npm run validate',
     'npm run docs:check-pairs',
+    'npm run typecheck',
     'Vitest coverage with JSON report',
     'Playwright E2E with JSON report',
     'npm run test:inventory:ci',
@@ -228,6 +230,8 @@ function runFeatureVerification() {
   mkdirSync(REPORT_DIRECTORY, { recursive: true });
   runCommand('Validate formatting and lint rules', npmCommand, ['run', 'validate']);
   runCommand('Check paired documentation structure', npmCommand, ['run', 'docs:check-pairs']);
+
+  runCommand('Check application types and compiler contracts', npmCommand, ['run', 'typecheck']);
 
   const vitestPath = resolve(PROJECT_ROOT, 'node_modules', 'vitest', 'vitest.mjs');
   runCommand('Run Vitest coverage', process.execPath, [

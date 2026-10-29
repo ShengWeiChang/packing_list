@@ -71,6 +71,9 @@
 - Dev Server: Vite dev server with HMR
 - CSS Processing: PostCSS with Tailwind CSS
 - Module Bundling: Vite with ES modules
+- 型別檢查：TypeScript 6.0.3 / vue-tsc 3.3.13、typescript-eslint 8.72.1、@vue/tsconfig 0.9.1；共用 feature／CI gate 在 runtime tests 前執行 `npm run typecheck`。
+- 遷移邊界：`typescript-migration.json` 記錄尚未受型別檢查的應用 JS／SFC scripts；compiler-root 涵蓋檢查與精確 allowance 防止漏檢。既有 24 個 JS 模組及 16 個 SFC scripts 尚未完成型別化。Runtime tests 與 Node 工具保留 JS；localStorage 仍需要 runtime validation。
+- 宣告相容性：已接受 `skipLibCheck: true` 以處理 vue-i18n 11.4.16 / Vue 3.5.44 的 TS2724 不相容；應用／模板程式與 API 使用仍受檢查。限制與重新評估規則見 Code Quality Guide。
 
 ## 4. Implemented Features 實做功能
 
@@ -421,6 +424,13 @@ packing-list/
 ├── postcss.config.js                 # PostCSS配置
 ├── tailwind.config.js                # Tailwind CSS配置
 ├── vite.config.js                    # Vite建置配置
+├── tsconfig.json                     # 應用型別檢查的編輯器入口
+├── tsconfig.app.json                 # 瀏覽器應用 compiler 範圍
+├── tsconfig.type-tests.json          # Compile-only 契約範圍
+├── typescript-migration.json         # 精確列出尚未受檢查的應用檔案
+├── scripts/                          # 驗證與 repository 工具
+│   ├── checkTypeScriptScope.js        # Source roots 與遷移 allowance guard
+│   └── checkTypeScriptContracts.js    # 預期的 TS 與模板錯誤診斷 probes
 ├── public/                           # 靜態資源
 │   └── favicon.svg                   # 網站圖示（主題綠底白勾）
 ├── docs/                             # 專案文件目錄

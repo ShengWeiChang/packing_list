@@ -71,6 +71,9 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Dev Server: Vite dev server with HMR
 - CSS Processing: PostCSS with Tailwind CSS
 - Module Bundling: Vite with ES modules
+- Type Checking: TypeScript 6.0.3 / vue-tsc 3.3.13, typescript-eslint 8.72.1, @vue/tsconfig 0.9.1; `npm run typecheck` runs before runtime tests in the shared feature/CI gate.
+- Migration Boundary: `typescript-migration.json` records unchecked application JS/SFC scripts; compiler-root coverage and explicit allowances prevent silent omissions. Existing 24 JS modules and 16 SFC scripts are not yet fully type-checked. Runtime tests and Node tools remain JS; localStorage runtime validation remains required.
+- Declaration Compatibility: `skipLibCheck: true` is accepted for the vue-i18n 11.4.16 / Vue 3.5.44 TS2724 mismatch; app/template code and API usage remain checked. See the Code Quality Guide for the limitation and re-evaluation rule.
 
 ## 4. Implemented Features
 
@@ -421,6 +424,13 @@ packing-list/
 ├── postcss.config.js                 # PostCSS config
 ├── tailwind.config.js                # Tailwind CSS config
 ├── vite.config.js                    # Vite build config
+├── tsconfig.json                     # Editor entry point for application type checking
+├── tsconfig.app.json                 # Browser application compiler scope
+├── tsconfig.type-tests.json          # Compile-only contract scope
+├── typescript-migration.json         # Exact remaining unchecked application files
+├── scripts/                          # Verification and repository utilities
+│   ├── checkTypeScriptScope.js        # Source roots and migration-allowance guard
+│   └── checkTypeScriptContracts.js    # Expected TS and template diagnostic probes
 ├── public/                           # Static assets
 │   └── favicon.svg                   # Site favicon (primary green with white checkmark)
 ├── docs/                             # Project documentation

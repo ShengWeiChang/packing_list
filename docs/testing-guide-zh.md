@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 671    |
-| Unit tests 單元測試           | 286    |
+| Total tests 總測試數          | 683    |
+| Unit tests 單元測試           | 298    |
 | Component tests 組件測試      | 296    |
 | E2E tests E2E 測試            | 89     |
-| Line coverage 行覆蓋率        | 92.12% |
-| Statement coverage 語句覆蓋率 | 90.60% |
-| Branch coverage 分支覆蓋率    | 81.17% |
+| Line coverage 行覆蓋率        | 92.90% |
+| Statement coverage 語句覆蓋率 | 91.28% |
+| Branch coverage 分支覆蓋率    | 81.31% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,7 +29,7 @@
 
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 286   | models、services、composables、utils 純邏輯 |
+| Unit      | Vitest                   | 298   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 296   | Vue 組件渲染、事件、狀態                    |
 | E2E       | Playwright               | 89    | 真實瀏覽器中的完整使用者流程                |
 
@@ -42,6 +42,16 @@
 | @vitest/coverage-v8 | 4.1.12  | 程式碼覆蓋率（V8 提供者） |
 | playwright          | 1.58.2  | 基於瀏覽器的 E2E 測試     |
 | jsdom               | 28.0.0  | Vitest 的 DOM 環境        |
+| typescript          | 6.0.3   | 靜態 compiler 契約        |
+| vue-tsc             | 3.3.13  | TS 與 Vue 模板檢查        |
+
+### Compile-Only Type Contracts 僅編譯的型別契約
+
+`npm run typecheck` 是獨立的靜態 gate，不是第四個 runtime 測試層。它先檢查 source／compiler 範圍，再檢查應用與 `tests/type-tests/` 契約。Vitest 排除此目錄；compile-only assertions 與預期錯誤診斷 probes 不計入 runtime 總數或 runtime coverage。
+
+初始 infrastructure suite 證明數值 ref 推導、null narrowing、indexed-access 安全性與真實 SFC props／emits。兩個隔離 probe 要求刻意無效的 TS 及 Vue template fixture 只產生 TS2322；無關的缺少模組、設定錯誤、crash 或意外成功都會使 probe 失敗。後續遷移 milestone 會針對真實 owner 加入 domain／operation 契約。
+
+Gate 明確回報尚未檢查的 JS 與 Vue JavaScript scripts；進入 compiler roots 不代表已完整檢查型別。`skipLibCheck: true` 是已接受的 Vue／i18n 宣告相容性例外，詳見 Code Quality Guide。
 
 ## 3. Test File Structure 測試檔案結構
 
@@ -50,7 +60,11 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 282 tests
+├── type-tests/                          # Compile-only; excluded from runtime counts
+│   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
+│   └── fixtures/                        # Typed probe and deliberately invalid inputs
+│
+├── unit-tests/                          # 298 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -74,9 +88,11 @@ tests/
 │       ├── order.test.js                #  8  tests
 │       ├── dragDrop.test.js             #  2  tests
 │       └── focusEditingInput.test.js     #  2  tests
-│   └── scripts/                         #  5  tests
+│   └── scripts/                         # 17 tests
 │       ├── candidateFingerprint.test.js #  2  tests
-│       └── verifyFeature.test.js        #  3  tests
+│       ├── checkTypeScriptScope.test.js #  8  tests
+│       ├── eslintTypeScript.test.js     #  2  tests
+│       └── verifyFeature.test.js        #  5  tests
 │
 ├── component-tests/                     # 296 tests
 │   ├── App.test.js                      # 68  tests
@@ -96,7 +112,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 13  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 82  tests
+└── end2end-tests/                       # 89 tests
     ├── mobile-workflow.spec.js          # 10  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
@@ -130,7 +146,7 @@ tests/
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 57.48%     | 50.00% | 53.04% |
+| scripts/     | 79.22%     | 67.17% | 77.52% |
 | source/      | 82.93%     | 72.29% | 85.50% |
 | components/  | 91.52%     | 82.42% | 94.29% |
 | composables/ | 95.41%     | 87.03% | 97.37% |
@@ -209,7 +225,8 @@ npm run test:coverage # Vitest code coverage only: terminal summary + coverage/i
 ```bash
 npm run test:inventory      # 執行 Vitest + Playwright 並驗證 comments 與可用的 guides
 npm run test:inventory:sync # 通過後同步生成的 guide counts
-npm run verify:feature      # 完整功能驗證：validate、coverage、E2E、inventory、build
+npm run typecheck           # Source 範圍、應用型別、compile-only contracts、診斷 probes
+npm run verify:feature      # 完整功能驗證：validate、typecheck、coverage、E2E、inventory、build
 npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與 build layers
 ```
 
@@ -225,16 +242,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ## 7. CI/CD Execution Stages 持續整合執行階段
 
-| Stage               | Trigger              | Test scope                               | Purpose                                          |
-| ------------------- | -------------------- | ---------------------------------------- | ------------------------------------------------ |
-| Development process | Manual               | 開發者手動決定要跑哪些測試               | 開發過程中快速本機檢查                           |
-| Commit              | `git commit`         | Unit + Component                         | push 前先擋掉明顯回歸                            |
-| CI on push          | `push` event         | Unit + Component + E2E + inventory audit | 每個測試套件只跑一次，再驗證生成的 test metadata |
-| CI on pull request  | `pull_request` event | Unit + Component + E2E + inventory audit | 每個測試套件只跑一次，再驗證可合併性與 metadata  |
+| Stage               | Trigger              | Test scope                                           | Purpose                                                  |
+| ------------------- | -------------------- | ---------------------------------------------------- | -------------------------------------------------------- |
+| Development process | Manual               | 開發者手動決定要跑哪些測試                           | 開發過程中快速本機檢查                                   |
+| Commit              | `git commit`         | Unit + Component                                     | push 前先擋掉明顯回歸                                    |
+| CI on push          | `push` to `main`     | Typecheck + Unit + Component + E2E + inventory audit | 拒絕型別錯誤，再執行一次各 runtime suite 並稽核 metadata |
+| CI on pull request  | `pull_request` event | Typecheck + Unit + Component + E2E + inventory audit | 拒絕型別錯誤，再驗證 runtime 行為與 metadata             |
 
 ## 8. Complete Test Inventory 完整測試案例清單
 
-### 8.1 Unit Tests（282）
+### 8.1 Unit Tests（298）
 
 #### 8.1.1 Models（40）
 
@@ -614,7 +631,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 3   | falls back to English for unsupported locales                                | 語系後備         |
 | 4   | returns isolated resolved data                                               | 解析結果隔離     |
 
-#### 8.1.7 Scripts（5）
+#### 8.1.7 Scripts（17）
 
 ##### 8.1.7.1 candidateFingerprint.test.js（2）
 
@@ -623,13 +640,35 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | allows a staged binary diff larger than the completion asset collection       | Binary candidate fingerprint 預算 |
 | 2   | fingerprints a staged binary candidate larger than the default process buffer | 大型 binary Git diff 端到端支援   |
 
-##### 8.1.7.2 verifyFeature.test.js（3）
+##### 8.1.7.2 verifyFeature.test.js（5）
 
-| #   | Test                                                         | 測試重點                 |
-| --- | ------------------------------------------------------------ | ------------------------ |
-| 1   | should summarize Playwright failures without ANSI formatting | 精簡、去重的失敗診斷摘要 |
-| 2   | should report missing individual errors                      | reporter 後備訊息        |
-| 3   | should summarize top-level Playwright runner failures        | 測試前 runner 診斷       |
+| #   | Test                                                                    | 測試重點                 |
+| --- | ----------------------------------------------------------------------- | ------------------------ |
+| 1   | should summarize Playwright failures without ANSI formatting            | 精簡、去重的失敗診斷摘要 |
+| 2   | should report missing individual errors                                 | reporter 後備訊息        |
+| 3   | should summarize top-level Playwright runner failures                   | 測試前 runner 診斷       |
+| 4   | checks types before tests and includes the layer in its success summary | 型別檢查順序及結果列示   |
+| 5   | stops before runtime tests when type checking fails                     | CI 失敗即停止邊界        |
+
+##### 8.1.7.3 checkTypeScriptScope.test.js（8）
+
+| #   | Test                                                        | 測試重點                         |
+| --- | ----------------------------------------------------------- | -------------------------------- |
+| 1   | reports the exact remaining unchecked scope                 | 區分 compiler roots 與已檢查程式 |
+| 2   | rejects an unlisted JavaScript module                       | 防止新增未檢查 JS                |
+| 3   | rejects an excluded application module                      | 防止 compiler 範圍漏檔           |
+| 4   | rejects a new unchecked Vue component                       | 防止新增未檢查 SFC               |
+| 5   | rejects stale allowances after a Vue migration              | 要求縮減遷移清單                 |
+| 6   | rejects strictNullChecks being disabled                     | 保留 strict null 檢查            |
+| 7   | rejects disabling template checks                           | 保留明確的模板檢查               |
+| 8   | accepts an all-TypeScript source with no migration manifest | 驗證最終遷移設定                 |
+
+##### 8.1.7.4 eslintTypeScript.test.js（2）
+
+| #   | Test                                                                    | 測試重點                       |
+| --- | ----------------------------------------------------------------------- | ------------------------------ |
+| 1   | retains no-undef for a JavaScript application component                 | 遷移期間保留 JS 未定義名稱保護 |
+| 2   | parses typed Vue props without applying JavaScript undefined-name rules | 允許 TS 型別且不誤報 JS 診斷   |
 
 ### 8.2 Component Tests（296）
 

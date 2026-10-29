@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.app.json",
+  "include": ["tests/type-tests/**/*.test.ts", "tests/type-tests/fixtures/TypecheckProbe.vue"]
+}

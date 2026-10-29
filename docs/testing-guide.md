@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 671    |
-| Unit tests         | 286    |
+| Total tests        | 683    |
+| Unit tests         | 298    |
 | Component tests    | 296    |
 | E2E tests          | 89     |
-| Line coverage      | 92.12% |
-| Statement coverage | 90.60% |
-| Branch coverage    | 81.17% |
+| Line coverage      | 92.90% |
+| Statement coverage | 91.28% |
+| Branch coverage    | 81.31% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -29,7 +29,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 286   | Pure logic in models, services, composables, utils |
+| Unit      | Vitest                   | 298   | Pure logic in models, services, composables, utils |
 | Component | Vitest + @vue/test-utils | 296   | Vue component rendering, events, state             |
 | E2E       | Playwright               | 89    | Full user flows in a real browser                  |
 
@@ -42,6 +42,16 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | @vitest/coverage-v8 | 4.1.12  | Code coverage (V8 provider)  |
 | playwright          | 1.58.2  | Browser-based E2E testing    |
 | jsdom               | 28.0.0  | DOM environment for Vitest   |
+| typescript          | 6.0.3   | Static compiler contracts    |
+| vue-tsc             | 3.3.13  | TS and Vue template checks   |
+
+### Compile-Only Type Contracts
+
+`npm run typecheck` is a separate static gate, not a fourth runtime test layer. It checks source/compiler scope, then the application and `tests/type-tests/` contracts. Vitest excludes this directory; compile-only assertions and expected diagnostic probes do not count toward runtime totals or runtime coverage.
+
+The initial infrastructure suite proves numeric ref inference, null narrowing, indexed-access safety, and real SFC props/emits. Two isolated probes require exactly TS2322 in deliberately invalid TS and Vue template fixtures; an unrelated missing module, config error, crash, or unexpected success fails the probe. Later migration milestones add domain/operation contracts against their real owners.
+
+The gate reports unchecked JS and Vue JavaScript scripts explicitly; their presence in compiler roots is not evidence of full type checking. `skipLibCheck: true` is the accepted Vue/i18n declaration compatibility exception described in the Code Quality Guide.
 
 ## 3. Test File Structure
 
@@ -50,7 +60,11 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 282 tests
+├── type-tests/                          # Compile-only; excluded from runtime counts
+│   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
+│   └── fixtures/                        # Typed probe and deliberately invalid inputs
+│
+├── unit-tests/                          # 298 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -74,9 +88,11 @@ tests/
 │       ├── order.test.js                #  8  tests
 │       ├── dragDrop.test.js             #  2  tests
 │       └── focusEditingInput.test.js     #  2  tests
-│   └── scripts/                         #  5  tests
+│   └── scripts/                         # 17 tests
 │       ├── candidateFingerprint.test.js #  2  tests
-│       └── verifyFeature.test.js        #  3  tests
+│       ├── checkTypeScriptScope.test.js #  8  tests
+│       ├── eslintTypeScript.test.js     #  2  tests
+│       └── verifyFeature.test.js        #  5  tests
 │
 ├── component-tests/                     # 296 tests
 │   ├── App.test.js                      # 68  tests
@@ -96,7 +112,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 13  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 82  tests
+└── end2end-tests/                       # 89 tests
     ├── mobile-workflow.spec.js          # 10  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
@@ -130,7 +146,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 57.48%     | 50.00% | 53.04% |
+| scripts/     | 79.22%     | 67.17% | 77.52% |
 | source/      | 82.93%     | 72.29% | 85.50% |
 | components/  | 91.52%     | 82.42% | 94.29% |
 | composables/ | 95.41%     | 87.03% | 97.37% |
@@ -209,7 +225,8 @@ npm run test:coverage # Vitest code coverage only: outputs terminal summary + co
 ```bash
 npm run test:inventory      # Execute Vitest + Playwright and verify comments plus available guides
 npm run test:inventory:sync # After passing, synchronize generated guide counts
-npm run verify:feature      # Full feature verification: validate, coverage, E2E, inventory, build
+npm run typecheck           # Source scope, application types, compile-only contracts, diagnostic probes
+npm run verify:feature      # Full feature verification: validate, typecheck, coverage, E2E, inventory, build
 npm run verify:feature -- --docs # Documentation-only validation; reports skipped test and build layers
 ```
 
@@ -225,16 +242,16 @@ This project uses three layers to balance speed and reliability.
 
 ## 7. CI/CD Execution Stages
 
-| Stage               | Trigger              | Test scope executed                      | Purpose                                                         |
-| ------------------- | -------------------- | ---------------------------------------- | --------------------------------------------------------------- |
-| Development process | Manual               | Manually selected by developer           | Fast local checks during implementation                         |
-| Commit              | `git commit`         | Unit + Component                         | Block obvious regressions before push                           |
-| CI on push          | `push` event         | Unit + Component + E2E + inventory audit | Run each suite once, then validate generated test metadata      |
-| CI on pull request  | `pull_request` event | Unit + Component + E2E + inventory audit | Run each suite once, then validate merge readiness and metadata |
+| Stage               | Trigger              | Test scope executed                                  | Purpose                                                                 |
+| ------------------- | -------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------- |
+| Development process | Manual               | Manually selected by developer                       | Fast local checks during implementation                                 |
+| Commit              | `git commit`         | Unit + Component                                     | Block obvious regressions before push                                   |
+| CI on push          | `push` to `main`     | Typecheck + Unit + Component + E2E + inventory audit | Reject type errors, then run each runtime suite once and audit metadata |
+| CI on pull request  | `pull_request` event | Typecheck + Unit + Component + E2E + inventory audit | Reject type errors, then verify runtime behavior and metadata           |
 
 ## 8. Complete Test Inventory
 
-### 8.1 Unit Tests (282 tests)
+### 8.1 Unit Tests (298 tests)
 
 #### 8.1.1 Models (40 tests)
 
@@ -614,7 +631,7 @@ This project uses three layers to balance speed and reliability.
 | 3   | falls back to English for unsupported locales                                | Locale fallback           |
 | 4   | returns isolated resolved data                                               | Resolver output isolation |
 
-#### 8.1.7 Scripts (5 tests)
+#### 8.1.7 Scripts (17 tests)
 
 ##### 8.1.7.1 candidateFingerprint.test.js (2 tests)
 
@@ -623,13 +640,35 @@ This project uses three layers to balance speed and reliability.
 | 1   | allows a staged binary diff larger than the completion asset collection       | Binary candidate fingerprint budget      |
 | 2   | fingerprints a staged binary candidate larger than the default process buffer | End-to-end large binary Git diff support |
 
-##### 8.1.7.2 verifyFeature.test.js (3 tests)
+##### 8.1.7.2 verifyFeature.test.js (5 tests)
 
-| #   | Test                                                         | What it verifies                           |
-| --- | ------------------------------------------------------------ | ------------------------------------------ |
-| 1   | should summarize Playwright failures without ANSI formatting | Concise, de-duplicated failure diagnostics |
-| 2   | should report missing individual errors                      | Reporter fallback message                  |
-| 3   | should summarize top-level Playwright runner failures        | Pre-test runner diagnostic                 |
+| #   | Test                                                                    | What it verifies                           |
+| --- | ----------------------------------------------------------------------- | ------------------------------------------ |
+| 1   | should summarize Playwright failures without ANSI formatting            | Concise, de-duplicated failure diagnostics |
+| 2   | should report missing individual errors                                 | Reporter fallback message                  |
+| 3   | should summarize top-level Playwright runner failures                   | Pre-test runner diagnostic                 |
+| 4   | checks types before tests and includes the layer in its success summary | Type-check ordering and reporting          |
+| 5   | stops before runtime tests when type checking fails                     | Fail-fast CI boundary                      |
+
+##### 8.1.7.3 checkTypeScriptScope.test.js (8 tests)
+
+| #   | Test                                                        | What it verifies                             |
+| --- | ----------------------------------------------------------- | -------------------------------------------- |
+| 1   | reports the exact remaining unchecked scope                 | Distinguish compiler roots from checked code |
+| 2   | rejects an unlisted JavaScript module                       | Prevent new unchecked JS                     |
+| 3   | rejects an excluded application module                      | Prevent compiler-scope omissions             |
+| 4   | rejects a new unchecked Vue component                       | Prevent unchecked SFC additions              |
+| 5   | rejects stale allowances after a Vue migration              | Require migration-list reduction             |
+| 6   | rejects strictNullChecks being disabled                     | Preserve strict null checking                |
+| 7   | rejects disabling template checks                           | Preserve explicit template checking          |
+| 8   | accepts an all-TypeScript source with no migration manifest | Verify the final migration configuration     |
+
+##### 8.1.7.4 eslintTypeScript.test.js (2 tests)
+
+| #   | Test                                                                    | What it verifies                                       |
+| --- | ----------------------------------------------------------------------- | ------------------------------------------------------ |
+| 1   | retains no-undef for a JavaScript application component                 | Preserve JS undefined-name protection during migration |
+| 2   | parses typed Vue props without applying JavaScript undefined-name rules | Allow TS types without false JS diagnostics            |
 
 ### 8.2 Component Tests (296 tests)
 
