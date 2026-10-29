@@ -569,4 +569,145 @@ describe('storage transaction safety', () => {
     expect(storage.has(STORAGE_KEYS.APP_DATA)).toBe(false);
     app.dispose();
   });
+  // Test Case 21: Conflicting item status transitions are rejected in either order.
+  it('rejects stale packed and pending transitions without overwriting either winner', async () => {
+    const item = {
+      id: 'item',
+      name: 'Hat',
+      quantity: 1,
+      checklistId: 'cl',
+      categoryId: 'cat',
+      order: 0,
+      isPacked: false,
+      isPending: false,
+    };
+    for (const [firstChange, secondChange] of [
+      [{ isPacked: true }, { isPending: true }],
+      [{ isPending: true }, { isPacked: true }],
+    ]) {
+      storage.set(
+        STORAGE_KEYS.APP_DATA,
+        JSON.stringify({ checklists: [], categories: [], items: [item] })
+      );
+      const first = new LocalStorageService();
+      const second = new LocalStorageService();
+      await first.updateItem('cl', { ...item, ...firstChange }, item);
+      const before = storage.get(STORAGE_KEYS.APP_DATA);
+      await expect(
+        second.updateItem('cl', { ...item, ...secondChange }, item)
+      ).rejects.toMatchObject({ code: 'conflict' });
+      expect(storage.get(STORAGE_KEYS.APP_DATA)).toBe(before);
+      first.dispose();
+      second.dispose();
+    }
+  });
+
+  // Test Case 22: A status conflict aborts the entire batch in either order.
+  it('does not partially save a batch when the other status field changed', async () => {
+    const item = {
+      id: 'item',
+      name: 'Hat',
+      quantity: 1,
+      checklistId: 'cl',
+      categoryId: 'cat',
+      order: 0,
+      isPacked: false,
+      isPending: false,
+    };
+    const other = { ...item, id: 'other', name: 'Gloves', order: 1 };
+    for (const [firstChange, secondChange] of [
+      [{ isPacked: true }, { isPending: true }],
+      [{ isPending: true }, { isPacked: true }],
+    ]) {
+      storage.set(
+        STORAGE_KEYS.APP_DATA,
+        JSON.stringify({ checklists: [], categories: [], items: [item, other] })
+      );
+      const first = new LocalStorageService();
+      const second = new LocalStorageService();
+      await first.updateItem('cl', { ...item, ...firstChange }, item);
+      const before = storage.get(STORAGE_KEYS.APP_DATA);
+      await expect(
+        second.updateMultipleItems(
+          'cl',
+          [
+            { ...other, name: 'Changed' },
+            { ...item, ...secondChange },
+          ],
+          [other, item]
+        )
+      ).rejects.toMatchObject({ code: 'conflict' });
+      expect(storage.get(STORAGE_KEYS.APP_DATA)).toBe(before);
+      first.dispose();
+      second.dispose();
+    }
+  });
+
+  // Test Case 23: Item status and unrelated edits can still merge in both directions.
+  it('merges status and unrelated item edits without losing either change', async () => {
+    const item = {
+      id: 'item',
+      name: 'Hat',
+      quantity: 1,
+      checklistId: 'cl',
+      categoryId: 'cat',
+      order: 0,
+      isPacked: false,
+      isPending: false,
+    };
+    for (const statusFirst of [true, false]) {
+      storage.set(
+        STORAGE_KEYS.APP_DATA,
+        JSON.stringify({ checklists: [], categories: [], items: [item] })
+      );
+      const first = new LocalStorageService();
+      const second = new LocalStorageService();
+      const status = { ...item, isPending: true };
+      const content = { ...item, name: 'Warm hat', quantity: 2 };
+      await first.updateItem('cl', statusFirst ? status : content, item);
+      const merged = await second.updateItem('cl', statusFirst ? content : status, item);
+      expect(merged).toMatchObject({
+        name: 'Warm hat',
+        quantity: 2,
+        isPacked: false,
+        isPending: true,
+      });
+      first.dispose();
+      second.dispose();
+    }
+  });
+
+  // Test Case 24: Invalid transitions are rejected without rewriting legacy data.
+  it('rejects contradictory status writes but preserves and can repair legacy data', async () => {
+    const item = {
+      id: 'item',
+      name: 'Hat',
+      quantity: 1,
+      checklistId: 'cl',
+      categoryId: 'cat',
+      order: 0,
+      isPacked: false,
+      isPending: false,
+    };
+    storage.set(
+      STORAGE_KEYS.APP_DATA,
+      JSON.stringify({ checklists: [], categories: [], items: [item] })
+    );
+    const service = new LocalStorageService();
+    const before = storage.get(STORAGE_KEYS.APP_DATA);
+    await expect(
+      service.updateItem('cl', { ...item, isPacked: true, isPending: true }, item)
+    ).rejects.toMatchObject({ code: 'conflict' });
+    expect(storage.get(STORAGE_KEYS.APP_DATA)).toBe(before);
+    const legacy = { ...item, isPacked: true, isPending: true };
+    storage.set(
+      STORAGE_KEYS.APP_DATA,
+      JSON.stringify({ checklists: [], categories: [], items: [legacy] })
+    );
+    const renamed = await service.updateItem('cl', { ...legacy, name: 'Old hat' }, legacy);
+    expect(renamed).toMatchObject({ name: 'Old hat', isPacked: true, isPending: true });
+    const repaired = await service.updateItem('cl', { ...renamed, isPacked: false }, renamed);
+    expect(repaired).toMatchObject({ isPacked: false, isPending: true });
+    service.dispose();
+  });
 });

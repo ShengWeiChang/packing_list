@@ -54,6 +54,29 @@ function mergeIntent(current, desired, expected) {
   return merged;
 }
 
+/**
+ * Merge item edits while treating packing and pending as one state.
+ * @param {object} current - Latest stored item.
+ * @param {object} desired - Requested item or partial item update.
+ * @param {object} expected - Item observed before editing.
+ * @returns {object} Merged item.
+ */
+function mergeItemIntent(current, desired, expected) {
+  if (!expected) return mergeIntent(current, desired, expected);
+  const statusFields = ['isPacked', 'isPending'];
+  const statusChanged = statusFields.some(
+    (field) => Object.hasOwn(desired, field) && desired[field] !== expected[field]
+  );
+  if (statusChanged && statusFields.some((field) => current[field] !== expected[field])) {
+    throw new StorageError('conflict', 'The item status changed in another tab');
+  }
+  const merged = mergeIntent(current, desired, expected);
+  if (statusChanged && merged.isPacked && merged.isPending) {
+    throw new StorageError('conflict', 'An item cannot be both packed and pending');
+  }
+  return merged;
+}
+
 // -----------------------------------------------------------------------------
 // Class definition
 // -----------------------------------------------------------------------------
@@ -683,7 +706,7 @@ export class LocalStorageService extends DataService {
 
       // Create a proper Item instance to ensure consistent structure
       const updatedItem = new Item({
-        ...mergeIntent(Item.fromJSON(items[index]).toJSON(), item, expectedItem),
+        ...mergeItemIntent(Item.fromJSON(items[index]).toJSON(), item, expectedItem),
         checklistId,
       });
       if (
@@ -739,7 +762,7 @@ export class LocalStorageService extends DataService {
           throw new StorageError('conflict', `Item with id ${item.id} has no baseline`);
         }
         const candidate = new Item(
-          mergeIntent(Item.fromJSON(items[indexes[index]]).toJSON(), item.toJSON(), expected)
+          mergeItemIntent(Item.fromJSON(items[indexes[index]]).toJSON(), item.toJSON(), expected)
         ).toJSON();
         if (
           candidate.categoryId !== items[indexes[index]].categoryId &&

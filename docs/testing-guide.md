@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 665    |
-| Unit tests         | 282    |
+| Total tests        | 671    |
+| Unit tests         | 286    |
 | Component tests    | 296    |
-| E2E tests          | 87     |
-| Line coverage      | 92.09% |
+| E2E tests          | 89     |
+| Line coverage      | 92.12% |
 | Statement coverage | 90.60% |
-| Branch coverage    | 81.09% |
+| Branch coverage    | 81.17% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -29,9 +29,9 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 282   | Pure logic in models, services, composables, utils |
+| Unit      | Vitest                   | 286   | Pure logic in models, services, composables, utils |
 | Component | Vitest + @vue/test-utils | 296   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 87    | Full user flows in a real browser                  |
+| E2E       | Playwright               | 89    | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -58,10 +58,10 @@ tests/
 │   │   ├── Category.test.js             #  9  tests
 │   │   └── Checklist.test.js            # 11  tests
 │   │   └── Template.test.js             #  3  tests
-│   ├── services/                        # 119 tests
+│   ├── services/                        # 123 tests
 │   │   ├── localStorageService.test.js  # 80  tests
 │   │   ├── templateService.test.js      # 15  tests
-│   │   ├── storageTransaction.test.js  # 20  tests
+│   │   ├── storageTransaction.test.js  # 24  tests
 │   │   └── recommendedListService.test.js  #  4  tests
 │   ├── composables/                     # 66  tests
 │   │   └── usePackingLists.test.js      # 51  tests
@@ -107,7 +107,7 @@ tests/
     ├── multi-tab-sync.spec.js           #  6  tests
     ├── template-management.spec.js      #  7  tests
     ├── recommended-lists.spec.js        #  1  test
-    └── storage-recovery.spec.js         # 26  tests
+    └── storage-recovery.spec.js         # 28  tests
 ```
 
 ### Naming Conventions
@@ -135,7 +135,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | components/  | 91.52%     | 82.42% | 94.29% |
 | composables/ | 95.41%     | 87.03% | 97.37% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 95.60%     | 82.72% | 95.12% |
+| services/    | 95.50%     | 83.06% | 95.22% |
 | utils/       | 98.92%     | 87.69% | 100%   |
 
 ### By Component
@@ -298,7 +298,7 @@ This project uses three layers to balance speed and reliability.
 | 2   | trims its name and round-trips snapshot content  | Serialization        |
 | 3   | rejects a non-string or too-long name            | Name validation      |
 
-#### 8.1.2 Services (119 tests)
+#### 8.1.2 Services (123 tests)
 
 ##### 8.1.2.1 localStorageService.test.js (80 tests)
 
@@ -414,7 +414,7 @@ This project uses three layers to balance speed and reliability.
 | 3   | rejects missing recommended lists                                    | Missing recommended-list guard    |
 | 4   | applies the localized general recommended list                       | General list and locale selection |
 
-##### 8.1.2.4 storageTransaction.test.js (20 tests)
+##### 8.1.2.4 storageTransaction.test.js (24 tests)
 
 | #   | Test                                                                          | What it verifies           |
 | --- | ----------------------------------------------------------------------------- | -------------------------- |
@@ -438,6 +438,10 @@ This project uses three layers to balance speed and reliability.
 | 18  | rejects a queued item move after another writer deletes its destination       | Destination conflict       |
 | 19  | rejects queued checklist creation after the selected template is deleted      | Deleted template guard     |
 | 20  | preserves corrupted template data and refuses queued checklist creation       | Corrupt template guard     |
+| 21  | Reject stale packed and pending changes in either order                       | Coupled status conflict    |
+| 22  | Reject a whole batch on coupled status conflict                               | Atomic batch status        |
+| 23  | Merge status and unrelated edits in both orders                               | Unrelated field merge      |
+| 24  | Reject contradictory status writes and preserve legacy values                 | Legacy compatibility       |
 
 #### 8.1.3 Composables (66 tests)
 
@@ -1118,7 +1122,7 @@ This project uses three layers to balance speed and reliability.
 | --- | ------------------------------------------------------------- | ---------------------------- |
 | 1   | should create and persist a checklist from a recommended list | Source-aware name and reload |
 
-#### 8.3.11 storage-recovery.spec.js (26 tests)
+#### 8.3.11 storage-recovery.spec.js (28 tests)
 
 | #   | Test                                                                 | What it verifies                   |
 | --- | -------------------------------------------------------------------- | ---------------------------------- |
@@ -1148,3 +1152,5 @@ This project uses three layers to balance speed and reliability.
 | 24  | Save an active template category                                     | Direct save without Enter          |
 | 25  | Save an active template item                                         | Direct save without Enter          |
 | 26  | Finish composing a template title before saving                      | IME event and final stored text    |
+| 27  | Reject queued pending after another tab packs the item               | Cross-tab item conflict            |
+| 28  | Reject queued category pack after another tab marks the item pending | Cross-tab atomic batch             |

@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 665    |
-| Unit tests 單元測試           | 282    |
+| Total tests 總測試數          | 671    |
+| Unit tests 單元測試           | 286    |
 | Component tests 組件測試      | 296    |
-| E2E tests E2E 測試            | 87     |
-| Line coverage 行覆蓋率        | 92.09% |
+| E2E tests E2E 測試            | 89     |
+| Line coverage 行覆蓋率        | 92.12% |
 | Statement coverage 語句覆蓋率 | 90.60% |
-| Branch coverage 分支覆蓋率    | 81.09% |
+| Branch coverage 分支覆蓋率    | 81.17% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,9 +29,9 @@
 
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 282   | models、services、composables、utils 純邏輯 |
+| Unit      | Vitest                   | 286   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 296   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 87    | 真實瀏覽器中的完整使用者流程                |
+| E2E       | Playwright               | 89    | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
@@ -58,10 +58,10 @@ tests/
 │   │   ├── Category.test.js             #  9  tests
 │   │   └── Checklist.test.js            # 11  tests
 │   │   └── Template.test.js             #  3  tests
-│   ├── services/                        # 119 tests
+│   ├── services/                        # 123 tests
 │   │   ├── localStorageService.test.js  # 80  tests
 │   │   ├── templateService.test.js      # 15  tests
-│   │   ├── storageTransaction.test.js  # 20  tests
+│   │   ├── storageTransaction.test.js  # 24  tests
 │   │   └── recommendedListService.test.js  #  4  tests
 │   ├── composables/                     # 66  tests
 │   │   └── usePackingLists.test.js      # 51  tests
@@ -107,7 +107,7 @@ tests/
     ├── multi-tab-sync.spec.js           #  6  tests
     ├── template-management.spec.js      #  7  tests
     ├── recommended-lists.spec.js        #  1  test
-    └── storage-recovery.spec.js         # 26  tests
+    └── storage-recovery.spec.js         # 28  tests
 ```
 
 ### Naming Conventions 命名慣例
@@ -135,7 +135,7 @@ tests/
 | components/  | 91.52%     | 82.42% | 94.29% |
 | composables/ | 95.41%     | 87.03% | 97.37% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 95.60%     | 82.72% | 95.12% |
+| services/    | 95.50%     | 83.06% | 95.22% |
 | utils/       | 98.92%     | 87.69% | 100%   |
 
 ### By Component 各組件覆蓋率
@@ -298,7 +298,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | trims its name and round-trips snapshot content  | 序列化     |
 | 3   | rejects a non-string or too-long name            | 名稱驗證   |
 
-#### 8.1.2 Services（119）
+#### 8.1.2 Services（123）
 
 ##### 8.1.2.1 localStorageService.test.js（80）
 
@@ -414,7 +414,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 3   | rejects missing recommended lists                                    | 缺少推薦清單防護       |
 | 4   | applies the localized general recommended list                       | 一般推薦清單與語系選擇 |
 
-##### 8.1.2.4 storageTransaction.test.js（20）
+##### 8.1.2.4 storageTransaction.test.js（24）
 
 | #   | Test                                                                          | 測試重點         |
 | --- | ----------------------------------------------------------------------------- | ---------------- |
@@ -438,6 +438,10 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 18  | rejects a queued item move after another writer deletes its destination       | 目的地衝突       |
 | 19  | rejects queued checklist creation after the selected template is deleted      | 已刪除模板防護   |
 | 20  | preserves corrupted template data and refuses queued checklist creation       | 損壞模板防護     |
+| 21  | 任一順序都拒絕過期打包與待處理變更                                            | 關聯狀態衝突     |
+| 22  | 關聯狀態衝突時拒絕整個批次                                                    | 原子批次狀態     |
+| 23  | 兩種順序都可合併狀態與無關編輯                                                | 無關欄位合併     |
+| 24  | 拒絕矛盾狀態寫入並保留舊資料值                                                | 舊資料相容       |
 
 #### 8.1.3 Composables（66）
 
@@ -1118,7 +1122,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | --- | ------------------------------------------------------------- | ---------------------- |
 | 1   | should create and persist a checklist from a recommended list | 來源識別名稱與重新載入 |
 
-#### 8.3.11 storage-recovery.spec.js（26）
+#### 8.3.11 storage-recovery.spec.js（28）
 
 | #   | Test                                 | 測試重點             |
 | --- | ------------------------------------ | -------------------- |
@@ -1148,3 +1152,5 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 24  | 儲存正在編輯的範本分類               | 不按 Enter 直接儲存  |
 | 25  | 儲存正在編輯的範本物品               | 不按 Enter 直接儲存  |
 | 26  | 完成範本標題組字後才儲存             | 輸入法事件與最終文字 |
+| 27  | 拒絕打包後排隊的待處理               | 跨分頁物品衝突       |
+| 28  | 拒絕待處理後排隊的分類打包           | 跨分頁原子批次       |

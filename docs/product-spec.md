@@ -393,6 +393,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - JSON serialization with model instances (toJSON/fromJSON)
 - Checklists and templates use separate `packingListApp` and `packingListTemplates` keys. Writes coordinate cooperating tabs with a shared Web Lock, read the latest data inside the lock, and publish only after the destination key is saved.
 - Field-intent updates compare the edited fields with their expected previous values: unrelated field changes can coexist, while stale changes to the same fields are rejected. Batch changes commit together or not at all.
+- Item packing and pending status form one conflict group: a stale change to either status is rejected if either has changed, and status edits cannot create a simultaneously packed and pending item. Unrelated edits do not rewrite legacy status values.
 - Corrupt data or an unsupported schema is preserved as raw storage and blocks writes to that domain. Missing legacy defaults are normalized in memory, not rewritten on read.
 - Read failures identify the affected domain and offer retry; corrupt or unsupported data can be downloaded as its original content when storage is readable. A download request is not proof that a backup was saved.
 - Checklist and template domains are reported independently. A failed save retains the active inline name/date or dialog draft and reports the error; a successful write followed by a failed refresh is reported separately to discourage duplicate writes.

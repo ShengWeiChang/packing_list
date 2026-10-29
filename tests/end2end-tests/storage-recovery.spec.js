@@ -931,3 +931,97 @@ test('waits for composition to finish before saving a template title', async ({ 
   ).toBe('旅行清單');
   expect(await page.evaluate(() => window.templateWriteCount)).toBe(1);
 });
+
+for (const { firstAction, secondAction } of [
+  { firstAction: 'item-pack', secondAction: 'pending' },
+  { firstAction: 'pending', secondAction: 'category-pack' },
+]) {
+  // Test Cases 27–28: Conflicting item and category status changes cannot merge.
+  test(`rejects queued ${secondAction} after another tab commits ${firstAction}`, async ({
+    page,
+    context,
+  }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'packingListApp',
+        JSON.stringify({
+          checklists: [
+            { id: 'cl', name: 'Trip', startDate: '2026-01-01', endDate: '2026-01-01', order: 0 },
+          ],
+          categories: [{ id: 'cat', name: 'Clothes', checklistId: 'cl', order: 0 }],
+          items: [
+            {
+              id: 'item',
+              name: 'Hat',
+              quantity: 1,
+              categoryId: 'cat',
+              checklistId: 'cl',
+              order: 0,
+              isPacked: false,
+              isPending: false,
+            },
+            {
+              id: 'other',
+              name: 'Gloves',
+              quantity: 1,
+              categoryId: 'cat',
+              checklistId: 'cl',
+              order: 1,
+              isPacked: false,
+              isPending: false,
+            },
+          ],
+        })
+      );
+    });
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/');
+    const other = await context.newPage();
+    await other.setViewportSize({ width: 1280, height: 720 });
+    await other.goto('/');
+    const holder = await context.newPage();
+    await holder.goto('/');
+    await holder.evaluate(() => {
+      window.lockReady = false;
+      void navigator.locks.request('packing-list-storage-write', async () => {
+        window.lockReady = true;
+        await new Promise((resolve) => {
+          window.releaseTestLock = resolve;
+        });
+      });
+    });
+    await expect.poll(() => holder.evaluate(() => window.lockReady)).toBe(true);
+    const act = async (target, action) => {
+      if (action === 'category-pack') {
+        await target.getByTestId('category-checkbox').click();
+      } else if (action === 'item-pack') {
+        await target.getByTestId('item-checkbox').first().click();
+      } else {
+        await target.getByTestId('item-row').first().hover();
+        await target.getByTestId('item-pending-toggle').first().click();
+      }
+    };
+    await act(page, firstAction);
+    await expect
+      .poll(() => page.evaluate(async () => (await navigator.locks.query()).pending.length))
+      .toBeGreaterThanOrEqual(1);
+    await act(other, secondAction);
+    await expect
+      .poll(() => page.evaluate(async () => (await navigator.locks.query()).pending.length))
+      .toBeGreaterThanOrEqual(2);
+    await holder.evaluate(() => window.releaseTestLock());
+    await expect(other.getByRole('alert')).toContainText('changed in another tab');
+    const items = await page.evaluate(
+      () => JSON.parse(localStorage.getItem('packingListApp')).items
+    );
+    expect(items.find((item) => item.id === 'item')).toMatchObject(
+      firstAction === 'item-pack'
+        ? { isPacked: true, isPending: false }
+        : { isPacked: false, isPending: true }
+    );
+    expect(items.find((item) => item.id === 'other')).toMatchObject({
+      isPacked: false,
+      isPending: false,
+    });
+  });
+}
