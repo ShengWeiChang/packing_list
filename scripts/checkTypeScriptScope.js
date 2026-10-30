@@ -1,13 +1,12 @@
 /*
 ================================================================================
 File: scripts/checkTypeScriptScope.js
-Description: Reject unchecked source files outside the explicit migration scope
-             and application files missing from the compiler project.
+Description: Require TypeScript application modules and scripts in compiler roots.
 License: MIT (SPDX: MIT)
 ================================================================================
 */
 
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -28,28 +27,6 @@ function collectSourceFiles(directory) {
     if (entry.isDirectory()) return collectSourceFiles(path);
     return /\.(?:[cm]?[jt]sx?|vue)$/.test(entry.name) ? [path] : [];
   });
-}
-
-/**
- * Validate an exact allowance list rather than silently accepting stale entries.
- * @param {string} label - Migration category.
- * @param {string[]} actual - Actual unchecked files.
- * @param {unknown} allowed - Recorded migration entries.
- */
-function checkAllowance(label, actual, allowed) {
-  if (!Array.isArray(allowed) || allowed.some((path) => typeof path !== 'string')) {
-    throw new Error(`${label} must be an array of source paths`);
-  }
-  if (new Set(allowed).size !== allowed.length) {
-    throw new Error(`${label} contains duplicate paths`);
-  }
-  const unlisted = actual.filter((path) => !allowed.includes(path));
-  const stale = allowed.filter((path) => !actual.includes(path));
-  if (unlisted.length || stale.length) {
-    throw new Error(
-      `${label} mismatch. Unlisted: ${unlisted.join(', ') || 'none'}. Stale: ${stale.join(', ') || 'none'}`
-    );
-  }
 }
 
 /**
@@ -99,44 +76,27 @@ export function checkTypeScriptScope(projectRoot = PROJECT_ROOT) {
   if (strictFlags.some((flag) => options[flag] === false)) {
     throw new Error('Application config must not disable strict sub-options');
   }
+  if (options.allowJs) throw new Error('Application config must disable allowJs');
   const paths = collectSourceFiles(resolve(projectRoot, 'source')).sort();
   const roots = new Set(parsed.fileNames.map((path) => resolve(path)));
-  const uncheckedJavaScript = [];
-  const uncheckedVueScripts = [];
   for (const path of paths) {
     const name = relative(projectRoot, path).replaceAll('\\', '/');
+    if (path.endsWith('.js'))
+      throw new Error(`JavaScript application module is not supported: ${name}`);
     if (!roots.has(path)) throw new Error(`Source module missing from compiler roots: ${name}`);
-    if (path.endsWith('.js')) uncheckedJavaScript.push(name);
-    else if (path.endsWith('.vue')) {
+    if (path.endsWith('.vue')) {
       const { descriptor, errors } = parse(readFileSync(path, 'utf8'), { filename: path });
       if (errors.length) throw new Error(`Cannot parse Vue source: ${name}`);
       const scripts = [descriptor.script, descriptor.scriptSetup].filter(Boolean);
-      if (scripts.some((script) => !script.lang || script.lang === 'js'))
-        uncheckedVueScripts.push(name);
-      if (
-        scripts.some((script) => script.src || (script.lang && !['js', 'ts'].includes(script.lang)))
-      ) {
+      if (scripts.some((script) => script.src || script.lang !== 'ts')) {
         throw new Error(`Unsupported Vue script boundary: ${name}`);
       }
     } else if (!path.endsWith('.ts')) throw new Error(`Unsupported source extension: ${name}`);
   }
-  const migrationPath = resolve(projectRoot, 'typescript-migration.json');
-  const allowance = existsSync(migrationPath)
-    ? JSON.parse(readFileSync(migrationPath, 'utf8'))
-    : { uncheckedJavaScript: [], uncheckedVueScripts: [] };
-  checkAllowance('uncheckedJavaScript', uncheckedJavaScript, allowance.uncheckedJavaScript);
-  checkAllowance('uncheckedVueScripts', uncheckedVueScripts, allowance.uncheckedVueScripts);
-  if (
-    !uncheckedJavaScript.length &&
-    !uncheckedVueScripts.length &&
-    (options.allowJs || existsSync(migrationPath))
-  ) {
-    throw new Error('Migration is complete: remove allowJs and the migration manifest');
-  }
   return {
     modules: paths.length,
-    uncheckedJavaScript: uncheckedJavaScript.length,
-    uncheckedVueScripts: uncheckedVueScripts.length,
+    uncheckedJavaScript: 0,
+    uncheckedVueScripts: 0,
   };
 }
 
@@ -146,9 +106,7 @@ if (resolve(process.argv[1] || '') === fileURLToPath(import.meta.url)) {
     process.stdout.write(
       `TypeScript scope verified: ${result.modules} source modules in compiler roots.\n`
     );
-    process.stdout.write(
-      `Not yet type-checked: ${result.uncheckedJavaScript} JavaScript modules; ${result.uncheckedVueScripts} Vue JavaScript scripts.\n`
-    );
+    process.stdout.write(`All application modules and Vue scripts use TypeScript.\n`);
   } catch (error) {
     process.stderr.write(`TypeScript scope check failed: ${error.message}\n`);
     process.exitCode = 1;

@@ -18,9 +18,9 @@
 | Unit tests 單元測試           | 305    |
 | Component tests 組件測試      | 296    |
 | E2E tests E2E 測試            | 89     |
-| Line coverage 行覆蓋率        | 92.97% |
-| Statement coverage 語句覆蓋率 | 91.30% |
-| Branch coverage 分支覆蓋率    | 81.22% |
+| Line coverage 行覆蓋率        | 92.92% |
+| Statement coverage 語句覆蓋率 | 91.15% |
+| Branch coverage 分支覆蓋率    | 81.32% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -53,7 +53,9 @@
 
 Composable compile-only suites 檢查可寫選取、唯讀集合與巢狀 snapshot、nullable 實體／操作結果、async callbacks、drag baseline／field keys，以及不可變的 packing history。
 
-Gate 明確回報尚未檢查的 JS 與 Vue JavaScript scripts；進入 compiler roots 不代表已完整檢查型別。`skipLibCheck: true` 是已接受的 Vue／i18n 宣告相容性例外，詳見 Code Quality Guide。
+真實元件的 compile-only suite 檢查 nullable async action、baseline 第二參數、source-specific selection 與 semantic icons。額外的 Vue template fixture 檢查錯誤 props／callback，以及 typed drag slot 的錯誤欄位／方法；IsAny assertions 證明 model、slot、change element 與 forwarding baseline 未被 any 繞過。
+
+Gate 要求全部應用模組與 Vue scripts 為 TypeScript，並核對 compiler roots；新增 JS、非 TS Vue script、allowJs 或漏列 source 都會失敗。`skipLibCheck: true` 是已接受的 Vue／i18n 宣告相容性例外，詳見 Code Quality Guide。
 
 ## 3. Test File Structure 測試檔案結構
 
@@ -63,6 +65,7 @@ tests/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
 ├── type-tests/                          # Compile-only; excluded from runtime counts
+│   ├── componentContracts.test.ts    # 真實元件 props／emits、async action 與 drag slot 契約
 │   ├── contracts.test.ts               # Domain／storage、snapshot、callback 契約
 │   ├── usePackingLists.test.ts        # Reactive state／操作／history 契約
 │   ├── useTemplates.test.ts           # 範本 state／snapshot／callback 契約
@@ -108,7 +111,7 @@ tests/
 │   ├── Item.test.js                     # 27  tests
 │   ├── Sidebar.test.js                  # 33  tests
 │   ├── Category.test.js                 # 31  tests
-│   ├── OverflowMenu.test.js             # 27  tests
+│   ├── OverflowMenu.test.js             # 24  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
 │   ├── Topbar.test.js                   #  2  tests
@@ -152,9 +155,9 @@ tests/
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 79.22%     | 67.17% | 77.52% |
-| source/      | 82.93%     | 72.29% | 85.50% |
-| components/  | 91.52%     | 82.42% | 94.29% |
+| scripts/     | 79.03%     | 63.20% | 77.63% |
+| source/      | 82.38%     | 72.14% | 85.01% |
+| components/  | 91.11%     | 82.84% | 94.02% |
 | composables/ | 95.17%     | 85.54% | 97.46% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
@@ -164,7 +167,7 @@ tests/
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 82.93%     | 85.50% | 68    |
+| App.vue                      | 82.38%     | 85.01% | 68    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
@@ -173,11 +176,11 @@ tests/
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
 | Sidebar.vue                  | 100%       | 100%   | 33    |
 | OverflowMenu.vue             | 95.12%     | 96.20% | 24    |
-| Category.vue                 | 87.82%     | 90.07% | 31    |
-| Checklist.vue                | 85.95%     | 91.97% | 39    |
-| Item.vue                     | 81.39%     | 85.12% | 27    |
+| Category.vue                 | 87.42%     | 90.20% | 31    |
+| Checklist.vue                | 84.78%     | 90.47% | 39    |
+| Item.vue                     | 80.91%     | 85.24% | 27    |
 | NewChecklistDialog.vue       | 97.36%     | 100%   | 12    |
-| PackingCompletionOverlay.vue | 97.18%     | 100%   | 10    |
+| PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
 | SaveTemplateDialog.vue       | 96.07%     | 100%   | 10    |
 | TemplateEditor.vue           | 95.23%     | 97.10% | 13    |
 
@@ -670,23 +673,23 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ##### 8.1.7.3 checkTypeScriptScope.test.js（8）
 
-| #   | Test                                                        | 測試重點                         |
-| --- | ----------------------------------------------------------- | -------------------------------- |
-| 1   | reports the exact remaining unchecked scope                 | 區分 compiler roots 與已檢查程式 |
-| 2   | rejects an unlisted JavaScript module                       | 防止新增未檢查 JS                |
-| 3   | rejects an excluded application module                      | 防止 compiler 範圍漏檔           |
-| 4   | rejects a new unchecked Vue component                       | 防止新增未檢查 SFC               |
-| 5   | rejects stale allowances after a Vue migration              | 要求縮減遷移清單                 |
-| 6   | rejects strictNullChecks being disabled                     | 保留 strict null 檢查            |
-| 7   | rejects disabling template checks                           | 保留明確的模板檢查               |
-| 8   | accepts an all-TypeScript source with no migration manifest | 驗證最終遷移設定                 |
+| #   | Test                                                   | 測試重點                             |
+| --- | ------------------------------------------------------ | ------------------------------------ |
+| 1   | accepts an all-TypeScript application                  | 驗證 TS 應用的 compiler roots        |
+| 2   | rejects a new JavaScript module                        | 防止新增未檢查 JS                    |
+| 3   | rejects an excluded application module                 | 防止 compiler 範圍漏檔               |
+| 4   | rejects a JavaScript Vue script                        | 要求 SFC scripts 使用 TS             |
+| 5   | rejects allowJs being enabled                          | 防止重新引入 JS 過渡設定             |
+| 6   | rejects strictNullChecks being disabled                | 保留 strict null 檢查                |
+| 7   | rejects disabling template checks                      | 保留明確的模板檢查                   |
+| 8   | checks newly added source files for compiler inclusion | 檢查新增 declarations 與 source 檔案 |
 
 ##### 8.1.7.4 eslintTypeScript.test.js（2）
 
-| #   | Test                                                                    | 測試重點                       |
-| --- | ----------------------------------------------------------------------- | ------------------------------ |
-| 1   | retains no-undef for a JavaScript application component                 | 遷移期間保留 JS 未定義名稱保護 |
-| 2   | parses typed Vue props without applying JavaScript undefined-name rules | 允許 TS 型別且不誤報 JS 診斷   |
+| #   | Test                                                                    | 測試重點                               |
+| --- | ----------------------------------------------------------------------- | -------------------------------------- |
+| 1   | rejects explicit any in a TypeScript application component              | 防止 TS 應用 scripts 使用 explicit any |
+| 2   | parses typed Vue props without applying JavaScript undefined-name rules | 允許 TS 型別且不誤報 JS 診斷           |
 
 ### 8.2 Component Tests（296）
 

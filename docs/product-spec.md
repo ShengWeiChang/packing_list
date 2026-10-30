@@ -72,7 +72,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - CSS Processing: PostCSS with Tailwind CSS
 - Module Bundling: Vite with ES modules
 - Type Checking: TypeScript 6.0.3 / vue-tsc 3.3.13, typescript-eslint 8.72.1, @vue/tsconfig 0.9.1; `npm run typecheck` runs before runtime tests in the shared feature/CI gate.
-- Migration Boundary: `typescript-migration.json` records unchecked application JS/SFC scripts; compiler-root coverage and explicit allowances prevent silent omissions. Models, utilities, seed data, services, and composables are typed; 2 JS modules and 16 SFC scripts still await migration. Runtime tests and Node tools remain JS; localStorage runtime validation remains required.
+- Type Boundary: All application modules and 16 Vue SFC scripts/templates use strict TypeScript with `allowJs: false`. A permanent compiler-root guard prevents new JS or omitted source files without migration allowances. Component actions, baselines, event tuples and drag slots are checked. Runtime tests and Node tools remain JS; localStorage runtime validation remains required.
 - Declaration Compatibility: `skipLibCheck: true` is accepted for the vue-i18n 11.4.16 / Vue 3.5.44 TS2724 mismatch; app/template code and API usage remain checked. See the Code Quality Guide for the limitation and re-evaluation rule.
 
 ## 4. Implemented Features
@@ -427,9 +427,8 @@ packing-list/
 ├── tsconfig.json                     # Editor entry point for application type checking
 ├── tsconfig.app.json                 # Browser application compiler scope
 ├── tsconfig.type-tests.json          # Compile-only contract scope
-├── typescript-migration.json         # Exact remaining unchecked application files
 ├── scripts/                          # Verification and repository utilities
-│   ├── checkTypeScriptScope.js        # Source roots and migration-allowance guard
+│   ├── checkTypeScriptScope.js        # Source roots and TypeScript-only guard
 │   └── checkTypeScriptContracts.js    # Expected TS and template diagnostic probes
 ├── public/                           # Static assets
 │   └── favicon.svg                   # Site favicon (primary green with white checkmark)
@@ -441,7 +440,8 @@ packing-list/
     ├── assets/                        # Bundled visual assets
     │   └── completion/                # Packing completion PNG illustration layers
     ├── index.css                     # Global styles; contains auto-generated :root variables
-    ├── main.js                       # App entry point (createApp + mount)
+    ├── main.ts                       # App entry point (createApp + mount)
+    ├── vueAttributes.d.ts            # Vue data attribute type extensions
     ├── components/                   # UI components
     │   ├── AddCategoryButton.vue     # Add category button
     │   ├── AddItemButton.vue         # Add item button
@@ -452,16 +452,19 @@ packing-list/
     │   ├── OverflowMenu.vue          # Overflow actions menu
     │   ├── NewChecklistDialog.vue    # Checklist source selection dialog
     │   ├── PackingCompletionOverlay.vue # Full-page packing completion journey
+    │   ├── PendingItemsCategory.vue  # Pending item section
     │   ├── ProgressBar.vue           # Progress bar component
     │   ├── SaveTemplateDialog.vue    # New template naming dialog
     │   ├── Sidebar.vue               # Sidebar navigation
     │   ├── TemplateEditor.vue        # Isolated personal template editor
-    │   └── Topbar.vue                # Top bar for mobile
+    │   ├── Topbar.vue                # Top bar for mobile
+    │   ├── componentContracts.ts     # Shared component action/event/draft types
+    │   └── typedDraggable.ts         # Entity-typed draggable facade
     ├── composables/                  # Vue composables (state + logic)
     │   ├── usePackingLists.ts        # Core state and CRUD logic
     │   └── useTemplates.ts           # Template state and CRUD logic
     ├── i18n/                         # i18n initialization and locale detection/persistence
-    │   └── index.js                  # create vue-i18n, locale mapping, localStorage read/write
+    │   └── index.ts                  # create vue-i18n, locale mapping, localStorage read/write
     ├── locales/                      # Translation files
     │   ├── en.json                   # English strings
     │   └── zh-TW.json                # Traditional Chinese strings

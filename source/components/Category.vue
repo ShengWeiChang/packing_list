@@ -212,23 +212,39 @@ Created: 2025-09-19
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Imports
 // ------------------------------------------------------------------------------
 
+import type { PropType } from 'vue';
 import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue';
-import draggable from 'vuedraggable';
 
 import { Category } from '../models/Category';
+import type { CategoryDTO, ItemDTO } from '../models/contracts';
 import { putOnlyFromGroup } from '../utils/dragDrop';
 import { focusEditingInput } from '../utils/focusEditingInput';
 import { insertAtVisibleIndex, renumberOrder, reorderVisibleSlots } from '../utils/order';
 import AddItemButton from './AddItemButton.vue';
 import AppIcon from './AppIcon.vue';
+import type {
+  CategoryPackedChange,
+  DragStart,
+  EditCancelled,
+  ItemDragChange,
+  ItemMove,
+  RetainDraft,
+  SaveCategoryEdit,
+  SaveItemEdit,
+  SetCategoryPackedAction,
+  UpdateItemAction,
+} from './componentContracts';
 import Item from './Item.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import ProgressBar from './ProgressBar.vue';
+import { draggableFor } from './typedDraggable';
+
+const draggable = draggableFor<Readonly<ItemDTO>>();
 
 // ------------------------------------------------------------------------------
 // Props & Emits
@@ -237,17 +253,20 @@ import ProgressBar from './ProgressBar.vue';
 // Props
 const props = defineProps({
   commitEditOnBlur: { type: Boolean, default: false },
-  retainDraft: { type: Function, default: null },
-  editCancelled: { type: Function, default: null },
-  saveCategoryEdit: { type: Function, default: null },
-  saveItemEdit: { type: Function, default: null },
-  editErrorCode: { type: String, default: null },
-  setCategoryPackedAction: { type: Function, default: null },
-  updateItemAction: { type: Function, default: null },
+  retainDraft: { type: Function as PropType<RetainDraft | null>, default: null },
+  editCancelled: { type: Function as PropType<EditCancelled | null>, default: null },
+  saveCategoryEdit: { type: Function as PropType<SaveCategoryEdit | null>, default: null },
+  saveItemEdit: { type: Function as PropType<SaveItemEdit | null>, default: null },
+  editErrorCode: { type: String as PropType<string | null>, default: null },
+  setCategoryPackedAction: {
+    type: Function as PropType<SetCategoryPackedAction | null>,
+    default: null,
+  },
+  updateItemAction: { type: Function as PropType<UpdateItemAction | null>, default: null },
   category: {
-    type: Object,
+    type: Object as PropType<Readonly<CategoryDTO>>,
     required: true,
-    validator: (value) => {
+    validator: (value: Record<string, unknown>) => {
       // Validate that the object has the required properties for a category
       return (
         value &&
@@ -258,15 +277,15 @@ const props = defineProps({
     },
   },
   items: {
-    type: Array,
+    type: Array as PropType<readonly Readonly<ItemDTO>[]>,
     required: true,
   },
   newlyCreatedItemId: {
-    type: String,
+    type: String as PropType<string | null>,
     default: null,
   },
   newlyCreatedCategoryId: {
-    type: String,
+    type: String as PropType<string | null>,
     default: null,
   },
   showUnpackedOnly: {
@@ -276,17 +295,17 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits([
-  'update:item',
-  'copy:item',
-  'delete:item',
-  'create:item',
-  'update:category',
-  'copy:category',
-  'delete:category',
-  'move:item',
-  'set-category-packed',
-]);
+const emit = defineEmits<{
+  'update:item': [item: ItemDTO, expected?: ItemDTO];
+  'copy:item': [id: string];
+  'delete:item': [id: string];
+  'create:item': [categoryId: string];
+  'update:category': [category: CategoryDTO, expected?: CategoryDTO];
+  'copy:category': [id: string];
+  'delete:category': [id: string];
+  'move:item': [move: ItemMove];
+  'set-category-packed': [change: CategoryPackedChange];
+}>();
 
 // ------------------------------------------------------------------------------
 // States
@@ -298,13 +317,13 @@ const isSavingEdit = ref(false);
 const isSavingPacked = ref(false);
 const editSaveFailed = ref(false);
 const editedName = ref('');
-let editBaseline = null;
-const editInput = ref(null);
+let editBaseline: CategoryDTO | null = null;
+const editInput = ref<HTMLInputElement | null>(null);
 const isComposing = ref(false);
 let cleanupEditingFocus = () => {};
 
 // Drag state
-const draggingItemId = ref(null);
+const draggingItemId = ref<string | null>(null);
 
 // Collapse state
 const isCollapsed = ref(false);
@@ -332,7 +351,7 @@ const visibleItems = computed(() => {
  * @param {object} item - Item to evaluate.
  * @returns {boolean} Whether the item is visible.
  */
-function isItemVisible(item) {
+function isItemVisible(item: Readonly<ItemDTO>) {
   return !props.showUnpackedOnly || !item.isPacked;
 }
 
@@ -383,14 +402,14 @@ function toggleCollapse() {
  * Request one atomic packed-state change for all items in this category.
  * @param {Event} event - Checkbox change event
  */
-async function toggleCategoryPacked(event) {
+async function toggleCategoryPacked(event: Event) {
   if (isSavingPacked.value) {
-    event.target.checked = isCompleted.value;
+    (event.target as HTMLInputElement).checked = isCompleted.value;
     return;
   }
-  const requested = event.target.checked;
+  const requested = (event.target as HTMLInputElement).checked;
   // Keep the control aligned with committed state until the asynchronous write succeeds.
-  event.target.checked = isCompleted.value;
+  (event.target as HTMLInputElement).checked = isCompleted.value;
   const change = {
     categoryId: props.category.id,
     isPacked: requested,
@@ -429,7 +448,7 @@ function handleCompositionEnd() {
  * Handle Enter key press - only save if not in IME composition
  * @param {KeyboardEvent} event - The keyboard event
  */
-function handleEnterKey(event) {
+function handleEnterKey(event: KeyboardEvent) {
   event.preventDefault();
   // If currently composing (e.g., selecting Chinese characters), return early
   if (isComposing.value) {
@@ -470,6 +489,7 @@ async function startEdit() {
 async function saveEdit() {
   if (isSavingEdit.value) return;
   cleanupEditingFocus();
+  if (!editBaseline) return;
   const hasNameChanged = editedName.value.trim() && editedName.value !== editBaseline.name;
 
   if (hasNameChanged) {
@@ -530,10 +550,10 @@ function handleDelete() {
  * Set dragging item ID when drag starts
  * @param {object} event - Sortable drag event
  */
-function onItemDragStart(event) {
-  const item = event.item.querySelector('[data-item-id]');
+function onItemDragStart(event: DragStart) {
+  const item = event.item.querySelector<HTMLElement>('[data-item-id]');
   if (item) {
-    draggingItemId.value = item.dataset.itemId;
+    draggingItemId.value = item.dataset.itemId!;
   }
 }
 
@@ -541,7 +561,7 @@ function onItemDragStart(event) {
  * Clear dragging item ID when drag ends
  * @param {object} _event - Sortable drag event (unused)
  */
-function onItemDragEnd(_event) {
+function onItemDragEnd(_event: unknown) {
   draggingItemId.value = null;
 }
 
@@ -549,7 +569,7 @@ function onItemDragEnd(_event) {
  * Handle item reorder or move events from vue-draggable
  * @param {object} event - Sortable change event with added/removed/moved properties
  */
-function onItemChange(event) {
+function onItemChange(event: ItemDragChange) {
   // Case 1: Cross-category move (target side)
   // When an item is dragged from another category to this one
   // Note: event.removed is intentionally ignored.
@@ -591,7 +611,7 @@ function onItemChange(event) {
 
     const reorderedVisibleItems = [...visibleItems.value];
     const [removed] = reorderedVisibleItems.splice(oldIndex, 1);
-    reorderedVisibleItems.splice(newIndex, 0, removed);
+    reorderedVisibleItems.splice(newIndex, 0, removed!);
     const itemsWithNewOrder = reorderVisibleSlots(
       sortedItems.value,
       reorderedVisibleItems,
@@ -601,7 +621,7 @@ function onItemChange(event) {
     emit('move:item', {
       items: itemsWithNewOrder,
       expectedItems: props.items.map((entry) =>
-        entry.id === event.moved.element?.id ? { ...event.moved.element } : { ...entry }
+        entry.id === event.moved!.element?.id ? { ...event.moved!.element } : { ...entry }
       ),
       categoryId: props.category.id,
       type: 'reorder',

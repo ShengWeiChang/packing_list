@@ -210,14 +210,17 @@ Created: 2026-10-13
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Imports
 // ------------------------------------------------------------------------------
 
+import type { DeepReadonly, PropType } from 'vue';
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
+import type { RecommendedList } from '../models/contracts';
 import AppIcon from './AppIcon.vue';
+import type { ChecklistSelection, TemplateView } from './componentContracts';
 
 // ------------------------------------------------------------------------------
 // Props & Emits
@@ -226,35 +229,35 @@ import AppIcon from './AppIcon.vue';
 const props = defineProps({
   saving: { type: Boolean, default: false },
   saveError: { type: Boolean, default: false },
-  errorCode: { type: String, default: null },
+  errorCode: { type: String as PropType<string | null>, default: null },
   visible: {
     type: Boolean,
     default: false,
   },
   templates: {
-    type: Array,
+    type: Array as PropType<readonly TemplateView[]>,
     default: () => [],
   },
   recommendedLists: {
-    type: Array,
+    type: Array as PropType<readonly DeepReadonly<RecommendedList>[]>,
     default: () => [],
   },
 });
 
-const emit = defineEmits(['close', 'select']);
+const emit = defineEmits<{ close: []; select: [selection: ChecklistSelection] }>();
 
 // ------------------------------------------------------------------------------
 // State
 // ------------------------------------------------------------------------------
 
-const activeList = ref(null);
-const dialogRef = ref(null);
-const emptyOptionRef = ref(null);
-const templateOptionRef = ref(null);
-const recommendedOptionRef = ref(null);
-const templateButtonRefs = ref([]);
-const recommendedListButtonRefs = ref([]);
-const previouslyFocusedElement = ref(null);
+const activeList = ref<'template' | 'recommended' | null>(null);
+const dialogRef = ref<HTMLElement | null>(null);
+const emptyOptionRef = ref<HTMLButtonElement | null>(null);
+const templateOptionRef = ref<HTMLButtonElement | null>(null);
+const recommendedOptionRef = ref<HTMLButtonElement | null>(null);
+const templateButtonRefs = ref<HTMLButtonElement[]>([]);
+const recommendedListButtonRefs = ref<HTMLButtonElement[]>([]);
+const previouslyFocusedElement = ref<HTMLElement | SVGElement | null>(null);
 
 /** Close only when no creation is in flight. */
 function close() {
@@ -269,7 +272,7 @@ function close() {
  * Show one source list and move focus to its first choice.
  * @param {'template'|'recommended'} list - List to show.
  */
-async function showList(list) {
+async function showList(list: 'template' | 'recommended') {
   if (list === 'template' && props.templates.length === 0) return;
   activeList.value = list;
   await nextTick();
@@ -294,7 +297,7 @@ async function showSources() {
  * Handle Escape and keep Tab focus inside the visible modal.
  * @param {KeyboardEvent} event - Document keyboard event
  */
-function handleDialogKeydown(event) {
+function handleDialogKeydown(event: KeyboardEvent) {
   if (!props.visible) return;
   if (event.key === 'Escape') {
     close();
@@ -302,7 +305,7 @@ function handleDialogKeydown(event) {
   }
   if (event.key !== 'Tab') return;
 
-  const focusable = dialogRef.value?.querySelectorAll(
+  const focusable = dialogRef.value?.querySelectorAll<HTMLElement>(
     'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
   );
   if (!focusable?.length) return;
@@ -310,10 +313,10 @@ function handleDialogKeydown(event) {
   const last = focusable[focusable.length - 1];
   if (event.shiftKey && document.activeElement === first) {
     event.preventDefault();
-    last.focus();
+    last!.focus();
   } else if (!event.shiftKey && document.activeElement === last) {
     event.preventDefault();
-    first.focus();
+    first!.focus();
   }
 }
 
@@ -325,7 +328,7 @@ watch(
   () => props.visible,
   async (value) => {
     if (value) {
-      previouslyFocusedElement.value = document.activeElement;
+      previouslyFocusedElement.value = document.activeElement as HTMLElement | SVGElement | null;
       activeList.value = null;
       await nextTick();
       emptyOptionRef.value?.focus();

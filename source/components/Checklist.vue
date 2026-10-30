@@ -84,7 +84,7 @@ Created: 2025-09-19
                 :disabled="isSavingEdit"
                 :name="`checklist-${checklist.id}-end-date`"
                 type="date"
-                :min="editedStartDate"
+                :min="editedStartDate as string"
                 :aria-label="$t('checklist.endDate')"
                 class="w-28 rounded border border-border-color-medium bg-transparent p-1 text-base text-secondary focus:border-interactive-focus focus:outline-none sm:w-auto sm:px-2"
                 @keydown.enter="handleEnterKey"
@@ -250,30 +250,46 @@ Created: 2025-09-19
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Imports
 // ------------------------------------------------------------------------------
 
+import type { PropType } from 'vue';
 import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import draggable from 'vuedraggable';
 
+import type { CategoryDTO, ChecklistDTO, ItemDTO } from '../models/contracts';
 import { putOnlyFromGroup } from '../utils/dragDrop';
 import { focusEditingInput } from '../utils/focusEditingInput';
 import { renumberOrder } from '../utils/order';
 import AddCategoryButton from './AddCategoryButton.vue';
 import AppIcon from './AppIcon.vue';
 import Category from './Category.vue';
+import type {
+  CategoryPackedChange,
+  DragStart,
+  EditCancelled,
+  ItemMove,
+  RetainDraft,
+  SaveCategoryEdit,
+  SaveChecklistEdit,
+  SaveItemEdit,
+  SetCategoryPackedAction,
+  UpdateItemAction,
+} from './componentContracts';
 import OverflowMenu from './OverflowMenu.vue';
 import PendingItemsCategory from './PendingItemsCategory.vue';
 import ProgressBar from './ProgressBar.vue';
+import { draggableFor } from './typedDraggable';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
 // ------------------------------------------------------------------------------
 
 const { t } = useI18n();
+
+const draggable = draggableFor<Readonly<CategoryDTO>>();
 
 // ------------------------------------------------------------------------------
 // Props & Emits
@@ -282,18 +298,21 @@ const { t } = useI18n();
 // Props validation
 const props = defineProps({
   commitEditOnBlur: { type: Boolean, default: false },
-  retainDraft: { type: Function, default: null },
-  editCancelled: { type: Function, default: null },
-  saveChecklistEdit: { type: Function, default: null },
-  saveCategoryEdit: { type: Function, default: null },
-  saveItemEdit: { type: Function, default: null },
-  editErrorCode: { type: String, default: null },
-  setCategoryPackedAction: { type: Function, default: null },
-  updateItemAction: { type: Function, default: null },
+  retainDraft: { type: Function as PropType<RetainDraft | null>, default: null },
+  editCancelled: { type: Function as PropType<EditCancelled | null>, default: null },
+  saveChecklistEdit: { type: Function as PropType<SaveChecklistEdit | null>, default: null },
+  saveCategoryEdit: { type: Function as PropType<SaveCategoryEdit | null>, default: null },
+  saveItemEdit: { type: Function as PropType<SaveItemEdit | null>, default: null },
+  editErrorCode: { type: String as PropType<string | null>, default: null },
+  setCategoryPackedAction: {
+    type: Function as PropType<SetCategoryPackedAction | null>,
+    default: null,
+  },
+  updateItemAction: { type: Function as PropType<UpdateItemAction | null>, default: null },
   checklist: {
-    type: Object,
+    type: Object as PropType<Readonly<ChecklistDTO>>,
     required: true,
-    validator: (value) => {
+    validator: (value: Record<string, unknown>) => {
       // Validate that the object has the required properties for a checklist
       return (
         value &&
@@ -306,23 +325,23 @@ const props = defineProps({
     },
   },
   categories: {
-    type: Array,
+    type: Array as PropType<readonly Readonly<CategoryDTO>[]>,
     required: true,
   },
   items: {
-    type: Array,
+    type: Array as PropType<readonly Readonly<ItemDTO>[]>,
     required: true,
   },
   newlyCreatedItemId: {
-    type: String,
+    type: String as PropType<string | null>,
     default: null,
   },
   newlyCreatedCategoryId: {
-    type: String,
+    type: String as PropType<string | null>,
     default: null,
   },
   newlyCreatedChecklistId: {
-    type: String,
+    type: String as PropType<string | null>,
     default: null,
   },
   showDates: {
@@ -340,23 +359,23 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits([
-  'update:checklist',
-  'copy:checklist',
-  'delete:checklist',
-  'update:item',
-  'copy:item',
-  'delete:item',
-  'create:item',
-  'update:category',
-  'copy:category',
-  'delete:category',
-  'create:category',
-  'reorder:categories',
-  'move:item',
-  'save-as-template',
-  'set-category-packed',
-]);
+const emit = defineEmits<{
+  'update:checklist': [checklist: ChecklistDTO, expected?: ChecklistDTO];
+  'copy:checklist': [id: string];
+  'delete:checklist': [id: string];
+  'update:item': [item: ItemDTO, expected?: ItemDTO];
+  'copy:item': [id: string];
+  'delete:item': [id: string];
+  'create:item': [categoryId: string];
+  'update:category': [category: CategoryDTO, expected?: CategoryDTO];
+  'copy:category': [id: string];
+  'delete:category': [id: string];
+  'create:category': [];
+  'reorder:categories': [categories: CategoryDTO[], expected: CategoryDTO[]];
+  'move:item': [move: ItemMove];
+  'save-as-template': [id: string];
+  'set-category-packed': [change: CategoryPackedChange];
+}>();
 
 // ------------------------------------------------------------------------------
 // States
@@ -367,19 +386,21 @@ const isEditing = ref(false);
 const isSavingEdit = ref(false);
 const editSaveFailed = ref(false);
 const editedName = ref('');
-let editBaseline = null;
-const editedStartDate = ref('');
-const editedEndDate = ref('');
-const nameInput = ref(null);
-const startDateInput = ref(null);
-const endDateInput = ref(null);
+let editBaseline: ChecklistDTO | null = null;
+// Legacy dates are unvalidated. Local casts retain native DOM / Date coercion;
+// they do not narrow the stored DTO or claim these values are validated strings.
+const editedStartDate = ref<unknown>('');
+const editedEndDate = ref<unknown>('');
+const nameInput = ref<HTMLInputElement | null>(null);
+const startDateInput = ref<HTMLInputElement | null>(null);
+const endDateInput = ref<HTMLInputElement | null>(null);
 const isComposing = ref(false);
 const isAdjustingDates = ref(false); // Guard flag to prevent watcher infinite loops
 const showUnpackedOnly = ref(false);
 let cleanupEditingFocus = () => {};
 
 // Drag state
-const draggingCategoryId = ref(null);
+const draggingCategoryId = ref<string | null>(null);
 const isDraggingCategory = ref(false);
 
 // ------------------------------------------------------------------------------
@@ -436,7 +457,9 @@ function handleCompositionEnd() {
   if (
     props.commitEditOnBlur &&
     isEditing.value &&
-    ![nameInput.value, startDateInput.value, endDateInput.value].includes(document.activeElement)
+    ![nameInput.value, startDateInput.value, endDateInput.value].some(
+      (input) => input === document.activeElement
+    )
   )
     saveEdit();
 }
@@ -445,7 +468,7 @@ function handleCompositionEnd() {
  * Handle Enter key press - only save if not in IME composition
  * @param {KeyboardEvent} event - The keyboard event
  */
-function handleEnterKey(event) {
+function handleEnterKey(event: KeyboardEvent) {
   event.preventDefault();
   // If currently composing (e.g., selecting Chinese characters), return early
   if (isComposing.value) {
@@ -460,9 +483,14 @@ function handleEnterKey(event) {
  * Includes IME composition check for defensive programming
  * @param {FocusEvent} event - Focus change from the edit area.
  */
-function handleEditBlur(event) {
+function handleEditBlur(event: FocusEvent) {
   if (props.commitEditOnBlur) {
-    if (![nameInput.value, startDateInput.value, endDateInput.value].includes(event.target)) return;
+    if (
+      ![nameInput.value, startDateInput.value, endDateInput.value].some(
+        (input) => input === event.target
+      )
+    )
+      return;
     const next = event.relatedTarget;
     const movingWithinEditor =
       next &&
@@ -508,6 +536,7 @@ async function startEdit() {
 async function saveEdit() {
   if (isSavingEdit.value) return;
   cleanupEditingFocus();
+  if (!editBaseline) return;
   const hasNameChanged = editedName.value.trim() !== editBaseline.name;
   const hasStartDateChanged = editedStartDate.value !== editBaseline.startDate;
   const hasEndDateChanged = editedEndDate.value !== editBaseline.endDate;
@@ -520,8 +549,8 @@ async function saveEdit() {
       endDate: editedEndDate.value,
     };
     if (props.saveChecklistEdit) {
-      const restoreFocus = [nameInput.value, startDateInput.value, endDateInput.value].includes(
-        document.activeElement
+      const restoreFocus = [nameInput.value, startDateInput.value, endDateInput.value].some(
+        (input) => input === document.activeElement
       )
         ? document.activeElement
         : null;
@@ -532,7 +561,7 @@ async function saveEdit() {
           editSaveFailed.value = true;
           isSavingEdit.value = false;
           await nextTick();
-          restoreFocus?.focus({ preventScroll: true });
+          (restoreFocus as HTMLInputElement | null)?.focus({ preventScroll: true });
           return;
         }
       } finally {
@@ -578,8 +607,8 @@ function handleDelete() {
  * Set dragging category ID when drag starts
  * @param {object} event - Sortable drag event
  */
-function onCategoryDragStart(event) {
-  const categoryElement = event.item.querySelector('[data-category-id]') || event.item;
+function onCategoryDragStart(event: DragStart) {
+  const categoryElement = event.item.querySelector<HTMLElement>('[data-category-id]') || event.item;
   if (categoryElement.dataset.categoryId) {
     draggingCategoryId.value = categoryElement.dataset.categoryId;
   }
@@ -590,7 +619,7 @@ function onCategoryDragStart(event) {
  * Clear dragging state when drag ends
  * @param {object} _event - Sortable drag event (unused)
  */
-function onCategoryDragEnd(_event) {
+function onCategoryDragEnd(_event: unknown) {
   draggingCategoryId.value = null;
   isDraggingCategory.value = false;
 }
@@ -599,7 +628,7 @@ function onCategoryDragEnd(_event) {
  * Handle category update event (delegated to draggableCategories setter)
  * @param {object} _event - Sortable update event (unused)
  */
-function onCategoryUpdate(_event) {
+function onCategoryUpdate(_event: unknown) {
   // This event is now handled by the draggableCategories setter
 }
 
@@ -607,7 +636,7 @@ function onCategoryUpdate(_event) {
  * Emit item move event to parent component
  * @param {object} moveData - Move data containing item and reorder information
  */
-function handleItemMove(moveData) {
+function handleItemMove(moveData: ItemMove) {
   emit('move:item', moveData);
 }
 
@@ -619,19 +648,19 @@ function handleItemMove(moveData) {
  * @param {string} endDate - End date in YYYY-MM-DD format
  * @returns {string} Formatted date range string
  */
-function formatDateRange(startDate, endDate) {
+function formatDateRange(startDate: unknown, endDate: unknown) {
   /**
    * Parse YYYY-MM-DD date string to local Date object
    * @param {string} dateStr - Date string
    * @returns {Date|null} Parsed date or null
    */
-  function parseLocalDate(dateStr) {
+  function parseLocalDate(dateStr: unknown) {
     if (!dateStr) return null;
     const parts = String(dateStr).split('-');
-    if (parts.length !== 3) return new Date(dateStr);
+    if (parts.length !== 3) return new Date(dateStr as string);
     const [y, m, d] = parts.map(Number);
     // new Date(year, monthIndex, day) creates a date in local timezone
-    return new Date(y, m - 1, d);
+    return new Date(y!, m! - 1, d!);
   }
 
   const start = parseLocalDate(startDate);
@@ -685,7 +714,7 @@ watch(editedStartDate, (newStartDate) => {
   if (!newStartDate) return;
 
   // If end date is empty or earlier than the new start date, set end date to start date
-  if (!editedEndDate.value || editedEndDate.value < newStartDate) {
+  if (!editedEndDate.value || (editedEndDate.value as string) < (newStartDate as string)) {
     isAdjustingDates.value = true;
     editedEndDate.value = newStartDate;
     nextTick(() => {
@@ -701,7 +730,7 @@ watch(editedEndDate, (newEndDate) => {
   if (!newEndDate || !editedStartDate.value) return;
 
   // If end date is earlier than start date, set end date to start date
-  if (newEndDate < editedStartDate.value) {
+  if ((newEndDate as string) < (editedStartDate.value as string)) {
     isAdjustingDates.value = true;
     editedEndDate.value = editedStartDate.value;
     nextTick(() => {

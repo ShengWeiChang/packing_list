@@ -91,11 +91,12 @@ Created: 2026-10-25
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Imports
 // ------------------------------------------------------------------------------
 
+import type { PropType } from 'vue';
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -122,16 +123,16 @@ const props = defineProps({
     required: true,
   },
   endDate: {
-    type: String,
+    type: String as PropType<unknown>,
     required: true,
   },
   startDate: {
-    type: String,
+    type: String as PropType<unknown>,
     required: true,
   },
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits<{ close: [] }>();
 
 const { locale } = useI18n();
 const timelineStyles = {
@@ -146,8 +147,9 @@ const timelineStyles = {
  * @param {string} date - Date in YYYY-MM-DD format.
  * @returns {Date|null} Local date, or null for missing, malformed, or impossible input.
  */
-function parseTripDate(date) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+function parseTripDate(date: unknown) {
+  // RegExp.exec performs native string coercion, including for legacy date values.
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date as string);
   if (!match) return null;
 
   const [, yearText, monthText, dayText] = match;
@@ -175,7 +177,7 @@ function parseTripDate(date) {
  * @param {boolean} [includeYear=true] - Whether to include the year.
  * @returns {string} Localized date, or an empty string for missing or invalid input.
  */
-function formatTripDate(date, includeYear = true) {
+function formatTripDate(date: unknown, includeYear = true) {
   const parsedDate = parseTripDate(date);
   if (!parsedDate) return '';
 
@@ -194,15 +196,15 @@ const formattedTripDates = computed(() => {
   if (!startDate) return endDate;
   if (!endDate || props.startDate === props.endDate) return startDate;
 
-  const startYear = parsedStartDate.getFullYear();
-  const endYear = parsedEndDate.getFullYear();
+  const startYear = parsedStartDate!.getFullYear();
+  const endYear = parsedEndDate!.getFullYear();
   if (startYear !== endYear) return `${startDate}–${endDate}`;
 
   const dateParts = new Intl.DateTimeFormat(locale.value, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-  }).formatToParts(parsedStartDate);
+  }).formatToParts(parsedStartDate!);
   const yearFirst =
     dateParts.findIndex((part) => part.type === 'year') <
     dateParts.findIndex((part) => part.type === 'month');
@@ -216,9 +218,9 @@ const formattedTripDates = computed(() => {
 // State
 // ------------------------------------------------------------------------------
 
-const skipButton = ref(null);
+const skipButton = ref<HTMLButtonElement | null>(null);
 const assetsReady = ref(false);
-let closeTimer = null;
+let closeTimer: number | undefined;
 let isClosed = false;
 let settledAssetCount = 0;
 

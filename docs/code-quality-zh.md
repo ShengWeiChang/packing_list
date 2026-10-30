@@ -323,17 +323,20 @@ Validation 驗證
 - 靜態檢查：`npm run lint` (透過 `eslint-plugin-vuejs-accessibility`)
 - 手動測試：使用鍵盤 `Tab` 鍵遍歷所有功能，確認無焦點陷阱且所有功能皆可操作。
 
-### 3.11 TypeScript Migration and Checking TypeScript 遷移與檢查
+### 3.11 TypeScript Contracts and Checking TypeScript 契約與檢查
 
 - `npm run typecheck` 執行應用範圍 guard、`vue-tsc --noEmit`、compile-only contracts 與故意錯誤的診斷 probes。Vite build 只轉譯而不檢查型別。
 - 啟用 `strict`、`noUncheckedIndexedAccess` 與 `strictTemplates`。應用 project 使用瀏覽器 globals 與 `vite/client`，不注入 Node 或 Vitest globals。
-- `typescript-migration.json` 精確列出尚未遷移的 2 個 JS 模組與 16 個 Vue JavaScript scripts。`allowJs: true` / `checkJs: false` 允許匯入，但不表示已檢查型別。每次遷移移除對應 allowance；新增未列管 JS、殘留 allowance 或未進入 compiler roots 的 source 檔會使 gate 失敗。
-- 最終目標是全部應用模組及 SFC scripts 使用 TS；清單清空後移除 manifest 並設 `allowJs: false`。Runtime JS tests、Node 設定／scripts、locale JSON 與視覺資產是此次應用遷移之外的明確例外。
+- 全部應用模組與 16 個 SFC scripts 均使用 TypeScript，`allowJs: false`；遷移 manifest 與暫時 lint override 已移除。永久 scope guard 拒絕 JS 模組、非 TS Vue scripts，以及未進入 compiler roots 的 source 檔（包含新增 declarations）。
+- Runtime JS tests、Node 設定／scripts、locale JSON 與視覺資產保留原格式；這些不屬於 browser 應用 compiler project，也不代表應用仍在混用 JS／TS。
 - TS 模組沿用既有命名 stem 並改為 `.ts`：類別／模型用 PascalCase，services、utilities、composables 與型別模組用 camelCase。Compile-only tests 放在 `tests/type-tests/`，以 owner stem 加 `.test.ts` 命名；Vitest 排除此目錄。
 - 純型別依賴使用 `import type`。外部 JSON 與捕獲錯誤先視為 `unknown`，直到既有 runtime 檢查或正規化足以縮窄契約；TS 不能取代 storage validation。
 - 不得用 `any`、`@ts-ignore`、`@ts-nocheck`、blanket module shims 或無依據 assertion 通過 gate。第三方邊界的狹窄例外需附理由；附說明的 `@ts-expect-error` 只用於負向型別測試。
-- ESLint 對 TS／Vue 套用 TypeScript recommended rules，保留 Vue outer parser；TypeScript unused-variable rules 取代重疊 core rules；manifest 中尚未遷移的 JavaScript SFC 保留含 `no-undef` 的 JS recommended rules 與 JSDoc 檢查。移除 manifest 時一併移除此暫時 lint override／import。lint-staged 與 VSCode ESLint 已納入 TS。
+- ESLint 對全部 TS／Vue 套用 TypeScript recommended rules，保留 Vue outer parser；TypeScript unused-variable rules 取代重疊 core rules。lint-staged 與 VSCode ESLint 包含 TS，應用中的 suppression comments 與 explicit any 會被拒絕。
 - Composable 集合輸出為深唯讀，選取 ID 仍可寫入 `string | null`，computed 選取實體可能為 `undefined`。泛型 loader 保留 `T | null`，寫入成功與刷新失敗分別回報；packing-only history 只保存不可變的狀態快照。
+- `componentContracts.ts` 定義共用 action／event／draft 契約；runtime props 的 constructor、required、default 與 validator 保留，事件 tuple 保留可選第二個 baseline。儲存 callback 為 Promise，失敗可能回傳 null；App 的泛型 action runner 保留完整參數及回傳型別。
+- `typedDraggable.ts` 只描述實際使用的 vuedraggable 4.1.0 API，以同一 runtime 元件提供依 list entity 型別化的 model、item slot 與 change payload；此具依據的第三方 assertion 不新增 wrapper，也不容許 any 擴散。`vueAttributes.d.ts` 僅補充 data attributes，沒有通用元件 shim。
+- Legacy 日期在元件 props／draft 中仍為 unknown；狹窄 DOM、RegExp 與 Date／比較操作的 assertion 保留原生轉換行為，不代表資料已驗證。唯讀範本的 baseline 複製 snapshot records 與 arrays 後傳入既有 DTO service 契約，保留相同欄位與比較內容。
 - 已接受的依賴限制：沿用 Vue base config 的 `skipLibCheck: true`，因 vue-i18n 11.4.16 匯入 Vue 3.5.44 未提供的 `GenericComponentInstance`（TS2724）。此設定略過 `.d.ts` 內部檢查，包含本地 declarations；應用／模板程式與 API 使用仍受檢查。Vue／i18n 升級時重新評估，宣告不相容修復後移除此例外。
 
 ## 4. Git Hooks (Husky) Git 勾子

@@ -1,7 +1,7 @@
 /*
 ================================================================================
 File: tests/unit-tests/scripts/eslintTypeScript.test.js
-Description: Verify JS lint protection and TS parsing coexist during migration.
+Description: Verify typed Vue lint protection and TypeScript parsing.
 License: MIT (SPDX: MIT)
 ================================================================================
 */
@@ -11,16 +11,18 @@ import { describe, expect, it } from 'vitest';
 
 const eslint = new ESLint();
 
-describe('mixed-language Vue linting', () => {
+describe('TypeScript Vue linting', () => {
   // Test Group 1: Script-language safety boundaries
-  // Test Case 1: Keep undefined-name checks for an explicitly unmigrated JS SFC
-  it('retains no-undef for a JavaScript application component', async () => {
+  // Test Case 1: Reject explicit any in application Vue scripts
+  it('rejects explicit any in a TypeScript application component', async () => {
     const [result] = await eslint.lintText(
-      '<template><div /></template><script setup>missingFunction();</script>',
+      '<template><div>{{ value }}</div></template><script setup lang="ts">const value: any = 1;</script>',
       { filePath: 'source/components/Item.vue' }
     );
     expect(result.messages).toEqual(
-      expect.arrayContaining([expect.objectContaining({ ruleId: 'no-undef', severity: 2 })])
+      expect.arrayContaining([
+        expect.objectContaining({ ruleId: '@typescript-eslint/no-explicit-any', severity: 2 }),
+      ])
     );
   });
 

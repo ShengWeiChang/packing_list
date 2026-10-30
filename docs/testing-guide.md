@@ -18,9 +18,9 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | Unit tests         | 305    |
 | Component tests    | 296    |
 | E2E tests          | 89     |
-| Line coverage      | 92.97% |
-| Statement coverage | 91.30% |
-| Branch coverage    | 81.22% |
+| Line coverage      | 92.92% |
+| Statement coverage | 91.15% |
+| Branch coverage    | 81.32% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -53,7 +53,9 @@ The initial infrastructure suite proves numeric ref inference, null narrowing, i
 
 Composable compile-only suites check writable selection, readonly collections and nested snapshots, nullable entities/results, async callbacks, drag baselines/field keys, and immutable packing history.
 
-The gate reports unchecked JS and Vue JavaScript scripts explicitly; their presence in compiler roots is not evidence of full type checking. `skipLibCheck: true` is the accepted Vue/i18n declaration compatibility exception described in the Code Quality Guide.
+The real-component compile-only suite checks nullable async actions, second-argument baselines, source-specific selections and semantic icons. An additional Vue template fixture checks invalid props/callbacks and wrong fields/methods in typed drag slots; IsAny assertions prove models, slots, change elements and forwarding baselines do not become any.
+
+The gate requires TypeScript application modules and Vue scripts and checks compiler roots; new JS, non-TS Vue scripts, allowJs or omitted source files fail. `skipLibCheck: true` is the accepted Vue/i18n declaration compatibility exception described in the Code Quality Guide.
 
 ## 3. Test File Structure
 
@@ -63,6 +65,7 @@ tests/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
 ├── type-tests/                          # Compile-only; excluded from runtime counts
+│   ├── componentContracts.test.ts    # Real props/emits, async actions and drag slots
 │   ├── contracts.test.ts               # Domain/storage, snapshot, and callback contracts
 │   ├── usePackingLists.test.ts        # Reactive state, operation, and history contracts
 │   ├── useTemplates.test.ts           # Template state, snapshot, and callback contracts
@@ -108,7 +111,7 @@ tests/
 │   ├── Item.test.js                     # 27  tests
 │   ├── Sidebar.test.js                  # 33  tests
 │   ├── Category.test.js                 # 31  tests
-│   ├── OverflowMenu.test.js             # 27  tests
+│   ├── OverflowMenu.test.js             # 24  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
 │   ├── Topbar.test.js                   #  2  tests
@@ -152,9 +155,9 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 79.22%     | 67.17% | 77.52% |
-| source/      | 82.93%     | 72.29% | 85.50% |
-| components/  | 91.52%     | 82.42% | 94.29% |
+| scripts/     | 79.03%     | 63.20% | 77.63% |
+| source/      | 82.38%     | 72.14% | 85.01% |
+| components/  | 91.11%     | 82.84% | 94.02% |
 | composables/ | 95.17%     | 85.54% | 97.46% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
@@ -164,7 +167,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 82.93%     | 85.50% | 68    |
+| App.vue                      | 82.38%     | 85.01% | 68    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
@@ -173,11 +176,11 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
 | Sidebar.vue                  | 100%       | 100%   | 33    |
 | OverflowMenu.vue             | 95.12%     | 96.20% | 24    |
-| Category.vue                 | 87.82%     | 90.07% | 31    |
-| Checklist.vue                | 85.95%     | 91.97% | 39    |
-| Item.vue                     | 81.39%     | 85.12% | 27    |
+| Category.vue                 | 87.42%     | 90.20% | 31    |
+| Checklist.vue                | 84.78%     | 90.47% | 39    |
+| Item.vue                     | 80.91%     | 85.24% | 27    |
 | NewChecklistDialog.vue       | 97.36%     | 100%   | 12    |
-| PackingCompletionOverlay.vue | 97.18%     | 100%   | 10    |
+| PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
 | SaveTemplateDialog.vue       | 96.07%     | 100%   | 10    |
 | TemplateEditor.vue           | 95.23%     | 97.10% | 13    |
 
@@ -670,23 +673,23 @@ This project uses three layers to balance speed and reliability.
 
 ##### 8.1.7.3 checkTypeScriptScope.test.js (8 tests)
 
-| #   | Test                                                        | What it verifies                             |
-| --- | ----------------------------------------------------------- | -------------------------------------------- |
-| 1   | reports the exact remaining unchecked scope                 | Distinguish compiler roots from checked code |
-| 2   | rejects an unlisted JavaScript module                       | Prevent new unchecked JS                     |
-| 3   | rejects an excluded application module                      | Prevent compiler-scope omissions             |
-| 4   | rejects a new unchecked Vue component                       | Prevent unchecked SFC additions              |
-| 5   | rejects stale allowances after a Vue migration              | Require migration-list reduction             |
-| 6   | rejects strictNullChecks being disabled                     | Preserve strict null checking                |
-| 7   | rejects disabling template checks                           | Preserve explicit template checking          |
-| 8   | accepts an all-TypeScript source with no migration manifest | Verify the final migration configuration     |
+| #   | Test                                                   | What it verifies                                |
+| --- | ------------------------------------------------------ | ----------------------------------------------- |
+| 1   | accepts an all-TypeScript application                  | Verify compiler roots for the typed application |
+| 2   | rejects a new JavaScript module                        | Prevent new unchecked JS                        |
+| 3   | rejects an excluded application module                 | Prevent compiler-scope omissions                |
+| 4   | rejects a JavaScript Vue script                        | Require TS scripts in SFCs                      |
+| 5   | rejects allowJs being enabled                          | Prevent reintroducing the JS bridge             |
+| 6   | rejects strictNullChecks being disabled                | Preserve strict null checking                   |
+| 7   | rejects disabling template checks                      | Preserve explicit template checking             |
+| 8   | checks newly added source files for compiler inclusion | Check future declarations and source files      |
 
 ##### 8.1.7.4 eslintTypeScript.test.js (2 tests)
 
-| #   | Test                                                                    | What it verifies                                       |
-| --- | ----------------------------------------------------------------------- | ------------------------------------------------------ |
-| 1   | retains no-undef for a JavaScript application component                 | Preserve JS undefined-name protection during migration |
-| 2   | parses typed Vue props without applying JavaScript undefined-name rules | Allow TS types without false JS diagnostics            |
+| #   | Test                                                                    | What it verifies                                  |
+| --- | ----------------------------------------------------------------------- | ------------------------------------------------- |
+| 1   | rejects explicit any in a TypeScript application component              | Prevent explicit any in typed application scripts |
+| 2   | parses typed Vue props without applying JavaScript undefined-name rules | Allow TS types without false JS diagnostics       |
 
 ### 8.2 Component Tests (296 tests)
 

@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/main.js
+File: source/main.ts
 Description: Application entry point - creates and mounts the Vue app instance
              with styles and global configuration.
 Author: Sheng-Wei Chang

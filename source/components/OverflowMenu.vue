@@ -108,11 +108,12 @@ Created: 2025-09-19
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Imports
 // ------------------------------------------------------------------------------
 
+import type { PropType } from 'vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 import AppIcon from './AppIcon.vue';
@@ -130,12 +131,12 @@ const props = defineProps({
   menuType: {
     type: String,
     required: true,
-    validator: (value) => ['item', 'category', 'checklist', 'template'].includes(value),
+    validator: (value: string) => ['item', 'category', 'checklist', 'template'].includes(value),
   },
   alignment: {
     type: String,
     default: 'left',
-    validator: (value) => ['left', 'right'].includes(value),
+    validator: (value: string) => ['left', 'right'].includes(value),
   },
   forceVisible: {
     type: Boolean,
@@ -150,9 +151,9 @@ const props = defineProps({
     default: false,
   },
   triggerIconSize: {
-    type: String,
+    type: String as PropType<'compact' | 'inline' | 'control' | 'feature' | 'navigation' | null>,
     default: null,
-    validator: (value) =>
+    validator: (value: string) =>
       value === null || ['compact', 'inline', 'control', 'feature', 'navigation'].includes(value),
   },
   transparentTrigger: {
@@ -162,12 +163,18 @@ const props = defineProps({
   triggerFrameSize: {
     type: String,
     default: 'standard',
-    validator: (value) => ['standard', 'spacious'].includes(value),
+    validator: (value: string) => ['standard', 'spacious'].includes(value),
   },
 });
 
 // Emits
-const emit = defineEmits(['edit', 'copy', 'save-as-template', 'delete', 'confirm-edit']);
+const emit = defineEmits<{
+  edit: [];
+  copy: [];
+  'save-as-template': [];
+  delete: [];
+  'confirm-edit': [];
+}>();
 
 // ------------------------------------------------------------------------------
 // States
@@ -176,9 +183,9 @@ const emit = defineEmits(['edit', 'copy', 'save-as-template', 'delete', 'confirm
 // Menu state
 const showMenu = ref(false);
 const dropdownStyle = ref({});
-const dropdownRef = ref(null);
-const buttonRef = ref(null);
-const root = ref(null);
+const dropdownRef = ref<HTMLElement | null>(null);
+const buttonRef = ref<HTMLButtonElement | null>(null);
+const root = ref<HTMLElement | null>(null);
 
 // ------------------------------------------------------------------------------
 // Computed
@@ -333,13 +340,13 @@ function handleConfirmEdit() {
  * Close menu when focus leaves the component
  * @param {FocusEvent} event - The focus event
  */
-function handleFocusOut(event) {
+function handleFocusOut(event: FocusEvent) {
   // Check if the new focus target is still within this component
   // event.relatedTarget is the element receiving focus
   const newFocus = event.relatedTarget;
   const isFocusInside =
-    (root.value && root.value.contains(newFocus)) ||
-    (dropdownRef.value && dropdownRef.value.contains(newFocus));
+    (root.value && root.value.contains(newFocus as Node | null)) ||
+    (dropdownRef.value && dropdownRef.value.contains(newFocus as Node | null));
 
   if (!isFocusInside) {
     showMenu.value = false;
@@ -350,10 +357,11 @@ function handleFocusOut(event) {
  * Close menu when user clicks outside the dropdown
  * @param {Event} event - The click event
  */
-function closeMenu(event) {
+function closeMenu(event: MouseEvent) {
   const target = event.target;
-  const clickedInsideRoot = root.value && root.value.contains(target);
-  const clickedInsideDropdown = dropdownRef.value && dropdownRef.value.contains(target);
+  const clickedInsideRoot = root.value && root.value.contains(target as Node | null);
+  const clickedInsideDropdown =
+    dropdownRef.value && dropdownRef.value.contains(target as Node | null);
 
   if (!clickedInsideRoot && !clickedInsideDropdown) {
     showMenu.value = false;
@@ -371,8 +379,8 @@ function closeMenuOnScroll() {
  * Close this menu when another overflow menu opens
  * @param {CustomEvent} event - The custom event with menu details
  */
-function closeWhenOtherOpens(event) {
-  const detail = event?.detail || {};
+function closeWhenOtherOpens(event: Event) {
+  const detail = (event as CustomEvent<{ id?: string }>).detail || {};
   const otherId = detail.id;
 
   if (otherId && otherId !== props.itemId) {

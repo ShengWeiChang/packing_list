@@ -1,7 +1,7 @@
 /*
 ================================================================================
 File: tests/unit-tests/scripts/checkTypeScriptScope.test.js
-Description: Behavior tests for migration allowances and compiler scope coverage.
+Description: Behavior tests for TypeScript-only application compiler scope.
 License: MIT (SPDX: MIT)
 ================================================================================
 */
@@ -26,46 +26,40 @@ beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'packing-list-type-scope-'));
   mkdirSync(join(root, 'source'));
   config = {
-    compilerOptions: { strict: true, noUncheckedIndexedAccess: true, noEmit: true, allowJs: true },
+    compilerOptions: { strict: true, noUncheckedIndexedAccess: true, noEmit: true, allowJs: false },
     include: ['source/**/*'],
     vueCompilerOptions: { strictTemplates: true },
   };
   saveConfig();
-  writeFileSync(join(root, 'source/legacy.js'), 'export const value = 1;');
   writeFileSync(join(root, 'source/typed.ts'), 'export const value: number = 1;');
   writeFileSync(
-    join(root, 'source/Legacy.vue'),
-    '<template><div /></template><script setup>const value = 1;</script>'
-  );
-  writeFileSync(
-    join(root, 'typescript-migration.json'),
-    JSON.stringify({
-      uncheckedJavaScript: ['source/legacy.js'],
-      uncheckedVueScripts: ['source/Legacy.vue'],
-    })
+    join(root, 'source/Typed.vue'),
+    '<script setup lang="ts">const value = 1;</script>'
   );
 });
 
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 describe('TypeScript application scope', () => {
-  // Test Group 1: Migration boundaries and compiler coverage
-  // Test Case 1: Report compiler roots separately from unchecked migration files
-  it('reports the exact remaining unchecked scope', () => {
+  // Test Group 1: Permanent source boundaries and compiler coverage
+  // Test Case 1: Accept every typed source module in compiler roots
+  it('accepts an all-TypeScript application', () => {
     expect(checkTypeScriptScope(root)).toEqual({
-      modules: 3,
-      uncheckedJavaScript: 1,
-      uncheckedVueScripts: 1,
+      modules: 2,
+      uncheckedJavaScript: 0,
+      uncheckedVueScripts: 0,
     });
   });
 
-  // Test Case 2: Reject new JavaScript outside the reviewed migration allowance
-  it('rejects an unlisted JavaScript module', () => {
+  // Test Case 2: Reject JavaScript even when the compiler would omit it
+  it('rejects a new JavaScript module', () => {
     writeFileSync(join(root, 'source/newModule.js'), 'export const value = 1;');
-    expect(() => checkTypeScriptScope(root)).toThrow('Unlisted: source/newModule.js');
+    expect(() => checkTypeScriptScope(root)).toThrow(
+      'JavaScript application module is not supported'
+    );
   });
 
-  // Test Case 3: Reject typed files excluded from the compiler even if still imported
+  // Test Case 3: Reject typed files excluded from the compiler
   it('rejects an excluded application module', () => {
     config.exclude = ['source/typed.ts'];
     saveConfig();
@@ -74,19 +68,19 @@ describe('TypeScript application scope', () => {
     );
   });
 
-  // Test Case 4: Detect JavaScript in a newly added Vue script
-  it('rejects a new unchecked Vue component', () => {
+  // Test Case 4: Reject Vue scripts without TypeScript
+  it('rejects a JavaScript Vue script', () => {
     writeFileSync(join(root, 'source/NewComponent.vue'), '<script setup>const value = 1;</script>');
-    expect(() => checkTypeScriptScope(root)).toThrow('Unlisted: source/NewComponent.vue');
+    expect(() => checkTypeScriptScope(root)).toThrow(
+      'Unsupported Vue script boundary: source/NewComponent.vue'
+    );
   });
 
-  // Test Case 5: Require allowances to shrink when a component is migrated
-  it('rejects stale allowances after a Vue migration', () => {
-    writeFileSync(
-      join(root, 'source/Legacy.vue'),
-      '<script setup lang="ts">const value: number = 1;</script>'
-    );
-    expect(() => checkTypeScriptScope(root)).toThrow('Stale: source/Legacy.vue');
+  // Test Case 5: Prevent the migration compiler bridge from returning
+  it('rejects allowJs being enabled', () => {
+    config.compilerOptions.allowJs = true;
+    saveConfig();
+    expect(() => checkTypeScriptScope(root)).toThrow('must disable allowJs');
   });
 
   // Test Case 6: Reject weakening a strict sub-option while keeping strict=true
@@ -103,20 +97,13 @@ describe('TypeScript application scope', () => {
     expect(() => checkTypeScriptScope(root)).toThrow('must enable strictTemplates');
   });
 
-  // Test Case 8: Allow the completed migration only without temporary bridges
-  it('accepts an all-TypeScript source with no migration manifest', () => {
-    rmSync(join(root, 'source/legacy.js'));
-    writeFileSync(
-      join(root, 'source/Legacy.vue'),
-      '<script setup lang="ts">const value: number = 1;</script>'
-    );
-    rmSync(join(root, 'typescript-migration.json'));
-    config.compilerOptions.allowJs = false;
+  // Test Case 8: Check future source files, including declarations, without an inventory allowlist
+  it('checks newly added source files for compiler inclusion', () => {
+    writeFileSync(join(root, 'source/newContract.d.ts'), 'export type Id = string;');
+    config.exclude = ['source/newContract.d.ts'];
     saveConfig();
-    expect(checkTypeScriptScope(root)).toEqual({
-      modules: 2,
-      uncheckedJavaScript: 0,
-      uncheckedVueScripts: 0,
-    });
+    expect(() => checkTypeScriptScope(root)).toThrow(
+      'Source module missing from compiler roots: source/newContract.d.ts'
+    );
   });
 });

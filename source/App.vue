@@ -287,7 +287,7 @@ Created: 2025-09-19
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Imports
 // ------------------------------------------------------------------------------
@@ -296,6 +296,14 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import ChecklistComponent from './components/Checklist.vue';
+import type {
+  CategoryPackedChange,
+  ChecklistSelection,
+  EditKind,
+  ItemMove,
+  RetainedDraft,
+  TemplateView,
+} from './components/componentContracts';
 import NewChecklistDialog from './components/NewChecklistDialog.vue';
 import PackingCompletionOverlay from './components/PackingCompletionOverlay.vue';
 import SaveTemplateDialog from './components/SaveTemplateDialog.vue';
@@ -304,7 +312,9 @@ import TemplateEditor from './components/TemplateEditor.vue';
 import Topbar from './components/Topbar.vue';
 import { usePackingLists } from './composables/usePackingLists';
 import { useTemplates } from './composables/useTemplates';
+import type { CategoryDTO, ChecklistDTO, ItemDTO, TemplateDTO } from './models/contracts';
 import { RecommendedListService } from './services/recommendedListService';
+import type { ChecklistSourceOptions, SeedData } from './services/storageTypes';
 import { STORAGE_KEYS, VALIDATION } from './utils/constants';
 import { generateSecureId } from './utils/helpers';
 
@@ -392,37 +402,37 @@ const isMobileViewport = ref(false);
 const isSmallDesktop = ref(false);
 const showNewChecklistDialog = ref(false);
 const showSaveTemplateDialog = ref(false);
-const templateChecklistId = ref(null);
+const templateChecklistId = ref<string | null>(null);
 const templateChecklistName = ref('');
 const isSavingTemplate = ref(false);
 const templateSaveFailed = ref(false);
 const isCreatingChecklist = ref(false);
 const checklistCreateFailed = ref(false);
 const inlineSaveFailed = ref(false);
-let inlineFailureVersion = null;
-let inlineFailureOwner = null;
+let inlineFailureVersion: number | null = null;
+let inlineFailureOwner: string | null = null;
 // A displaced editor cannot display an async failure; leave that error global.
 let inlineDraftGeneration = 0;
-const displacedDrafts = ref([]);
+const displacedDrafts = ref<(RetainedDraft & { id: number })[]>([]);
 let nextDisplacedDraftId = 0;
-const exportFailure = ref(null);
-const mainHeading = ref(null);
-const templateEditing = ref(null);
+const exportFailure = ref<string | null>(null);
+const mainHeading = ref<HTMLElement | null>(null);
+const templateEditing = ref<TemplateView | null>(null);
 const isSavingTemplateEdit = ref(false);
 const templateEditSaveFailed = ref(false);
 const templateDraftAtRisk = ref(false);
 const showPackingUndo = ref(false);
 const showPackingCompletion = ref(false);
-const packingCompletion = ref(null);
-const appShell = ref(null);
-let packingUndoTimer = null;
-let packingCompletionTrigger = null;
+const packingCompletion = ref<ReturnType<typeof getPackingCompletionSnapshot> | null>(null);
+const appShell = ref<HTMLElement | null>(null);
+let packingUndoTimer: number | undefined;
+let packingCompletionTrigger: HTMLElement | null = null;
 let packingUndoPendingAfterCompletion = false;
 
 // Newly created item tracking for auto-edit
-const newlyCreatedItemId = ref(null);
-const newlyCreatedCategoryId = ref(null);
-const newlyCreatedChecklistId = ref(null);
+const newlyCreatedItemId = ref<string | null>(null);
+const newlyCreatedCategoryId = ref<string | null>(null);
+const newlyCreatedChecklistId = ref<string | null>(null);
 
 // ------------------------------------------------------------------------------
 // Computed
@@ -449,7 +459,7 @@ const visibleOperationError = computed(() => {
   )
     return null;
   const code = checklistOperationError?.value || templateOperationError?.value;
-  return ['conflict', 'quota', 'lock-unavailable'].includes(code)
+  return ['conflict', 'quota', 'lock-unavailable'].some((candidate) => candidate === code)
     ? code
     : code
       ? 'writeFailed'
@@ -459,7 +469,7 @@ const visibleOperationError = computed(() => {
 /** Preserve unsaved text when its editor is removed or selection changes.
  * @param {object} draft - Unsaved values from the disappearing editor.
  */
-function retainDisplacedDraft(draft) {
+function retainDisplacedDraft(draft: RetainedDraft) {
   displacedDrafts.value.push({ ...draft, id: ++nextDisplacedDraftId });
   inlineDraftGeneration++;
   inlineSaveFailed.value = false;
@@ -469,7 +479,7 @@ function retainDisplacedDraft(draft) {
  * @param {string} kind - Type of edited entity.
  * @param {string} id - ID of the edited entity.
  */
-function clearInlineFailure(kind, id) {
+function clearInlineFailure(kind: EditKind, id: string) {
   if (inlineFailureOwner !== `${kind}:${id}`) return;
   inlineSaveFailed.value = false;
   if (inlineFailureVersion !== null) clearChecklistOperationError?.(inlineFailureVersion);
@@ -480,7 +490,7 @@ function clearInlineFailure(kind, id) {
 /** Dismiss a displayed, locally retained draft.
  * @param {number} id - Draft identifier.
  */
-function dismissDraft(id) {
+function dismissDraft(id: number) {
   displacedDrafts.value = displacedDrafts.value.filter((draft) => draft.id !== id);
 }
 
@@ -488,7 +498,7 @@ function dismissDraft(id) {
  * @param {string} domain - Domain to read again.
  * @param {Event} event - Event from the retry control.
  */
-async function retryStorage(domain, event) {
+async function retryStorage(domain: string, event: Event) {
   const focusedRetry = document.activeElement === event.currentTarget;
   if (domain === 'checklists') await initialize();
   else loadTemplates();
@@ -503,7 +513,7 @@ async function retryStorage(domain, event) {
 /** Offer the original stored bytes for download without changing storage.
  * @param {string} domain - Domain whose original data is exported.
  */
-function exportStorage(domain) {
+function exportStorage(domain: string) {
   exportFailure.value = null;
   try {
     const key = domain === 'checklists' ? STORAGE_KEYS.APP_DATA : STORAGE_KEYS.TEMPLATES;
@@ -530,7 +540,10 @@ function exportStorage(domain) {
 // ---------- General Helpers ----------
 
 // Generic error handler for async operations
-const handleAsyncAction = async (action, ...args) => {
+const handleAsyncAction = async <Args extends unknown[], Result>(
+  action: (...args: Args) => Result,
+  ...args: Args
+): Promise<Awaited<Result>> => {
   inlineSaveFailed.value = false;
   templateEditSaveFailed.value = false;
   return await action(...args);
@@ -556,7 +569,7 @@ function getPackingCompletionSnapshot() {
  * @param {{total: number, completed: number}} snapshot - Packing progress snapshot.
  * @returns {boolean} `true` when every item in the snapshot is packed.
  */
-function isPackingComplete(snapshot) {
+function isPackingComplete(snapshot: { total: number; completed: number }) {
   return snapshot.total > 0 && snapshot.total === snapshot.completed;
 }
 
@@ -572,7 +585,11 @@ function deferPackingUndoUntilCompletionClose() {
  * @param {{checklistId: string|null, total: number, completed: number}} before - Pre-action state.
  * @returns {boolean} Whether the overlay opened.
  */
-function showPackingCompletionForTransition(before) {
+function showPackingCompletionForTransition(before: {
+  checklistId: string | null;
+  total: number;
+  completed: number;
+}) {
   const after = getPackingCompletionSnapshot();
   if (
     !before.checklistId ||
@@ -673,7 +690,7 @@ function toggleSidebar() {
  * Create a new item in the specified category with default values
  * @param {string} categoryId - The ID of the category to add the item to
  */
-async function handleItemCreate(categoryId) {
+async function handleItemCreate(categoryId: string) {
   // Find the max order in this category
   const categoryItems = items.value.filter((item) => item.categoryId === categoryId);
   const maxOrder =
@@ -699,7 +716,7 @@ async function handleItemCreate(categoryId) {
  * @param {object} [expected] - Item before editing.
  * @returns {Promise<object|null>} Committed item or null on failure.
  */
-async function handleItemUpdate(item, expected) {
+async function handleItemUpdate(item: ItemDTO, expected?: ItemDTO) {
   const before = getPackingCompletionSnapshot();
   const draftGeneration = inlineDraftGeneration;
   const updatedItem = await handleAsyncAction(updateItem, item, expected);
@@ -723,7 +740,7 @@ async function handleItemUpdate(item, expected) {
  * Handle item copy
  * @param {string} itemId - The ID of the item to copy
  */
-async function handleItemCopy(itemId) {
+async function handleItemCopy(itemId: string) {
   await handleAsyncAction(duplicateItem, itemId);
 }
 
@@ -731,7 +748,7 @@ async function handleItemCopy(itemId) {
  * Delete an item by ID
  * @param {string} itemId - The ID of the item to delete
  */
-async function handleItemDelete(itemId) {
+async function handleItemDelete(itemId: string) {
   await handleAsyncAction(deleteItem, itemId);
 }
 
@@ -739,7 +756,7 @@ async function handleItemDelete(itemId) {
  * Handle item drag-and-drop movement or reordering within categories
  * @param {object} moveData - Move data containing item, category IDs, and reordered items
  */
-async function handleItemMove(moveData) {
+async function handleItemMove(moveData: ItemMove) {
   if (!['move', 'reorder'].includes(moveData.type) || !moveData.items?.length) return;
   const result = await handleAsyncAction(updateMultipleItems, moveData.items, {
     fields: ['order', 'categoryId'],
@@ -775,7 +792,7 @@ async function handleCategoryCreate() {
  * @param {object} [expected] - Category before editing.
  * @returns {Promise<object|null>} Committed category or null on failure.
  */
-async function handleCategoryUpdate(category, expected) {
+async function handleCategoryUpdate(category: CategoryDTO, expected?: CategoryDTO) {
   const draftGeneration = inlineDraftGeneration;
   const updatedCategory = await handleAsyncAction(updateCategory, category, expected);
   if (expected && !updatedCategory && draftGeneration === inlineDraftGeneration) {
@@ -795,7 +812,7 @@ async function handleCategoryUpdate(category, expected) {
  * Handle category copy
  * @param {string} categoryId - The ID of the category to copy
  */
-async function handleCategoryCopy(categoryId) {
+async function handleCategoryCopy(categoryId: string) {
   await handleAsyncAction(duplicateCategory, categoryId);
 }
 
@@ -803,7 +820,7 @@ async function handleCategoryCopy(categoryId) {
  * Delete a category by ID
  * @param {string} categoryId - The ID of the category to delete
  */
-async function handleCategoryDelete(categoryId) {
+async function handleCategoryDelete(categoryId: string) {
   await handleAsyncAction(deleteCategory, categoryId);
 }
 
@@ -813,7 +830,7 @@ async function handleCategoryDelete(categoryId) {
  * @param {string} change.categoryId - Category ID
  * @param {boolean} change.isPacked - Target packed state
  */
-async function handleCategoryPacked({ categoryId, isPacked }) {
+async function handleCategoryPacked({ categoryId, isPacked }: CategoryPackedChange) {
   const checklistId = selectedChecklistId.value;
   const before = getPackingCompletionSnapshot();
   const updatedItems = await handleAsyncAction(setCategoryPacked, categoryId, isPacked);
@@ -856,7 +873,7 @@ async function handleRedoPackingChange() {
  * @param {EventTarget|null} target - Keyboard event target
  * @returns {boolean} Whether native text editing should retain the shortcut
  */
-function isEditableTarget(target) {
+function isEditableTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
   return (
     target.isContentEditable ||
@@ -870,7 +887,7 @@ function isEditableTarget(target) {
  * Handle global undo/redo shortcuts for category-wide packing status changes.
  * @param {KeyboardEvent} event - Window keydown event
  */
-function handlePackingHistoryKeydown(event) {
+function handlePackingHistoryKeydown(event: KeyboardEvent) {
   if (
     showPackingCompletion.value ||
     event.repeat ||
@@ -898,7 +915,10 @@ function handlePackingHistoryKeydown(event) {
  * @param {Array<object>} reorderedCategories - Array of categories with updated order properties
  * @param {Array<object>} [expectedCategories] - Categories before the drag.
  */
-async function handleCategoryReorder(reorderedCategories, expectedCategories) {
+async function handleCategoryReorder(
+  reorderedCategories: CategoryDTO[],
+  expectedCategories?: CategoryDTO[]
+) {
   const result = await handleAsyncAction(
     updateMultipleCategories,
     reorderedCategories,
@@ -916,8 +936,8 @@ async function handleCategoryReorder(reorderedCategories, expectedCategories) {
  * @param {string} [sourceName=''] - Localized template or recommended-list name
  * @returns {string} Source-aware checklist name
  */
-function buildSourceAwareChecklistName(source, sourceName = '') {
-  const key = `checklist.defaultNameFrom${source[0].toUpperCase()}${source.slice(1)}`;
+function buildSourceAwareChecklistName(source: ChecklistSelection['source'], sourceName = '') {
+  const key = `checklist.defaultNameFrom${source[0]!.toUpperCase()}${source.slice(1)}`;
   if (source === 'empty') return t(key);
 
   const wrapperLength = t(key, { name: '' }).length;
@@ -937,7 +957,7 @@ function handleChecklistCreate() {
  * Handle user's selection from the new checklist dialog
  * @param {object} selection - Selected source and optional template/list ID.
  */
-async function handleNewChecklistSelect(selection) {
+async function handleNewChecklistSelect(selection: ChecklistSelection) {
   if (isCreatingChecklist.value) return;
   isCreatingChecklist.value = true;
   checklistCreateFailed.value = false;
@@ -951,9 +971,9 @@ async function handleNewChecklistSelect(selection) {
       (selection.source === 'recommended' && selection.recommendedListId)
     ) {
       const checklistId = generateSecureId('checklist-');
-      let seedData = null;
+      let seedData: SeedData | null = null;
       let sourceName = '';
-      let expectedTemplate = null;
+      let expectedTemplate: TemplateView | null = null;
 
       if (selection.source === 'template') {
         const selectedTemplate = templates.value.find(
@@ -985,9 +1005,13 @@ async function handleNewChecklistSelect(selection) {
         name: buildSourceAwareChecklistName(selection.source, sourceName),
         order: maxOrder + 1,
       };
-      const options =
+      const options: ChecklistSourceOptions =
         selection.source === 'template'
-          ? { source: 'template', templateId: selection.templateId, expectedTemplate }
+          ? {
+              source: 'template',
+              templateId: selection.templateId,
+              expectedTemplate: copyTemplateBaseline(expectedTemplate),
+            }
           : { source: selection.source, seedData };
       const newChecklist = await handleAsyncAction(createChecklist, checklistWithId, options);
       if (newChecklist) {
@@ -1001,7 +1025,7 @@ async function handleNewChecklistSelect(selection) {
         name: buildSourceAwareChecklistName('empty'),
         order: maxOrder + 1,
       };
-      const options = { source: 'empty' };
+      const options: ChecklistSourceOptions = { source: 'empty' };
       const newChecklist = await handleAsyncAction(createChecklist, newChecklistData, options);
       if (newChecklist) {
         newlyCreatedChecklistId.value = newChecklist.id;
@@ -1021,7 +1045,7 @@ async function handleNewChecklistSelect(selection) {
  * @param {object} [expected] - Checklist before editing.
  * @returns {Promise<object|null>} Committed checklist or null on failure.
  */
-async function handleChecklistUpdate(checklist, expected) {
+async function handleChecklistUpdate(checklist: ChecklistDTO, expected?: ChecklistDTO) {
   const draftGeneration = inlineDraftGeneration;
   const result = await handleAsyncAction(updateChecklist, checklist, expected);
   if (expected && !result && draftGeneration === inlineDraftGeneration) {
@@ -1036,7 +1060,7 @@ async function handleChecklistUpdate(checklist, expected) {
  * Handle checklist edit from sidebar - select the checklist and mark for edit
  * @param {string} checklistId - The ID of the checklist to edit
  */
-function handleChecklistEdit(checklistId) {
+function handleChecklistEdit(checklistId: string) {
   // Select the checklist first
   selectedChecklistId.value = checklistId;
   // Mark it for editing
@@ -1047,7 +1071,7 @@ function handleChecklistEdit(checklistId) {
  * Handle checklist copy from sidebar
  * @param {string} checklistId - The ID of the checklist to copy
  */
-async function handleChecklistCopy(checklistId) {
+async function handleChecklistCopy(checklistId: string) {
   const result = await handleAsyncAction(duplicateChecklist, checklistId);
   if (result && !checklistRefreshAfterSaveFailed?.value) {
     // Select the new checklist
@@ -1061,7 +1085,7 @@ async function handleChecklistCopy(checklistId) {
  * Delete a checklist by ID after user confirmation
  * @param {string} checklistId - The ID of the checklist to delete
  */
-async function handleChecklistDelete(checklistId) {
+async function handleChecklistDelete(checklistId: string) {
   const confirmed = confirm(t('checklist.deleteConfirm'));
   if (!confirmed) return;
 
@@ -1073,7 +1097,10 @@ async function handleChecklistDelete(checklistId) {
  * @param {Array} reorderedChecklists - Array of checklists with updated order
  * @param {Array<object>} [expectedChecklists] - Checklists before the drag.
  */
-async function handleChecklistMove(reorderedChecklists, expectedChecklists) {
+async function handleChecklistMove(
+  reorderedChecklists: ChecklistDTO[],
+  expectedChecklists?: ChecklistDTO[]
+) {
   // Update all checklists in a single transaction to avoid race conditions
   const result = await handleAsyncAction(
     updateMultipleChecklists,
@@ -1089,7 +1116,7 @@ async function handleChecklistMove(reorderedChecklists, expectedChecklists) {
  * Open the dialog to save a checklist as a personal template.
  * @param {string} checklistId - Checklist ID to snapshot
  */
-function handleSaveAsTemplate(checklistId) {
+function handleSaveAsTemplate(checklistId: string) {
   const checklist = checklists.value.find((item) => item.id === checklistId);
   templateChecklistId.value = checklistId;
   templateChecklistName.value = checklist?.name || '';
@@ -1101,7 +1128,7 @@ function handleSaveAsTemplate(checklistId) {
  * Persist the named template snapshot and clear the dialog source state.
  * @param {string} templateName - User-supplied template name
  */
-async function handleTemplateSave(templateName) {
+async function handleTemplateSave(templateName: string) {
   if (isSavingTemplate.value || !templateChecklistId.value) return;
   isSavingTemplate.value = true;
   templateSaveFailed.value = false;
@@ -1122,7 +1149,7 @@ async function handleTemplateSave(templateName) {
  * Open a template in its isolated, in-memory editor.
  * @param {string} templateId - Template ID to edit
  */
-function handleTemplateEdit(templateId) {
+function handleTemplateEdit(templateId: string) {
   if (isSavingTemplateEdit.value || templateEditing.value?.id === templateId) return;
   if (
     templateDraftAtRisk.value &&
@@ -1137,16 +1164,26 @@ function handleTemplateEdit(templateId) {
   templateEditing.value = template;
 }
 
+/** Copy readonly snapshots into the service's mutable DTO input contract. */
+function copyTemplateBaseline(template: TemplateView | null): TemplateDTO | undefined {
+  if (!template) return undefined;
+  return {
+    ...template,
+    categories: template.categories.map((category) => ({ ...category })),
+    items: template.items.map((item) => ({ ...item })),
+  };
+}
+
 /**
  * Save the isolated editor snapshot to the active template.
  * @param {object} template - Complete template snapshot from the editor
  */
-async function handleTemplateEditSave(template) {
+async function handleTemplateEditSave(template: TemplateDTO) {
   if (isSavingTemplateEdit.value) return;
   isSavingTemplateEdit.value = true;
   templateEditSaveFailed.value = false;
   try {
-    const updated = await updateTemplate(template, templateEditing.value);
+    const updated = await updateTemplate(template, copyTemplateBaseline(templateEditing.value));
     if (updated) {
       templateDraftAtRisk.value = false;
       templateEditing.value = null;
@@ -1171,7 +1208,7 @@ function handleTemplateEditCancel() {
  * Delete the active template from the editor after confirmation.
  * @param {string} templateId - Active template ID
  */
-async function handleTemplateEditDelete(templateId) {
+async function handleTemplateEditDelete(templateId: string) {
   await handleTemplateDelete(templateId);
 }
 
@@ -1179,7 +1216,7 @@ async function handleTemplateEditDelete(templateId) {
  * Delete a personal template after confirmation.
  * @param {string} templateId - Template ID to delete
  */
-async function handleTemplateDelete(templateId) {
+async function handleTemplateDelete(templateId: string) {
   if (isSavingTemplateEdit.value) return;
   templateEditSaveFailed.value = false;
   if (confirm(t('template.deleteConfirm'))) {

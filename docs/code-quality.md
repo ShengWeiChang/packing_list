@@ -323,17 +323,20 @@ Validation
 - Static analysis: `npm run lint` (via `eslint-plugin-vuejs-accessibility`)
 - Manual testing: Navigate all features using only the `Tab` key to ensure no focus traps and full operability.
 
-### 3.11 TypeScript Migration and Checking
+### 3.11 TypeScript Contracts and Checking
 
 - `npm run typecheck` runs the application scope guard, `vue-tsc --noEmit`, compile-only contracts, and deliberate-error diagnostic probes. Vite builds transpile without type checking.
 - `strict`, `noUncheckedIndexedAccess`, and `strictTemplates` are enabled. The app project uses browser globals and `vite/client`; Node and Vitest globals are not injected.
-- `typescript-migration.json` lists exactly the remaining 2 JS modules and 16 Vue JavaScript scripts. `allowJs: true` / `checkJs: false` permits their imports without claiming they are checked. Each migration removes its allowance; new unlisted JS, stale allowances, and source files outside compiler roots fail the gate.
-- The final target is all application modules in TS and all SFC scripts in TS. Remove the manifest and set `allowJs: false` when the list is empty. Runtime JS tests, Node configuration/scripts, locale JSON, and visual assets remain intentional exceptions outside that application migration.
+- All application modules and 16 SFC scripts use TypeScript with `allowJs: false`; the migration manifest and temporary lint override are removed. The permanent scope guard rejects JS modules, non-TS Vue scripts, and source files missing from compiler roots, including new declarations.
+- Runtime JS tests, Node configuration/scripts, locale JSON, and visual assets retain their formats outside the browser application compiler project; they are not an unchecked application migration bridge.
 - TS modules retain existing naming stems with `.ts`: classes/models use PascalCase; services, utilities, composables, and type modules use camelCase. Compile-only tests use the owner's stem plus `.test.ts` under `tests/type-tests/`; Vitest excludes that directory.
 - Use `import type` for type-only dependencies. Treat external JSON and caught errors as `unknown` until existing runtime checks or normalization justify narrower contracts; TS never replaces storage validation.
 - Do not use `any`, `@ts-ignore`, `@ts-nocheck`, blanket module shims, or unsupported assertions to pass the gate. Document narrowly justified third-party boundaries. Described `@ts-expect-error` directives belong only in negative type tests.
-- ESLint applies TypeScript recommended rules to TS/Vue with Vue's outer parser preserved. TypeScript unused-variable rules replace overlapping core rules; the manifest's remaining JavaScript SFCs retain JS recommended rules, including `no-undef`, and their JSDoc checks. Remove this temporary lint override/import with the manifest. lint-staged and VSCode ESLint include TS.
+- ESLint applies TypeScript recommended rules to all TS/Vue with Vue's outer parser preserved; TypeScript unused-variable rules replace overlapping core rules. lint-staged and VSCode ESLint include TS; application suppression comments and explicit any are rejected.
 - Composable collections are exposed deeply readonly; the selected ID remains writable as `string | null`, and the computed selected entity may be `undefined`. Generic loaders preserve `T | null`; committed writes and failed refreshes are reported separately, and packing-only history stores immutable status snapshots.
+- `componentContracts.ts` owns shared action/event/draft contracts. Runtime prop constructors, required flags, defaults and validators remain; event tuples retain the optional second baseline. Save callbacks return Promises with nullable failure results; App's generic action runner preserves argument and result types.
+- `typedDraggable.ts` describes only the vuedraggable 4.1.0 API actually used, exposing the same runtime component with entity-typed models, item slots and change payloads. This justified third-party assertion adds no wrapper and contains any leakage. `vueAttributes.d.ts` extends only data attributes, with no blanket component shim.
+- Legacy dates remain unknown in component props/drafts; narrow assertions at DOM, RegExp and Date/comparison operations preserve native coercion without claiming validation. Readonly template baselines copy their snapshot records and arrays into the existing DTO service contract with the same fields and comparison content.
 - Accepted dependency limitation: `skipLibCheck: true` follows the Vue base config because vue-i18n 11.4.16 imports `GenericComponentInstance`, absent from Vue 3.5.44 (TS2724). This skips `.d.ts` internal checking, including local declarations; application/template code and API usage remain checked. Re-evaluate on Vue/i18n upgrades and remove the exception once the declaration mismatch is fixed.
 
 ## 4. Git Hooks (Husky)

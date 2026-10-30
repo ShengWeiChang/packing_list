@@ -31,7 +31,7 @@ npm run dev
 ## Tech Stack
 
 - **Frontend:** Vue 3 (Composition API), Vite
-- **Type checking:** TypeScript + vue-tsc (application migration in progress; see the Code Quality Guide)
+- **Type checking:** TypeScript + vue-tsc for application code and Vue templates (see the Code Quality Guide)
 - **Styling:** Tailwind CSS
 - **Testing:** Vitest, Playwright, @vue/test-utils
 - **i18n:** vue-i18n

@@ -83,11 +83,12 @@ Created: 2026-10-13
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Imports
 // ------------------------------------------------------------------------------
 
+import type { PropType } from 'vue';
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 // ------------------------------------------------------------------------------
@@ -99,20 +100,20 @@ const props = defineProps({
   visible: { type: Boolean, default: false },
   saving: { type: Boolean, default: false },
   saveError: { type: Boolean, default: false },
-  errorCode: { type: String, default: null },
+  errorCode: { type: String as PropType<string | null>, default: null },
 });
 
-const emit = defineEmits(['close', 'save']);
+const emit = defineEmits<{ close: []; save: [name: string] }>();
 
 // ------------------------------------------------------------------------------
 // State
 // ------------------------------------------------------------------------------
 
 const name = ref('');
-const nameInput = ref(null);
+const nameInput = ref<HTMLInputElement | null>(null);
 const showError = ref(false);
-const dialogRef = ref(null);
-const previouslyFocusedElement = ref(null);
+const dialogRef = ref<HTMLElement | null>(null);
+const previouslyFocusedElement = ref<HTMLElement | SVGElement | null>(null);
 
 // ------------------------------------------------------------------------------
 // Functions
@@ -139,7 +140,7 @@ function close() {
  * Handle Escape and keep Tab focus inside the visible modal.
  * @param {KeyboardEvent} event - Document keyboard event
  */
-function handleDialogKeydown(event) {
+function handleDialogKeydown(event: KeyboardEvent) {
   if (!props.visible) return;
   if (event.key === 'Escape') {
     close();
@@ -147,7 +148,7 @@ function handleDialogKeydown(event) {
   }
   if (event.key !== 'Tab') return;
 
-  const focusable = dialogRef.value?.querySelectorAll(
+  const focusable = dialogRef.value?.querySelectorAll<HTMLElement>(
     'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
   );
   if (!focusable?.length) return;
@@ -155,10 +156,10 @@ function handleDialogKeydown(event) {
   const last = focusable[focusable.length - 1];
   if (event.shiftKey && document.activeElement === first) {
     event.preventDefault();
-    last.focus();
+    last!.focus();
   } else if (!event.shiftKey && document.activeElement === last) {
     event.preventDefault();
-    first.focus();
+    first!.focus();
   }
 }
 
@@ -170,7 +171,7 @@ watch(
   () => props.visible,
   async (visible) => {
     if (visible) {
-      previouslyFocusedElement.value = document.activeElement;
+      previouslyFocusedElement.value = document.activeElement as HTMLElement | SVGElement | null;
       name.value = props.initialName;
       showError.value = false;
       await nextTick();

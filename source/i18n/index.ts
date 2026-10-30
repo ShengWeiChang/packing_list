@@ -1,6 +1,6 @@
 /*
 ================================================================================
-File: source/i18n/index.js
+File: source/i18n/index.ts
 Description: i18n configuration for Vue application with locale persistence
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
@@ -25,7 +25,14 @@ import zhTW from '../locales/zh-TW.json';
 const LOCALE_STORAGE_KEY = 'user-locale';
 
 // Supported locales
-const SUPPORTED_LOCALES = ['en', 'zh-TW'];
+const SUPPORTED_LOCALES = ['en', 'zh-TW'] as const;
+export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+type MessageSchema = typeof en;
+
+/** Check a preference before using it as a message locale. */
+function isSupportedLocale(value: string): value is SupportedLocale {
+  return SUPPORTED_LOCALES.some((locale) => locale === value);
+}
 
 // TODO: Add support for more languages (e.g., zh-CN, ja, ko, es, fr)
 // - Update SUPPORTED_LOCALES array
@@ -42,7 +49,7 @@ const SUPPORTED_LOCALES = ['en', 'zh-TW'];
  * @param {string} lang - Browser language code
  * @returns {string} Mapped locale ('en' or 'zh-TW')
  */
-function mapToSupportedLocale(lang) {
+function mapToSupportedLocale(lang: unknown): SupportedLocale {
   if (!lang) return 'en';
 
   const lower = String(lang).toLowerCase();
@@ -71,7 +78,7 @@ function mapToSupportedLocale(lang) {
  * 3) Fallback to English
  * @returns {string} Locale string ('en' or 'zh-TW')
  */
-function getPreferredLocale() {
+function getPreferredLocale(): SupportedLocale {
   // 1. Check saved preference first
   let savedLocale;
   try {
@@ -79,7 +86,7 @@ function getPreferredLocale() {
   } catch {
     // Locale is an optional preference; browser detection remains available.
   }
-  if (savedLocale && SUPPORTED_LOCALES.includes(savedLocale)) {
+  if (savedLocale && isSupportedLocale(savedLocale)) {
     return savedLocale;
   }
 
@@ -87,7 +94,7 @@ function getPreferredLocale() {
   const browserLangs =
     Array.isArray(navigator.languages) && navigator.languages.length
       ? navigator.languages
-      : [navigator.language || navigator.userLanguage];
+      : [navigator.language || (navigator as Navigator & { userLanguage?: string }).userLanguage];
 
   // Try each browser language candidate
   for (const lang of browserLangs) {
@@ -105,7 +112,7 @@ function getPreferredLocale() {
 const initialLocale = getPreferredLocale();
 
 // Create i18n instance
-const i18n = createI18n({
+const i18n = createI18n<[MessageSchema], SupportedLocale, false>({
   legacy: false, // Use Composition API mode
   locale: initialLocale,
   fallbackLocale: 'en',
@@ -130,8 +137,8 @@ try {
  * Update locale and persist to localStorage
  * @param {string} newLocale - New locale to set
  */
-export function setLocale(newLocale) {
-  if (!SUPPORTED_LOCALES.includes(newLocale)) {
+export function setLocale(newLocale: string) {
+  if (!isSupportedLocale(newLocale)) {
     console.warn(`Unsupported locale: ${newLocale}`);
     return;
   }

@@ -21,8 +21,6 @@ import pluginVue from 'eslint-plugin-vue';
 import vueAccessibility from 'eslint-plugin-vuejs-accessibility';
 import tseslint from 'typescript-eslint';
 
-import migration from './typescript-migration.json' with { type: 'json' };
-
 // ------------------------------------------------------------------------------
 // Configuration
 // ------------------------------------------------------------------------------
@@ -185,18 +183,6 @@ export default [
         'error',
         { 'ts-expect-error': true, 'ts-ignore': true, 'ts-nocheck': true, 'ts-check': false },
       ],
-    },
-  },
-  {
-    // These scripts still rely on JS linting until their explicit migration.
-    files: migration.uncheckedVueScripts,
-    rules: {
-      ...js.configs.recommended.rules,
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-unused-vars': 'off',
-      'jsdoc/require-param': 'warn',
-      'jsdoc/require-returns': 'warn',
-      'jsdoc/check-types': 'warn',
     },
   },
 
