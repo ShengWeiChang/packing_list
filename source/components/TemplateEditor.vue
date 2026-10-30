@@ -91,18 +91,21 @@ Created: 2026-10-13
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Imports
 // ------------------------------------------------------------------------------
 
+import type { PropType } from 'vue';
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { Category } from '../models/Category';
+import type { CategoryDTO, ChecklistDTO, ItemDTO, TemplateDTO } from '../models/contracts';
 import { Item } from '../models/Item';
-import { generateSecureId } from '../utils/helpers.js';
+import { generateSecureId } from '../utils/helpers';
 import Checklist from './Checklist.vue';
+import type { ItemMove, TemplateView } from './componentContracts';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
@@ -117,24 +120,24 @@ const { t } = useI18n();
 const props = defineProps({
   saving: { type: Boolean, default: false },
   saveError: { type: Boolean, default: false },
-  errorCode: { type: String, default: null },
+  errorCode: { type: String as PropType<string | null>, default: null },
   template: {
-    type: Object,
+    type: Object as PropType<TemplateView>,
     required: true,
   },
 });
 
-const emit = defineEmits(['cancel', 'delete', 'save']);
+const emit = defineEmits<{ cancel: []; delete: [id: string]; save: [template: TemplateDTO] }>();
 
 // ------------------------------------------------------------------------------
 // State
 // ------------------------------------------------------------------------------
 
 const draftChecklist = ref(createDraftChecklist(props.template));
-const draftCategories = ref([]);
-const draftItems = ref([]);
-const newlyCreatedItemId = ref(null);
-const newlyCreatedCategoryId = ref(null);
+const draftCategories = ref<CategoryDTO[]>([]);
+const draftItems = ref<ItemDTO[]>([]);
+const newlyCreatedItemId = ref<string | null>(null);
+const newlyCreatedCategoryId = ref<string | null>(null);
 const isComposing = ref(false);
 
 // ------------------------------------------------------------------------------
@@ -146,7 +149,7 @@ const isComposing = ref(false);
  * @param {object} template - Source template
  * @returns {object} Draft checklist header
  */
-function createDraftChecklist(template) {
+function createDraftChecklist(template: TemplateView): ChecklistDTO {
   return {
     id: `template-editor-${template.id}`,
     name: template.name,
@@ -160,7 +163,7 @@ function createDraftChecklist(template) {
  * Reset the in-memory draft from a template snapshot.
  * @param {object} template - Source template
  */
-function loadDraft(template) {
+function loadDraft(template: TemplateView) {
   draftChecklist.value = createDraftChecklist(template);
   draftCategories.value = (template.categories || []).map(
     (category) => new Category({ ...category, checklistId: draftChecklist.value.id })
@@ -185,17 +188,17 @@ function loadDraft(template) {
  * @param {object} updated - Updated entry
  * @returns {Array<object>} Updated collection
  */
-function replaceById(collection, updated) {
+function replaceById<T extends { id: string }>(collection: T[], updated: T): T[] {
   return collection.map((entry) => (entry.id === updated.id ? updated : entry));
 }
 
 /** @param {object} checklist - Updated draft header */
-function updateChecklist(checklist) {
+function updateChecklist(checklist: ChecklistDTO) {
   draftChecklist.value = checklist;
 }
 
 /** @param {string} categoryId - Target category ID */
-function createItem(categoryId) {
+function createItem(categoryId: string) {
   const categoryItems = draftItems.value.filter((item) => item.categoryId === categoryId);
   const maxOrder =
     categoryItems.length > 0 ? Math.max(...categoryItems.map((item) => item.order || 0)) : -1;
@@ -211,13 +214,13 @@ function createItem(categoryId) {
 }
 
 /** @param {object} item - Updated draft item */
-function updateItem(item) {
+function updateItem(item: ItemDTO) {
   draftItems.value = replaceById(draftItems.value, item);
   if (newlyCreatedItemId.value === item.id) newlyCreatedItemId.value = null;
 }
 
 /** @param {string} itemId - Item ID to copy */
-function copyItem(itemId) {
+function copyItem(itemId: string) {
   const source = draftItems.value.find((item) => item.id === itemId);
   if (!source) return;
   const copy = new Item({
@@ -230,12 +233,12 @@ function copyItem(itemId) {
 }
 
 /** @param {string} itemId - Item ID to delete */
-function deleteItem(itemId) {
+function deleteItem(itemId: string) {
   draftItems.value = draftItems.value.filter((item) => item.id !== itemId);
 }
 
 /** @param {object} moveData - Item move or reorder payload */
-function moveItem(moveData) {
+function moveItem(moveData: ItemMove) {
   if (!['move', 'reorder'].includes(moveData.type)) return;
   for (const item of moveData.items || []) updateItem(item);
 }
@@ -256,13 +259,13 @@ function createCategory() {
 }
 
 /** @param {object} category - Updated draft category */
-function updateCategory(category) {
+function updateCategory(category: CategoryDTO) {
   draftCategories.value = replaceById(draftCategories.value, category);
   if (newlyCreatedCategoryId.value === category.id) newlyCreatedCategoryId.value = null;
 }
 
 /** @param {string} categoryId - Category ID to copy */
-function copyCategory(categoryId) {
+function copyCategory(categoryId: string) {
   const source = draftCategories.value.find((category) => category.id === categoryId);
   if (!source) return;
   const copy = new Category({
@@ -286,13 +289,13 @@ function copyCategory(categoryId) {
 }
 
 /** @param {string} categoryId - Category ID to delete */
-function deleteCategory(categoryId) {
+function deleteCategory(categoryId: string) {
   draftCategories.value = draftCategories.value.filter((category) => category.id !== categoryId);
   draftItems.value = draftItems.value.filter((item) => item.categoryId !== categoryId);
 }
 
 /** @param {Array<object>} categories - Reordered draft categories */
-function reorderCategories(categories) {
+function reorderCategories(categories: CategoryDTO[]) {
   draftCategories.value = categories;
 }
 

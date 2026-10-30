@@ -83,13 +83,15 @@ Created: 2025-11-01
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Imports
 // ------------------------------------------------------------------------------
 
+import type { PropType } from 'vue';
 import { computed } from 'vue';
 
+import type { ItemDTO } from '../models/contracts';
 import { Item } from '../models/Item';
 import { THEME_COLORS } from '../utils/constants';
 import AppIcon from './AppIcon.vue';
@@ -100,9 +102,9 @@ import AppIcon from './AppIcon.vue';
 
 const props = defineProps({
   items: {
-    type: Array,
+    type: Array as PropType<readonly Readonly<ItemDTO>[]>,
     required: true,
-    validator: (items) => {
+    validator: (items: Record<string, unknown>[]) => {
       return items.every(
         (item) =>
           item &&
@@ -114,7 +116,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['update:item']);
+const emit = defineEmits<{ 'update:item': [item: ItemDTO] }>();
 
 // ------------------------------------------------------------------------------
 // Computed
@@ -136,7 +138,7 @@ const pendingItems = computed(() => {
  * This will automatically remove it from the pending items list
  * @param {object} item - The item to mark as completed
  */
-function markAsCompleted(item) {
+function markAsCompleted(item: Readonly<ItemDTO>) {
   const updatedItem = new Item({
     ...item,
     isPending: false, // Remove from pending items list

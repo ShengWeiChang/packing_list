@@ -19,6 +19,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "validate": "npm run lint && npm run format:check",
+    "typecheck:scope": "node scripts/checkTypeScriptScope.js",
+    "typecheck:source": "npm run typecheck:scope && vue-tsc --noEmit -p tsconfig.app.json",
+    "typecheck:contracts": "vue-tsc --noEmit -p tsconfig.type-tests.json && node scripts/checkTypeScriptContracts.js",
+    "typecheck": "npm run typecheck:source && npm run typecheck:contracts",
     "prepare": "husky",
     "test": "vitest",
     "test:run": "vitest run",
@@ -43,6 +47,7 @@
     "@vitejs/plugin-vue": "^6.0.10",
     "@vitest/coverage-v8": "^4.1.12",
     "@vue/test-utils": "^2.4.6",
+    "@vue/tsconfig": "0.9.1",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.38.0",
     "eslint-config-prettier": "^10.1.8",
@@ -59,7 +64,10 @@
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.7.1",
     "tailwindcss": "^3.4.17",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
     "vite": "^8.3.5",
-    "vitest": "^4.1.12"
+    "vitest": "^4.1.12",
+    "vue-tsc": "3.3.13"
   }
 }

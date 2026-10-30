@@ -23,11 +23,11 @@ import zhTW from '../../../source/locales/zh-TW.json';
 
 /**
  * Dynamically load the i18n module after resetting module cache.
- * @returns {Promise<typeof import('../../../source/i18n/index.js')>} Loaded i18n module.
+ * @returns {Promise<typeof import('../../../source/i18n/index')>} Loaded i18n module.
  */
 async function loadI18nModule() {
   vi.resetModules();
-  return import('../../../source/i18n/index.js');
+  return import('../../../source/i18n/index');
 }
 
 /**

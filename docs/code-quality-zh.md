@@ -16,6 +16,7 @@
 - Prettier 搭配 prettier-plugin-tailwindcss
 - simple-import-sort（import/export 排序）
 - husky + lint-staged（pre-commit 自動化）
+- TypeScript 6.0.3 + vue-tsc 3.3.13、typescript-eslint 8.72.1、@vue/tsconfig 0.9.1
 
 Source of Truth 權威設定來源：
 
@@ -23,6 +24,7 @@ Source of Truth 權威設定來源：
 - Prettier：`.prettierrc`、`.prettierignore`
 - 編輯器：`.vscode/settings.json`
 - 指令：`package.json`（lint、format、validate）
+- 型別：`tsconfig.app.json`、`tsconfig.type-tests.json`；`tsconfig.json` 為編輯器入口
 
 ## 3. Conventions 規範
 
@@ -35,18 +37,18 @@ Source of Truth 權威設定來源：
 - 使用 **PascalCase**：`MyComponent.vue`、`UserProfile.vue`
 - Vue.js 官方風格指南建議
 
-**JavaScript 模組**
+**JavaScript/TypeScript 模組**
 
-- **Classes/Models 類別/模型**：PascalCase（例如 `Category.js`、`User.js`）
-- **Services/Utils 服務/工具**：camelCase（例如 `dataService.js`、`helpers.js`）
-- **Composables 組合式函式**：camelCase 搭配 "use" 前綴（例如 `usePackingLists.js`）
+- **Classes/Models 類別/模型**：PascalCase（例如 `Category.ts`、`User.ts`）
+- **Services/Utils 服務/工具**：camelCase（例如 `dataService.ts`、`helpers.ts`）
+- **Composables 組合式函式**：camelCase 搭配 "use" 前綴（例如 `usePackingLists.ts`）
 - **Config files 設定檔**：kebab-case（例如 `vite.config.js`、`tailwind.config.js`）
 
 **測試檔案**
 
 - **Unit/Component tests 單元/元件測試**：對應原始檔 + `.test.js`
   - `MyComponent.vue` → `MyComponent.test.js`
-  - `helpers.js` → `helpers.test.js`
+  - `helpers.ts` → `helpers.test.js`
 - **E2E tests 端對端測試**：kebab-case + `.spec.js`
   - `app-loading.spec.js`、`user-login.spec.js`
   - Playwright 官方慣例
@@ -59,7 +61,7 @@ Source of Truth 權威設定來源：
 **資料/語系檔案**
 
 - 語系後綴使用 **camelCase**
-- `recommendedListContentEn.js`、`recommendedListContentZhTw.js`
+- `recommendedListContentEn.ts`、`recommendedListContentZhTw.ts`
 - 避免底線或混合分隔符號
 
 ### 3.2 Prettier Formatting 格式化
@@ -168,9 +170,9 @@ Validation 驗證
 
 - 風格建議，非 ESLint 強制；匯入排序由 `simple-import-sort` 自動處理，區塊順序依團隊習慣/Code Review 維持。
 
-### 3.8 JavaScript File Section Order JS 檔案區段順序
+### 3.8 JavaScript/TypeScript File Section Order JS／TS 檔案區段順序
 
-JS 檔案應根據類型採用適當的分組：
+JS／TS 檔案應根據類型採用適當的分組：
 
 1. Imports（vue、外部庫、本地模組）— 自動排序：side-effects (CSS) → vue → 外部套件 → 本地模組
 2. Constants — 模組層級常數、配置
@@ -181,9 +183,9 @@ JS 檔案應根據類型採用適當的分組：
 7. Watchers — `watch`、`watchEffect`（僅 Composables）
 8. Class definition — 類別定義（Class 檔案）
 
-**Composables** (如 `usePackingLists.js`)：採用 1 → 3 → 4 → 5 → 6 → 7
+**Composables** (如 `usePackingLists.ts`)：採用 1 → 3 → 4 → 5 → 6 → 7
 
-**Class 檔案** (如 `localStorageService.js`, Models)：採用 1 → 8
+**Class 檔案** (如 `localStorageService.ts`, Models)：採用 1 → 8
 
 **Utility/Configuration 檔案**：採用 1 → 2 → 6
 
@@ -258,11 +260,13 @@ export function useExample() {
 
 **JSDoc Comments JSDoc 註解**
 
-所有匯出的函式、方法與類別都必須包含 JSDoc，需包括：
+匯出的函式、方法與類別都需要 JSDoc 說明。JavaScript 模組需包括：
 
 - 簡要說明
 - `@param {Type} name - 說明` 各參數說明
 - `@returns {Type} 說明` 非 void 回傳值說明
+
+TypeScript 與 Vue scripts 保留行為說明，不要求重複的 JSDoc 型別標記；受檢查的契約由 TypeScript annotations 描述。
 
 ```javascript
 /**
@@ -319,6 +323,22 @@ Validation 驗證
 - 靜態檢查：`npm run lint` (透過 `eslint-plugin-vuejs-accessibility`)
 - 手動測試：使用鍵盤 `Tab` 鍵遍歷所有功能，確認無焦點陷阱且所有功能皆可操作。
 
+### 3.11 TypeScript Contracts and Checking TypeScript 契約與檢查
+
+- `npm run typecheck` 執行應用範圍 guard、`vue-tsc --noEmit`、compile-only contracts 與故意錯誤的診斷 probes。Vite build 只轉譯而不檢查型別。
+- 啟用 `strict`、`noUncheckedIndexedAccess` 與 `strictTemplates`。應用 project 使用瀏覽器 globals 與 `vite/client`，不注入 Node 或 Vitest globals。
+- 全部應用模組與 16 個 SFC scripts 均使用 TypeScript，`allowJs: false`；遷移 manifest 與暫時 lint override 已移除。永久 scope guard 拒絕 JS 模組、非 TS Vue scripts，以及未進入 compiler roots 的 source 檔（包含新增 declarations）。
+- Runtime JS tests、Node 設定／scripts、locale JSON 與視覺資產保留原格式；這些不屬於 browser 應用 compiler project，也不代表應用仍在混用 JS／TS。
+- TS 模組沿用既有命名 stem 並改為 `.ts`：類別／模型用 PascalCase，services、utilities、composables 與型別模組用 camelCase。Compile-only tests 放在 `tests/type-tests/`，以 owner stem 加 `.test.ts` 命名；Vitest 排除此目錄。
+- 純型別依賴使用 `import type`。外部 JSON 與捕獲錯誤先視為 `unknown`，直到既有 runtime 檢查或正規化足以縮窄契約；TS 不能取代 storage validation。
+- 不得用 `any`、`@ts-ignore`、`@ts-nocheck`、blanket module shims 或無依據 assertion 通過 gate。第三方邊界的狹窄例外需附理由；附說明的 `@ts-expect-error` 只用於負向型別測試。
+- ESLint 對全部 TS／Vue 套用 TypeScript recommended rules，保留 Vue outer parser；TypeScript unused-variable rules 取代重疊 core rules。lint-staged 與 VSCode ESLint 包含 TS，應用中的 suppression comments 與 explicit any 會被拒絕。
+- Composable 集合輸出為深唯讀，選取 ID 仍可寫入 `string | null`，computed 選取實體可能為 `undefined`。泛型 loader 保留 `T | null`，寫入成功與刷新失敗分別回報；packing-only history 只保存不可變的狀態快照。
+- `componentContracts.ts` 定義共用 action／event／draft 契約；runtime props 的 constructor、required、default 與 validator 保留，事件 tuple 保留可選第二個 baseline。儲存 callback 為 Promise，失敗可能回傳 null；App 的泛型 action runner 保留完整參數及回傳型別。
+- `typedDraggable.ts` 只描述實際使用的 vuedraggable 4.1.0 API，以同一 runtime 元件提供依 list entity 型別化的 model、item slot 與 change payload；此具依據的第三方 assertion 不新增 wrapper，也不容許 any 擴散。`vueAttributes.d.ts` 僅補充 data attributes，沒有通用元件 shim。
+- Legacy 日期在元件 props／draft 中仍為 unknown；狹窄 DOM、RegExp 與 Date／比較操作的 assertion 保留原生轉換行為，不代表資料已驗證。唯讀範本的 baseline 複製 snapshot records 與 arrays 後傳入既有 DTO service 契約，保留相同欄位與比較內容。
+- 已接受的依賴限制：沿用 Vue base config 的 `skipLibCheck: true`，因 vue-i18n 11.4.16 匯入 Vue 3.5.44 未提供的 `GenericComponentInstance`（TS2724）。此設定略過 `.d.ts` 內部檢查，包含本地 declarations；應用／模板程式與 API 使用仍受檢查。Vue／i18n 升級時重新評估，宣告不相容修復後移除此例外。
+
 ## 4. Git Hooks (Husky) Git 勾子
 
 - Purpose 目的：在提交前強制執行品質檢查。
@@ -332,6 +352,7 @@ Validation 驗證
 - 稽核檢查：`npm run lint`
 - 自動修正：`npm run lint:fix`
 - 驗證（lint + format 檢查）：`npm run validate`
+- 檢查應用型別與 checker contracts：`npm run typecheck`
 - Pre-commit：對已暫存檔案自動執行 lint-staged
 - GitHub Actions 在 pull request 與 push 到 `main` 時執行 `npm run verify:feature`；參見 `.github/workflows/test.yml`。
 

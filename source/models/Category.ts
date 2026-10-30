@@ -1,0 +1,90 @@
+/*
+================================================================================
+File: source/models/Category.ts
+Description: Category model class with validation, serialization and
+             secure ID generation.
+Author: Sheng-Wei Chang
+License: MIT (SPDX: MIT)
+Created: 2025-09-19
+================================================================================
+*/
+
+// -----------------------------------------------------------------------------
+// Imports
+// -----------------------------------------------------------------------------
+
+import { VALIDATION } from '../utils/constants';
+import { generateSecureId } from '../utils/helpers';
+import type { CategoryDTO, CategoryInput } from './contracts';
+
+// -----------------------------------------------------------------------------
+// Class definition
+// -----------------------------------------------------------------------------
+
+/**
+ * Represents a category of items in a checklist
+ */
+export class Category implements CategoryDTO {
+  declare id: string;
+  declare name: string;
+  declare checklistId: string | null;
+  declare order: number;
+
+  /**
+   * Category class constructor
+   * @param {object} root0 - Category configuration object
+   * @param {string} root0.id - Unique identifier for the category
+   * @param {string} root0.name - Name of the category
+   * @param {string} root0.checklistId - ID of the checklist this category belongs to
+   * @param {number} root0.order - Display order of the category
+   */
+  constructor({
+    id = generateSecureId('category-'),
+    name = '',
+    checklistId = null,
+    order = 0,
+  }: CategoryInput = {}) {
+    this.id = id;
+    this.name = this.validateName(name);
+    this.checklistId = checklistId;
+    this.order = Number(order) || 0;
+  }
+
+  /**
+   * Validate category name
+   * @param {string} name - The name to validate
+   * @returns {string} Validated name
+   */
+  validateName(name: unknown): string {
+    if (typeof name !== 'string') {
+      throw new Error('Category name must be a string');
+    }
+    // Allow empty name for initial creation, but enforce max length
+    if (name.length > VALIDATION.NAME_MAX_LENGTH) {
+      throw new Error(`Category name must be less than ${VALIDATION.NAME_MAX_LENGTH} characters`);
+    }
+    return name;
+  }
+
+  /**
+   * Creates a Category instance from JSON data
+   * @param {object} json - The JSON data to create the category from
+   * @returns {Category} A new Category instance
+   */
+  static fromJSON(json: CategoryInput): Category {
+    return new Category(json);
+  }
+
+  /**
+   * Converts the category instance to JSON format
+   * @returns {object} The JSON representation of the category
+   */
+  toJSON(): CategoryDTO {
+    return {
+      id: this.id,
+      name: this.name,
+      checklistId: this.checklistId,
+      order: this.order,
+    };
+  }
+}

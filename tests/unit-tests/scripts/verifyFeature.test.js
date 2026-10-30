@@ -12,9 +12,30 @@ Created: 2026-10-24
 // Imports
 // -----------------------------------------------------------------------------
 
-import { describe, expect, it } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import process from 'node:process';
 
-import { summarizePlaywrightFailures } from '../../../scripts/verify-feature.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  runFeatureVerification,
+  summarizePlaywrightFailures,
+} from '../../../scripts/verify-feature.js';
+
+vi.mock('node:child_process', async (importOriginal) => {
+  const actual = await importOriginal();
+  const exec = vi.fn();
+  return { ...actual, execFileSync: exec, default: { ...actual.default, execFileSync: exec } };
+});
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal();
+  const methods = { mkdirSync: vi.fn(), writeFileSync: vi.fn() };
+  return { ...actual, ...methods, default: { ...actual.default, ...methods } };
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.mocked(execFileSync).mockReset();
+});
 
 // -----------------------------------------------------------------------------
 // Tests
@@ -97,5 +118,31 @@ describe('verify-feature report diagnostics', () => {
       'Playwright failure summary:\n' +
         '- Playwright runner — Error: Process from config.webServer was not able to start. Exit code: 1'
     );
+  });
+
+  // Test Group 2: Type checking in the feature gate
+  // Test Case 4: Run type checking before runtime tests and report it as executed
+  it('checks types before tests and includes the layer in its success summary', () => {
+    vi.mocked(execFileSync).mockReturnValue('');
+    const output = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    runFeatureVerification();
+    const argumentsList = vi.mocked(execFileSync).mock.calls.map(([, args]) => args);
+    expect(argumentsList[2]).toEqual(['run', 'typecheck']);
+    expect(argumentsList[3][1]).toBe('run');
+    expect(argumentsList[3]).toContain('--coverage');
+    expect(output.mock.calls.map(([message]) => message).join('')).toContain('npm run typecheck');
+  });
+
+  // Test Case 5: Stop the gate when type checking fails rather than running later layers
+  it('stops before runtime tests when type checking fails', () => {
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    vi.mocked(execFileSync).mockImplementation((_command, args) => {
+      if (args.includes('typecheck')) throw new Error('Type error');
+      return '';
+    });
+    expect(() => runFeatureVerification()).toThrow(
+      'Check application types and compiler contracts failed'
+    );
+    expect(execFileSync).toHaveBeenCalledTimes(3);
   });
 });

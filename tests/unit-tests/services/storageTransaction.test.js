@@ -8,9 +8,9 @@ License: MIT (SPDX: MIT)
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { LocalStorageService } from '../../../source/services/localStorageService.js';
-import { TemplateService } from '../../../source/services/templateService.js';
-import { STORAGE_KEYS } from '../../../source/utils/constants.js';
+import { LocalStorageService } from '../../../source/services/localStorageService';
+import { TemplateService } from '../../../source/services/templateService';
+import { STORAGE_KEYS } from '../../../source/utils/constants';
 
 describe('storage transaction safety', () => {
   let storage;
@@ -709,5 +709,134 @@ describe('storage transaction safety', () => {
     const repaired = await service.updateItem('cl', { ...renamed, isPacked: false }, renamed);
     expect(repaired).toMatchObject({ isPacked: false, isPending: true });
     service.dispose();
+  });
+
+  // Test Case 25: Legacy values remain raw until a model is requested, without read-time writes.
+  it('preserves legacy dates, numeric strings, truthiness, and extensions across reads and writes', async () => {
+    const original = {
+      customDocument: { enabled: true },
+      checklists: [
+        { id: 'cl', name: ' Trip ', startDate: { legacy: true }, endDate: null, custom: [1] },
+      ],
+      categories: [{ id: 'cat', checklistId: 'cl', custom: { nested: true } }],
+      items: [
+        {
+          id: 'item',
+          name: 'Hat',
+          quantity: ' 02 ',
+          checklistId: 'cl',
+          categoryId: 'orphan',
+          isPacked: 'false',
+          isPending: 0,
+          custom: [2],
+        },
+      ],
+    };
+    const raw = JSON.stringify(original);
+    storage.set(STORAGE_KEYS.APP_DATA, raw);
+    const service = new LocalStorageService();
+    try {
+      const data = await service.getData();
+      expect(data).toEqual({ ...original, checklists: [{ ...original.checklists[0], order: 0 }] });
+      expect(await service.getChecklistById('cl')).toMatchObject({
+        name: 'Trip',
+        startDate: { legacy: true },
+        endDate: null,
+      });
+      expect(await service.getCategories('cl')).toEqual([
+        { id: 'cat', name: '', checklistId: 'cl', order: 0 },
+      ]);
+      expect(await service.getItems('cl')).toEqual([
+        {
+          id: 'item',
+          name: 'Hat',
+          quantity: 2,
+          checklistId: 'cl',
+          categoryId: 'orphan',
+          isPacked: true,
+          isPending: false,
+          order: 0,
+        },
+      ]);
+      expect(storage.get(STORAGE_KEYS.APP_DATA)).toBe(raw);
+      expect(localStorage.setItem).not.toHaveBeenCalled();
+      data.checklists[0].custom.push(99);
+      expect((await service.getData()).checklists[0].custom).toEqual([1]);
+      const baseline = await service.getChecklistById('cl');
+      await service.updateChecklist({ ...baseline, name: 'Updated' }, baseline);
+      const committed = JSON.parse(storage.get(STORAGE_KEYS.APP_DATA));
+      expect(committed.customDocument).toEqual(original.customDocument);
+      expect(committed.checklists[0]).toMatchObject({
+        startDate: { legacy: true },
+        endDate: null,
+        custom: [1],
+        name: 'Updated',
+      });
+      expect(committed.categories).toEqual(original.categories);
+      expect(committed.items).toEqual(original.items);
+    } finally {
+      service.dispose();
+    }
+  });
+
+  // Test Case 26: Nested legacy template snapshots are preserved until materialization.
+  it('preserves nested template fields and isolates newly materialized runtime state', async () => {
+    const stored = [
+      {
+        id: 'tpl',
+        custom: { source: 'legacy' },
+        categories: [{ id: 'old-cat', custom: 1 }],
+        items: [
+          {
+            name: 'Hat',
+            quantity: '2',
+            categoryId: 'old-cat',
+            isPacked: 'false',
+            isPending: { legacy: true },
+            custom: 2,
+          },
+        ],
+      },
+    ];
+    const raw = JSON.stringify(stored);
+    storage.set(STORAGE_KEYS.TEMPLATES, raw);
+    const service = new TemplateService();
+    const template = service.getTemplateById('tpl');
+    expect(template).toMatchObject({
+      name: '',
+      order: 0,
+      categories: stored[0].categories,
+      items: stored[0].items,
+    });
+    const materialized = service.applyToNewChecklist('tpl', 'new-cl');
+    expect(materialized.categories[0]).toMatchObject({ name: '', order: 0, checklistId: 'new-cl' });
+    expect(materialized.items[0]).toMatchObject({
+      quantity: 2,
+      isPacked: false,
+      isPending: false,
+      checklistId: 'new-cl',
+      categoryId: materialized.categories[0].id,
+    });
+    template.items[0].custom = 99;
+    expect(service.getTemplateById('tpl').items[0].custom).toBe(2);
+    expect(storage.get(STORAGE_KEYS.TEMPLATES)).toBe(raw);
+    expect(localStorage.setItem).not.toHaveBeenCalled();
+    await service.createTemplate({ name: 'New' });
+    expect(JSON.parse(storage.get(STORAGE_KEYS.TEMPLATES))[0]).toEqual(stored[0]);
+  });
+
+  // Test Case 27: Missing raw names retain their existing duplicate failure behavior.
+  it('does not silently repair missing legacy names when duplicating raw records', async () => {
+    const raw = JSON.stringify({ checklists: [{ id: 'cl' }], categories: [{ id: 'cat' }] });
+    storage.set(STORAGE_KEYS.APP_DATA, raw);
+    const service = new LocalStorageService();
+    try {
+      await expect(service.duplicateChecklist('cl')).rejects.toBeInstanceOf(TypeError);
+      await expect(service.duplicateCategory('cat')).rejects.toBeInstanceOf(TypeError);
+      expect(storage.get(STORAGE_KEYS.APP_DATA)).toBe(raw);
+      expect(localStorage.setItem).not.toHaveBeenCalled();
+    } finally {
+      service.dispose();
+    }
   });
 });

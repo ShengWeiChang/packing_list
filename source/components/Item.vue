@@ -225,16 +225,24 @@ Created: 2025-09-19
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Imports
 // ------------------------------------------------------------------------------
 
+import type { PropType } from 'vue';
 import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue';
 
+import type { ItemDTO } from '../models/contracts';
 import { Item } from '../models/Item';
-import { focusEditingInput } from '../utils/focusEditingInput.js';
+import { focusEditingInput } from '../utils/focusEditingInput';
 import AppIcon from './AppIcon.vue';
+import type {
+  EditCancelled,
+  RetainDraft,
+  SaveItemEdit,
+  UpdateItemAction,
+} from './componentContracts';
 import OverflowMenu from './OverflowMenu.vue';
 
 // ------------------------------------------------------------------------------
@@ -244,15 +252,15 @@ import OverflowMenu from './OverflowMenu.vue';
 // Props
 const props = defineProps({
   commitEditOnBlur: { type: Boolean, default: false },
-  retainDraft: { type: Function, default: null },
-  editCancelled: { type: Function, default: null },
-  saveItemEdit: { type: Function, default: null },
-  editErrorCode: { type: String, default: null },
-  updateItemAction: { type: Function, default: null },
+  retainDraft: { type: Function as PropType<RetainDraft | null>, default: null },
+  editCancelled: { type: Function as PropType<EditCancelled | null>, default: null },
+  saveItemEdit: { type: Function as PropType<SaveItemEdit | null>, default: null },
+  editErrorCode: { type: String as PropType<string | null>, default: null },
+  updateItemAction: { type: Function as PropType<UpdateItemAction | null>, default: null },
   item: {
-    type: Object,
+    type: Object as PropType<Readonly<ItemDTO>>,
     required: true,
-    validator: (value) => {
+    validator: (value: Record<string, unknown>) => {
       // Validate that the object has the required properties for an item
       return (
         value &&
@@ -267,7 +275,7 @@ const props = defineProps({
     },
   },
   newlyCreatedItemId: {
-    type: String,
+    type: String as PropType<string | null>,
     default: null,
   },
   categoryCompleted: {
@@ -281,7 +289,11 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits(['update:item', 'copy:item', 'delete:item']);
+const emit = defineEmits<{
+  'update:item': [item: ItemDTO, expected?: ItemDTO];
+  'copy:item': [id: string];
+  'delete:item': [id: string];
+}>();
 
 // ------------------------------------------------------------------------------
 // States
@@ -294,8 +306,8 @@ const editSaveFailed = ref(false);
 const isHovered = ref(false);
 const isQuantityHovered = ref(false);
 const editedName = ref('');
-let editBaseline = null;
-const editInput = ref(null);
+let editBaseline: ItemDTO | null = null;
+const editInput = ref<HTMLInputElement | null>(null);
 const isComposing = ref(false);
 let cleanupEditingFocus = () => {};
 
@@ -345,13 +357,13 @@ const isItemPacked = computed({
 /** Keep the checkbox at its committed value until the update is reflected in props.
  * @param {Event} event - Checkbox change event.
  */
-async function handlePackedChange(event) {
+async function handlePackedChange(event: Event) {
   if (isSavingPacked.value) {
-    event.target.checked = props.item.isPacked;
+    (event.target as HTMLInputElement).checked = props.item.isPacked;
     return;
   }
-  const requested = event.target.checked;
-  event.target.checked = props.item.isPacked;
+  const requested = (event.target as HTMLInputElement).checked;
+  (event.target as HTMLInputElement).checked = props.item.isPacked;
   if (!props.updateItemAction) {
     isItemPacked.value = requested;
     return;
@@ -406,7 +418,7 @@ function handleCompositionEnd() {
  * Handle Enter key press - only save if not in IME composition
  * @param {KeyboardEvent} event - The keyboard event
  */
-function handleEnterKey(event) {
+function handleEnterKey(event: KeyboardEvent) {
   event.preventDefault();
   // If currently composing (e.g., selecting Chinese characters), return early
   if (isComposing.value) {
@@ -421,7 +433,7 @@ function handleEnterKey(event) {
  * Includes IME composition check for defensive programming
  * @param {FocusEvent} event - Focus change from the edit area.
  */
-function handleEditBlur(event) {
+function handleEditBlur(event: FocusEvent) {
   if (props.commitEditOnBlur) {
     if (event.target !== editInput.value) return;
     if (isEditing.value && !isComposing.value) saveEdit();
@@ -460,6 +472,7 @@ async function startEdit() {
 async function saveEdit() {
   if (isSavingEdit.value) return;
   cleanupEditingFocus();
+  if (!editBaseline) return;
   const hasNameChanged = editedName.value.trim() && editedName.value !== editBaseline.name;
 
   if (hasNameChanged) {

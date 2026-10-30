@@ -10,8 +10,8 @@ Created: 2026-10-15
 
 import { describe, expect, it } from 'vitest';
 
-import { recommendedListDefinitions } from '../../../source/data/recommendedListDefinitions.js';
-import { getRecommendedList, getRecommendedLists } from '../../../source/data/recommendedLists.js';
+import { recommendedListDefinitions } from '../../../source/data/recommendedListDefinitions';
+import { getRecommendedList, getRecommendedLists } from '../../../source/data/recommendedLists';
 
 describe('recommendedLists', () => {
   // Test Case 1: Should resolve complete localized recommended lists with valid references

@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 671    |
-| Unit tests 單元測試           | 286    |
+| Total tests 總測試數          | 690    |
+| Unit tests 單元測試           | 305    |
 | Component tests 組件測試      | 296    |
 | E2E tests E2E 測試            | 89     |
-| Line coverage 行覆蓋率        | 92.12% |
-| Statement coverage 語句覆蓋率 | 90.60% |
-| Branch coverage 分支覆蓋率    | 81.17% |
+| Line coverage 行覆蓋率        | 92.92% |
+| Statement coverage 語句覆蓋率 | 91.15% |
+| Branch coverage 分支覆蓋率    | 81.32% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,7 +29,7 @@
 
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 286   | models、services、composables、utils 純邏輯 |
+| Unit      | Vitest                   | 305   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 296   | Vue 組件渲染、事件、狀態                    |
 | E2E       | Playwright               | 89    | 真實瀏覽器中的完整使用者流程                |
 
@@ -42,6 +42,20 @@
 | @vitest/coverage-v8 | 4.1.12  | 程式碼覆蓋率（V8 提供者） |
 | playwright          | 1.58.2  | 基於瀏覽器的 E2E 測試     |
 | jsdom               | 28.0.0  | Vitest 的 DOM 環境        |
+| typescript          | 6.0.3   | 靜態 compiler 契約        |
+| vue-tsc             | 3.3.13  | TS 與 Vue 模板檢查        |
+
+### Compile-Only Type Contracts 僅編譯的型別契約
+
+`npm run typecheck` 是獨立的靜態 gate，不是第四個 runtime 測試層。它先檢查 source／compiler 範圍，再檢查應用與 `tests/type-tests/` 契約。Vitest 排除此目錄；compile-only assertions 與預期錯誤診斷 probes 不計入 runtime 總數或 runtime coverage。
+
+初始 infrastructure suite 證明數值 ref 推導、null narrowing、indexed-access 安全性與真實 SFC props／emits。兩個隔離 probe 要求刻意無效的 TS 及 Vue template fixture 只產生 TS2322；無關的缺少模組、設定錯誤、crash 或意外成功都會使 probe 失敗。Domain／storage suite 檢查實際 model 正規化、舊資料 unknown 欄位、可攜 snapshot、seed source、mutation baseline、nullable 查詢、lock 結果、JSON clone、debounce 參數與純資料排序與欄位覆寫。
+
+Composable compile-only suites 檢查可寫選取、唯讀集合與巢狀 snapshot、nullable 實體／操作結果、async callbacks、drag baseline／field keys，以及不可變的 packing history。
+
+真實元件的 compile-only suite 檢查 nullable async action、baseline 第二參數、source-specific selection 與 semantic icons。額外的 Vue template fixture 檢查錯誤 props／callback，以及 typed drag slot 的錯誤欄位／方法；IsAny assertions 證明 model、slot、change element 與 forwarding baseline 未被 any 繞過。
+
+Gate 要求全部應用模組與 Vue scripts 為 TypeScript，並核對 compiler roots；新增 JS、非 TS Vue script、allowJs 或漏列 source 都會失敗。`skipLibCheck: true` 是已接受的 Vue／i18n 宣告相容性例外，詳見 Code Quality Guide。
 
 ## 3. Test File Structure 測試檔案結構
 
@@ -50,7 +64,15 @@ tests/
 ├── test-setup/
 │   └── setup.js                         # Global mocks: localStorage, crypto, scrollIntoView
 │
-├── unit-tests/                          # 282 tests
+├── type-tests/                          # Compile-only; excluded from runtime counts
+│   ├── componentContracts.test.ts    # 真實元件 props／emits、async action 與 drag slot 契約
+│   ├── contracts.test.ts               # Domain／storage、snapshot、callback 契約
+│   ├── usePackingLists.test.ts        # Reactive state／操作／history 契約
+│   ├── useTemplates.test.ts           # 範本 state／snapshot／callback 契約
+│   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
+│   └── fixtures/                        # Typed probe and deliberately invalid inputs
+│
+├── unit-tests/                          # 305 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -58,25 +80,28 @@ tests/
 │   │   ├── Category.test.js             #  9  tests
 │   │   └── Checklist.test.js            # 11  tests
 │   │   └── Template.test.js             #  3  tests
-│   ├── services/                        # 123 tests
+│   ├── services/                        # 126 tests
 │   │   ├── localStorageService.test.js  # 80  tests
 │   │   ├── templateService.test.js      # 15  tests
-│   │   ├── storageTransaction.test.js  # 24  tests
+│   │   ├── storageTransaction.test.js  # 27  tests
 │   │   └── recommendedListService.test.js  #  4  tests
-│   ├── composables/                     # 66  tests
+│   ├── composables/                     # 67  tests
 │   │   └── usePackingLists.test.js      # 51  tests
-│   │   └── useTemplates.test.js         # 15  tests
+│   │   └── useTemplates.test.js         # 16  tests
 │   ├── i18n/                            # 12  tests
 │   │   └── index.test.js                # 12  tests
-│   ├── utils/                           # 36  tests
+│   ├── utils/                           # 39  tests
+│       ├── operationErrors.test.js    #  3  tests
 │       ├── helpers.test.js              # 21  tests
 │       ├── positioning.test.js          #  3  tests
 │       ├── order.test.js                #  8  tests
 │       ├── dragDrop.test.js             #  2  tests
 │       └── focusEditingInput.test.js     #  2  tests
-│   └── scripts/                         #  5  tests
+│   └── scripts/                         # 17 tests
 │       ├── candidateFingerprint.test.js #  2  tests
-│       └── verifyFeature.test.js        #  3  tests
+│       ├── checkTypeScriptScope.test.js #  8  tests
+│       ├── eslintTypeScript.test.js     #  2  tests
+│       └── verifyFeature.test.js        #  5  tests
 │
 ├── component-tests/                     # 296 tests
 │   ├── App.test.js                      # 68  tests
@@ -96,7 +121,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 13  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 82  tests
+└── end2end-tests/                       # 89 tests
     ├── mobile-workflow.spec.js          # 10  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
@@ -114,7 +139,7 @@ tests/
 
 - **Unit/Component tests 單元/組件測試** (`.test.js`): 完全匹配 production 檔案名稱
   - `Category.test.js` → 測試 `Category.vue`
-  - `usePackingLists.test.js` → 測試 `usePackingLists.js`
+  - `usePackingLists.test.js` → 測試 `usePackingLists.ts`
 - **E2E tests 端到端測試** (`.spec.js`): 使用 kebab-case 描述使用者流程
   - `item-packing.spec.js`, `checklist-management.spec.js`
 
@@ -130,19 +155,19 @@ tests/
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 57.48%     | 50.00% | 53.04% |
-| source/      | 82.93%     | 72.29% | 85.50% |
-| components/  | 91.52%     | 82.42% | 94.29% |
-| composables/ | 95.41%     | 87.03% | 97.37% |
+| scripts/     | 79.03%     | 63.20% | 77.63% |
+| source/      | 82.38%     | 72.14% | 85.01% |
+| components/  | 91.11%     | 82.84% | 94.02% |
+| composables/ | 95.17%     | 85.54% | 97.46% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 95.50%     | 83.06% | 95.22% |
-| utils/       | 98.92%     | 87.69% | 100%   |
+| services/    | 95.55%     | 82.84% | 95.28% |
+| utils/       | 98.98%     | 91.13% | 100%   |
 
 ### By Component 各組件覆蓋率
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 82.93%     | 85.50% | 68    |
+| App.vue                      | 82.38%     | 85.01% | 68    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
@@ -151,11 +176,11 @@ tests/
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
 | Sidebar.vue                  | 100%       | 100%   | 33    |
 | OverflowMenu.vue             | 95.12%     | 96.20% | 24    |
-| Category.vue                 | 87.82%     | 90.07% | 31    |
-| Checklist.vue                | 85.95%     | 91.97% | 39    |
-| Item.vue                     | 81.39%     | 85.12% | 27    |
+| Category.vue                 | 87.42%     | 90.20% | 31    |
+| Checklist.vue                | 84.78%     | 90.47% | 39    |
+| Item.vue                     | 80.91%     | 85.24% | 27    |
 | NewChecklistDialog.vue       | 97.36%     | 100%   | 12    |
-| PackingCompletionOverlay.vue | 97.18%     | 100%   | 10    |
+| PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
 | SaveTemplateDialog.vue       | 96.07%     | 100%   | 10    |
 | TemplateEditor.vue           | 95.23%     | 97.10% | 13    |
 
@@ -209,7 +234,8 @@ npm run test:coverage # Vitest code coverage only: terminal summary + coverage/i
 ```bash
 npm run test:inventory      # 執行 Vitest + Playwright 並驗證 comments 與可用的 guides
 npm run test:inventory:sync # 通過後同步生成的 guide counts
-npm run verify:feature      # 完整功能驗證：validate、coverage、E2E、inventory、build
+npm run typecheck           # Source 範圍、應用型別、compile-only contracts、診斷 probes
+npm run verify:feature      # 完整功能驗證：validate、typecheck、coverage、E2E、inventory、build
 npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與 build layers
 ```
 
@@ -225,16 +251,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ## 7. CI/CD Execution Stages 持續整合執行階段
 
-| Stage               | Trigger              | Test scope                               | Purpose                                          |
-| ------------------- | -------------------- | ---------------------------------------- | ------------------------------------------------ |
-| Development process | Manual               | 開發者手動決定要跑哪些測試               | 開發過程中快速本機檢查                           |
-| Commit              | `git commit`         | Unit + Component                         | push 前先擋掉明顯回歸                            |
-| CI on push          | `push` event         | Unit + Component + E2E + inventory audit | 每個測試套件只跑一次，再驗證生成的 test metadata |
-| CI on pull request  | `pull_request` event | Unit + Component + E2E + inventory audit | 每個測試套件只跑一次，再驗證可合併性與 metadata  |
+| Stage               | Trigger              | Test scope                                           | Purpose                                                  |
+| ------------------- | -------------------- | ---------------------------------------------------- | -------------------------------------------------------- |
+| Development process | Manual               | 開發者手動決定要跑哪些測試                           | 開發過程中快速本機檢查                                   |
+| Commit              | `git commit`         | Unit + Component                                     | push 前先擋掉明顯回歸                                    |
+| CI on push          | `push` to `main`     | Typecheck + Unit + Component + E2E + inventory audit | 拒絕型別錯誤，再執行一次各 runtime suite 並稽核 metadata |
+| CI on pull request  | `pull_request` event | Typecheck + Unit + Component + E2E + inventory audit | 拒絕型別錯誤，再驗證 runtime 行為與 metadata             |
 
 ## 8. Complete Test Inventory 完整測試案例清單
 
-### 8.1 Unit Tests（282）
+### 8.1 Unit Tests（305）
 
 #### 8.1.1 Models（40）
 
@@ -298,7 +324,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | trims its name and round-trips snapshot content  | 序列化     |
 | 3   | rejects a non-string or too-long name            | 名稱驗證   |
 
-#### 8.1.2 Services（123）
+#### 8.1.2 Services（126）
 
 ##### 8.1.2.1 localStorageService.test.js（80）
 
@@ -414,36 +440,39 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 3   | rejects missing recommended lists                                    | 缺少推薦清單防護       |
 | 4   | applies the localized general recommended list                       | 一般推薦清單與語系選擇 |
 
-##### 8.1.2.4 storageTransaction.test.js（24）
+##### 8.1.2.4 storageTransaction.test.js（27）
 
-| #   | Test                                                                          | 測試重點         |
-| --- | ----------------------------------------------------------------------------- | ---------------- |
-| 1   | keeps durable and readable data unchanged after a failed write                | 寫入失敗隔離     |
-| 2   | preserves app and template data when any supported mutation cannot be saved   | 各種修改失敗覆蓋 |
-| 3   | does not expose mutable references to committed data                          | 獨立快照         |
-| 4   | preserves corrupted application data and rejects writes                       | 損壞資料保留     |
-| 5   | rejects an unsupported application schema without replacing it                | 版本防護         |
-| 6   | rejects records without identity instead of generating a new id               | 身分防護         |
-| 7   | preserves malformed template snapshots and refuses to overwrite them          | 模板資料保留     |
-| 8   | rejects wrong-typed persisted fields without normalizing them into new values | 型別防護         |
-| 9   | refuses writes when safe cross-tab locking is unavailable                     | 唯讀後備         |
-| 10  | normalizes legacy defaults in memory without rewriting the stored bytes       | 非破壞性讀取     |
-| 11  | keeps both templates when an earlier reader creates after another writer      | 最新模板寫入     |
-| 12  | serializes simultaneous checklist creation across service instances           | 併發寫入         |
-| 13  | merges unrelated field changes and rejects stale edits to the same field      | 欄位意圖與衝突   |
-| 14  | does not create a category or item after its owner was deleted                | 所屬對象防護     |
-| 15  | rejects an entire batch when one item conflicts                               | 原子物品批次     |
-| 16  | does not partially reorder categories if a category was deleted               | 原子類別批次     |
-| 17  | rejects a template draft if another tab changed its original snapshot         | 模板衝突         |
-| 18  | rejects a queued item move after another writer deletes its destination       | 目的地衝突       |
-| 19  | rejects queued checklist creation after the selected template is deleted      | 已刪除模板防護   |
-| 20  | preserves corrupted template data and refuses queued checklist creation       | 損壞模板防護     |
-| 21  | 任一順序都拒絕過期打包與待處理變更                                            | 關聯狀態衝突     |
-| 22  | 關聯狀態衝突時拒絕整個批次                                                    | 原子批次狀態     |
-| 23  | 兩種順序都可合併狀態與無關編輯                                                | 無關欄位合併     |
-| 24  | 拒絕矛盾狀態寫入並保留舊資料值                                                | 舊資料相容       |
+| #   | Test                                                                          | 測試重點                     |
+| --- | ----------------------------------------------------------------------------- | ---------------------------- |
+| 1   | keeps durable and readable data unchanged after a failed write                | 寫入失敗隔離                 |
+| 2   | preserves app and template data when any supported mutation cannot be saved   | 各種修改失敗覆蓋             |
+| 3   | does not expose mutable references to committed data                          | 獨立快照                     |
+| 4   | preserves corrupted application data and rejects writes                       | 損壞資料保留                 |
+| 5   | rejects an unsupported application schema without replacing it                | 版本防護                     |
+| 6   | rejects records without identity instead of generating a new id               | 身分防護                     |
+| 7   | preserves malformed template snapshots and refuses to overwrite them          | 模板資料保留                 |
+| 8   | rejects wrong-typed persisted fields without normalizing them into new values | 型別防護                     |
+| 9   | refuses writes when safe cross-tab locking is unavailable                     | 唯讀後備                     |
+| 10  | normalizes legacy defaults in memory without rewriting the stored bytes       | 非破壞性讀取                 |
+| 11  | keeps both templates when an earlier reader creates after another writer      | 最新模板寫入                 |
+| 12  | serializes simultaneous checklist creation across service instances           | 併發寫入                     |
+| 13  | merges unrelated field changes and rejects stale edits to the same field      | 欄位意圖與衝突               |
+| 14  | does not create a category or item after its owner was deleted                | 所屬對象防護                 |
+| 15  | rejects an entire batch when one item conflicts                               | 原子物品批次                 |
+| 16  | does not partially reorder categories if a category was deleted               | 原子類別批次                 |
+| 17  | rejects a template draft if another tab changed its original snapshot         | 模板衝突                     |
+| 18  | rejects a queued item move after another writer deletes its destination       | 目的地衝突                   |
+| 19  | rejects queued checklist creation after the selected template is deleted      | 已刪除模板防護               |
+| 20  | preserves corrupted template data and refuses queued checklist creation       | 損壞模板防護                 |
+| 21  | 任一順序都拒絕過期打包與待處理變更                                            | 關聯狀態衝突                 |
+| 22  | 關聯狀態衝突時拒絕整個批次                                                    | 原子批次狀態                 |
+| 23  | 兩種順序都可合併狀態與無關編輯                                                | 無關欄位合併                 |
+| 24  | 拒絕矛盾狀態寫入並保留舊資料值                                                | 舊資料相容                   |
+| 25  | 讀寫保留舊日期、數量字串、truthiness 與額外欄位                               | 原始／model 邊界與讀取不寫回 |
+| 26  | 保留範本巢狀欄位並隔離新建立的 runtime 狀態                                   | Snapshot 保留與全新狀態      |
+| 27  | 複製原始資料時不偷偷修復缺漏的舊名稱                                          | 既有失敗行為與原文保留       |
 
-#### 8.1.3 Composables（66）
+#### 8.1.3 Composables（67）
 
 ##### 8.1.3.1 usePackingLists.test.js（51）
 
@@ -493,33 +522,34 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 42  | should return null when updateCategory throws (real service)                       | throw → null 後備       |
 | 43  | should refresh categories and return updated category on success                   | 成功路徑 + refresh      |
 | 44  | should preserve valid selection and recover deleted selection on app data refresh  | 跨分頁選取復原          |
-| 45  | should treat a category pack-all as one undoable action and restore mixed state    | 群組歷史與重做安全      |
-| 46  | should clear packing history when switching checklists                             | 歷史範圍隔離            |
-| 47  | preserves remote item edits when committing a stale drag payload                   | 明確拖曳意圖            |
-| 48  | 刪除失敗後保留歷史與資料                                                           | 刪除失敗                |
-| 49  | 重新讀取失敗後保留畫面上的分類與物品                                               | 讀取失敗                |
-| 50  | 區分寫入成功與後續更新失敗                                                         | 寫入確認                |
-| 51  | 新清單無法讀取時清除先前清單資料                                                   | 選取歸屬                |
+| 45  | 刪除失敗後保留歷史與資料                                                           | 刪除失敗                |
+| 46  | 重新讀取失敗後保留畫面上的分類與物品                                               | 讀取失敗                |
+| 47  | 區分寫入成功與後續更新失敗                                                         | 寫入確認                |
+| 48  | 新清單無法讀取時清除先前清單資料                                                   | 選取歸屬                |
+| 49  | should treat a category pack-all as one undoable action and restore mixed state    | 群組歷史與重做安全      |
+| 50  | should clear packing history when switching checklists                             | 歷史範圍隔離            |
+| 51  | preserves remote item edits when committing a stale drag payload                   | 明確拖曳意圖            |
 
-##### 8.1.3.2 useTemplates.test.js（15）
+##### 8.1.3.2 useTemplates.test.js（16）
 
-| #   | Test                                                       | 測試重點       |
-| --- | ---------------------------------------------------------- | -------------- |
-| 1   | should load template state                                 | 初始載入       |
-| 2   | should expose a load error                                 | 錯誤狀態       |
-| 3   | should save a template and refresh state                   | 儲存 + refresh |
-| 4   | should expose an apply error                               | 套用失敗       |
-| 5   | should rename a template and refresh state                 | 更新 + refresh |
-| 6   | should expose a delete error                               | 刪除失敗       |
-| 7   | should delete a template and refresh state                 | 刪除 + refresh |
-| 8   | should expose a save error                                 | 儲存失敗       |
-| 9   | should reject renaming a missing template                  | 缺少項目 guard |
-| 10  | should expose a rename error                               | 重命名失敗     |
-| 11  | should return applied template data                        | 套用成功       |
-| 12  | should update a template and refresh state                 | 更新 + refresh |
-| 13  | should expose an update error                              | 更新失敗       |
-| 14  | should expose its service instance                         | Service 存取   |
-| 15  | refreshes for template and clear events only while mounted | 跨分頁生命週期 |
+| #   | Test                                                        | 測試重點           |
+| --- | ----------------------------------------------------------- | ------------------ |
+| 1   | should load template state                                  | 初始載入           |
+| 2   | should expose a load error                                  | 錯誤狀態           |
+| 3   | should save a template and refresh state                    | 儲存 + refresh     |
+| 4   | should expose an apply error                                | 套用失敗           |
+| 5   | should rename a template and refresh state                  | 更新 + refresh     |
+| 6   | should expose a delete error                                | 刪除失敗           |
+| 7   | should delete a template and refresh state                  | 刪除 + refresh     |
+| 8   | should expose a save error                                  | 儲存失敗           |
+| 9   | should reject renaming a missing template                   | 缺少項目 guard     |
+| 10  | should expose a rename error                                | 重命名失敗         |
+| 11  | should return applied template data                         | 套用成功           |
+| 12  | should update a template and refresh state                  | 更新 + refresh     |
+| 13  | should expose an update error                               | 更新失敗           |
+| 14  | should expose its service instance                          | Service 存取       |
+| 15  | refreshes for template and clear events only while mounted  | 跨分頁生命週期     |
+| 16  | 已提交範本在refresh失敗時仍回傳成功，重讀可恢復且不重複寫入 | 提交確認與唯讀重試 |
 
 #### 8.1.4 i18n（12）
 
@@ -540,7 +570,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 11  | should render the English fallback when a Chinese message is missing    | 執行時英文後備顯示 |
 | 12  | storage 拒絕存取時維持 session 語言                                     | 偏好後備           |
 
-#### 8.1.5 Utils（36）
+#### 8.1.5 Utils（39）
 
 ##### 8.1.5.1 helpers.test.js（21）
 
@@ -603,6 +633,14 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | should focus without scrolling, select the name, and keep a visible input in place    | 穩定聚焦與全選       |
 | 2   | should use nearest non-animated scrolling only when the input is outside the viewport | 條件式 viewport 捲動 |
 
+##### 8.1.5.6 operationErrors.test.js（3）
+
+| #   | Test                                                    | 測試重點    |
+| --- | ------------------------------------------------------- | ----------- |
+| 1   | 保留一般錯誤訊息並使用unavailable後備                   | 一般失敗    |
+| 2   | Service errors與error-like records保留支援的storage類別 | 穩定錯誤碼  |
+| 3   | 不信任未知失敗的任意code值                              | Unknown縮窄 |
+
 #### 8.1.6 Data（4）
 
 ##### 8.1.6.1 recommendedLists.test.js（4）
@@ -614,7 +652,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 3   | falls back to English for unsupported locales                                | 語系後備         |
 | 4   | returns isolated resolved data                                               | 解析結果隔離     |
 
-#### 8.1.7 Scripts（5）
+#### 8.1.7 Scripts（17）
 
 ##### 8.1.7.1 candidateFingerprint.test.js（2）
 
@@ -623,13 +661,35 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | allows a staged binary diff larger than the completion asset collection       | Binary candidate fingerprint 預算 |
 | 2   | fingerprints a staged binary candidate larger than the default process buffer | 大型 binary Git diff 端到端支援   |
 
-##### 8.1.7.2 verifyFeature.test.js（3）
+##### 8.1.7.2 verifyFeature.test.js（5）
 
-| #   | Test                                                         | 測試重點                 |
-| --- | ------------------------------------------------------------ | ------------------------ |
-| 1   | should summarize Playwright failures without ANSI formatting | 精簡、去重的失敗診斷摘要 |
-| 2   | should report missing individual errors                      | reporter 後備訊息        |
-| 3   | should summarize top-level Playwright runner failures        | 測試前 runner 診斷       |
+| #   | Test                                                                    | 測試重點                 |
+| --- | ----------------------------------------------------------------------- | ------------------------ |
+| 1   | should summarize Playwright failures without ANSI formatting            | 精簡、去重的失敗診斷摘要 |
+| 2   | should report missing individual errors                                 | reporter 後備訊息        |
+| 3   | should summarize top-level Playwright runner failures                   | 測試前 runner 診斷       |
+| 4   | checks types before tests and includes the layer in its success summary | 型別檢查順序及結果列示   |
+| 5   | stops before runtime tests when type checking fails                     | CI 失敗即停止邊界        |
+
+##### 8.1.7.3 checkTypeScriptScope.test.js（8）
+
+| #   | Test                                                   | 測試重點                             |
+| --- | ------------------------------------------------------ | ------------------------------------ |
+| 1   | accepts an all-TypeScript application                  | 驗證 TS 應用的 compiler roots        |
+| 2   | rejects a new JavaScript module                        | 防止新增未檢查 JS                    |
+| 3   | rejects an excluded application module                 | 防止 compiler 範圍漏檔               |
+| 4   | rejects a JavaScript Vue script                        | 要求 SFC scripts 使用 TS             |
+| 5   | rejects allowJs being enabled                          | 防止重新引入 JS 過渡設定             |
+| 6   | rejects strictNullChecks being disabled                | 保留 strict null 檢查                |
+| 7   | rejects disabling template checks                      | 保留明確的模板檢查                   |
+| 8   | checks newly added source files for compiler inclusion | 檢查新增 declarations 與 source 檔案 |
+
+##### 8.1.7.4 eslintTypeScript.test.js（2）
+
+| #   | Test                                                                    | 測試重點                               |
+| --- | ----------------------------------------------------------------------- | -------------------------------------- |
+| 1   | rejects explicit any in a TypeScript application component              | 防止 TS 應用 scripts 使用 explicit any |
+| 2   | parses typed Vue props without applying JavaScript undefined-name rules | 允許 TS 型別且不誤報 JS 診斷           |
 
 ### 8.2 Component Tests（296）
 

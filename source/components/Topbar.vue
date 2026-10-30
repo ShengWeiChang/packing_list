@@ -43,7 +43,7 @@ Created: 2025-09-19
   </header>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Props & Emits
 // ------------------------------------------------------------------------------
@@ -59,5 +59,5 @@ defineProps({
 });
 
 // Emits
-defineEmits(['toggle', 'new']);
+defineEmits<{ toggle: []; new: [] }>();
 </script>

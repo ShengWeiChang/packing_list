@@ -18,7 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usePackingLists } from '../../../source/composables/usePackingLists';
 import { LocalStorageService } from '../../../source/services/localStorageService';
-import { STORAGE_KEYS } from '../../../source/utils/constants.js';
+import { STORAGE_KEYS } from '../../../source/utils/constants';
 
 // -----------------------------------------------------------------------------
 // usePackingLists Tests

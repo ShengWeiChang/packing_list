@@ -132,7 +132,7 @@ Created: 2025-09-19
                             : 'text-secondary',
                         ],
                   ]"
-                  :aria-current="selectedChecklistId === checklist.id ? 'page' : null"
+                  :aria-current="selectedChecklistId === checklist.id ? 'page' : undefined"
                   data-testid="sidebar-checklist-item"
                   :data-checklist-id="checklist.id"
                   @click="$emit('select-checklist', checklist.id)"
@@ -290,17 +290,20 @@ Created: 2025-09-19
   </aside>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Imports
 // ------------------------------------------------------------------------------
 
+import type { PropType } from 'vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import draggable from 'vuedraggable';
 
+import type { ChecklistDTO } from '../models/contracts';
 import AppIcon from './AppIcon.vue';
+import type { DragStart, TemplateView } from './componentContracts';
 import OverflowMenu from './OverflowMenu.vue';
+import { draggableFor } from './typedDraggable';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
@@ -314,6 +317,8 @@ const availableLanguages = [
   { code: 'en', label: 'English' },
   { code: 'zh-TW', label: '繁體中文' },
 ];
+
+const draggable = draggableFor<Readonly<ChecklistDTO>>();
 
 // ------------------------------------------------------------------------------
 // Props & Emits
@@ -334,36 +339,36 @@ const props = defineProps({
     default: false,
   },
   checklists: {
-    type: Array,
+    type: Array as PropType<readonly Readonly<ChecklistDTO>[]>,
     required: true,
   },
   templates: {
-    type: Array,
+    type: Array as PropType<readonly TemplateView[]>,
     default: () => [],
   },
   selectedChecklistId: {
-    type: String,
+    type: String as PropType<string | null>,
     default: null,
   },
   selectedTemplateId: {
-    type: String,
+    type: String as PropType<string | null>,
     default: null,
   },
 });
 
 // Emits
-const emit = defineEmits([
-  'toggle-sidebar',
-  'create-checklist',
-  'select-checklist',
-  'edit-checklist',
-  'copy-checklist',
-  'delete-checklist',
-  'move:checklists',
-  'save-as-template',
-  'edit-template',
-  'delete-template',
-]);
+const emit = defineEmits<{
+  'toggle-sidebar': [];
+  'create-checklist': [];
+  'select-checklist': [id: string];
+  'edit-checklist': [id: string];
+  'copy-checklist': [id: string];
+  'delete-checklist': [id: string];
+  'move:checklists': [checklists: ChecklistDTO[], expected: ChecklistDTO[]];
+  'save-as-template': [id: string];
+  'edit-template': [id: string];
+  'delete-template': [id: string];
+}>();
 
 // ------------------------------------------------------------------------------
 // States
@@ -372,10 +377,10 @@ const emit = defineEmits([
 // Settings menu state
 const showLanguageMenu = ref(false);
 const showTemplatesMenu = ref(false);
-const settingsRoot = ref(null);
+const settingsRoot = ref<HTMLElement | null>(null);
 
 // Drag state
-const draggingChecklistId = ref(null);
+const draggingChecklistId = ref<string | null>(null);
 
 // ------------------------------------------------------------------------------
 // Computed
@@ -444,7 +449,7 @@ function toggleLanguageMenu() {
  * Change the application language and close the language menu
  * @param {string} langCode - The language code to switch to (e.g., 'en', 'zh-TW')
  */
-function selectLanguage(langCode) {
+function selectLanguage(langCode: string) {
   currentLocale.value = langCode;
   showLanguageMenu.value = false;
 }
@@ -453,9 +458,10 @@ function selectLanguage(langCode) {
  * Close language menu when user clicks outside
  * @param {Event} event - The click event
  */
-function closeSettingsMenusOnClick(event) {
+function closeSettingsMenusOnClick(event: MouseEvent) {
   const target = event.target;
-  const clickedInsideRoot = settingsRoot.value && settingsRoot.value.contains(target);
+  const clickedInsideRoot =
+    settingsRoot.value && settingsRoot.value.contains(target as Node | null);
 
   if (!clickedInsideRoot) {
     showLanguageMenu.value = false;
@@ -467,10 +473,10 @@ function closeSettingsMenusOnClick(event) {
  * Handle focus out event to close menu when tabbing away
  * @param {FocusEvent} event - The focus event
  */
-function handleSettingsFocusOut(event) {
+function handleSettingsFocusOut(event: FocusEvent) {
   // Check if the new focus target is still within the settings component or dropdown
   const newFocus = event.relatedTarget;
-  const isFocusInRoot = settingsRoot.value && settingsRoot.value.contains(newFocus);
+  const isFocusInRoot = settingsRoot.value && settingsRoot.value.contains(newFocus as Node | null);
 
   if (!isFocusInRoot) {
     showLanguageMenu.value = false;
@@ -496,7 +502,7 @@ function closeSettingsMenus() {
  * Close settings menus when Escape is pressed.
  * @param {KeyboardEvent} event - Document keyboard event
  */
-function handleSettingsKeydown(event) {
+function handleSettingsKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') closeSettingsMenus();
 }
 
@@ -512,7 +518,7 @@ function toggleTemplatesMenu() {
  * Open a template in the editor and close the templates menu.
  * @param {string} templateId - Template ID to edit
  */
-function openTemplateEditor(templateId) {
+function openTemplateEditor(templateId: string) {
   showTemplatesMenu.value = false;
   emit('edit-template', templateId);
 }
@@ -523,7 +529,7 @@ function openTemplateEditor(templateId) {
  * Set dragging checklist ID when drag starts
  * @param {object} event - Sortable drag event
  */
-function onChecklistDragStart(event) {
+function onChecklistDragStart(event: DragStart) {
   // The data-checklist-id attribute is on the <li> element (event.item itself)
   if (event.item.dataset.checklistId) {
     draggingChecklistId.value = event.item.dataset.checklistId;
@@ -534,7 +540,7 @@ function onChecklistDragStart(event) {
  * Clear dragging state when drag ends
  * @param {object} _event - Sortable drag event (unused)
  */
-function onChecklistDragEnd(_event) {
+function onChecklistDragEnd(_event: unknown) {
   draggingChecklistId.value = null;
 }
 

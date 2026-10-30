@@ -224,4 +224,31 @@ describe('useTemplates', () => {
     window.dispatchEvent(new StorageEvent('storage', { key: 'packingListTemplates' }));
     expect(service.getTemplates).toHaveBeenCalledTimes(2);
   });
+
+  // Test Case 16: Keep the successful save result separate from a failed refresh.
+  it('returns the committed template when refresh fails and allows read-only retry', async () => {
+    const previous = { id: 'old', name: 'Existing', categories: [], items: [] };
+    const created = { id: 'new', name: 'Weekend', categories: [], items: [] };
+    service.getTemplates.mockReturnValue([previous]);
+    const api = useTemplates();
+    expect(api.loadTemplates()).toBe(true);
+    service.createFromChecklist.mockResolvedValue(created);
+    service.getTemplates.mockImplementation(() => {
+      throw Object.assign(new Error('Corrupt read'), { code: 'corrupt' });
+    });
+
+    expect(await api.saveAsTemplate('trip', 'Weekend')).toEqual(created);
+    expect(api.templates.value).toEqual([previous]);
+    expect(api.operationError.value).toBeNull();
+    expect(api.storageHealth.value).toBe('corrupt');
+    expect(api.refreshAfterSaveFailed.value).toBe(true);
+    expect(service.createFromChecklist).toHaveBeenCalledTimes(1);
+
+    service.getTemplates.mockReturnValue([previous, created]);
+    expect(api.loadTemplates()).toBe(true);
+    expect(api.storageHealth.value).toBeNull();
+    expect(api.refreshAfterSaveFailed.value).toBe(false);
+    expect(api.templates.value).toEqual([previous, created]);
+    expect(service.createFromChecklist).toHaveBeenCalledTimes(1);
+  });
 });

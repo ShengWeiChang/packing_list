@@ -16,6 +16,7 @@ Applies to this project’s stack: Vue 3 + Vite + Tailwind, ES Modules.
 - Prettier with prettier-plugin-tailwindcss
 - simple-import-sort (imports/exports ordering)
 - husky + lint-staged (pre-commit automation)
+- TypeScript 6.0.3 + vue-tsc 3.3.13, typescript-eslint 8.72.1, @vue/tsconfig 0.9.1
 
 Authoritative configuration files:
 
@@ -23,6 +24,7 @@ Authoritative configuration files:
 - Prettier: `.prettierrc`, `.prettierignore`
 - Editor: `.vscode/settings.json`
 - Scripts: `package.json` (lint, format, validate)
+- Types: `tsconfig.app.json`, `tsconfig.type-tests.json`; `tsconfig.json` is the editor entry point
 
 ## 3. Conventions
 
@@ -35,18 +37,18 @@ Follow industry-standard naming patterns for consistency and IDE compatibility:
 - Use **PascalCase**: `MyComponent.vue`, `UserProfile.vue`
 - Official Vue.js Style Guide recommendation
 
-**JavaScript Modules**
+**JavaScript/TypeScript Modules**
 
-- **Classes/Models**: PascalCase (e.g., `Category.js`, `User.js`)
-- **Services/Utils**: camelCase (e.g., `dataService.js`, `helpers.js`)
-- **Composables**: camelCase with "use" prefix (e.g., `usePackingLists.js`)
+- **Classes/Models**: PascalCase (e.g., `Category.ts`, `User.ts`)
+- **Services/Utils**: camelCase (e.g., `dataService.ts`, `helpers.ts`)
+- **Composables**: camelCase with "use" prefix (e.g., `usePackingLists.ts`)
 - **Config files**: kebab-case (e.g., `vite.config.js`, `tailwind.config.js`)
 
 **Test Files**
 
 - **Unit/Component tests**: Match source file + `.test.js`
   - `MyComponent.vue` → `MyComponent.test.js`
-  - `helpers.js` → `helpers.test.js`
+  - `helpers.ts` → `helpers.test.js`
 - **E2E tests**: kebab-case + `.spec.js`
   - `app-loading.spec.js`, `user-login.spec.js`
   - Playwright official convention
@@ -59,7 +61,7 @@ Follow industry-standard naming patterns for consistency and IDE compatibility:
 **Data/Locale Files**
 
 - Use **camelCase** for locale suffixes
-- `recommendedListContentEn.js`, `recommendedListContentZhTw.js`
+- `recommendedListContentEn.ts`, `recommendedListContentZhTw.ts`
 - Avoid underscores or mixed separators
 
 ### 3.2 Prettier Formatting
@@ -168,9 +170,9 @@ Validation
 
 - Guideline only (not enforced by ESLint). Import sorting is automatically handled by `simple-import-sort`; section order relies on team practice/code review.
 
-### 3.8 JavaScript File Section Order
+### 3.8 JavaScript/TypeScript File Section Order
 
-JS files should use appropriate grouping based on file type:
+JS/TS files should use appropriate grouping based on file type:
 
 1. Imports (vue, libs, local) — Auto-sorted: side-effects (CSS) → vue → external packages → local modules
 2. Constants — module-level constants, config
@@ -181,9 +183,9 @@ JS files should use appropriate grouping based on file type:
 7. Watchers — `watch`, `watchEffect` (Composables only)
 8. Class definition — class definition (Class files)
 
-**Composables** (e.g., `usePackingLists.js`): Use 1 → 3 → 4 → 5 → 6 → 7
+**Composables** (e.g., `usePackingLists.ts`): Use 1 → 3 → 4 → 5 → 6 → 7
 
-**Class Files** (e.g., `localStorageService.js`, Models): Use 1 → 8
+**Class Files** (e.g., `localStorageService.ts`, Models): Use 1 → 8
 
 **Utility/Configuration Files**: Use 1 → 2 → 6
 
@@ -258,11 +260,13 @@ export function useExample() {
 
 **JSDoc Comments**
 
-Required for all exported functions, methods, and classes. Must include:
+Required descriptions for exported functions, methods, and classes. JavaScript modules include:
 
 - Brief description
 - `@param {Type} name - description` for each parameter
 - `@returns {Type} description` for non-void returns
+
+TypeScript and Vue scripts retain behavioral descriptions without requiring duplicate JSDoc type tags; TypeScript annotations describe the checked contracts.
 
 ```javascript
 /**
@@ -319,6 +323,22 @@ Validation
 - Static analysis: `npm run lint` (via `eslint-plugin-vuejs-accessibility`)
 - Manual testing: Navigate all features using only the `Tab` key to ensure no focus traps and full operability.
 
+### 3.11 TypeScript Contracts and Checking
+
+- `npm run typecheck` runs the application scope guard, `vue-tsc --noEmit`, compile-only contracts, and deliberate-error diagnostic probes. Vite builds transpile without type checking.
+- `strict`, `noUncheckedIndexedAccess`, and `strictTemplates` are enabled. The app project uses browser globals and `vite/client`; Node and Vitest globals are not injected.
+- All application modules and 16 SFC scripts use TypeScript with `allowJs: false`; the migration manifest and temporary lint override are removed. The permanent scope guard rejects JS modules, non-TS Vue scripts, and source files missing from compiler roots, including new declarations.
+- Runtime JS tests, Node configuration/scripts, locale JSON, and visual assets retain their formats outside the browser application compiler project; they are not an unchecked application migration bridge.
+- TS modules retain existing naming stems with `.ts`: classes/models use PascalCase; services, utilities, composables, and type modules use camelCase. Compile-only tests use the owner's stem plus `.test.ts` under `tests/type-tests/`; Vitest excludes that directory.
+- Use `import type` for type-only dependencies. Treat external JSON and caught errors as `unknown` until existing runtime checks or normalization justify narrower contracts; TS never replaces storage validation.
+- Do not use `any`, `@ts-ignore`, `@ts-nocheck`, blanket module shims, or unsupported assertions to pass the gate. Document narrowly justified third-party boundaries. Described `@ts-expect-error` directives belong only in negative type tests.
+- ESLint applies TypeScript recommended rules to all TS/Vue with Vue's outer parser preserved; TypeScript unused-variable rules replace overlapping core rules. lint-staged and VSCode ESLint include TS; application suppression comments and explicit any are rejected.
+- Composable collections are exposed deeply readonly; the selected ID remains writable as `string | null`, and the computed selected entity may be `undefined`. Generic loaders preserve `T | null`; committed writes and failed refreshes are reported separately, and packing-only history stores immutable status snapshots.
+- `componentContracts.ts` owns shared action/event/draft contracts. Runtime prop constructors, required flags, defaults and validators remain; event tuples retain the optional second baseline. Save callbacks return Promises with nullable failure results; App's generic action runner preserves argument and result types.
+- `typedDraggable.ts` describes only the vuedraggable 4.1.0 API actually used, exposing the same runtime component with entity-typed models, item slots and change payloads. This justified third-party assertion adds no wrapper and contains any leakage. `vueAttributes.d.ts` extends only data attributes, with no blanket component shim.
+- Legacy dates remain unknown in component props/drafts; narrow assertions at DOM, RegExp and Date/comparison operations preserve native coercion without claiming validation. Readonly template baselines copy their snapshot records and arrays into the existing DTO service contract with the same fields and comparison content.
+- Accepted dependency limitation: `skipLibCheck: true` follows the Vue base config because vue-i18n 11.4.16 imports `GenericComponentInstance`, absent from Vue 3.5.44 (TS2724). This skips `.d.ts` internal checking, including local declarations; application/template code and API usage remain checked. Re-evaluate on Vue/i18n upgrades and remove the exception once the declaration mismatch is fixed.
+
 ## 4. Git Hooks (Husky)
 
 - Purpose: Enforce quality checks before commit.
@@ -332,6 +352,7 @@ Validation
 - Lint check: `npm run lint`
 - Lint with fixes: `npm run lint:fix`
 - Validate (lint + format check): `npm run validate`
+- Check application types and checker contracts: `npm run typecheck`
 - Pre-commit: lint-staged runs automatically on staged files
 - GitHub Actions runs `npm run verify:feature` on pull requests and pushes to `main`; see `.github/workflows/test.yml`.
 

@@ -1,0 +1,22 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "allowJs": false,
+    "types": ["vite/client"],
+    "paths": {
+      "@/*": ["./source/*"]
+    }
+  },
+  "include": ["source/**/*.ts", "source/**/*.vue"],
+  "vueCompilerOptions": {
+    "strictTemplates": true
+  }
+}

@@ -19,6 +19,7 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tailwindcss from 'eslint-plugin-tailwindcss';
 import pluginVue from 'eslint-plugin-vue';
 import vueAccessibility from 'eslint-plugin-vuejs-accessibility';
+import tseslint from 'typescript-eslint';
 
 // ------------------------------------------------------------------------------
 // Configuration
@@ -44,7 +45,7 @@ export default [
 
   // Custom rules and plugins
   {
-    files: ['**/*.{js,vue}'],
+    files: ['**/*.{js,ts,vue}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -149,6 +150,39 @@ export default [
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'prefer-const': 'error',
       'no-var': 'error',
+    },
+  },
+
+  // TypeScript rules apply to TS and Vue scripts; keep Vue's outer parser.
+  ...tseslint.configs.recommended.map((config) => ({
+    ...config,
+    files: ['**/*.{ts,vue}'],
+    languageOptions: { ...config.languageOptions, parser: undefined },
+  })),
+  {
+    files: ['**/*.ts'],
+    languageOptions: { parser: tseslint.parser },
+  },
+  {
+    files: ['**/*.vue'],
+    languageOptions: { parserOptions: { parser: tseslint.parser } },
+  },
+  {
+    files: ['**/*.{ts,vue}'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'jsdoc/require-param': 'off',
+      'jsdoc/require-returns': 'off',
+      'jsdoc/check-types': 'off',
+    },
+  },
+  {
+    files: ['source/**/*.{ts,vue}'],
+    rules: {
+      '@typescript-eslint/ban-ts-comment': [
+        'error',
+        { 'ts-expect-error': true, 'ts-ignore': true, 'ts-nocheck': true, 'ts-check': false },
+      ],
     },
   },
 

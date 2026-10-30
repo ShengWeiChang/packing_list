@@ -31,6 +31,7 @@ npm run dev
 ## Tech Stack
 
 - **Frontend:** Vue 3 (Composition API), Vite
+- **Type checking:** TypeScript + vue-tsc for application code and Vue templates (see the Code Quality Guide)
 - **Styling:** Tailwind CSS
 - **Testing:** Vitest, Playwright, @vue/test-utils
 - **i18n:** vue-i18n
@@ -53,6 +54,7 @@ npm run test:e2e         # Run E2E tests
 npm run lint             # Lint code
 npm run format           # Format code
 npm run validate         # Lint + format check
+npm run typecheck        # Check source scope, types, and compiler contracts
 ```
 
 ## Project Structure
@@ -90,7 +92,7 @@ packing_list/
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/new-feature`)
-3. Run tests (`npm run validate && npm test`)
+3. Run checks (`npm run validate && npm run typecheck && npm run test:run`)
 4. Commit your changes (follows conventional commits)
 5. Push to the branch (`git push origin feature/new-feature`)
 6. Open a Pull Request

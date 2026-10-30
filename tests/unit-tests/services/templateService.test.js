@@ -11,7 +11,7 @@ Created: 2026-10-13
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { TemplateService } from '../../../source/services/templateService';
-import { STORAGE_KEYS } from '../../../source/utils/constants.js';
+import { STORAGE_KEYS } from '../../../source/utils/constants';
 
 describe('TemplateService', () => {
   let storage;

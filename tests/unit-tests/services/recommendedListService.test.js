@@ -10,7 +10,7 @@ Created: 2026-10-15
 
 import { describe, expect, it } from 'vitest';
 
-import { RecommendedListService } from '../../../source/services/recommendedListService.js';
+import { RecommendedListService } from '../../../source/services/recommendedListService';
 
 describe('RecommendedListService', () => {
   const service = new RecommendedListService();

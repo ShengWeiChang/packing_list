@@ -15,13 +15,13 @@ Created: 2026-10-24
     :aria-hidden="isDecorative ? 'true' : undefined"
     :aria-label="isDecorative ? undefined : label"
     :role="isDecorative ? undefined : 'img'"
-    :focusable="false"
+    :focusable="'false'"
     :stroke-width="2"
     v-bind="forwardedAttrs"
   />
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ------------------------------------------------------------------------------
 // Imports
 // ------------------------------------------------------------------------------
@@ -44,6 +44,7 @@ import {
   Plus,
   Trash2,
 } from '@lucide/vue';
+import type { PropType } from 'vue';
 import { computed, useAttrs } from 'vue';
 
 // ------------------------------------------------------------------------------
@@ -91,9 +92,9 @@ const props = defineProps({
     default: '',
   },
   name: {
-    type: String,
+    type: String as PropType<keyof typeof icons>,
     required: true,
-    validator: (value) =>
+    validator: (value: string) =>
       [
         'add',
         'back',
@@ -114,9 +115,10 @@ const props = defineProps({
       ].includes(value),
   },
   size: {
-    type: String,
+    type: String as PropType<keyof typeof sizeClasses>,
     default: 'control',
-    validator: (value) => ['compact', 'inline', 'control', 'feature', 'navigation'].includes(value),
+    validator: (value: string) =>
+      ['compact', 'inline', 'control', 'feature', 'navigation'].includes(value),
   },
 });
 
