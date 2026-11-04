@@ -21,15 +21,16 @@ Created: 2025-09-19
       ref="buttonRef"
       type="button"
       :class="buttonClass"
-      :aria-label="props.isEditing ? $t('common.save') : $t('common.moreOptions')"
-      aria-haspopup="true"
-      :aria-expanded="showMenu"
+      :aria-label="props.isEditing && !inlineActions ? $t('common.save') : $t('common.moreOptions')"
+      :aria-haspopup="inlineActions ? undefined : 'true'"
+      :aria-controls="inlineActions ? inlineControls : undefined"
+      :aria-expanded="inlineActions ? inlineExpanded : showMenu"
       :data-testid="`overflow-trigger-${props.menuType}-${props.itemId}`"
-      @click.stop="props.isEditing ? handleConfirmEdit() : toggleMenu()"
+      @click.stop="handleTriggerClick"
     >
       <!-- Checkmark icon when editing -->
       <AppIcon
-        v-if="props.isEditing"
+        v-if="props.isEditing && !inlineActions"
         name="confirm"
         :size="triggerIconSize"
       />
@@ -124,6 +125,9 @@ import AppIcon from './AppIcon.vue';
 
 // Props
 const props = defineProps({
+  inlineActions: { type: Boolean, default: false },
+  inlineExpanded: { type: Boolean, default: false },
+  inlineControls: { type: String, default: undefined },
   itemId: {
     type: String,
     required: true,
@@ -169,6 +173,7 @@ const props = defineProps({
 
 // Emits
 const emit = defineEmits<{
+  'toggle-inline': [];
   edit: [];
   copy: [];
   'save-as-template': [];
@@ -195,11 +200,15 @@ const root = ref<HTMLElement | null>(null);
 const buttonClass = computed(() => {
   const frameSizeClass =
     props.triggerFrameSize === 'spacious' ? 'size-9 md:size-8' : 'size-9 md:size-6';
-  const baseClass = `${frameSizeClass} flex items-center justify-center rounded-lg transition-all duration-200 hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1`;
-  const surfaceClass = props.transparentTrigger ? 'bg-transparent' : 'bg-control-bg';
+  const baseClass = `touch-target ${frameSizeClass} flex items-center justify-center rounded-lg transition-all duration-200 hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1`;
+  const surfaceClass = props.inlineExpanded
+    ? 'bg-interactive-hover'
+    : props.transparentTrigger
+      ? 'bg-transparent'
+      : 'bg-control-bg';
 
   // Green checkmark style when editing
-  if (props.isEditing) {
+  if (props.isEditing && !props.inlineActions) {
     return `${baseClass} ${surfaceClass} opacity-100 text-success-state-text hover:text-success-state-text-dark hover:bg-success-state-bg`;
   }
 
@@ -207,7 +216,7 @@ const buttonClass = computed(() => {
   const normalClass = `${baseClass} ${surfaceClass} text-secondary hover:text-primary`;
 
   // Show the button when menu is open or forceVisible is true
-  if (showMenu.value || props.forceVisible) {
+  if (props.inlineActions || showMenu.value || props.forceVisible) {
     return `${normalClass} opacity-100`;
   }
 
@@ -219,7 +228,7 @@ const buttonClass = computed(() => {
   // Otherwise keep hidden unless forced or open
   // Mobile: always visible, Desktop: only when forced
   // Also ensure visible when focused (keyboard navigation)
-  return `${normalClass} opacity-100 md:opacity-0 focus:opacity-100 md:focus:opacity-100`;
+  return `${normalClass} opacity-100 md:opacity-0 focus-visible:opacity-100 md:focus-visible:opacity-100`;
 });
 
 const triggerIconSize = computed(
@@ -234,6 +243,27 @@ const dropdownClass = computed(
 // ------------------------------------------------------------------------------
 // Functions
 // ------------------------------------------------------------------------------
+
+/** A touch tap can use inline actions even on a hybrid device with a mouse. */
+function handleTriggerClick(event: PointerEvent) {
+  if (props.menuType === 'item' && (props.inlineActions || event.pointerType === 'touch')) {
+    showMenu.value = false;
+    window.dispatchEvent(
+      new CustomEvent('overflow-menu-open', { detail: { id: props.itemId, type: props.menuType } })
+    );
+    emit('toggle-inline');
+  } else if (props.isEditing) {
+    handleConfirmEdit();
+  } else {
+    toggleMenu();
+  }
+}
+
+/** Return focus only when a caller explicitly dismisses with Escape. */
+function focusTrigger() {
+  buttonRef.value?.focus({ preventScroll: true });
+}
+defineExpose({ focusTrigger });
 
 // ---------- Menu Positioning ----------
 

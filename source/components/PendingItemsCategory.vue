@@ -1,8 +1,8 @@
 <!--
 ================================================================================
 File: source/components/PendingItemsCategory.vue
-Description: Special virtual category component for displaying pending items
-             (to-buy / to-do). Provides a simplified view with completion
+Description: Special virtual category component for displaying to-buy items.
+             Provides a simplified view with completion
              functionality.
 Author: Sheng-Wei Chang
 License: MIT (SPDX: MIT)
@@ -49,7 +49,7 @@ Created: 2025-11-01
         <!-- Completion button (left side) - mark as completed -->
         <button
           type="button"
-          class="mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center rounded-full bg-pending-button text-white transition-all hover:scale-110 hover:bg-pending-accent sm:mr-2"
+          class="touch-target mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center rounded-full bg-pending-button text-white transition-all hover:scale-110 hover:bg-pending-accent sm:mr-2"
           :title="$t('item.markAsBought')"
           :aria-label="$t('item.markAsBought')"
           data-testid="pending-item-complete"
@@ -63,7 +63,7 @@ Created: 2025-11-01
         </button>
 
         <!-- Item name and optional quantity -->
-        <div class="flex grow items-center gap-1">
+        <div class="flex min-w-0 grow items-center gap-1">
           <span class="truncate text-base text-primary">
             {{ item.name }}
           </span>
@@ -123,7 +123,7 @@ const emit = defineEmits<{ 'update:item': [item: ItemDTO] }>();
 // ------------------------------------------------------------------------------
 
 /**
- * Filter items that are marked as pending (to-buy / to-do)
+ * Filter items that are marked as to buy
  */
 const pendingItems = computed(() => {
   return props.items.filter((item) => item.isPending);

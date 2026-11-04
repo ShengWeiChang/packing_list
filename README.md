@@ -8,8 +8,8 @@
 - **Categorized packing** — Organize items by category with quantity tracking
 - **Progress visualization** — Real-time packing progress with visual indicators
 - **i18n support** — English and Traditional Chinese
-- **Responsive design** — Optimized for mobile and desktop devices
-- **Accessible** — WCAG 2.1 Level AA compliant
+- **Responsive design** — Touch item actions and desktop hover controls
+- **Accessibility features** — Keyboard operation and labelled controls
 - **Offline-first** — Local storage with cross-tab synchronization
 
 ## Quick Start

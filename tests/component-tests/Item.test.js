@@ -533,3 +533,103 @@ describe('Item', () => {
     });
   });
 });
+
+describe('Item touch editing boundaries', () => {
+  it('defers an inline action until composition ends and the name is saved', async () => {
+    const saveItemEdit = vi.fn().mockResolvedValue({ ...createMockItem(), name: '中文' });
+    const w = mount(Item, {
+      props: { item: createMockItem(), touchControls: true, actionsOpen: true, saveItemEdit },
+      global: { stubs: { OverflowMenu: true } },
+      attachTo: document.body,
+    });
+    try {
+      await w.get('[data-testid="item-action-edit"]').trigger('click');
+      const input = w.get('[data-testid="item-edit-input"]');
+      await input.trigger('compositionstart');
+      input.element.value = '中文';
+      await input.trigger('input');
+      await w.get('[data-testid="item-action-copy"]').trigger('click');
+      expect(w.emitted('copy:item')).toBeUndefined();
+      expect(saveItemEdit).not.toHaveBeenCalled();
+      await input.trigger('compositionend');
+      await flushPromises();
+      expect(saveItemEdit).toHaveBeenCalledOnce();
+      expect(saveItemEdit.mock.calls[0][0].name).toBe('中文');
+      expect(w.emitted('copy:item')).toEqual([['item-1']]);
+    } finally {
+      w.unmount();
+    }
+  });
+  it('waits for the name save before an inline action and retains a failed draft', async () => {
+    let finishSave;
+    const saveItemEdit = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise((resolve) => (finishSave = resolve)))
+      .mockResolvedValueOnce(null);
+    const w = mount(Item, {
+      props: { item: createMockItem(), touchControls: true, actionsOpen: true, saveItemEdit },
+      global: { stubs: { OverflowMenu: true } },
+      attachTo: document.body,
+    });
+    try {
+      await w.get('[data-testid="item-action-edit"]').trigger('click');
+      await w.get('[data-testid="item-edit-input"]').setValue('New name');
+      await w.get('[data-testid="item-action-copy"]').trigger('click');
+      expect(w.emitted('copy:item')).toBeUndefined();
+      finishSave({ ...createMockItem(), name: 'New name' });
+      await flushPromises();
+      expect(w.emitted('copy:item')).toEqual([['item-1']]);
+      await w.get('[data-testid="item-action-edit"]').trigger('click');
+      await w.get('[data-testid="item-edit-input"]').setValue('Failed draft');
+      await w.get('[data-testid="item-action-delete"]').trigger('click');
+      await flushPromises();
+      expect(w.emitted('delete:item')).toBeUndefined();
+      expect(w.get('[data-testid="item-edit-input"]').element.value).toBe('Failed draft');
+      expect(w.get('[role="alert"]').exists()).toBe(true);
+    } finally {
+      w.unmount();
+    }
+  });
+  // Test Case 28: Repeated rename entry keeps a failed draft and the original optimistic baseline.
+  it('preserves a failed name draft when another edit entry is activated', async () => {
+    const saveItemEdit = vi.fn().mockResolvedValue(null);
+    const w = mount(Item, {
+      props: { item: createMockItem(), touchControls: true, saveItemEdit },
+      global: { stubs: { OverflowMenu: true } },
+      attachTo: document.body,
+    });
+    try {
+      await w.get('[data-testid="item-name"]').trigger('click');
+      await w.get('[data-testid="item-edit-input"]').setValue('Unsaved draft');
+      await w.get('[data-testid="item-edit-input"]').trigger('keydown.enter');
+      await flushPromises();
+      w.getComponent({ name: 'OverflowMenu' }).vm.$emit('edit');
+      await flushPromises();
+      expect(w.get('[data-testid="item-edit-input"]').element.value).toBe('Unsaved draft');
+      expect(w.get('[role="alert"]').exists()).toBe(true);
+      w.getComponent({ name: 'OverflowMenu' }).vm.$emit('toggle-inline');
+      await flushPromises();
+      expect(w.emitted('toggle-actions')).toBeUndefined();
+      expect(w.get('[data-testid="item-edit-input"]').element.value).toBe('Unsaved draft');
+    } finally {
+      w.unmount();
+    }
+  });
+  // Test Case 29: Quantity one retains the trash action while pending and copy remain ordinary inline buttons.
+  it('keeps the quantity-one delete action in the expanded touch region', async () => {
+    const w = mount(Item, {
+      props: { item: createMockItem(), touchControls: true, actionsOpen: true },
+      global: { stubs: { OverflowMenu: true } },
+    });
+    try {
+      expect(w.find('[data-testid="item-quantity-summary"]').exists()).toBe(false);
+      await w.get('[data-testid="item-quantity-decrement"]').trigger('click');
+      expect(w.emitted('delete:item')).toEqual([['item-1']]);
+      expect(w.emitted('update:item')).toBeUndefined();
+      await w.get('[data-testid="item-action-copy"]').trigger('click');
+      expect(w.emitted('copy:item')).toEqual([['item-1']]);
+    } finally {
+      w.unmount();
+    }
+  });
+});

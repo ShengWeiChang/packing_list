@@ -182,13 +182,17 @@
 - 目的：在清單內管理單一物品條目，支援新增、編輯、刪除、勾選打包狀態與拖曳排序/跨分類移動，並即時影響分類與清單進度。
 - 主要功能：
   - 新增物品：在指定分類中建立，`isPacked=false`，`order = 該分類最大 order + 1`。
-  - 編輯物品：即時編輯名稱與數量（數量下限 1）；刪除物品。
+  - 編輯物品：點名稱直接原位編輯；明確的「編輯名稱」使用同一編輯器。Enter 確認、Escape 取消，保留既有 blur／IME 與失敗草稿處理。
+  - 觸控操作：常駐物品三點直接在主列下方展開同寬區域，整合數量、待買、編輯名稱、複製與刪除。編輯時保持展開；其他操作會先儲存名稱，成功後才執行。開啟不聚焦輸入框，也不改變名稱寬度／換行。
+  - 展開規則：每個 Checklist 檢視一次一件；點外關閉且原點擊照常執行，內部快調保持展開；區域內按 Escape 回焦三點。分類收合、物品隱藏／移除與切清單時清理失效展開。
+  - 數量：下限為 1；等於 1 時減量變刪除。收合觸控列只在大於 1 時顯示數量摘要，並保留已啟用待處理的提示。
+  - 桌面操作：保留滑鼠 hover 快調與管理短選單。分類／清單三點保留命令選單；分類箭頭控制分類內容顯示。
   - 編輯模式 (Edit Mode)：
     - 採用 `box-shadow` 代替 `border-bottom`，以避免版面位移 (Layout Shift)。
     - 輸入框樣式與顯示文字完全一致（字體大小、行高、內距），確保切換過程平滑（Seamless Toggle）。
     - 進入編輯模式時以防止捲動的方式聚焦並全選名稱；新物品建立後會自動進入此狀態。只有輸入框位於可視範圍外時才以最近位置、無動畫方式捲動。
   - UI 改進：
-    - 互動元件（按鈕、選單）在行動版統一為 `size-9`，桌面版統一為 `size-6`，確保視覺一致性。
+    - 觸控物品／分類 checkbox label 與核心操作控制提供真實 44×44 CSS px 命中區，圖示保持小巧；桌面控制保留既有密度。
   - 勾選狀態：切換 `isPacked` 即時更新分類與清單進度，並保留原 `order`。
   - 拖曳排序：
     - 同分類：重排後依序重寫 `order`（0 起）。
@@ -220,20 +224,20 @@
   - 篩選中的同分類與跨分類拖曳會產生連續且可持久化的 `order`，隱藏物品位置遵循上述規則。
   - 重新整理後恢復完整檢視，同時保留物品資料與重新整理前明確執行的拖曳排序。
 
-#### Pending Items (To Buy / To Do) 待處理物品（待買/待辦）
+#### Pending Items (To Buy) 待買物品
 
-- 目的：提供一個虛擬且跨分類的檢視，用於顯示使用者標記為「待處理」的物品 — 此功能涵蓋「待購買」與「待辦」語義。
+- 目的：提供一個虛擬且跨分類的檢視，用於顯示使用者標記為「待買」的物品。
 - 主要功能：
-  - 標記待處理：每個物品新增布林欄位 `isPending`。將物品標記為待處理時，系統會自動清除 `isPacked`（避免狀態衝突）。
-  - 虛擬分類：所有 `isPending === true` 的項目會顯示在一個虛擬的待處理分類（`PendingItemsCategory.vue`），該區塊會置於一般分類之上，並採用淺橘色主題及多欄緊湊格局（與分類欄位數一致）。
-  - 完成（清除待處理）：在虛擬分類中可對項目執行完成（勾選）操作以清除 `isPending`，該項目隨即移出虛擬分類。
+  - 標記待買：每個物品新增布林欄位 `isPending`。將物品標記為待買時，系統會自動清除 `isPacked`（避免狀態衝突）。
+  - 虛擬分類：待買項目顯示於一般分類上方的虛擬分類（`PendingItemsCategory.vue`），採橘色主題與獨立的緊湊響應式 grid。
+  - 完成（清除待買）：在虛擬分類中可對項目執行標記為已買（勾選）操作以清除 `isPending`，該項目隨即移出虛擬分類。
   - 數量顯示：在虛擬分類中，僅當 `quantity > 1` 時才於名稱後顯示數量標籤。
 - 使用流程
-  - 將物品標記為待處理 → 該物品顯示於待處理虛擬分類 → 可選擇標記為完成（取消 isPending）→ 物品移出虛擬分類。
+- 將物品標記為待買 → 該物品顯示於待買虛擬分類 → 可選擇標記為已買（取消 isPending）→ 物品移出虛擬分類。
 - 驗證：
-  - 標記待處理會設定 `isPending` 並持久化。
-  - 標記待處理會同時清除 `isPacked`（設為 false）。
-  - 當沒有任何待處理項目時，虛擬分類自動隱藏。
+  - 標記待買會設定 `isPending` 並持久化。
+  - 標記待買會同時清除 `isPacked`（設為 false）。
+  - 當沒有任何待買項目時，虛擬分類自動隱藏。
 
 #### Progress Tracking 進度追蹤
 
@@ -283,14 +287,14 @@
   - 手機版優化 (Mobile Optimization)：
     - 互動優化：
       - 長按拖曳：為防止誤觸，手機版拖曳需長按 200ms 觸發（`vuedraggable` 設定）。
-      - 觸控區域：按鈕與互動元件最小尺寸為 44x44px，符合無障礙標準。
+      - 觸控區域：核心控制採 44×44 CSS px 產品目標，以實際 button／label 而非圖示量測；這不代表完整 WCAG 合規宣告。
       - 鍵盤避讓：以防止捲動的方式聚焦編輯輸入框；行動版 viewport 穩定後，只有被遮擋的輸入框才以最近可視位置、無動畫方式捲動。
-      - Hover 處理：使用 `matchMedia('(hover: hover)')` 區分觸控與滑鼠裝置，手機版不顯示 Hover 樣式。
+      - 輸入能力：`useTouchLayout` 在 Checklist 內共用寬度（<768px）、任一 coarse pointer 與 no-hover queries 並清理訂閱。觸控安全呈現獨立於 Sidebar 斷點；混合裝置實際 touch 點物品三點也可開列內操作。
     - 視覺優化：
       - 介面簡化：手機版隱藏部分編輯按鈕，改以點擊文字進入編輯模式；Overflow Menu (`...`) 常駐顯示。
       - 側邊欄調整：手機版 Sidebar 寬度加寬至 `w-72`，字體與間距放大，提升閱讀與點擊體驗。
   - 內容佈局：
-    - 類別瀑布流：使用 CSS columns 實作 `categories-masonry`，`column-count` 在寬度門檻下調整為 1（<600）、2（≥600）、3（≥840）、4（≥1280）。
+    - 類別瀑布流：觸控安全檢視採單欄，包含寬平板與旋轉；其他檢視用 CSS columns 呈現 1（<768）、2（≥768）、3（≥1180）、4（≥1536）欄。這些版面門檻不代表裝置類型。
     - 卡片不斷行：分類外層設 `break-inside: avoid`，並有平滑 transition 以降低重排抖動。
   - 可用性：
     - 抽屜開啟時鎖定 `document.body.style.overflow='hidden'`，避免背景滾動；轉場約 200–300ms。
@@ -328,12 +332,12 @@
 
 #### Accessibility 無障礙性
 
-- 目的：確保應用程式對所有使用者（包括鍵盤使用者與螢幕閱讀器使用者）皆可訪問，符合 WCAG 2.1 Level AA 標準。
+- 目的：依 WCAG 指引改善鍵盤與螢幕閱讀器操作；靜態檢查與局部 runtime 證據不代表完整 WCAG 合規。
 - 主要功能：
   - 鍵盤導航：所有互動元素（按鈕、連結、輸入框）皆可透過 `Tab` 鍵聚焦與操作；非原生按鈕實作 `Enter`/`Space` 觸發。
   - 焦點管理：
     - 隱藏元素（如 Hover 按鈕）在聚焦時自動顯示（`opacity-0` -> `opacity-100`）。
-    - 手機版隱藏元素使用 `absolute` 移出文檔流，聚焦時切換回 `static`，避免佔用空間。
+    - 關閉的觸控操作區會卸載，避免隱形 tab stops；分類收合時內容為 inert。列內區域不是 modal，不限制焦點於區內。
     - 確保無焦點陷阱，且焦點指示清晰可見。
   - 語意化與 ARIA：
     - 優先使用原生語意標籤（`<button>`, `<nav>`, `<main>`）。
@@ -452,7 +456,7 @@ packing-list/
     │   ├── OverflowMenu.vue          # 更多選項選單
     │   ├── NewChecklistDialog.vue    # 清單來源選擇 dialog
     │   ├── PackingCompletionOverlay.vue # 全版打包完成旅程
-    │   ├── PendingItemsCategory.vue  # 待辦物品區塊
+    │   ├── PendingItemsCategory.vue  # 待買物品區塊
     │   ├── ProgressBar.vue           # 進度條元件
     │   ├── SaveTemplateDialog.vue    # 新範本命名 dialog
     │   ├── Sidebar.vue               # 側邊欄導航
@@ -462,7 +466,8 @@ packing-list/
     │   └── typedDraggable.ts         # 依 entity 型別化的拖曳介面
     ├── composables/                  # Vue組合式函數
     │   ├── usePackingLists.ts        # 核心業務邏輯組合函數
-    │   └── useTemplates.ts           # 範本 state 與 CRUD 邏輯
+    │   ├── useTemplates.ts           # 範本 state 與 CRUD 邏輯
+    │   └── useTouchLayout.ts         # Checklist 輸入能力訂閱
     ├── i18n/                         # i18n 初始化與語系偵測/持久化
     │   └── index.ts                  # 建立 vue-i18n、語言映射與讀寫 localStorage
     ├── locales/                      # 語系翻譯檔
@@ -525,7 +530,7 @@ packing-list/
 - `theme-primary` (`#2f6b46`) — 森林綠，用於進度條和品牌元素
 - `theme-secondary` (`#d3e3db`) — 淺綠灰，用於進度條背景
 
-**待處理物品（待買/待辦）：**
+**待買物品：**
 
 - 背景: `#fff7ed` (orange-50)
 - 文字: `#7c2d12` (orange-900)
@@ -563,7 +568,7 @@ packing-list/
 
 #### Content Layout 內容佈局
 
-- 類別瀑布流: CSS columns 實作 1→4 欄，依寬度門檻自動調整
+- 觸控安全 Checklist 檢視採分類單欄；其他檢視保留 1–4 欄響應式瀑布流。
 - 卡片設計: 統一的卡片樣式系統、`break-inside: avoid` 避免斷行
 - 表單互動: 即時編輯與驗證
 
@@ -575,9 +580,9 @@ packing-list/
 | Sidebar                  | 清單與範本導航       | 響應式收合/展開、清單選擇與排序、範本選單開啟範本 editor                   |
 | Topbar                   | 手機版導航欄         | 漢堡選單，新增清單快捷按鈕                                                 |
 | Checklist                | 主內容區域           | 顯示分類／物品、分類排序、瀑布流與只顯示未攜帶物品切換                     |
-| PendingItemsCategory     | 待處理物品虛擬分類   | 橘色主題；多欄格局；顯示標記為待處理（待買/待辦）的物品                    |
+| PendingItemsCategory     | 待買物品虛擬分類     | 橘色主題；多欄格局；顯示標記為待買的物品                                   |
 | Category                 | 分類卡片             | 包含物品列表，進度顯示，編輯功能，拖曳物品重新排序或移動                   |
-| Item                     | 物品條目             | 勾選打包/待處理，即時編輯，刪除，支援拖曳移動                              |
+| Item                     | 物品條目             | 勾選打包/待買，即時編輯，刪除，支援拖曳移動                                |
 | ProgressBar              | 進度條               | 動態顯示完成百分比                                                         |
 | OverflowMenu             | 更多選項             | 編輯/複製/刪除等操作選單                                                   |
 | NewChecklistDialog       | 清單來源選擇         | 選擇空白清單、個人範本或唯讀推薦清單                                       |
@@ -621,7 +626,7 @@ packing-list/
   quantity: number,    // 數量
   categoryId: string,  // 所屬分類ID
   isPacked: boolean,   // 打包狀態
-  isPending: boolean,  // 待處理（待買 / 待辦）狀態
+  isPending: boolean,  // 待買狀態
   checklistId: string, // 所屬清單ID
   order: number        // 顯示順序 (預設: 0)
 }

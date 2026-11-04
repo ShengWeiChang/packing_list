@@ -310,7 +310,7 @@ Follow WCAG 2.1 Level AA standards to ensure the application is accessible to al
   - Non-native buttons must include `role="button"`, `tabindex="0"`, and implement `@keydown.enter` and `@keydown.space`.
 - **Focus Management**:
   - Hidden interactive elements (e.g., buttons that appear on hover) must be visible when focused.
-  - Use `opacity-0` + `pointer-events-none` instead of `display: none`, paired with `focus:opacity-100`.
+  - Closed inline action regions must be unmounted or otherwise removed from keyboard navigation; opacity alone is insufficient. Desktop hover controls remain visible on focus.
 - **Semantic HTML & ARIA**:
   - Prioritize native semantic tags.
   - Add `aria-label` to icon buttons without text labels.
@@ -338,6 +338,12 @@ Validation
 - `typedDraggable.ts` describes only the vuedraggable 4.1.0 API actually used, exposing the same runtime component with entity-typed models, item slots and change payloads. This justified third-party assertion adds no wrapper and contains any leakage. `vueAttributes.d.ts` extends only data attributes, with no blanket component shim.
 - Legacy dates remain unknown in component props/drafts; narrow assertions at DOM, RegExp and Date/comparison operations preserve native coercion without claiming validation. Readonly template baselines copy their snapshot records and arrays into the existing DTO service contract with the same fields and comparison content.
 - Accepted dependency limitation: `skipLibCheck: true` follows the Vue base config because vue-i18n 11.4.16 imports `GenericComponentInstance`, absent from Vue 3.5.44 (TS2724). This skips `.d.ts` internal checking, including local declarations; application/template code and API usage remain checked. Re-evaluate on Vue/i18n upgrades and remove the exception once the declaration mismatch is fixed.
+
+### 3.12 Responsive Interaction Ownership
+
+- `useTouchLayout` owns Checklist capability subscriptions and cleanup; Sidebar width thresholds remain separate. Checklist owns one open item ID, Category forwards it, and Item keeps editing/draft state. Do not persist expansion or duplicate mutation handlers.
+- `touch-target` in `source/index.css` enlarges real controls on narrow/coarse/no-hover views; scoped `inline-action` styles belong to Item. Keep approved scoped class names in the ESLint whitelist.
+- Inline action regions are non-modal button groups with labelled triggers and expanded/control relationships. Close by reason: Escape returns focus, outside clicks retain their destination, and rename focuses its input.
 
 ## 4. Git Hooks (Husky)
 

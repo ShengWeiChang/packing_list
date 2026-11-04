@@ -14,7 +14,7 @@ Created: 2026-02-11
 // Imports
 // -----------------------------------------------------------------------------
 
-import { flushPromises, shallowMount } from '@vue/test-utils';
+import { flushPromises, mount, shallowMount } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import { createI18n } from 'vue-i18n';
 
@@ -677,5 +677,116 @@ describe('Checklist', () => {
 
       vi.useRealTimers();
     });
+  });
+});
+
+describe('Checklist inline item actions', () => {
+  const draggable = {
+    name: 'draggable',
+    props: ['modelValue'],
+    template:
+      '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template></div>',
+  };
+  /**
+   * Mount real category and item owners with only drag geometry stubbed.
+   * @param {object} props - Optional checklist inputs.
+   * @returns {import('@vue/test-utils').VueWrapper} Mounted list.
+   */
+  function mountList(props = {}) {
+    return mount(Checklist, {
+      props: {
+        checklist: createMockChecklist(),
+        categories: createMockCategories(),
+        items: createMockItems(),
+        ...props,
+      },
+      global: { plugins: [i18n], stubs: { draggable } },
+      attachTo: document.body,
+    });
+  }
+  /**
+   * Activate the same trigger a touch pointer uses.
+   * @param {import('@vue/test-utils').VueWrapper} w - Mounted list.
+   * @param {string} id - Item ID.
+   */
+  async function open(w, id) {
+    await w
+      .get('[data-testid="overflow-trigger-item-' + id + '"]')
+      .trigger('click', { pointerType: 'touch' });
+    await flushPromises();
+  }
+  // Test Case 40: Once-one ownership spans categories; inside actions and outside clicks keep their intended effects.
+  it('switches across categories with one click and does not swallow outside actions', async () => {
+    const w = mountList();
+    const outside = document.createElement('button');
+    const onClick = vi.fn();
+    outside.addEventListener('click', onClick);
+    document.body.append(outside);
+    try {
+      await open(w, 'item-1');
+      expect(w.findAll('[data-testid="item-inline-actions"]')).toHaveLength(1);
+      await w.get('[data-testid="item-quantity-increment"]').trigger('click');
+      expect(w.emitted('update:item').at(-1)[0].quantity).toBe(2);
+      expect(w.findAll('[data-testid="item-inline-actions"]')).toHaveLength(1);
+      await open(w, 'item-2');
+      expect(w.findAll('[data-testid="item-inline-actions"]')).toHaveLength(1);
+      expect(w.get('[data-testid="item-inline-actions"]').attributes('id')).toBe(
+        'item-item-2-actions'
+      );
+      outside.click();
+      await flushPromises();
+      expect(onClick).toHaveBeenCalledOnce();
+      expect(w.find('[data-testid="item-inline-actions"]').exists()).toBe(false);
+      await w
+        .get('[data-testid="overflow-trigger-item-item-2"]')
+        .trigger('click', { pointerType: 'mouse' });
+      expect(w.find('[data-testid="overflow-dropdown-item-item-2"]').exists()).toBe(true);
+    } finally {
+      w.unmount();
+      outside.remove();
+    }
+  });
+  // Test Case 41: Direct and explicit rename preserve the same editor and Escape returns focus from actions.
+  it('uses the same rename flow and restores the trigger only for Escape', async () => {
+    const w = mountList();
+    try {
+      await open(w, 'item-1');
+      await w.get('[data-testid="item-action-edit"]').trigger('click');
+      expect(w.find('[data-testid="item-inline-actions"]').exists()).toBe(true);
+      await w.get('[data-testid="item-edit-input"]').setValue('Renamed');
+      await w.get('[data-testid="item-edit-input"]').trigger('keydown.enter');
+      expect(w.emitted('update:item').at(-1)[0].name).toBe('Renamed');
+      await w.get('[data-testid="item-action-copy"]').trigger('keydown', { key: 'Escape' });
+      await flushPromises();
+      expect(w.find('[data-testid="item-inline-actions"]').exists()).toBe(false);
+      expect(document.activeElement).toBe(
+        w.get('[data-testid="overflow-trigger-item-item-1"]').element
+      );
+    } finally {
+      w.unmount();
+    }
+  });
+  // Test Case 42: Collapse, removal and checklist switching invalidate only the affected open item.
+  it('clears invalid actions on collapse, removal and checklist switch', async () => {
+    const w = mountList();
+    try {
+      await open(w, 'item-1');
+      await w.findAll('[data-testid="category-collapse-toggle"]')[0].trigger('click');
+      expect(w.find('[data-testid="item-inline-actions"]').exists()).toBe(false);
+      await open(w, 'item-2');
+      w.get('[data-testid="item-action-copy"]').element.focus();
+      await w.setProps({ items: createMockItems().filter((item) => item.id !== 'item-2') });
+      await flushPromises();
+      expect(document.activeElement).toBe(
+        w.findAll('[data-testid="category-collapse-toggle"]')[0].element
+      );
+      expect(w.find('[data-testid="item-inline-actions"]').exists()).toBe(false);
+      await w.findAll('[data-testid="category-collapse-toggle"]')[0].trigger('click');
+      await open(w, 'item-1');
+      await w.setProps({ checklist: createMockChecklist({ id: 'cl-2' }) });
+      expect(w.find('[data-testid="item-inline-actions"]').exists()).toBe(false);
+    } finally {
+      w.unmount();
+    }
   });
 });

@@ -310,7 +310,7 @@ Validation 驗證
   - 非原生按鈕必須添加 `role="button"`、`tabindex="0"`，並實作 `@keydown.enter` 與 `@keydown.space`。
 - **Focus Management 焦點管理**：
   - 隱藏的互動元素（如 Hover 才會出現的按鈕）在聚焦時必須顯示。
-  - 使用 `opacity-0` + `pointer-events-none` 代替 `display: none`，並搭配 `focus:opacity-100`。
+  - 關閉的列內操作區必須卸載或以其他方式移出鍵盤導覽；只有 opacity 不足夠。桌面 hover 控制聚焦時仍須顯示。
 - **Semantic HTML & ARIA**：
   - 優先使用原生語意標籤。
   - 為沒有文字標籤的圖示按鈕添加 `aria-label`。
@@ -338,6 +338,12 @@ Validation 驗證
 - `typedDraggable.ts` 只描述實際使用的 vuedraggable 4.1.0 API，以同一 runtime 元件提供依 list entity 型別化的 model、item slot 與 change payload；此具依據的第三方 assertion 不新增 wrapper，也不容許 any 擴散。`vueAttributes.d.ts` 僅補充 data attributes，沒有通用元件 shim。
 - Legacy 日期在元件 props／draft 中仍為 unknown；狹窄 DOM、RegExp 與 Date／比較操作的 assertion 保留原生轉換行為，不代表資料已驗證。唯讀範本的 baseline 複製 snapshot records 與 arrays 後傳入既有 DTO service 契約，保留相同欄位與比較內容。
 - 已接受的依賴限制：沿用 Vue base config 的 `skipLibCheck: true`，因 vue-i18n 11.4.16 匯入 Vue 3.5.44 未提供的 `GenericComponentInstance`（TS2724）。此設定略過 `.d.ts` 內部檢查，包含本地 declarations；應用／模板程式與 API 使用仍受檢查。Vue／i18n 升級時重新評估，宣告不相容修復後移除此例外。
+
+### 3.12 Responsive Interaction Ownership 響應式互動責任
+
+- `useTouchLayout` 管理 Checklist 輸入能力訂閱與清理，Sidebar 寬度門檻獨立；Checklist 擁有一次展開的物品 ID，Category 轉送，Item 保留編輯／草稿狀態。不得持久化展開或複製 mutation handlers。
+- `source/index.css` 的 `touch-target` 在窄／coarse／no-hover 檢視放大真實控制；scoped `inline-action` 屬於 Item。已批准的 scoped class 名稱列入 ESLint whitelist。
+- 列內操作區是非 modal button group，觸發器提供名稱與 expanded／controls 關係。依原因關閉：Escape 回焦、點外保留目的焦點、改名聚焦輸入框。
 
 ## 4. Git Hooks (Husky) Git 勾子
 
