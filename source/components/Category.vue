@@ -52,7 +52,7 @@ Created: 2025-09-19
             @touchstart.stop
           />
         </label>
-        <div class="-ml-0.5 min-w-0 grow">
+        <div class="-ml-1.5 min-w-0 grow md:-ml-1">
           <input
             v-if="isEditing"
             :id="`category-${category.id}-name`"
