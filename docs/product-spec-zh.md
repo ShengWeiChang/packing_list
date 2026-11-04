@@ -190,7 +190,7 @@
   - 編輯模式 (Edit Mode)：
     - 採用 `box-shadow` 代替 `border-bottom`，以避免版面位移 (Layout Shift)。
     - 輸入框樣式與顯示文字完全一致（字體大小、行高、內距），確保切換過程平滑（Seamless Toggle）。
-    - 進入編輯模式時以防止捲動的方式聚焦並全選名稱；新物品建立後會自動進入此狀態。只有輸入框位於可視範圍外時才以最近位置、無動畫方式捲動。
+    - 進入編輯模式時以防止捲動的方式聚焦並全選名稱；新物品建立後會自動進入此狀態。實際 scrollport 讓輸入框保持在 visual viewport 內，並保留可在短畫面退讓的 28px 舒適留白；清理時還原暫態底部空間。原生鍵盤的舒適度仍需實機驗證。
   - UI 改進：
     - 觸控物品／分類 checkbox label 與核心操作控制提供真實 44×44 CSS px 命中區，圖示保持小巧；桌面控制保留既有密度。
   - 勾選狀態：切換 `isPacked` 即時更新分類與清單進度，並保留原 `order`。
@@ -288,7 +288,7 @@
     - 互動優化：
       - 長按拖曳：為防止誤觸，手機版拖曳需長按 200ms 觸發（`vuedraggable` 設定）。
       - 觸控區域：核心控制採 44×44 CSS px 產品目標，以實際 button／label 而非圖示量測；這不代表完整 WCAG 合規宣告。
-      - 鍵盤避讓：以防止捲動的方式聚焦編輯輸入框；行動版 viewport 穩定後，只有被遮擋的輸入框才以最近可視位置、無動畫方式捲動。
+      - 鍵盤避讓：以防止捲動的方式聚焦編輯輸入框；使用 visual viewport 與 scrollport 範圍的交集、最小無動畫捲動與可縮小的舒適留白。Dialog 表面跟隨可見 viewport 範圍，必要時在內部捲動。
       - 輸入能力：`useTouchLayout` 在 Checklist 內共用寬度（<768px）、任一 coarse pointer 與 no-hover queries 並清理訂閱。觸控安全呈現獨立於 Sidebar 斷點；混合裝置實際 touch 點物品三點也可開列內操作。
     - 視覺優化：
       - 介面簡化：手機版隱藏部分編輯按鈕，改以點擊文字進入編輯模式；Overflow Menu (`...`) 常駐顯示。
@@ -467,7 +467,8 @@ packing-list/
     ├── composables/                  # Vue組合式函數
     │   ├── usePackingLists.ts        # 核心業務邏輯組合函數
     │   ├── useTemplates.ts           # 範本 state 與 CRUD 邏輯
-    │   └── useTouchLayout.ts         # Checklist 輸入能力訂閱
+    │   ├── useTouchLayout.ts         # Checklist 輸入能力訂閱
+    │   └── useVisualViewport.ts      # Modal 表面的可見 viewport 範圍
     ├── i18n/                         # i18n 初始化與語系偵測/持久化
     │   └── index.ts                  # 建立 vue-i18n、語言映射與讀寫 localStorage
     ├── locales/                      # 語系翻譯檔
@@ -564,6 +565,8 @@ packing-list/
 #### Sidebar Behavior 側邊欄行為
 
 - 手機與窄桌面: 抽屜式設計，teleport 至 `body` 並覆蓋主內容，搭配半透明遮罩；點擊遮罩關閉
+- 抽屜開啟時移入焦點、Tab／Shift+Tab 循環、Escape 關閉並回焦入口。背景為 inert；上層 dialog 擁有焦點時抽屜也為 inert。只有高度變化的 resize 保留抽屜狀態，最後一個 modal 關閉後由 App 還原原本的 body 捲動設定。
+- 短命令選單 teleport 至卡片 transform 之外，依 visual viewport 空間在入口上方／下方展開，空間有限時內部捲動。鍵盤開啟時聚焦首個命令，Escape 回焦入口。
 - 桌面: 固定顯示，可手動收合為圖示模式；收合狀態會寫入 localStorage 以便記憶
 
 #### Content Layout 內容佈局

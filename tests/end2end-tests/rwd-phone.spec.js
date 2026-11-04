@@ -251,11 +251,11 @@ test.describe('mouse desktop', () => {
     await row.getByTestId('item-quantity-increment').click();
     await expect(row.getByTestId('item-quantity-value')).toContainText('2');
     await (await triggerFor(row)).click();
-    await expect(row.locator('[data-testid^="overflow-dropdown-item-"]')).toBeVisible();
+    await expect(page.locator('[data-testid^="overflow-dropdown-item-"]')).toBeVisible();
     await expect(row.getByTestId('item-inline-actions')).toHaveCount(0);
     await page.screenshot({ path: test.info().outputPath('desktop-hover.png') });
     await (await triggerFor(row)).click();
-    await expect(row.locator('[data-testid^="overflow-dropdown-item-"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid^="overflow-dropdown-item-"]')).toHaveCount(0);
     await page.mouse.move(0, 0);
     await expect(await triggerFor(row)).toHaveCSS('opacity', '0');
     await row.getByTestId('item-name').focus();

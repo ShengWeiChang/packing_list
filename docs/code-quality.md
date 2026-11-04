@@ -344,6 +344,7 @@ Validation
 - `useTouchLayout` owns Checklist capability subscriptions and cleanup; Sidebar width thresholds remain separate. Checklist owns one open item ID, Category forwards it, and Item keeps editing/draft state. Do not persist expansion or duplicate mutation handlers.
 - `touch-target` in `source/index.css` enlarges real controls on narrow/coarse/no-hover views; scoped `inline-action` styles belong to Item. Keep approved scoped class names in the ESLint whitelist.
 - Inline action regions are non-modal button groups with labelled triggers and expanded/control relationships. Close by reason: Escape returns focus, outside clicks retain their destination, and rename focuses its input.
+- `focusEditingInput` owns editor scrollport geometry, temporary bottom space and cleanup; one active editor owns each scrollport. `useVisualViewport` owns modal viewport subscriptions. App owns modal background isolation and body scroll restoration; a higher dialog takes precedence over the drawer. Popup positioning is shared through `positionDropdownWithinViewport`; popups portal into their nearest modal ancestor, falling back to `body`, to preserve focus and inert ownership.
 
 ## 4. Git Hooks (Husky)
 

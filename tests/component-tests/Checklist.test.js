@@ -740,7 +740,9 @@ describe('Checklist inline item actions', () => {
       await w
         .get('[data-testid="overflow-trigger-item-item-2"]')
         .trigger('click', { pointerType: 'mouse' });
-      expect(w.find('[data-testid="overflow-dropdown-item-item-2"]').exists()).toBe(true);
+      expect(
+        document.querySelector('[data-testid="overflow-dropdown-item-item-2"]')
+      ).not.toBeNull();
     } finally {
       w.unmount();
       outside.remove();

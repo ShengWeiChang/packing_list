@@ -644,7 +644,10 @@ async function saveEdit() {
           editSaveFailed.value = true;
           isSavingEdit.value = false;
           await nextTick();
-          (restoreFocus as HTMLInputElement | null)?.focus({ preventScroll: true });
+          if (restoreFocus)
+            cleanupEditingFocus = focusEditingInput(restoreFocus as HTMLInputElement, {
+              select: false,
+            });
           return;
         }
       } finally {

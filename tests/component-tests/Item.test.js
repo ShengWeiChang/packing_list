@@ -535,6 +535,7 @@ describe('Item', () => {
 });
 
 describe('Item touch editing boundaries', () => {
+  // Test Case 30: A toolbar action waits for the final IME model update.
   it('defers an inline action until composition ends and the name is saved', async () => {
     const saveItemEdit = vi.fn().mockResolvedValue({ ...createMockItem(), name: '中文' });
     const w = mount(Item, {
@@ -560,6 +561,7 @@ describe('Item touch editing boundaries', () => {
       w.unmount();
     }
   });
+  // Test Case 31: Save acknowledgement gates actions and failures preserve the draft.
   it('waits for the name save before an inline action and retains a failed draft', async () => {
     let finishSave;
     const saveItemEdit = vi

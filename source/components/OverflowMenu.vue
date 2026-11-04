@@ -10,10 +10,12 @@ Created: 2025-09-19
 -->
 
 <template>
+  <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
   <div
     ref="root"
     class="relative"
     :data-testid="`overflow-root-${props.menuType}-${props.itemId}`"
+    @keydown.esc.stop.prevent="dismissWithEscape"
     @focusout="handleFocusOut"
   >
     <!-- Three-dot menu button or checkmark button when editing -->
@@ -44,68 +46,73 @@ Created: 2025-09-19
     </button>
 
     <!-- Dropdown menu with edit and delete actions -->
-    <div
-      v-if="showMenu"
-      ref="dropdownRef"
-      :class="dropdownClass"
-      :style="dropdownStyle"
-      :data-testid="`overflow-dropdown-${props.menuType}-${props.itemId}`"
-    >
-      <button
-        class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
-        :data-testid="`overflow-action-edit-${props.menuType}-${props.itemId}`"
-        @click="handleEdit"
+    <Teleport :to="portalTarget">
+      <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
+      <div
+        v-if="showMenu"
+        ref="dropdownRef"
+        :class="dropdownClass"
+        :style="dropdownStyle"
+        :data-testid="`overflow-dropdown-${props.menuType}-${props.itemId}`"
+        @focusout="handleFocusOut"
+        @keydown.esc.stop.prevent="dismissWithEscape"
       >
-        <AppIcon
-          class="mr-2"
-          name="edit"
-          size="inline"
-        />
-        {{ $t('common.edit') }}
-      </button>
+        <button
+          class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
+          :data-testid="`overflow-action-edit-${props.menuType}-${props.itemId}`"
+          @click="handleEdit"
+        >
+          <AppIcon
+            class="mr-2"
+            name="edit"
+            size="inline"
+          />
+          {{ $t('common.edit') }}
+        </button>
 
-      <button
-        v-if="props.menuType !== 'template'"
-        class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
-        :data-testid="`overflow-action-copy-${props.menuType}-${props.itemId}`"
-        @click="handleCopy"
-      >
-        <AppIcon
-          class="mr-2"
-          name="copy"
-          size="inline"
-        />
-        {{ $t('common.copy') }}
-      </button>
+        <button
+          v-if="props.menuType !== 'template'"
+          class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
+          :data-testid="`overflow-action-copy-${props.menuType}-${props.itemId}`"
+          @click="handleCopy"
+        >
+          <AppIcon
+            class="mr-2"
+            name="copy"
+            size="inline"
+          />
+          {{ $t('common.copy') }}
+        </button>
 
-      <!-- Save as Template (checklist only) -->
-      <button
-        v-if="props.menuType === 'checklist'"
-        class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
-        :data-testid="`overflow-action-save-template-${props.menuType}-${props.itemId}`"
-        @click="handleSaveAsTemplate"
-      >
-        <AppIcon
-          class="mr-2"
-          name="saveTemplate"
-          size="inline"
-        />
-        {{ $t('template.saveAsTemplate') }}
-      </button>
+        <!-- Save as Template (checklist only) -->
+        <button
+          v-if="props.menuType === 'checklist'"
+          class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
+          :data-testid="`overflow-action-save-template-${props.menuType}-${props.itemId}`"
+          @click="handleSaveAsTemplate"
+        >
+          <AppIcon
+            class="mr-2"
+            name="saveTemplate"
+            size="inline"
+          />
+          {{ $t('template.saveAsTemplate') }}
+        </button>
 
-      <button
-        class="flex w-full items-center px-3 py-2 text-base text-danger-text hover:bg-danger-bg focus:bg-danger-bg focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-danger-focus md:text-sm"
-        :data-testid="`overflow-action-delete-${props.menuType}-${props.itemId}`"
-        @click="handleDelete"
-      >
-        <AppIcon
-          class="mr-2"
-          name="delete"
-          size="inline"
-        />
-        {{ $t('common.delete') }}
-      </button>
-    </div>
+        <button
+          class="flex w-full items-center px-3 py-2 text-base text-danger-text hover:bg-danger-bg focus:bg-danger-bg focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-danger-focus md:text-sm"
+          :data-testid="`overflow-action-delete-${props.menuType}-${props.itemId}`"
+          @click="handleDelete"
+        >
+          <AppIcon
+            class="mr-2"
+            name="delete"
+            size="inline"
+          />
+          {{ $t('common.delete') }}
+        </button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -117,6 +124,7 @@ Created: 2025-09-19
 import type { PropType } from 'vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
+import { positionDropdownWithinViewport } from '../utils/positioning';
 import AppIcon from './AppIcon.vue';
 
 // ------------------------------------------------------------------------------
@@ -235,6 +243,9 @@ const triggerIconSize = computed(
   () => props.triggerIconSize ?? (props.menuType === 'item' ? 'inline' : 'control')
 );
 
+// Keep drawer commands inside its focus/inert owner, outside transformed cards.
+const portalTarget = ref<HTMLElement | string>('body');
+
 // Dropdown styling
 const dropdownClass = computed(
   () => `mt-1 bg-white border border-border-color-light rounded-md shadow-lg z-50 w-auto max-w-xs`
@@ -255,7 +266,7 @@ function handleTriggerClick(event: PointerEvent) {
   } else if (props.isEditing) {
     handleConfirmEdit();
   } else {
-    toggleMenu();
+    toggleMenu(event.detail === 0);
   }
 }
 
@@ -271,27 +282,23 @@ defineExpose({ focusTrigger });
  * Calculate and apply dropdown position to avoid viewport overflow
  */
 function positionDropdown() {
-  if (!buttonRef.value || !dropdownRef.value) return;
+  if (!showMenu.value || !buttonRef.value || !dropdownRef.value) return;
   const btnRect = buttonRef.value.getBoundingClientRect();
   const ddRect = dropdownRef.value.getBoundingClientRect();
 
-  // Align dropdown right edge with the button's right edge
-  let left = btnRect.right - ddRect.width;
+  const viewport = window.visualViewport;
+  dropdownStyle.value = positionDropdownWithinViewport(btnRect, ddRect, {
+    left: viewport?.offsetLeft ?? 0,
+    top: viewport?.offsetTop ?? 0,
+    width: viewport?.width ?? window.innerWidth,
+    height: viewport?.height ?? window.innerHeight,
+  });
+}
 
-  // Clamp within viewport with 8px padding
-  const minPadding = 8;
-  const maxLeft = window.innerWidth - ddRect.width - minPadding;
-  if (left < minPadding) left = minPadding;
-  if (left > maxLeft) left = maxLeft;
-
-  const top = btnRect.bottom + 6; // 6px gap
-
-  dropdownStyle.value = {
-    position: 'fixed',
-    left: `${left}px`,
-    top: `${top}px`,
-    zIndex: 9999,
-  };
+/** Dismiss a keyboard-opened menu and return to its trigger. */
+function dismissWithEscape() {
+  showMenu.value = false;
+  focusTrigger();
 }
 
 // ---------- Menu Actions ----------
@@ -299,7 +306,7 @@ function positionDropdown() {
 /**
  * Toggle the overflow menu visibility and dispatch custom event
  */
-function toggleMenu() {
+function toggleMenu(focusFirst = false) {
   const willOpen = !showMenu.value;
   showMenu.value = willOpen;
 
@@ -310,6 +317,8 @@ function toggleMenu() {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         positionDropdown();
+        if (showMenu.value && focusFirst)
+          dropdownRef.value?.querySelector<HTMLButtonElement>('button')?.focus();
       });
     });
 
@@ -401,7 +410,8 @@ function closeMenu(event: MouseEvent) {
 /**
  * Close menu when user scrolls the page
  */
-function closeMenuOnScroll() {
+function closeMenuOnScroll(event: Event) {
+  if (event.target instanceof Node && dropdownRef.value?.contains(event.target)) return;
   showMenu.value = false;
 }
 
@@ -424,9 +434,12 @@ function closeWhenOtherOpens(event: Event) {
 
 // Set up event listeners
 onMounted(() => {
+  portalTarget.value = root.value?.closest<HTMLElement>('[aria-modal="true"]') ?? 'body';
   document.addEventListener('click', closeMenu);
   window.addEventListener('scroll', closeMenuOnScroll, true);
   window.addEventListener('overflow-menu-open', closeWhenOtherOpens);
+  window.addEventListener('resize', positionDropdown);
+  window.visualViewport?.addEventListener('resize', positionDropdown);
 });
 
 // Clean up event listeners
@@ -434,5 +447,7 @@ onUnmounted(() => {
   document.removeEventListener('click', closeMenu);
   window.removeEventListener('scroll', closeMenuOnScroll, true);
   window.removeEventListener('overflow-menu-open', closeWhenOtherOpens);
+  window.removeEventListener('resize', positionDropdown);
+  window.visualViewport?.removeEventListener('resize', positionDropdown);
 });
 </script>

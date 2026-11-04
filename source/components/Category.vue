@@ -522,7 +522,8 @@ async function saveEdit() {
           editSaveFailed.value = true;
           isSavingEdit.value = false;
           await nextTick();
-          if (restoreFocus) editInput.value?.focus({ preventScroll: true });
+          if (restoreFocus)
+            cleanupEditingFocus = focusEditingInput(editInput.value, { select: false });
           return;
         }
       } finally {

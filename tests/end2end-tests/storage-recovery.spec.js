@@ -503,7 +503,7 @@ test('keeps the original checklist selected after copy succeeds and refresh fail
     window.failReadAfterSave = true;
   });
   await page.getByRole('main').getByTestId('overflow-trigger-checklist-cl').click();
-  await page.getByRole('main').getByTestId('overflow-action-copy-checklist-cl').click();
+  await page.getByTestId('overflow-action-copy-checklist-cl').click();
   await expect(page.getByTestId('checklist-name')).toHaveText('Original trip');
   await expect(page.getByRole('status').filter({ hasText: 'Your change was saved' })).toBeVisible();
   await page.evaluate(() => {
@@ -601,7 +601,7 @@ test('shows a later checklist error after cancelling a failed template save', as
   await page.getByRole('button', { name: 'Cancel' }).click();
   await page.getByRole('main').getByTestId('overflow-trigger-checklist-cl').click();
   page.once('dialog', (dialog) => dialog.accept());
-  await page.getByRole('main').getByTestId('overflow-action-delete-checklist-cl').click();
+  await page.getByTestId('overflow-action-delete-checklist-cl').click();
   await expect(page.getByRole('alert').filter({ hasText: 'storage is full' })).toBeVisible();
   await expect(page.getByTestId('checklist-name')).toHaveText('Trip');
 });

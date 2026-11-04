@@ -53,6 +53,7 @@ describe('OverflowMenu', () => {
         menuType: 'item',
         ...props,
       },
+      global: { stubs: { teleport: true } },
       attachTo: document.body,
     });
     return wrapper;

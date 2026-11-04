@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 703    |
-| Unit tests 單元測試           | 306    |
-| Component tests 組件測試      | 302    |
-| E2E tests E2E 測試            | 95     |
-| Line coverage 行覆蓋率        | 93.46% |
-| Statement coverage 語句覆蓋率 | 91.79% |
-| Branch coverage 分支覆蓋率    | 82.35% |
+| Total tests 總測試數          | 715    |
+| Unit tests 單元測試           | 309    |
+| Component tests 組件測試      | 304    |
+| E2E tests E2E 測試            | 102    |
+| Line coverage 行覆蓋率        | 92.6%  |
+| Statement coverage 語句覆蓋率 | 90.88% |
+| Branch coverage 分支覆蓋率    | 81.35% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,8 +29,8 @@
 
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 306   | models、services、composables、utils 純邏輯 |
-| Component | Vitest + @vue/test-utils | 302   | Vue 組件渲染、事件、狀態                    |
+| Unit      | Vitest                   | 309   | models、services、composables、utils 純邏輯 |
+| Component | Vitest + @vue/test-utils | 304   | Vue 組件渲染、事件、狀態                    |
 | E2E       | Playwright               | 95    | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
@@ -72,7 +72,7 @@ tests/
 │   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
 │   └── fixtures/                        # Typed probe and deliberately invalid inputs
 │
-├── unit-tests/                          # 305 tests
+├── unit-tests/                          # 309 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -85,31 +85,32 @@ tests/
 │   │   ├── templateService.test.js      # 15  tests
 │   │   ├── storageTransaction.test.js  # 27  tests
 │   │   └── recommendedListService.test.js  #  4  tests
-│   ├── composables/                     # 68  tests
+│   ├── composables/                     # 69  tests
 │   │   └── usePackingLists.test.js      # 51  tests
 │   │   └── useTemplates.test.js         # 16  tests
 │   │   └── useTouchLayout.test.js       #  1  test
+│   │   └── useVisualViewport.test.js    #  1  test
 │   ├── i18n/                            # 12  tests
 │   │   └── index.test.js                # 12  tests
-│   ├── utils/                           # 39  tests
+│   ├── utils/                           # 41  tests
 │       ├── operationErrors.test.js    #  3  tests
 │       ├── helpers.test.js              # 21  tests
-│       ├── positioning.test.js          #  3  tests
+│       ├── positioning.test.js          #  4  tests
 │       ├── order.test.js                #  8  tests
 │       ├── dragDrop.test.js             #  2  tests
-│       └── focusEditingInput.test.js     #  2  tests
+│       └── focusEditingInput.test.js     #  3  tests
 │   └── scripts/                         # 17 tests
 │       ├── candidateFingerprint.test.js #  2  tests
 │       ├── checkTypeScriptScope.test.js #  8  tests
 │       ├── eslintTypeScript.test.js     #  2  tests
 │       └── verifyFeature.test.js        #  5  tests
 │
-├── component-tests/                     # 302 tests
+├── component-tests/                     # 304 tests
 │   ├── App.test.js                      # 68  tests
 │   ├── PackingCompletionOverlay.test.js # 10  tests
 │   ├── AppIcon.test.js                  #  4  tests
 │   ├── Checklist.test.js                # 42  tests
-│   ├── Item.test.js                     # 29  tests
+│   ├── Item.test.js                     # 31  tests
 │   ├── Sidebar.test.js                  # 33  tests
 │   ├── Category.test.js                 # 31  tests
 │   ├── OverflowMenu.test.js             # 24  tests
@@ -122,9 +123,11 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 95 tests
+└── end2end-tests/                       # 102 tests
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  6  tests
+    ├── rwd-overlays.spec.js             #  4  tests
+    ├── rwd-webkit.spec.js               #  2  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
@@ -158,18 +161,18 @@ tests/
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
 | scripts/     | 79.03%     | 63.2%  | 77.63% |
-| source/      | 82.38%     | 72.14% | 85.01% |
-| components/  | 92.7%      | 85.07% | 95.27% |
-| composables/ | 95.33%     | 85.71% | 97.55% |
+| source/      | 78.05%     | 67.56% | 81.72% |
+| components/  | 92.12%     | 85.25% | 94.41% |
+| composables/ | 95.46%     | 86.14% | 97.62% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
-| utils/       | 98.98%     | 91.13% | 100%   |
+| utils/       | 97.43%     | 85.93% | 97.85% |
 
 ### By Component 各組件覆蓋率
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 82.38%     | 85.01% | 68    |
+| App.vue                      | 78.05%     | 81.72% | 68    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
@@ -177,13 +180,13 @@ tests/
 | Topbar.vue                   | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
 | Sidebar.vue                  | 100%       | 100%   | 33    |
-| OverflowMenu.vue             | 96.66%     | 97.7%  | 24    |
-| Category.vue                 | 89.5%      | 91.72% | 31    |
-| Checklist.vue                | 87.83%     | 92.03% | 42    |
-| Item.vue                     | 87.42%     | 91.03% | 29    |
-| NewChecklistDialog.vue       | 97.36%     | 100%   | 12    |
+| OverflowMenu.vue             | 94.68%     | 95.65% | 24    |
+| Category.vue                 | 89.5%      | 91.09% | 31    |
+| Checklist.vue                | 87.44%     | 91.58% | 42    |
+| Item.vue                     | 88.2%      | 92.09% | 31    |
+| NewChecklistDialog.vue       | 95%        | 95.94% | 12    |
 | PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
-| SaveTemplateDialog.vue       | 96.07%     | 100%   | 10    |
+| SaveTemplateDialog.vue       | 92.72%     | 93.87% | 10    |
 | TemplateEditor.vue           | 95.23%     | 97.1%  | 14    |
 
 ### Coverage Metrics Explained 覆蓋率指標說明
@@ -253,7 +256,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ### Responsive Interaction Evidence 響應式互動證據
 
-`rwd-phone.spec.js` 明確設定 touch context，驗證 phone／tablet 操作、真實命中區、名稱幾何、一次一件展開、reload 與長按排序，並包含桌面滑鼠回歸。單純 setViewportSize 不代表 touch；Chromium emulation 不證明 Pixel／iPhone 軟鍵盤、中文候選列或 iPad 實機舒適度。M2 將再加入 WebKit 核心 smoke 與主要實機驗收。
+`rwd-phone.spec.js` 明確設定 touch context，驗證 phone／tablet 操作、真實命中區、名稱幾何、一次一件展開、reload 與長按排序，並包含桌面滑鼠回歸。`rwd-overlays.spec.js` 涵蓋抽屜焦點、巢狀 dialog、短畫面、原生日期與模擬鍵盤幾何／錯誤恢復。`webkit-rwd` 只執行 `rwd-webkit.spec.js`，Chromium 忽略此檔，CI 安裝兩個引擎。Emulation 及合成 viewport／IME 事件不證明原生 Pixel／iPhone 鍵盤或 iPad 實機舒適度；實機結果另行記錄。
 
 ## 7. CI/CD Execution Stages 持續整合執行階段
 
@@ -266,7 +269,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ## 8. Complete Test Inventory 完整測試案例清單
 
-### 8.1 Unit Tests（306）
+### 8.1 Unit Tests（309）
 
 #### 8.1.1 Models（40）
 
@@ -478,7 +481,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 26  | 保留範本巢狀欄位並隔離新建立的 runtime 狀態                                   | Snapshot 保留與全新狀態      |
 | 27  | 複製原始資料時不偷偷修復缺漏的舊名稱                                          | 既有失敗行為與原文保留       |
 
-#### 8.1.3 Composables（68）
+#### 8.1.3 Composables（69）
 
 ##### 8.1.3.1 usePackingLists.test.js（51）
 
@@ -563,6 +566,12 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | --- | ---------------------------------------------------------------------- | ------------------ |
 | 1   | tracks capabilities independently of width and cleans up subscriptions | 輸入能力與訂閱清理 |
 
+##### 8.1.3.4 useVisualViewport.test.js（1）
+
+| #   | Test                                                                 | 測試重點               |
+| --- | -------------------------------------------------------------------- | ---------------------- |
+| 1   | updates fixed modal bounds and removes viewport listeners on unmount | 鍵盤可見視窗範圍與清理 |
+
 #### 8.1.4 i18n（12）
 
 ##### 8.1.4.1 index.test.js（12）
@@ -582,7 +591,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 11  | should render the English fallback when a Chinese message is missing    | 執行時英文後備顯示 |
 | 12  | storage 拒絕存取時維持 session 語言                                     | 偏好後備           |
 
-#### 8.1.5 Utils（39）
+#### 8.1.5 Utils（41）
 
 ##### 8.1.5.1 helpers.test.js（21）
 
@@ -630,20 +639,22 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 7   | should append at the complete end when dropped after all visible entries | 可見末端插入            |
 | 8   | should append when every target entry is hidden                          | 全隱藏目標插入          |
 
-##### 8.1.5.4 positioning.test.js（3）
+##### 8.1.5.4 positioning.test.js（4）
 
-| #   | Test                                                      | 測試重點               |
-| --- | --------------------------------------------------------- | ---------------------- |
-| 1   | should clamp dropdown left within viewport padding        | 左側最小 padding 夾取  |
-| 2   | should clamp dropdown left to max when near right edge    | 右側最大邊界 夾取      |
-| 3   | should position dropdown above anchor with gap and zIndex | 固定定位計算（含 gap） |
+| #   | Test                                                                  | 測試重點               |
+| --- | --------------------------------------------------------------------- | ---------------------- |
+| 1   | should clamp dropdown left within viewport padding                    | 左側最小 padding 夾取  |
+| 2   | should clamp dropdown left to max when near right edge                | 右側最大邊界 夾取      |
+| 3   | should position dropdown above anchor with gap and zIndex             | 固定定位計算（含 gap） |
+| 4   | fits bottom-edge and oversized menus inside an offset visual viewport | Popup 可見範圍與捲動   |
 
-##### 8.1.5.5 focusEditingInput.test.js（2）
+##### 8.1.5.5 focusEditingInput.test.js（3）
 
-| #   | Test                                                                                  | 測試重點             |
-| --- | ------------------------------------------------------------------------------------- | -------------------- |
-| 1   | should focus without scrolling, select the name, and keep a visible input in place    | 穩定聚焦與全選       |
-| 2   | should use nearest non-animated scrolling only when the input is outside the viewport | 條件式 viewport 捲動 |
+| #   | Test                                                                       | 測試重點                            |
+| --- | -------------------------------------------------------------------------- | ----------------------------------- |
+| 1   | keeps a visible input in place and restores temporary space                | 穩定聚焦與 padding 清理             |
+| 2   | scrolls by the minimum delta after keyboard resize and stops after cleanup | Scrollport 幾何與 viewport 生命週期 |
+| 3   | transfers temporary space ownership between editors                        | 舊清理不得移除啟用中的空間          |
 
 ##### 8.1.5.6 operationErrors.test.js（3）
 
@@ -703,7 +714,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | rejects explicit any in a TypeScript application component              | 防止 TS 應用 scripts 使用 explicit any |
 | 2   | parses typed Vue props without applying JavaScript undefined-name rules | 允許 TS 型別且不誤報 JS 診斷           |
 
-### 8.2 Component Tests（302）
+### 8.2 Component Tests（304）
 
 #### 8.2.1 App.test.js（68）
 
@@ -828,39 +839,41 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 4   | should show quantity badge when quantity > 1                 | 數量顯示       |
 | 5   | should emit "update:item" with isPending=false on completion | 清除 pending   |
 
-#### 8.2.7 Item.test.js（29）
+#### 8.2.7 Item.test.js（31）
 
-| #   | Test                                                               | 測試重點                 |
-| --- | ------------------------------------------------------------------ | ------------------------ |
-| 1   | should display the item name                                       | 名稱渲染                 |
-| 2   | should render a checkbox input                                     | checkbox 存在            |
-| 3   | should check checkbox when packed                                  | checked 綁定             |
-| 4   | should apply line-through when packed                              | 打包樣式                 |
-| 5   | should display quantity value                                      | 數量標籤                 |
-| 6   | should emit toggled isPacked on checkbox click                     | checkbox 切換事件        |
-| 7   | should clear isPending when packed                                 | 打包清除 pending         |
-| 8   | should enter edit mode on name click                               | 編輯時聚焦全選           |
-| 9   | should save on Enter                                               | Enter 確認               |
-| 10  | should cancel on Escape                                            | Escape 取消              |
-| 11  | should emit incremented quantity                                   | 數量 +1                  |
-| 12  | should emit decremented quantity                                   | 數量 -1                  |
-| 13  | should emit delete when quantity=1 and delete clicked              | 刪除（數量1）            |
-| 14  | should emit toggled isPending                                      | 切換 pending             |
-| 15  | should clear isPacked when marked pending                          | pending 清除 packed      |
-| 16  | should emit copy:item from OverflowMenu                            | 複製轉發                 |
-| 17  | should emit update on blur with changed name                       | blur 儲存                |
-| 18  | should not emit on blur with empty name                            | 空名稱檢查               |
-| 19  | should emit delete from OverflowMenu                               | 刪除轉發                 |
-| 20  | should show action buttons on mouseenter                           | hover 顯示               |
-| 21  | should hide action buttons on mouseleave                           | hover 隱藏               |
-| 22  | should not save during IME composition                             | IME 檢查                 |
-| 23  | should enter edit mode when newlyCreatedItemId matches             | 新建自動聚焦全選         |
-| 24  | should not enter edit mode when ID doesn't match                   | 無誤觸發                 |
-| 25  | should not decrement quantity below 1                              | 最小數量檢查             |
-| 26  | should apply cursor-grabbing when isDragging                       | 拖曳視覺狀態             |
-| 27  | 儲存失敗後保留物品草稿直到重試                                     | 行內寫入確認             |
-| 28  | preserves a failed name draft when another edit entry is activated | 失敗草稿與 baseline 保留 |
-| 29  | keeps the quantity-one delete action in the expanded touch region  | 數量為一的刪除操作       |
+| #   | Test                                                                       | 測試重點                 |
+| --- | -------------------------------------------------------------------------- | ------------------------ |
+| 1   | should display the item name                                               | 名稱渲染                 |
+| 2   | should render a checkbox input                                             | checkbox 存在            |
+| 3   | should check checkbox when packed                                          | checked 綁定             |
+| 4   | should apply line-through when packed                                      | 打包樣式                 |
+| 5   | should display quantity value                                              | 數量標籤                 |
+| 6   | should emit toggled isPacked on checkbox click                             | checkbox 切換事件        |
+| 7   | should clear isPending when packed                                         | 打包清除 pending         |
+| 8   | should enter edit mode on name click                                       | 編輯時聚焦全選           |
+| 9   | should save on Enter                                                       | Enter 確認               |
+| 10  | should cancel on Escape                                                    | Escape 取消              |
+| 11  | should emit incremented quantity                                           | 數量 +1                  |
+| 12  | should emit decremented quantity                                           | 數量 -1                  |
+| 13  | should emit delete when quantity=1 and delete clicked                      | 刪除（數量1）            |
+| 14  | should emit toggled isPending                                              | 切換 pending             |
+| 15  | should clear isPacked when marked pending                                  | pending 清除 packed      |
+| 16  | should emit copy:item from OverflowMenu                                    | 複製轉發                 |
+| 17  | should emit update on blur with changed name                               | blur 儲存                |
+| 18  | should not emit on blur with empty name                                    | 空名稱檢查               |
+| 19  | should emit delete from OverflowMenu                                       | 刪除轉發                 |
+| 20  | should show action buttons on mouseenter                                   | hover 顯示               |
+| 21  | should hide action buttons on mouseleave                                   | hover 隱藏               |
+| 22  | should not save during IME composition                                     | IME 檢查                 |
+| 23  | should enter edit mode when newlyCreatedItemId matches                     | 新建自動聚焦全選         |
+| 24  | should not enter edit mode when ID doesn't match                           | 無誤觸發                 |
+| 25  | should not decrement quantity below 1                                      | 最小數量檢查             |
+| 26  | should apply cursor-grabbing when isDragging                               | 拖曳視覺狀態             |
+| 27  | 儲存失敗後保留物品草稿直到重試                                             | 行內寫入確認             |
+| 28  | preserves a failed name draft when another edit entry is activated         | 失敗草稿與 baseline 保留 |
+| 29  | keeps the quantity-one delete action in the expanded touch region          | 數量為一的刪除操作       |
+| 30  | defers an inline action until composition ends and the name is saved       | 操作前取得最終組字文字   |
+| 31  | waits for the name save before an inline action and retains a failed draft | 儲存確認與失敗保護       |
 
 #### 8.2.8 OverflowMenu.test.js（24）
 
@@ -1087,7 +1100,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 9   | renders localized Traditional Chinese sticker copy                     | 語系文字與緊湊日期範圍 |
 | 10  | exposes one synchronized timeline to JavaScript and CSS                | 共用時間軸契約         |
 
-### 8.3 E2E Tests（95）
+### 8.3 E2E Tests（102）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1243,3 +1256,20 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 4   | keeps tablet controls visible and categories in one column       | 平板與旋轉           |
 | 5   | retains hover quick controls and the desktop command menu        | 桌面回歸             |
 | 6   | preserves touch sorting while excluding action buttons           | 觸控長按與持久化排序 |
+
+#### 8.3.13 rwd-overlays.spec.js（5）
+
+| #   | Test                                                                                 | 測試重點                      |
+| --- | ------------------------------------------------------------------------------------ | ----------------------------- |
+| 1   | drawer isolates background, traps keyboard and restores focus through nested dialogs | Modal owner 與 resize 穩定性  |
+| 2   | drawer popup traps focus and edit actions unlock their destination                   | 抽屜指令歸屬與清單／範本編輯  |
+| 3   | short dialogs and narrow date editing fit without horizontal overflow                | 短 viewport 與原生日期        |
+| 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport 留白、錯誤與清理   |
+| 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup 範圍、初始焦點與 Escape |
+
+#### 8.3.14 rwd-webkit.spec.js（2）
+
+| #   | Test                                                         | 測試重點                      |
+| --- | ------------------------------------------------------------ | ----------------------------- |
+| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit 觸控狀態與回焦         |
+| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit 短 viewport 與日期幾何 |

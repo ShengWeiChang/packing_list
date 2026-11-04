@@ -10,9 +10,25 @@ Created: 2026-02-11
 
 import { describe, expect, it } from 'vitest';
 
-import { clampDropdownLeft, positionDropdownAbove } from '../../../source/utils/positioning';
+import {
+  clampDropdownLeft,
+  positionDropdownAbove,
+  positionDropdownWithinViewport,
+} from '../../../source/utils/positioning';
 
 describe('positioning utils', () => {
+  // Test Case 4: Bottom-edge and tall menus stay inside the visible viewport.
+  it('fits bottom-edge and oversized menus inside an offset visual viewport', () => {
+    const viewport = { left: 10, top: 40, width: 320, height: 300 };
+    const anchor = { right: 320, top: 300, bottom: 324 };
+    const style = positionDropdownWithinViewport(anchor, { width: 160, height: 120 }, viewport);
+    expect(style.top).toBe('174px');
+    expect(style.left).toBe('160px');
+    const tall = positionDropdownWithinViewport(anchor, { width: 160, height: 600 }, viewport);
+    expect(tall.top).toBe('48px');
+    expect(tall.maxHeight).toBe('246px');
+    expect(tall.overflowY).toBe('auto');
+  });
   // ---------------------------------------------------------------------------
   // Test Group 1: Dropdown Positioning
   // ---------------------------------------------------------------------------

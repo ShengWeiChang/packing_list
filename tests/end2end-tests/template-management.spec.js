@@ -140,10 +140,7 @@ test.describe('Template Management', () => {
       .getByRole('main')
       .getByTestId('overflow-trigger-checklist-checklist-1');
     await checklistOverflow.click();
-    await page
-      .getByRole('main')
-      .getByTestId('overflow-action-save-template-checklist-checklist-1')
-      .click();
+    await page.getByTestId('overflow-action-save-template-checklist-checklist-1').click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByTestId('save-template-name').fill('Saved Trip');
     await page.getByTestId('save-template-confirm').click();

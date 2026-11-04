@@ -15,16 +15,18 @@ Created: 2025-09-19
     :class="['min-h-screen text-primary', isMobileViewport ? 'flex flex-col' : 'flex']"
   >
     <!-- Overlay for narrow screens when sidebar is open -->
-    <div
-      v-if="(isMobileViewport || (isSmallDesktop && isSidebarOpen)) && isSidebarOpen"
-      class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-      role="button"
-      tabindex="0"
-      aria-label="Close sidebar"
-      @click="toggleSidebar"
-      @keydown.enter="toggleSidebar"
-      @keydown.space="toggleSidebar"
-    ></div>
+    <Teleport to="body">
+      <div
+        v-if="(isMobileViewport || (isSmallDesktop && isSidebarOpen)) && isSidebarOpen"
+        class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+        role="button"
+        tabindex="0"
+        aria-label="Close sidebar"
+        @click="toggleSidebar"
+        @keydown.enter="toggleSidebar"
+        @keydown.space="toggleSidebar"
+      ></div>
+    </Teleport>
 
     <!-- Mobile Topbar -->
     <Topbar
@@ -40,10 +42,17 @@ Created: 2025-09-19
       v-if="isOverlayVisible"
       to="body"
     >
+      <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
       <div
+        ref="sidebarOverlay"
         class="fixed inset-y-0 left-0 z-50"
-        :inert="showPackingCompletion || undefined"
+        :inert="isDialogVisible || showPackingCompletion || undefined"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="$t('topbar.toggleNav')"
+        tabindex="-1"
         data-testid="overlay-sidebar"
+        @keydown="handleSidebarKeydown"
       >
         <Sidebar
           :is-expanded="isSidebarOpen"
@@ -239,25 +248,27 @@ Created: 2025-09-19
     </main>
 
     <!-- New Checklist Dialog -->
-    <NewChecklistDialog
-      :visible="showNewChecklistDialog"
-      :templates="templates"
-      :recommended-lists="recommendedLists"
-      :saving="isCreatingChecklist"
-      :save-error="checklistCreateFailed"
-      :error-code="checklistOperationError"
-      @close="showNewChecklistDialog = false"
-      @select="handleNewChecklistSelect"
-    />
-    <SaveTemplateDialog
-      :initial-name="templateChecklistName"
-      :visible="showSaveTemplateDialog"
-      :saving="isSavingTemplate"
-      :save-error="templateSaveFailed"
-      :error-code="templateOperationError"
-      @close="showSaveTemplateDialog = false"
-      @save="handleTemplateSave"
-    />
+    <Teleport to="body">
+      <NewChecklistDialog
+        :visible="showNewChecklistDialog"
+        :templates="templates"
+        :recommended-lists="recommendedLists"
+        :saving="isCreatingChecklist"
+        :save-error="checklistCreateFailed"
+        :error-code="checklistOperationError"
+        @close="showNewChecklistDialog = false"
+        @select="handleNewChecklistSelect"
+      />
+      <SaveTemplateDialog
+        :initial-name="templateChecklistName"
+        :visible="showSaveTemplateDialog"
+        :saving="isSavingTemplate"
+        :save-error="templateSaveFailed"
+        :error-code="templateOperationError"
+        @close="showSaveTemplateDialog = false"
+        @save="handleTemplateSave"
+      />
+    </Teleport>
 
     <Teleport to="body">
       <PackingCompletionOverlay
@@ -425,6 +436,10 @@ const showPackingUndo = ref(false);
 const showPackingCompletion = ref(false);
 const packingCompletion = ref<ReturnType<typeof getPackingCompletionSnapshot> | null>(null);
 const appShell = ref<HTMLElement | null>(null);
+const sidebarOverlay = ref<HTMLElement | null>(null);
+let sidebarTrigger: HTMLElement | null = null;
+let previousBodyOverflow: string | null = null;
+let previousViewportWidth: number | null = null;
 let packingUndoTimer: number | undefined;
 let packingCompletionTrigger: HTMLElement | null = null;
 let packingUndoPendingAfterCompletion = false;
@@ -442,6 +457,9 @@ const newlyCreatedChecklistId = ref<string | null>(null);
 const isOverlayVisible = computed(
   () =>
     (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value)) && isSidebarOpen.value
+);
+const isDialogVisible = computed(
+  () => showNewChecklistDialog.value || showSaveTemplateDialog.value
 );
 const recommendedLists = computed(() => recommendedListService.getRecommendedLists(locale.value));
 const storageProblems = computed(() =>
@@ -637,8 +655,20 @@ function showPackingUndoToast() {
  * Check if screen is mobile size and adjust UI accordingly
  */
 function checkScreenSize() {
+  if (previousViewportWidth === window.innerWidth) return;
+  const previousBucket =
+    previousViewportWidth === null
+      ? null
+      : previousViewportWidth < BREAKPOINTS.MOBILE
+        ? 'mobile'
+        : previousViewportWidth < BREAKPOINTS.SIDEBAR_OVERLAY
+          ? 'narrow'
+          : 'desktop';
+  previousViewportWidth = window.innerWidth;
   isMobileViewport.value = window.innerWidth < BREAKPOINTS.MOBILE;
   isSmallDesktop.value = window.innerWidth < BREAKPOINTS.SIDEBAR_OVERLAY;
+  const bucket = isMobileViewport.value ? 'mobile' : isSmallDesktop.value ? 'narrow' : 'desktop';
+  if (previousBucket === bucket) return;
 
   // Auto-collapse sidebar on small screens
   if (isMobileViewport.value || isSmallDesktop.value) {
@@ -680,6 +710,37 @@ function toggleSidebar() {
       }
     } catch {
       // The current session still retains the selected sidebar state.
+    }
+  }
+}
+
+/** Keep keyboard navigation inside the active drawer, below any dialog. */
+function handleSidebarKeydown(event: KeyboardEvent) {
+  if (isDialogVisible.value || showPackingCompletion.value) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    event.stopPropagation();
+    isSidebarOpen.value = false;
+  } else if (event.key === 'Tab') {
+    const controls = Array.from(
+      sidebarOverlay.value?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), a[href], [tabindex="0"]'
+      ) ?? []
+    ).filter((element) => element.getClientRects().length && !element.closest('[inert]'));
+    const first = controls[0];
+    const last = controls.at(-1);
+    if (!first) {
+      event.preventDefault();
+      sidebarOverlay.value?.focus();
+    } else if (
+      event.shiftKey &&
+      (document.activeElement === first || document.activeElement === sidebarOverlay.value)
+    ) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
   }
 }
@@ -1015,6 +1076,7 @@ async function handleNewChecklistSelect(selection: ChecklistSelection) {
           : { source: selection.source, seedData };
       const newChecklist = await handleAsyncAction(createChecklist, checklistWithId, options);
       if (newChecklist) {
+        if (isOverlayVisible.value) isSidebarOpen.value = false;
         newlyCreatedChecklistId.value = newChecklist.id;
         showNewChecklistDialog.value = false;
       } else {
@@ -1028,6 +1090,7 @@ async function handleNewChecklistSelect(selection: ChecklistSelection) {
       const options: ChecklistSourceOptions = { source: 'empty' };
       const newChecklist = await handleAsyncAction(createChecklist, newChecklistData, options);
       if (newChecklist) {
+        if (isOverlayVisible.value) isSidebarOpen.value = false;
         newlyCreatedChecklistId.value = newChecklist.id;
         showNewChecklistDialog.value = false;
       } else {
@@ -1061,6 +1124,7 @@ async function handleChecklistUpdate(checklist: ChecklistDTO, expected?: Checkli
  * @param {string} checklistId - The ID of the checklist to edit
  */
 function handleChecklistEdit(checklistId: string) {
+  if (isOverlayVisible.value) isSidebarOpen.value = false;
   // Select the checklist first
   selectedChecklistId.value = checklistId;
   // Mark it for editing
@@ -1159,6 +1223,7 @@ function handleTemplateEdit(templateId: string) {
     return;
   const template = templates.value.find((item) => item.id === templateId);
   if (!template) return;
+  if (isOverlayVisible.value) isSidebarOpen.value = false;
   templateEditSaveFailed.value = false;
   templateDraftAtRisk.value = false;
   templateEditing.value = template;
@@ -1249,7 +1314,7 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handlePackingHistoryKeydown);
   window.clearTimeout(packingUndoTimer);
   if (appShell.value) appShell.value.inert = false;
-  document.body.style.overflow = '';
+  if (previousBodyOverflow !== null) document.body.style.overflow = previousBodyOverflow;
 });
 
 // ------------------------------------------------------------------------------
@@ -1257,18 +1322,45 @@ onUnmounted(() => {
 // ------------------------------------------------------------------------------
 
 // Prevent layout shift caused by scrollbar/body resizing when overlay drawer is active
-watch([isSidebarOpen, isMobileViewport, isSmallDesktop, showPackingCompletion], () => {
+watch([isOverlayVisible, isDialogVisible, showPackingCompletion], () => {
   const overlayActive =
-    showPackingCompletion.value ||
-    (isSidebarOpen.value &&
-      (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value)));
+    showPackingCompletion.value || isOverlayVisible.value || isDialogVisible.value;
   if (overlayActive) {
+    previousBodyOverflow ??= document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = '';
+  } else if (previousBodyOverflow !== null) {
+    document.body.style.overflow = previousBodyOverflow;
+    previousBodyOverflow = null;
   }
 
-  if (appShell.value) appShell.value.inert = showPackingCompletion.value;
+  if (appShell.value) appShell.value.inert = overlayActive;
+});
+
+watch(isOverlayVisible, async (open) => {
+  if (open) {
+    sidebarTrigger =
+      document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+        ? document.activeElement
+        : document.querySelector<HTMLElement>(
+            isMobileViewport.value
+              ? '[data-testid="topbar-toggle"]'
+              : '[data-testid="sidebar-toggle"]'
+          );
+    await nextTick();
+    if (!isOverlayVisible.value || isDialogVisible.value || showPackingCompletion.value) return;
+    const first = sidebarOverlay.value?.querySelector<HTMLElement>('button:not([disabled])');
+    (first ?? sidebarOverlay.value)?.focus({ preventScroll: true });
+  } else {
+    await nextTick();
+    if (
+      !isDialogVisible.value &&
+      !showPackingCompletion.value &&
+      sidebarTrigger?.isConnected &&
+      (document.activeElement === document.body || !document.activeElement?.isConnected)
+    ) {
+      sidebarTrigger.focus({ preventScroll: true });
+    }
+  }
 });
 
 watch(canUndoPackingChange, (canUndo) => {

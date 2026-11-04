@@ -8,7 +8,7 @@ Created: 2026-10-13
 ================================================================================
 */
 
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 
 import NewChecklistDialog from '../../source/components/NewChecklistDialog.vue';
@@ -156,6 +156,7 @@ describe('NewChecklistDialog', () => {
     );
 
     await wrapper.setProps({ visible: false });
+    await flushPromises();
     expect(document.activeElement).toBe(previousButton);
 
     wrapper.unmount();

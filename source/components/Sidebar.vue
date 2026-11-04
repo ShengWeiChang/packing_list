@@ -13,7 +13,7 @@ Created: 2025-09-19
   <aside
     :class="[
       'flex flex-col border-r border-border-color-light bg-white p-2 transition-all duration-300 ease-in-out',
-      isMobile ? 'h-full' : 'h-screen',
+      isMobile ? 'h-full' : 'h-dvh',
       // Mobile: overlay drawer when expanded, hidden when collapsed
       isMobile
         ? [isExpanded ? 'w-72 translate-x-0' : 'w-72 -translate-x-full']

@@ -190,7 +190,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Edit Mode:
     - Uses `box-shadow` instead of `border-bottom` to avoid layout shifts.
     - Input field styling matches display text exactly (font size, line height, padding) to ensure seamless toggle.
-    - Entering edit mode focuses with scroll prevention and selects the full name; a newly created item enters this state automatically. Scrolling occurs only when the input is outside the visible viewport and uses nearest, non-animated alignment.
+    - Entering edit mode focuses with scroll prevention and selects the full name; a newly created item enters this state automatically. The real scrollport keeps the input inside the visual viewport with a 28px comfort buffer that yields in short views; temporary bottom space is restored on cleanup. Native keyboard comfort still requires device testing.
   - UI Improvements:
     - Touch item/category checkbox labels and core action controls provide real 44×44 CSS px hit areas while retaining compact icons; desktop controls retain their existing density.
   - Toggle status: Toggling `isPacked` immediately updates category and checklist progress; preserves `order`.
@@ -288,7 +288,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Interaction Optimization:
       - Long Press Drag: To prevent accidental touches, dragging on mobile requires a 200ms long press (configured in `vuedraggable`).
       - Touch Targets: The product target is 44×44 CSS px for core controls, measured on the real button/label rather than its icon. This is not a claim of complete WCAG conformance.
-      - Keyboard Avoidance: Focus editing inputs with scroll prevention; after the mobile viewport settles, scroll only an occluded input to the nearest visible position without animation.
+      - Keyboard Avoidance: Focus editing inputs with scroll prevention; use the intersection of visual viewport and scrollport bounds, minimal non-animated scrolling, and a shrinking comfort buffer. Dialog surfaces follow visible viewport bounds and scroll internally when needed.
       - Input capabilities: `useTouchLayout` shares width (<768px), any coarse pointer, and no-hover queries within a Checklist and cleans up subscriptions. Touch-safe presentation is independent of Sidebar breakpoints; actual touch on an item trigger also reaches inline actions on a hybrid device.
     - Visual Optimization:
       - Interface Simplification: Mobile version hides some edit buttons, switching to "click text to edit" mode; Overflow Menu (`...`) is always visible.
@@ -467,7 +467,8 @@ packing-list/
     ├── composables/                  # Vue composables (state + logic)
     │   ├── usePackingLists.ts        # Core state and CRUD logic
     │   ├── useTemplates.ts           # Template state and CRUD logic
-    │   └── useTouchLayout.ts         # Checklist input-capability subscriptions
+    │   ├── useTouchLayout.ts         # Checklist input-capability subscriptions
+    │   └── useVisualViewport.ts      # Visible viewport bounds for modal surfaces
     ├── i18n/                         # i18n initialization and locale detection/persistence
     │   └── index.ts                  # create vue-i18n, locale mapping, localStorage read/write
     ├── locales/                      # Translation files
@@ -564,6 +565,8 @@ The application uses a centralized color management system with semantic naming:
 #### Sidebar Behavior
 
 - Mobile & narrow desktop: Sidebar becomes an overlay drawer (teleported to `body`) with a dimmed backdrop; clicking the backdrop closes it.
+- The drawer moves focus inside, wraps Tab/Shift+Tab, closes with Escape and restores its trigger. The background is inert; a higher dialog owns focus while the drawer is inert. Height-only resize preserves drawer state, and App restores the previous body scroll setting after the last modal closes.
+- Short command menus are teleported outside card transforms, fit above/below their trigger in the visual viewport, and scroll internally when space is limited. Keyboard opening focuses the first command; Escape restores the trigger.
 - Desktop: Inline sticky sidebar that can collapse to an icon-only mode; manual collapse/expand is persisted in localStorage.
 
 #### Content Layout
