@@ -565,6 +565,14 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+@media (min-width: 600px) and (any-pointer: coarse), (min-width: 600px) and (hover: none) {
+  [data-testid='sidebar-checklists-draggable'] > li > div {
+    padding-inline: 0;
+  }
+  [data-testid='sidebar-checklists-draggable'] > li > div > button.pr-8 {
+    padding-left: 0.75rem;
+  }
+}
 /* Checklist drag and drop styles */
 .ghost-checklist {
   opacity: 0.3;

@@ -38,47 +38,51 @@ Created: 2025-09-19
 
     <!-- Sidebar -->
     <!-- Overlay Sidebar (Mobile or Narrow + Expanded) -->
-    <teleport
-      v-if="isOverlayVisible"
-      to="body"
-    >
-      <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
-      <div
-        ref="sidebarOverlay"
-        class="fixed inset-y-0 left-0 z-50"
-        :inert="isDialogVisible || showPackingCompletion || undefined"
-        role="dialog"
-        aria-modal="true"
-        :aria-label="$t('topbar.toggleNav')"
-        tabindex="-1"
-        data-testid="overlay-sidebar"
-        @keydown="handleSidebarKeydown"
+    <teleport to="body">
+      <Transition
+        name="mobile-drawer"
+        :css="isMobileViewport"
+        @before-leave="prepareSidebarLeave"
       >
-        <Sidebar
-          :is-expanded="isSidebarOpen"
-          :is-mobile="isMobileViewport"
-          :is-narrow="isSmallDesktop"
-          :checklists="checklists"
-          :templates="templates"
-          :selected-checklist-id="selectedChecklistId"
-          :selected-template-id="templateEditing?.id || null"
-          @toggle-sidebar="toggleSidebar"
-          @create-checklist="handleChecklistCreate"
-          @select-checklist="selectedChecklistId = $event"
-          @edit-checklist="handleChecklistEdit"
-          @copy-checklist="handleChecklistCopy"
-          @delete-checklist="handleChecklistDelete"
-          @move:checklists="handleChecklistMove"
-          @save-as-template="handleSaveAsTemplate"
-          @edit-template="handleTemplateEdit"
-          @delete-template="handleTemplateDelete"
-        />
-      </div>
+        <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
+        <div
+          v-if="isOverlayVisible"
+          ref="sidebarOverlay"
+          class="fixed inset-y-0 left-0 z-50"
+          :inert="isDialogVisible || showPackingCompletion || undefined"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="$t('topbar.toggleNav')"
+          tabindex="-1"
+          data-testid="overlay-sidebar"
+          @keydown="handleSidebarKeydown"
+        >
+          <Sidebar
+            :is-expanded="isSidebarOpen"
+            :is-mobile="isMobileViewport"
+            :is-narrow="isSmallDesktop"
+            :checklists="checklists"
+            :templates="templates"
+            :selected-checklist-id="selectedChecklistId"
+            :selected-template-id="templateEditing?.id || null"
+            @toggle-sidebar="toggleSidebar"
+            @create-checklist="handleChecklistCreate"
+            @select-checklist="selectedChecklistId = $event"
+            @edit-checklist="handleChecklistEdit"
+            @copy-checklist="handleChecklistCopy"
+            @delete-checklist="handleChecklistDelete"
+            @move:checklists="handleChecklistMove"
+            @save-as-template="handleSaveAsTemplate"
+            @edit-template="handleTemplateEdit"
+            @delete-template="handleTemplateDelete"
+          />
+        </div>
+      </Transition>
     </teleport>
 
     <!-- Inline Sidebar (Desktop only, when not in overlay mode) -->
     <div
-      v-else-if="!isMobileViewport"
+      v-if="!isOverlayVisible && !isMobileViewport"
       class="relative z-50"
     >
       <Sidebar
@@ -1321,6 +1325,13 @@ onUnmounted(() => {
 // Watchers
 // ------------------------------------------------------------------------------
 
+/** Remove a closing drawer from interaction while its visual transition finishes. */
+function prepareSidebarLeave(element: Element) {
+  const drawer = element as HTMLElement;
+  drawer.inert = true;
+  drawer.setAttribute('aria-hidden', 'true');
+}
+
 // Prevent layout shift caused by scrollbar/body resizing when overlay drawer is active
 watch([isOverlayVisible, isDialogVisible, showPackingCompletion], () => {
   const overlayActive =
@@ -1356,7 +1367,9 @@ watch(isOverlayVisible, async (open) => {
       !isDialogVisible.value &&
       !showPackingCompletion.value &&
       sidebarTrigger?.isConnected &&
-      (document.activeElement === document.body || !document.activeElement?.isConnected)
+      (document.activeElement === document.body ||
+        !document.activeElement?.isConnected ||
+        document.activeElement?.closest('[data-testid="overlay-sidebar"][inert]'))
     ) {
       sidebarTrigger.focus({ preventScroll: true });
     }
@@ -1372,6 +1385,23 @@ watch(canUndoPackingChange, (canUndo) => {
 </script>
 
 <style>
+.mobile-drawer-enter-active,
+.mobile-drawer-leave-active {
+  transition: transform 300ms ease-in-out;
+}
+
+.mobile-drawer-enter-from,
+.mobile-drawer-leave-to {
+  transform: translateX(-100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-drawer-enter-active,
+  .mobile-drawer-leave-active {
+    transition: none;
+  }
+}
+
 .backdrop {
   background-color: var(--overlay);
 }

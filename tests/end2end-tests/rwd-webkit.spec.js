@@ -27,7 +27,23 @@ test('WebKit touch actions persist and drawer dismisses accessibly', async ({ pa
     page.locator(`[data-item-id="${id}"] [data-testid="item-quantity-summary"]`)
   ).toHaveText('×2');
   await page.getByTestId('topbar-toggle').click();
-  await expect(page.getByTestId('overlay-sidebar')).toBeVisible();
+  const drawer = page.getByTestId('overlay-sidebar');
+  await expect(drawer).toBeVisible();
+  const opening = await drawer.evaluate(
+    (element) =>
+      new Promise((resolve) => {
+        const start = performance.now();
+        const positions = [];
+        const sample = () => {
+          positions.push(element.getBoundingClientRect().x);
+          if (performance.now() - start < 350) requestAnimationFrame(sample);
+          else resolve(positions);
+        };
+        requestAnimationFrame(sample);
+      })
+  );
+  expect(opening.some((x) => x < -1)).toBe(true);
+  expect(Math.abs(opening.at(-1))).toBeLessThan(1);
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('overlay-sidebar')).toHaveCount(0);
   await expect(page.getByTestId('topbar-toggle')).toBeFocused();
@@ -60,6 +76,26 @@ test('WebKit tablet columns retain visible touch actions', async ({ page }) => {
   await selectGeneralRecommendedList(page);
   await page.getByTestId('checklist-name-input').press('Enter');
   await page.setViewportSize({ width: 820, height: 1180 });
+  const sidebarSamples = await page.evaluate(async () => {
+    const samples = [];
+    for (let i = 0; i < 2; i++) {
+      document.querySelector('aside [data-testid="sidebar-toggle"]').click();
+      const start = performance.now();
+      await new Promise((resolve) => {
+        const sample = () => {
+          const list = document.querySelector('aside [data-testid="sidebar-checklists-draggable"]');
+          const scrollport = list?.closest('.overflow-y-auto');
+          if (scrollport) samples.push(scrollport.scrollWidth - scrollport.clientWidth);
+          if (performance.now() - start < 400) requestAnimationFrame(sample);
+          else resolve();
+        };
+        requestAnimationFrame(sample);
+      });
+    }
+    return samples;
+  });
+  expect(sidebarSamples.length).toBeGreaterThan(0);
+  expect(Math.max(...sidebarSamples)).toBeLessThanOrEqual(0);
   const cards = page.getByTestId('category-card');
   await expect
     .poll(async () => {

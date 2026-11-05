@@ -18,9 +18,9 @@
 | Unit tests 單元測試           | 309    |
 | Component tests 組件測試      | 304    |
 | E2E tests E2E 測試            | 104    |
-| Line coverage 行覆蓋率        | 92.61% |
-| Statement coverage 語句覆蓋率 | 90.89% |
-| Branch coverage 分支覆蓋率    | 81.38% |
+| Line coverage 行覆蓋率        | 92.51% |
+| Statement coverage 語句覆蓋率 | 90.8%  |
+| Branch coverage 分支覆蓋率    | 81.35% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -172,7 +172,7 @@ tests/
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 78.05%     | 81.72% | 68    |
+| App.vue                      | 77.52%     | 81.1%  | 68    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
@@ -1253,25 +1253,25 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | touch actions remain open and persist quantity and pending state      | 手機命中區、選單、待買字級與持久化操作   |
 | 2   | keeps name geometry stable and makes checkbox edges actionable        | 名稱幾何與真實命中                       |
 | 3   | switches one open item and shares the direct rename flow              | 一次一件展開與改名                       |
-| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、觸控選單、文字對齊與密度       |
+| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、側欄溢出、觸控選單與密度       |
 | 5   | retains hover quick controls and the desktop command menu             | 桌面整列回饋、選單關閉、focus 與文字對齊 |
 | 6   | preserves touch sorting while excluding action buttons                | 觸控長按與持久化排序                     |
 | 7   | persists category sorting across tablet columns                       | 跨欄觸控拖曳與排序保存                   |
 
 #### 8.3.13 rwd-overlays.spec.js（5）
 
-| #   | Test                                                                                 | 測試重點                            |
-| --- | ------------------------------------------------------------------------------------ | ----------------------------------- |
-| 1   | drawer isolates background, traps keyboard and restores focus through nested dialogs | Modal owner 與 resize 穩定性        |
-| 2   | drawer popup traps focus and edit actions unlock their destination                   | 抽屜指令歸屬與清單／範本編輯        |
-| 3   | short dialogs and narrow date editing fit without horizontal overflow                | 短 viewport、原生日期與觸控選單捲動 |
-| 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport 留白、錯誤與清理         |
-| 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup 範圍、初始焦點與 Escape       |
+| #   | Test                                                                                 | 測試重點                                 |
+| --- | ------------------------------------------------------------------------------------ | ---------------------------------------- |
+| 1   | drawer isolates background, traps keyboard and restores focus through nested dialogs | 抽屜動畫、減少動態、焦點與 resize 穩定性 |
+| 2   | drawer popup traps focus and edit actions unlock their destination                   | 抽屜指令歸屬與清單／範本編輯             |
+| 3   | short dialogs and narrow date editing fit without horizontal overflow                | 短 viewport、原生日期與觸控選單捲動      |
+| 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport 留白、錯誤與清理              |
+| 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup 範圍、初始焦點與 Escape            |
 
 #### 8.3.14 rwd-webkit.spec.js（3）
 
 | #   | Test                                                         | 測試重點                                  |
 | --- | ------------------------------------------------------------ | ----------------------------------------- |
-| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit 觸控狀態與回焦                     |
+| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit 觸控狀態、抽屜動畫與回焦           |
 | 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit 短 viewport 與日期幾何             |
 | 3   | WebKit tablet columns retain visible touch actions           | WebKit 平板欄數、觸控選單、待買字級與密度 |

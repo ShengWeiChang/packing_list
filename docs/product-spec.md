@@ -294,7 +294,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
       - Input capabilities: `useTouchLayout` shares width (<768px), any coarse pointer, and no-hover queries within a Checklist and cleans up subscriptions. Touch-safe presentation is independent of Sidebar breakpoints; actual touch on an item trigger also reaches inline actions on a hybrid device.
     - Visual Optimization:
       - Interface Simplification: Mobile version hides some edit buttons, switching to "click text to edit" mode; Overflow Menu (`...`) is always visible.
-      - Sidebar Adjustments: Mobile Sidebar width increased to `w-72`, with larger fonts and spacing to improve readability and clickability.
+      - Sidebar Adjustments: Mobile Sidebar uses `w-72` with larger fonts and spacing; the drawer slides in and out and respects reduced-motion preferences.
   - Content layout:
     - Categories masonry: Touch-safe views use up to four CSS columns based on the actual container width, targeting 340px per column with a 12px gap; narrow containers remain one column. Other views use 1 (<768), 2 (≥768), 3 (≥1180), or 4 (≥1536) columns based on viewport width. Layout and touch controls are decided independently.
     - No card breaks: Category wrappers use `break-inside: avoid` with smooth transitions to reduce jitter.

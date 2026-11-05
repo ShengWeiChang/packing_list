@@ -346,7 +346,7 @@ Validation 驗證
 - `OverflowMenu` 的觸控物品／分類入口沒有個別底色，桌面 hover 時則依分類狀態顯示底色；Category 提供觸控可見性，Item 管理未完成與完成分類的整列 hover／展開回饋。維持 44px 觸控命中區與鍵盤焦點可見。
 - `Category` 管理較寬觸控版的物品間距；`Item` 與 `AddItemButton` 保持顯示／編輯字體和文字對齊一致，不移動加號或縮小觸控目標。
 - 列內操作區是非 modal button group，觸發器提供名稱與 expanded／controls 關係。依原因關閉：Escape 回焦、點外保留目的焦點、改名聚焦輸入框。
-- `focusEditingInput` 管理編輯器 scrollport 幾何、暫態底部空間與清理；每個 scrollport 由一個啟用編輯器擁有。`useVisualViewport` 管理 modal viewport 訂閱。App 管理 modal 背景隔離與 body 捲動還原，上層 dialog 優先於抽屜。Popup 透過 `positionDropdownWithinViewport` 共用定位；優先 portal 至最近的 modal 祖先，否則使用 `body`，以維持焦點與 inert 歸屬。
+- `focusEditingInput` 管理編輯器 scrollport 幾何、暫態底部空間與清理；每個 scrollport 由一個啟用編輯器擁有。`useVisualViewport` 管理 modal viewport 訂閱。App 管理 modal 背景隔離與 body 捲動還原，上層 dialog 優先於抽屜。手機抽屜視覺離場時設為 inert 並對輔助科技隱藏，焦點回到適當的啟用表面。Popup 透過 `positionDropdownWithinViewport` 共用定位；優先 portal 至最近的 modal 祖先，否則使用 `body`，以維持焦點與 inert 歸屬。
 
 ## 4. Git Hooks (Husky) Git 勾子
 

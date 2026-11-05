@@ -34,6 +34,22 @@ test('drawer isolates background, traps keyboard and restores focus through nest
   await trigger.click();
   const drawer = page.getByTestId('overlay-sidebar');
   await expect(drawer).toBeVisible();
+  const opening = await drawer.evaluate(
+    (element) =>
+      new Promise((resolve) => {
+        const start = performance.now();
+        const positions = [];
+        const sample = () => {
+          positions.push(element.getBoundingClientRect().x);
+          if (performance.now() - start < 350) requestAnimationFrame(sample);
+          else resolve(positions);
+        };
+        requestAnimationFrame(sample);
+      })
+  );
+  const drawerWidth = (await drawer.boundingBox()).width;
+  expect(opening.some((x) => x < -1 && x > -drawerWidth + 1)).toBe(true);
+  expect(Math.abs(opening.at(-1))).toBeLessThan(1);
   await expect
     .poll(() => drawer.evaluate((element) => element.contains(document.activeElement)))
     .toBe(true);
@@ -64,10 +80,62 @@ test('drawer isolates background, traps keyboard and restores focus through nest
     .poll(() => drawer.evaluate((element) => element.contains(document.activeElement)))
     .toBe(true);
   expect(await page.evaluate(() => document.body.style.overflow)).toBe('hidden');
+  const closing = page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const start = performance.now();
+        const positions = [];
+        const sample = () => {
+          const element = document.querySelector('[data-testid="overlay-sidebar"]');
+          if (element)
+            positions.push({ x: element.getBoundingClientRect().x, inert: element.inert });
+          if (performance.now() - start < 400) requestAnimationFrame(sample);
+          else resolve(positions);
+        };
+        requestAnimationFrame(sample);
+      })
+  );
   await page.keyboard.press('Escape');
+  const closingFrames = await closing;
+  expect(
+    closingFrames.some((frame) => frame.x < -1 && frame.x > -drawerWidth + 1 && frame.inert)
+  ).toBe(true);
   await expect(drawer).toHaveCount(0);
   await expect(trigger).toBeFocused();
   expect(await page.evaluate(() => document.body.style.overflow)).toBe('');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await trigger.click();
+  await expect(drawer).toBeVisible();
+  await expect(drawer).toHaveCSS('transition-duration', '0s');
+  await page.keyboard.press('Escape');
+  await expect(drawer).toHaveCount(0);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await trigger.click();
+  await page.keyboard.press('Escape');
+  await trigger.click();
+  await expect(drawer).toHaveCount(1);
+  await expect(drawer).not.toHaveAttribute('inert');
+  await expect
+    .poll(() => drawer.evaluate((element) => element.contains(document.activeElement)))
+    .toBe(true);
+  await page.setViewportSize({ width: 820, height: 820 });
+  await expect(drawer).toHaveCount(0);
+  await expect(page.getByLabel('Close sidebar')).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => document.querySelector('#app > div').inert))
+    .toBe(false);
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe('');
+  await expect(page.getByTestId('sidebar-toggle')).toBeVisible();
+  await page.getByTestId('sidebar-toggle').click();
+  await expect(drawer).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 820 });
+  await expect(drawer).toHaveCount(0);
+  await expect(page.getByLabel('Close sidebar')).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => document.querySelector('#app > div').inert))
+    .toBe(false);
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe('');
+  await expect(page.getByTestId('sidebar-toggle')).toBeVisible();
 });
 
 // Test Case 2: Drawer commands retain modal ownership and transfer focus to editors.

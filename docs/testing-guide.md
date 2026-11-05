@@ -18,9 +18,9 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | Unit tests         | 309    |
 | Component tests    | 304    |
 | E2E tests          | 104    |
-| Line coverage      | 92.61% |
-| Statement coverage | 90.89% |
-| Branch coverage    | 81.38% |
+| Line coverage      | 92.51% |
+| Statement coverage | 90.8%  |
+| Branch coverage    | 81.35% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -172,7 +172,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 78.05%     | 81.72% | 68    |
+| App.vue                      | 77.52%     | 81.1%  | 68    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
@@ -1253,25 +1253,25 @@ This project uses three layers to balance speed and reliability.
 | 1   | touch actions remain open and persist quantity and pending state      | Phone targets, menus, to-buy typography and persisted actions  |
 | 2   | keeps name geometry stable and makes checkbox edges actionable        | Name geometry and real hit areas                               |
 | 3   | switches one open item and shares the direct rename flow              | Once-one expansion and rename                                  |
-| 4   | fits tablet categories to available width while keeping touch actions | Tablet columns, touch menus, text alignment and density        |
+| 4   | fits tablet categories to available width while keeping touch actions | Tablet columns, sidebar overflow, touch menus and density      |
 | 5   | retains hover quick controls and the desktop command menu             | Desktop row feedback, menu dismissal, focus and text alignment |
 | 6   | preserves touch sorting while excluding action buttons                | Touch hold and persisted reorder                               |
 | 7   | persists category sorting across tablet columns                       | Cross-column touch drag and persistence                        |
 
 #### 8.3.13 rwd-overlays.spec.js (5 tests)
 
-| #   | Test                                                                                 | What it verifies                                        |
-| --- | ------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| 1   | drawer isolates background, traps keyboard and restores focus through nested dialogs | Modal ownership and resize stability                    |
-| 2   | drawer popup traps focus and edit actions unlock their destination                   | Drawer command ownership and checklist/template editing |
-| 3   | short dialogs and narrow date editing fit without horizontal overflow                | Short viewport, native dates and scrollable touch menu  |
-| 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport buffer, error and cleanup                    |
-| 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup bounds, initial focus and Escape                  |
+| #   | Test                                                                                 | What it verifies                                             |
+| --- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| 1   | drawer isolates background, traps keyboard and restores focus through nested dialogs | Drawer animation, reduced motion, focus and resize stability |
+| 2   | drawer popup traps focus and edit actions unlock their destination                   | Drawer command ownership and checklist/template editing      |
+| 3   | short dialogs and narrow date editing fit without horizontal overflow                | Short viewport, native dates and scrollable touch menu       |
+| 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport buffer, error and cleanup                         |
+| 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup bounds, initial focus and Escape                       |
 
 #### 8.3.14 rwd-webkit.spec.js (3 tests)
 
 | #   | Test                                                         | What it verifies                                                  |
 | --- | ------------------------------------------------------------ | ----------------------------------------------------------------- |
-| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit touch state and focus return                               |
+| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit touch state, drawer motion and focus return                |
 | 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit short viewport and date geometry                           |
 | 3   | WebKit tablet columns retain visible touch actions           | WebKit tablet columns, touch menus, to-buy typography and density |

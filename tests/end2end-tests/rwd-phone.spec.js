@@ -374,6 +374,71 @@ test.describe('touch tablet', () => {
     page,
   }) => {
     await createList(page);
+    await page.evaluate(() => {
+      const data = JSON.parse(localStorage.getItem('packingListApp'));
+      const original = data.checklists[0];
+      for (let index = 0; index < 30; index++) {
+        data.checklists.push({
+          ...original,
+          id: `sidebar-scroll-${index}`,
+          name: `長清單 ${index}`,
+          order: index + 1,
+        });
+      }
+      localStorage.setItem('packingListApp', JSON.stringify(data));
+    });
+    await page.reload();
+    const sidebarScrollport = page
+      .locator('aside [data-testid="sidebar-checklists-draggable"]')
+      .locator('xpath=../..');
+    await expect
+      .poll(() =>
+        sidebarScrollport.evaluate((element) => element.scrollHeight > element.clientHeight)
+      )
+      .toBe(true);
+    await sidebarScrollport.evaluate((element) => {
+      element.scrollTop = 300;
+    });
+    await expect
+      .poll(() => sidebarScrollport.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(0);
+    await sidebarScrollport.evaluate((element) => {
+      element.scrollTop = 0;
+    });
+    const sidebarOverflowDuringToggle = () =>
+      page.evaluate(async () => {
+        const samples = [];
+        for (let i = 0; i < 2; i++) {
+          document.querySelector('aside [data-testid="sidebar-toggle"]').click();
+          const start = performance.now();
+          await new Promise((resolve) => {
+            const sample = () => {
+              const list = document.querySelector(
+                'aside [data-testid="sidebar-checklists-draggable"]'
+              );
+              const scrollport = list?.closest('.overflow-y-auto');
+              if (scrollport) samples.push(scrollport.scrollWidth - scrollport.clientWidth);
+              if (performance.now() - start < 400) requestAnimationFrame(sample);
+              else resolve();
+            };
+            requestAnimationFrame(sample);
+          });
+        }
+        return samples;
+      });
+    let sidebarSamples = await sidebarOverflowDuringToggle();
+    expect(sidebarSamples.length).toBeGreaterThan(0);
+    expect(Math.max(...sidebarSamples)).toBeLessThanOrEqual(0);
+    expect(
+      (await page.getByTestId('sidebar-checklist-item').first().boundingBox()).width
+    ).toBeGreaterThanOrEqual(44);
+    await page.setViewportSize({ width: 1376, height: 1032 });
+    await expect.poll(async () => (await page.locator('aside').boundingBox()).width).toBe(64);
+    sidebarSamples = await sidebarOverflowDuringToggle();
+    expect(sidebarSamples.length).toBeGreaterThan(0);
+    expect(Math.max(...sidebarSamples)).toBeLessThanOrEqual(0);
+    await page.evaluate(() => localStorage.removeItem('sidebar-manually-collapsed'));
+    await page.setViewportSize({ width: 820, height: 1180 });
     const categories = page.getByTestId('category-card');
     const columnCount = async () => {
       const boxes = await categories.all();
