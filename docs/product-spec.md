@@ -183,16 +183,17 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Key features:
   - Create item: In a specified category, `isPacked=false`, `order = max order of that category + 1`.
   - Edit item: Tap/click the name to edit inline; the explicit Edit name action uses the same editor. Enter confirms, Escape cancels, and existing blur/IME and failed-draft handling remain.
-  - Touch actions: A visible item ellipsis directly opens a full-width region below the main row containing quantity, pending, Edit name, copy, and delete. It stays open during editing; other actions first save the name and wait for success. Opening it does not focus an input or change the name width/wrapping.
+  - Touch actions: Visible category collapse and ellipsis controls and the item ellipsis remain available on touch layouts; their appearance is icon-only without individual backgrounds. An expanded item is highlighted as one row: gray in an incomplete category, light green in a completed category. The pending action uses a dark orange checked clipboard when selected and a plain clipboard otherwise. The item ellipsis directly opens a full-width region below the main row containing quantity, pending, Edit name, copy, and delete. It stays open during editing; other actions first save the name and wait for success. Opening it does not focus an input or change the name width/wrapping.
   - Expansion: One item per Checklist view; outside clicks close it without swallowing that click. Internal quick actions stay open; Escape from the region returns focus to its trigger. Category collapse, hidden/removed items and checklist switches clear invalid expansion.
-  - Quantity: Minimum 1; at 1 the decrement action becomes delete. Collapsed touch rows show a quantity summary only above 1 and retain an active pending indicator.
-  - Desktop actions: Preserve mouse hover quick controls and the short management popup. Category/checklist ellipses retain their command menus; the category arrow controls category visibility.
+  - Quantity: Minimum 1; at 1 the decrement action becomes delete. Collapsed touch rows show a quantity summary only above 1 and retain an active pending indicator in a consistent column.
+  - Desktop actions: Preserve mouse hover quick controls and the short management popup; highlight the entire item row in gray or light green according to category completion, with a gray or green background under the hovered button to match the category. Category/checklist ellipses retain their anchored command menus; on touch layouts each command has at least a 44px target and 16px text. The category arrow controls category visibility.
   - Edit Mode:
     - Uses `box-shadow` instead of `border-bottom` to avoid layout shifts.
     - Input field styling matches display text exactly (font size, line height, padding) to ensure seamless toggle.
     - Entering edit mode focuses with scroll prevention and selects the full name; a newly created item enters this state automatically. The real scrollport keeps the input inside the visual viewport with a 28px comfort buffer that yields in short views; temporary bottom space is restored on cleanup. Native keyboard comfort still requires device testing.
   - UI Improvements:
     - Touch item/category checkbox labels and core action controls provide real 44×44 CSS px hit areas while retaining compact icons; desktop controls retain their existing density.
+    - At the default root size, New Item text aligns with item text and its plus with the checkbox center; touch layouts maintain this alignment when the root font size changes. At touch-safe widths of 768px or more, item display, editor and New Item text use 18px at the default root size; single-line rows have approximately 48px pitch while retaining 44px targets.
   - Toggle status: Toggling `isPacked` immediately updates category and checklist progress; preserves `order`.
   - Dragging:
     - Same category: After reorder, rewrite `order` sequentially (0-based).
@@ -232,6 +233,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Virtual category: To-buy items are shown in a special virtual category (`PendingItemsCategory.vue`) above regular categories. It uses an orange theme and its own compact responsive grid.
   - Completion (clear to-buy): Items in the virtual category can be marked as bought (check action) which clears the `isPending` flag and removes them from the virtual category.
   - Quantity display: In the virtual category the quantity label is shown inline after the item name only when `quantity > 1`.
+  - Touch presentation: A compact visual check sits inside a 44px completion target; at the default root size, item names and quantities use the same 18px and 14px sizes as other touch item summaries.
 - Flow:
 - Mark item as to buy → item appears in To Buy virtual category → optionally mark as bought (clears `isPending`) → item removed from virtual category.
 - Validation:
@@ -294,7 +296,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
       - Interface Simplification: Mobile version hides some edit buttons, switching to "click text to edit" mode; Overflow Menu (`...`) is always visible.
       - Sidebar Adjustments: Mobile Sidebar width increased to `w-72`, with larger fonts and spacing to improve readability and clickability.
   - Content layout:
-    - Categories masonry: Touch-safe views use one column, including wide tablets and rotation. Other views use 1 (<768), 2 (≥768), 3 (≥1180), or 4 (≥1536) CSS columns; these layout thresholds do not identify device types.
+    - Categories masonry: Touch-safe views use up to four CSS columns based on the actual container width, targeting 340px per column with a 12px gap; narrow containers remain one column. Other views use 1 (<768), 2 (≥768), 3 (≥1180), or 4 (≥1536) columns based on viewport width. Layout and touch controls are decided independently.
     - No card breaks: Category wrappers use `break-inside: avoid` with smooth transitions to reduce jitter.
   - Usability:
     - When the drawer is open, set `document.body.style.overflow='hidden'` to prevent background scroll; transitions around 200–300ms.
@@ -530,6 +532,8 @@ The application uses a centralized color management system with semantic naming:
 
 - `theme-primary` (`#2f6b46`) — Forest green for progress bars and brand elements
 - `theme-secondary` (`#d3e3db`) — Light green-gray for progress bar backgrounds
+- `success-attention` (`#e3f2e8`) — Light muted green for an active item in a completed category
+- `success-control-hover` (`#d3e3db`) — Muted green for a hovered control in a completed category
 
 **To-Buy Items:**
 
@@ -571,7 +575,7 @@ The application uses a centralized color management system with semantic naming:
 
 #### Content Layout
 
-- Touch-safe Checklist views use one category column; other views retain responsive masonry with 1–4 columns.
+- Touch-safe Checklist views fit up to four category columns to the available content width while keeping touch controls; other views retain responsive masonry with 1–4 viewport-based columns.
 - Cards: consistent card style system; use `break-inside: avoid` to prevent card splitting across columns.
 - Forms: Inline editing with validation.
 

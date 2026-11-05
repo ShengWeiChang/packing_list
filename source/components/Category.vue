@@ -106,7 +106,14 @@ Created: 2025-09-19
         <!-- Collapse/Expand Button -->
         <button
           type="button"
-          class="touch-target ml-2 flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-all duration-200 hover:bg-control-hover hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6 md:opacity-0 md:focus-visible:opacity-100 md:group-hover:opacity-100"
+          class="touch-target ml-2 flex size-9 flex-none items-center justify-center rounded-lg text-secondary transition-colors duration-200 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6 md:opacity-0 md:focus-visible:opacity-100 md:group-hover:opacity-100"
+          :class="
+            touchControls
+              ? 'bg-transparent md:!opacity-100'
+              : isCompleted
+                ? 'bg-transparent hover:bg-success-state-control-hover'
+                : 'bg-transparent hover:bg-control-hover'
+          "
           :title="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-label="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-expanded="!isCollapsed"
@@ -132,7 +139,11 @@ Created: 2025-09-19
           :item-id="category.id"
           menu-type="category"
           alignment="left"
+          :force-visible="touchControls"
+          :touch-minimal="touchControls"
+          :success-surface="isCompleted"
           class="ml-2"
+          :class="{ 'md:mr-1': !touchControls }"
           @edit="startEdit"
           @copy="$emit('copy:category', category.id)"
           @delete="handleDelete"
@@ -176,7 +187,13 @@ Created: 2025-09-19
             :ghost-class="'ghost-item'"
             :chosen-class="'chosen-item'"
             :drag-class="'drag-item'"
-            :class="['space-y-1', { 'min-h-12': showUnpackedOnly && visibleItems.length === 0 }]"
+            :class="[
+              'space-y-1',
+              {
+                'md:space-y-0': touchControls,
+                'min-h-12': showUnpackedOnly && visibleItems.length === 0,
+              },
+            ]"
             data-testid="category-items-draggable"
             :data-category-id="category.id"
             @start="onItemDragStart"
@@ -672,6 +689,9 @@ onUnmounted(() => cleanupEditingFocus());
 </script>
 
 <style scoped>
+[data-testid='category-collapse-toggle'] {
+  -webkit-tap-highlight-color: transparent;
+}
 @media (min-width: 768px) {
   .desktop-checkbox-inset {
     margin-left: 0.5rem;

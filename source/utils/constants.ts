@@ -134,6 +134,8 @@ export const THEME_COLORS = {
   // ============================================================================
 
   successBg: 'rgba(240, 253, 244, 1)', // Success background #f0fdf4 (green-50)
+  successAttention: 'rgba(227, 242, 232, 1)', // Completed item attention #e3f2e8
+  successControlHover: 'rgba(211, 227, 219, 1)', // Completed category control hover #d3e3db
   successText: 'rgba(22, 163, 74, 1)', // Success text #16a34a (green-600)
   successTextDark: 'rgba(21, 128, 61, 1)', // Success text (dark) #15803d (green-700)
   successBorder: 'rgba(134, 239, 172, 1)', // Success border #86efac (green-300)

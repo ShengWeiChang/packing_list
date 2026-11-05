@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 715    |
+| Total tests 總測試數          | 717    |
 | Unit tests 單元測試           | 309    |
 | Component tests 組件測試      | 304    |
-| E2E tests E2E 測試            | 102    |
-| Line coverage 行覆蓋率        | 92.6%  |
-| Statement coverage 語句覆蓋率 | 90.88% |
-| Branch coverage 分支覆蓋率    | 81.35% |
+| E2E tests E2E 測試            | 104    |
+| Line coverage 行覆蓋率        | 92.61% |
+| Statement coverage 語句覆蓋率 | 90.89% |
+| Branch coverage 分支覆蓋率    | 81.38% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -123,11 +123,11 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 102 tests
+└── end2end-tests/                       # 104 tests
     ├── mobile-workflow.spec.js          # 10  tests
-    ├── rwd-phone.spec.js                #  6  tests
-    ├── rwd-overlays.spec.js             #  4  tests
-    ├── rwd-webkit.spec.js               #  2  tests
+    ├── rwd-phone.spec.js                #  7  tests
+    ├── rwd-overlays.spec.js             #  5  tests
+    ├── rwd-webkit.spec.js               #  3  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
@@ -162,7 +162,7 @@ tests/
 | ------------ | ---------- | ------ | ------ |
 | scripts/     | 79.03%     | 63.2%  | 77.63% |
 | source/      | 78.05%     | 67.56% | 81.72% |
-| components/  | 92.12%     | 85.25% | 94.41% |
+| components/  | 92.13%     | 85.25% | 94.41% |
 | composables/ | 95.46%     | 86.14% | 97.62% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
@@ -180,7 +180,7 @@ tests/
 | Topbar.vue                   | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
 | Sidebar.vue                  | 100%       | 100%   | 33    |
-| OverflowMenu.vue             | 94.68%     | 95.65% | 24    |
+| OverflowMenu.vue             | 94.79%     | 95.74% | 24    |
 | Category.vue                 | 89.5%      | 91.09% | 31    |
 | Checklist.vue                | 87.44%     | 91.58% | 42    |
 | Item.vue                     | 88.2%      | 92.09% | 31    |
@@ -1100,7 +1100,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 9   | renders localized Traditional Chinese sticker copy                     | 語系文字與緊湊日期範圍 |
 | 10  | exposes one synchronized timeline to JavaScript and CSS                | 共用時間軸契約         |
 
-### 8.3 E2E Tests（102）
+### 8.3 E2E Tests（104）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1246,30 +1246,32 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 27  | 拒絕打包後排隊的待處理               | 跨分頁物品衝突       |
 | 28  | 拒絕待處理後排隊的分類打包           | 跨分頁原子批次       |
 
-#### 8.3.12 rwd-phone.spec.js (6 tests)
+#### 8.3.12 rwd-phone.spec.js (7 tests)
 
-| #   | Test                                                             | 驗證內容             |
-| --- | ---------------------------------------------------------------- | -------------------- |
-| 1   | touch actions remain open and persist quantity and pending state | 持久化快調           |
-| 2   | keeps name geometry stable and makes checkbox edges actionable   | 名稱幾何與真實命中   |
-| 3   | switches one open item and shares the direct rename flow         | 一次一件展開與改名   |
-| 4   | keeps tablet controls visible and categories in one column       | 平板與旋轉           |
-| 5   | retains hover quick controls and the desktop command menu        | 桌面回歸             |
-| 6   | preserves touch sorting while excluding action buttons           | 觸控長按與持久化排序 |
+| #   | Test                                                                  | 驗證內容                                 |
+| --- | --------------------------------------------------------------------- | ---------------------------------------- |
+| 1   | touch actions remain open and persist quantity and pending state      | 手機命中區、選單、待買字級與持久化操作   |
+| 2   | keeps name geometry stable and makes checkbox edges actionable        | 名稱幾何與真實命中                       |
+| 3   | switches one open item and shares the direct rename flow              | 一次一件展開與改名                       |
+| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、觸控選單、文字對齊與密度       |
+| 5   | retains hover quick controls and the desktop command menu             | 桌面整列回饋、選單關閉、focus 與文字對齊 |
+| 6   | preserves touch sorting while excluding action buttons                | 觸控長按與持久化排序                     |
+| 7   | persists category sorting across tablet columns                       | 跨欄觸控拖曳與排序保存                   |
 
 #### 8.3.13 rwd-overlays.spec.js（5）
 
-| #   | Test                                                                                 | 測試重點                      |
-| --- | ------------------------------------------------------------------------------------ | ----------------------------- |
-| 1   | drawer isolates background, traps keyboard and restores focus through nested dialogs | Modal owner 與 resize 穩定性  |
-| 2   | drawer popup traps focus and edit actions unlock their destination                   | 抽屜指令歸屬與清單／範本編輯  |
-| 3   | short dialogs and narrow date editing fit without horizontal overflow                | 短 viewport 與原生日期        |
-| 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport 留白、錯誤與清理   |
-| 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup 範圍、初始焦點與 Escape |
+| #   | Test                                                                                 | 測試重點                            |
+| --- | ------------------------------------------------------------------------------------ | ----------------------------------- |
+| 1   | drawer isolates background, traps keyboard and restores focus through nested dialogs | Modal owner 與 resize 穩定性        |
+| 2   | drawer popup traps focus and edit actions unlock their destination                   | 抽屜指令歸屬與清單／範本編輯        |
+| 3   | short dialogs and narrow date editing fit without horizontal overflow                | 短 viewport、原生日期與觸控選單捲動 |
+| 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport 留白、錯誤與清理         |
+| 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup 範圍、初始焦點與 Escape       |
 
-#### 8.3.14 rwd-webkit.spec.js（2）
+#### 8.3.14 rwd-webkit.spec.js（3）
 
-| #   | Test                                                         | 測試重點                      |
-| --- | ------------------------------------------------------------ | ----------------------------- |
-| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit 觸控狀態與回焦         |
-| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit 短 viewport 與日期幾何 |
+| #   | Test                                                         | 測試重點                                  |
+| --- | ------------------------------------------------------------ | ----------------------------------------- |
+| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit 觸控狀態與回焦                     |
+| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit 短 viewport 與日期幾何             |
+| 3   | WebKit tablet columns retain visible touch actions           | WebKit 平板欄數、觸控選單、待買字級與密度 |

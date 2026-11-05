@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 715    |
+| Total tests        | 717    |
 | Unit tests         | 309    |
 | Component tests    | 304    |
-| E2E tests          | 102    |
-| Line coverage      | 92.6%  |
-| Statement coverage | 90.88% |
-| Branch coverage    | 81.35% |
+| E2E tests          | 104    |
+| Line coverage      | 92.61% |
+| Statement coverage | 90.89% |
+| Branch coverage    | 81.38% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -123,11 +123,11 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 102 tests
+└── end2end-tests/                       # 104 tests
     ├── mobile-workflow.spec.js          # 10  tests
-    ├── rwd-phone.spec.js                #  6  tests
-    ├── rwd-overlays.spec.js             #  4  tests
-    ├── rwd-webkit.spec.js               #  2  tests
+    ├── rwd-phone.spec.js                #  7  tests
+    ├── rwd-overlays.spec.js             #  5  tests
+    ├── rwd-webkit.spec.js               #  3  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
@@ -162,7 +162,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | ------------ | ---------- | ------ | ------ |
 | scripts/     | 79.03%     | 63.2%  | 77.63% |
 | source/      | 78.05%     | 67.56% | 81.72% |
-| components/  | 92.12%     | 85.25% | 94.41% |
+| components/  | 92.13%     | 85.25% | 94.41% |
 | composables/ | 95.46%     | 86.14% | 97.62% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
@@ -180,7 +180,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | Topbar.vue                   | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
 | Sidebar.vue                  | 100%       | 100%   | 33    |
-| OverflowMenu.vue             | 94.68%     | 95.65% | 24    |
+| OverflowMenu.vue             | 94.79%     | 95.74% | 24    |
 | Category.vue                 | 89.5%      | 91.09% | 31    |
 | Checklist.vue                | 87.44%     | 91.58% | 42    |
 | Item.vue                     | 88.2%      | 92.09% | 31    |
@@ -1100,7 +1100,7 @@ This project uses three layers to balance speed and reliability.
 | 9   | renders localized Traditional Chinese sticker copy                     | Locale-aware copy and compact date range |
 | 10  | exposes one synchronized timeline to JavaScript and CSS                | Shared timing contract                   |
 
-### 8.3 E2E Tests (102 tests)
+### 8.3 E2E Tests (104 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -1246,16 +1246,17 @@ This project uses three layers to balance speed and reliability.
 | 27  | Reject queued pending after another tab packs the item               | Cross-tab item conflict            |
 | 28  | Reject queued category pack after another tab marks the item pending | Cross-tab atomic batch             |
 
-#### 8.3.12 rwd-phone.spec.js (6 tests)
+#### 8.3.12 rwd-phone.spec.js (7 tests)
 
-| #   | Test                                                             | What it verifies                 |
-| --- | ---------------------------------------------------------------- | -------------------------------- |
-| 1   | touch actions remain open and persist quantity and pending state | Persisted quick actions          |
-| 2   | keeps name geometry stable and makes checkbox edges actionable   | Name geometry and real hit areas |
-| 3   | switches one open item and shares the direct rename flow         | Once-one expansion and rename    |
-| 4   | keeps tablet controls visible and categories in one column       | Tablet and rotation              |
-| 5   | retains hover quick controls and the desktop command menu        | Desktop regression               |
-| 6   | preserves touch sorting while excluding action buttons           | Touch hold and persisted reorder |
+| #   | Test                                                                  | What it verifies                                               |
+| --- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
+| 1   | touch actions remain open and persist quantity and pending state      | Phone targets, menus, to-buy typography and persisted actions  |
+| 2   | keeps name geometry stable and makes checkbox edges actionable        | Name geometry and real hit areas                               |
+| 3   | switches one open item and shares the direct rename flow              | Once-one expansion and rename                                  |
+| 4   | fits tablet categories to available width while keeping touch actions | Tablet columns, touch menus, text alignment and density        |
+| 5   | retains hover quick controls and the desktop command menu             | Desktop row feedback, menu dismissal, focus and text alignment |
+| 6   | preserves touch sorting while excluding action buttons                | Touch hold and persisted reorder                               |
+| 7   | persists category sorting across tablet columns                       | Cross-column touch drag and persistence                        |
 
 #### 8.3.13 rwd-overlays.spec.js (5 tests)
 
@@ -1263,13 +1264,14 @@ This project uses three layers to balance speed and reliability.
 | --- | ------------------------------------------------------------------------------------ | ------------------------------------------------------- |
 | 1   | drawer isolates background, traps keyboard and restores focus through nested dialogs | Modal ownership and resize stability                    |
 | 2   | drawer popup traps focus and edit actions unlock their destination                   | Drawer command ownership and checklist/template editing |
-| 3   | short dialogs and narrow date editing fit without horizontal overflow                | Short viewport and native dates                         |
+| 3   | short dialogs and narrow date editing fit without horizontal overflow                | Short viewport, native dates and scrollable touch menu  |
 | 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport buffer, error and cleanup                    |
 | 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup bounds, initial focus and Escape                  |
 
-#### 8.3.14 rwd-webkit.spec.js (2 tests)
+#### 8.3.14 rwd-webkit.spec.js (3 tests)
 
-| #   | Test                                                         | What it verifies                        |
-| --- | ------------------------------------------------------------ | --------------------------------------- |
-| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit touch state and focus return     |
-| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit short viewport and date geometry |
+| #   | Test                                                         | What it verifies                                                  |
+| --- | ------------------------------------------------------------ | ----------------------------------------------------------------- |
+| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit touch state and focus return                               |
+| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit short viewport and date geometry                           |
+| 3   | WebKit tablet columns retain visible touch actions           | WebKit tablet columns, touch menus, to-buy typography and density |

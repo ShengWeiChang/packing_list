@@ -145,6 +145,8 @@ const groups = {
   ],
   stateSuccess: [
     '--success-bg',
+    '--success-attention',
+    '--success-control-hover',
     '--success-text',
     '--success-text-dark',
     '--success-border',

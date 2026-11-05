@@ -49,22 +49,29 @@ Created: 2025-11-01
         <!-- Completion button (left side) - mark as completed -->
         <button
           type="button"
-          class="touch-target mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center rounded-full bg-pending-button text-white transition-all hover:scale-110 hover:bg-pending-accent sm:mr-2"
+          class="touch-target mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 sm:mr-2"
           :title="$t('item.markAsBought')"
           :aria-label="$t('item.markAsBought')"
           data-testid="pending-item-complete"
           @click.stop="markAsCompleted(item)"
         >
           <!-- Checkmark icon -->
-          <AppIcon
-            name="confirm"
-            size="inline"
-          />
+          <span
+            class="flex size-5 items-center justify-center rounded-full bg-pending-button text-white"
+          >
+            <AppIcon
+              name="confirm"
+              size="inline"
+            />
+          </span>
         </button>
 
         <!-- Item name and optional quantity -->
         <div class="flex min-w-0 grow items-center gap-1">
-          <span class="truncate text-base text-primary">
+          <span
+            class="truncate text-base text-primary"
+            :class="{ '!text-lg': touchControls }"
+          >
             {{ item.name }}
           </span>
 
@@ -72,6 +79,7 @@ Created: 2025-11-01
           <div
             v-if="item.quantity > 1"
             class="flex h-6 w-8 shrink-0 items-center justify-center rounded-md bg-control-bg px-1 text-xs font-semibold text-secondary"
+            :class="{ '!w-auto min-w-8 !text-sm': touchControls }"
             data-testid="pending-item-quantity"
           >
             <span class="mr-0.5">x</span>
@@ -101,6 +109,7 @@ import AppIcon from './AppIcon.vue';
 // ------------------------------------------------------------------------------
 
 const props = defineProps({
+  touchControls: { type: Boolean, default: false },
   items: {
     type: Array as PropType<readonly Readonly<ItemDTO>[]>,
     required: true,
@@ -149,6 +158,12 @@ function markAsCompleted(item: Readonly<ItemDTO>) {
 </script>
 
 <style scoped>
+@media (hover: hover) and (pointer: fine) {
+  [data-testid='pending-item-complete']:hover > span {
+    background-color: var(--pending-accent);
+    transform: scale(1.1);
+  }
+}
 /* Multi-column grid layout matching category columns */
 .pending-items-grid {
   display: grid;

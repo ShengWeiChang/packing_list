@@ -14,14 +14,14 @@ Created: 2025-09-19
   <div
     :class="[
       'group cursor-grab rounded-md px-0 py-0.5 transition-all duration-200',
-      categoryCompleted
-        ? 'bg-success-state-bg text-success-state-complete'
-        : 'bg-white hover:bg-interactive-hover',
+      categoryCompleted ? 'bg-success-state-bg text-success-state-complete' : 'bg-white',
       isDragging ? 'scale-105 cursor-grabbing opacity-50 shadow-lg' : '',
       { 'touch-item': touchPresentation },
       { 'desktop-item-inset': !touchControls },
     ]"
     data-testid="item-row"
+    :data-attention="actionsOpen ? 'true' : undefined"
+    :data-completed="categoryCompleted ? 'true' : undefined"
     :data-item-id="item.id"
     :data-inline-item-id="item.id"
     @keydown.esc="closeActionsFromKeyboard"
@@ -72,7 +72,9 @@ Created: 2025-09-19
           :class="[
             'w-full bg-transparent px-1 py-0.5 text-lg leading-snug focus:outline-none md:text-base',
             {
-              'text-secondary line-through': item.isPacked,
+              'md:!text-lg': touchControls,
+              'text-secondary line-through': item.isPacked && !categoryCompleted,
+              'text-control-accent line-through': item.isPacked && categoryCompleted,
             },
           ]"
           style="border-radius: 0; box-shadow: inset 0 -2px 0 0 var(--interactive-focus)"
@@ -85,9 +87,11 @@ Created: 2025-09-19
         <span
           v-else
           :class="[
-            'touch-name block cursor-pointer rounded-lg px-1 py-0.5 text-lg leading-snug hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:text-base',
+            'touch-name block cursor-pointer rounded-lg px-1 py-0.5 text-lg leading-snug focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:text-base',
             {
-              'text-secondary line-through': item.isPacked,
+              'md:!text-lg': touchControls,
+              'text-secondary line-through': item.isPacked && !categoryCompleted,
+              'text-control-accent line-through': item.isPacked && categoryCompleted,
             },
           ]"
           style="word-break: break-word; overflow-wrap: break-word"
@@ -139,8 +143,11 @@ Created: 2025-09-19
           <!-- Decrement button / Delete button (when quantity = 1) -->
           <button
             type="button"
-            class="flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-colors hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6"
-            :class="buttonVisibilityClass"
+            class="flex size-9 flex-none items-center justify-center rounded-lg text-secondary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6"
+            :class="[
+              buttonVisibilityClass,
+              categoryCompleted ? 'hover:bg-success-state-control-hover' : 'hover:bg-control-hover',
+            ]"
             data-testid="item-quantity-decrement"
             :aria-label="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
             :title="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
@@ -164,8 +171,8 @@ Created: 2025-09-19
 
           <!-- Quantity display -->
           <div
-            class="flex h-9 w-8 items-center justify-center rounded-lg bg-control-bg px-1 text-xs font-semibold text-secondary transition-colors hover:bg-control-hover md:h-6"
-            :class="{ 'bg-transparent': !isHovered && !isEditing && item.quantity > 1 }"
+            class="flex h-9 w-8 items-center justify-center rounded-lg px-1 text-xs font-semibold text-secondary transition-colors md:h-6"
+            :class="{ '!text-control-accent': categoryCompleted }"
             data-testid="item-quantity-value"
           >
             <span class="mr-0.5">x</span>
@@ -175,8 +182,11 @@ Created: 2025-09-19
           <!-- Increment button -->
           <button
             type="button"
-            class="flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-colors hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6"
-            :class="buttonVisibilityClass"
+            class="flex size-9 flex-none items-center justify-center rounded-lg text-secondary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6"
+            :class="[
+              buttonVisibilityClass,
+              categoryCompleted ? 'hover:bg-success-state-control-hover' : 'hover:bg-control-hover',
+            ]"
             data-testid="item-quantity-increment"
             :aria-label="$t('item.increaseQuantity')"
             :title="$t('item.increaseQuantity')"
@@ -196,28 +206,28 @@ Created: 2025-09-19
         v-if="!touchPresentation"
         type="button"
         :class="[
-          'ml-1.5 flex size-9 flex-none items-center justify-center rounded-lg transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 sm:ml-2 md:size-6',
-          item.isPending
-            ? 'bg-pending-button text-white hover:bg-pending-accent'
-            : 'bg-control-bg text-secondary hover:bg-control-hover',
+          'relative ml-1.5 flex size-9 flex-none items-center justify-center rounded-lg transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 sm:ml-2 md:size-6',
+          categoryCompleted ? 'hover:bg-success-state-control-hover' : 'hover:bg-control-hover',
+          item.isPending ? 'text-pending-foreground' : 'text-secondary hover:text-primary',
           pendingButtonVisibilityClass,
           'focus:pointer-events-auto focus:static focus:opacity-100', // Ensure visible on focus
         ]"
         data-testid="item-pending-toggle"
         :title="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
         :aria-label="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
+        :aria-pressed="item.isPending"
         @click.stop="togglePending"
         @mousedown.prevent
       >
         <AppIcon
-          name="clipboardCheck"
+          :name="item.isPending ? 'clipboardCheck' : 'clipboard'"
           size="inline"
         />
       </button>
 
       <span
         v-if="touchPresentation && item.isPending"
-        class="px-1 text-pending-button"
+        class="px-1 text-pending-foreground"
         :aria-label="$t('item.markedAsPending')"
         data-testid="item-pending-summary"
         ><AppIcon
@@ -225,10 +235,12 @@ Created: 2025-09-19
           size="inline"
       /></span>
       <span
-        v-if="touchPresentation && item.quantity > 1"
+        v-if="touchPresentation && (item.quantity > 1 || item.isPending)"
         class="touch-quantity-summary px-1 text-sm font-semibold text-secondary"
+        :class="{ '!text-control-accent': categoryCompleted }"
+        :aria-hidden="item.quantity > 1 ? undefined : 'true'"
         data-testid="item-quantity-summary"
-        >×{{ item.quantity }}</span
+        >{{ item.quantity > 1 ? `×${item.quantity}` : '' }}</span
       >
       <!-- Overflow menu -->
       <OverflowMenu
@@ -236,6 +248,8 @@ Created: 2025-09-19
         :inline-actions="touchPresentation"
         :inline-expanded="actionsOpen"
         :inline-controls="`item-${item.id}-actions`"
+        :touch-minimal="touchPresentation"
+        :success-surface="categoryCompleted"
         :item-id="item.id"
         :force-visible="isHovered"
         :use-group-hover="false"
@@ -243,7 +257,7 @@ Created: 2025-09-19
         menu-type="item"
         alignment="left"
         class="ml-1"
-        :class="{ 'touch-item-menu': touchPresentation }"
+        :class="{ 'touch-item-menu': touchPresentation, 'md:mr-1': !touchControls }"
         @toggle-inline="toggleActions"
         @edit="startEdit"
         @copy="$emit('copy:item', item.id)"
@@ -254,7 +268,7 @@ Created: 2025-09-19
     <div
       v-if="touchPresentation && actionsOpen"
       :id="`item-${item.id}-actions`"
-      class="item-inline-actions mt-1 flex flex-wrap items-center justify-between gap-1 border-t border-border-color-light px-2 py-1.5"
+      class="item-inline-actions flex flex-wrap items-center justify-between gap-1 border-t border-border-color-light px-2"
       role="group"
       :aria-label="$t('common.moreOptions')"
       data-testid="item-inline-actions"
@@ -296,7 +310,7 @@ Created: 2025-09-19
         <button
           type="button"
           class="inline-action"
-          :class="{ 'bg-pending-button text-white': item.isPending }"
+          :class="{ 'text-pending-foreground': item.isPending }"
           data-testid="item-pending-toggle"
           :aria-label="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
           :aria-pressed="item.isPending"
@@ -304,7 +318,7 @@ Created: 2025-09-19
           @click="runInlineAction(togglePending)"
         >
           <AppIcon
-            name="clipboardCheck"
+            :name="item.isPending ? 'clipboardCheck' : 'clipboard'"
             size="inline"
           />
         </button>
@@ -806,6 +820,20 @@ onUnmounted(() => cleanupEditingFocus());
 </script>
 
 <style scoped>
+[data-attention='true'] {
+  background-color: var(--interactive-hover);
+}
+[data-attention='true'][data-completed='true'] {
+  background-color: var(--success-attention);
+}
+@media (hover: hover) {
+  [data-testid='item-row']:hover {
+    background-color: var(--interactive-hover);
+  }
+  [data-testid='item-row'][data-completed='true']:hover {
+    background-color: var(--success-attention);
+  }
+}
 .touch-item {
   padding-right: 0;
   padding-left: 0;
@@ -820,11 +848,12 @@ onUnmounted(() => cleanupEditingFocus());
 }
 .touch-quantity-summary {
   display: flex;
-  width: 44px;
+  width: 2.75rem;
   flex: none;
   justify-content: center;
 }
 .inline-action {
+  position: relative;
   display: inline-flex;
   width: 44px;
   height: 44px;
@@ -833,22 +862,10 @@ onUnmounted(() => cleanupEditingFocus());
   flex: none;
   border-radius: 0.5rem;
 }
-.inline-action:hover {
-  background-color: var(--control-hover);
-}
 .inline-action-group {
   display: flex;
   align-items: center;
   gap: 0;
-}
-.inline-quantity-group {
-  gap: 0;
-  padding: 0.125rem;
-  border-radius: 0.625rem;
-  background-color: var(--control-bg);
-}
-.inline-quantity-group .inline-action:hover {
-  background-color: var(--control-hover);
 }
 .inline-quantity-value {
   min-width: 2rem;
@@ -859,9 +876,6 @@ onUnmounted(() => cleanupEditingFocus());
 .inline-action:focus-visible {
   outline: 2px solid var(--interactive-focus);
   outline-offset: 2px;
-}
-.inline-action[aria-pressed='true'] {
-  background-color: var(--pending-button);
 }
 @media (max-width: 340px) {
   .item-inline-actions {

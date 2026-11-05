@@ -52,3 +52,111 @@ test('WebKit short dialogs and date fields fit the narrow viewport', async ({ pa
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+// Test Case 3: A wide touch viewport has multiple usable category columns in WebKit.
+test('WebKit tablet columns retain visible touch actions', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('topbar-new').click();
+  await selectGeneralRecommendedList(page);
+  await page.getByTestId('checklist-name-input').press('Enter');
+  await page.setViewportSize({ width: 820, height: 1180 });
+  const cards = page.getByTestId('category-card');
+  await expect
+    .poll(async () => {
+      const boxes = await Promise.all((await cards.all()).map((card) => card.boundingBox()));
+      return new Set(boxes.map((box) => Math.round(box.x))).size;
+    })
+    .toBe(2);
+  const row = page.getByTestId('item-row').first();
+  const trigger = row.locator('[data-testid^="overflow-trigger-item-"]');
+  await page.mouse.move(0, 0);
+  const category = cards.first();
+  for (const type of ['category', 'checklist']) {
+    const menuTrigger = page.locator(`[data-testid^="overflow-trigger-${type}-"]`).last();
+    await menuTrigger.tap();
+    const menu = page.locator(`[data-testid^="overflow-dropdown-${type}-"]`);
+    await expect(menu).toBeVisible();
+    for (const action of await menu.locator('button').all()) {
+      expect((await action.boundingBox()).height).toBeGreaterThanOrEqual(44);
+      await expect(action).toHaveCSS('font-size', '16px');
+    }
+    await menuTrigger.tap();
+  }
+  await expect(category.getByTestId('category-collapse-toggle')).toHaveCSS(
+    '-webkit-tap-highlight-color',
+    'rgba(0, 0, 0, 0)'
+  );
+  const name = row.getByTestId('item-name');
+  const addLabel = category.getByTestId('add-item-button').locator(':scope > span').last();
+  const textPositions = await Promise.all(
+    [name, addLabel].map((locator) =>
+      locator.evaluate(
+        (element) =>
+          element.getBoundingClientRect().left + parseFloat(getComputedStyle(element).paddingLeft)
+      )
+    )
+  );
+  expect(Math.abs(textPositions[0] - textPositions[1])).toBeLessThan(1);
+  await expect(name).toHaveCSS('font-size', '18px');
+  await expect(addLabel).toHaveCSS('font-size', '18px');
+  const firstBox = await row.boundingBox();
+  const nextBox = await category.getByTestId('item-row').nth(1).boundingBox();
+  expect(Math.abs(nextBox.y - firstBox.y - 48)).toBeLessThan(1);
+  for (const control of [
+    category.getByTestId('category-collapse-toggle'),
+    category.locator('[data-testid^="overflow-trigger-category-"]'),
+    trigger,
+  ]) {
+    await expect(control).toHaveCSS('opacity', '1');
+    await expect(control).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  }
+  await expect(trigger).toBeVisible();
+  await trigger.tap();
+  await expect(trigger).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await row.getByTestId('item-quantity-increment').tap();
+  await expect(row.getByTestId('item-quantity-value')).toHaveText('×2');
+  await row.getByTestId('item-pending-toggle').tap();
+  const pendingRow = page.getByTestId('pending-item-row').first();
+  const complete = pendingRow.getByTestId('pending-item-complete');
+  expect((await complete.boundingBox()).width).toBeGreaterThanOrEqual(44);
+  expect((await complete.locator('span').boundingBox()).width).toBe(20);
+  await expect(pendingRow.locator('div > span').first()).toHaveCSS('font-size', '18px');
+  await expect(pendingRow.getByTestId('pending-item-quantity')).toHaveCSS('font-size', '14px');
+  const pendingSummary = row.getByTestId('item-pending-summary');
+  const pendingAtTwo = await pendingSummary.boundingBox();
+  await row.getByTestId('item-quantity-decrement').tap();
+  await expect(row.getByTestId('item-quantity-summary')).toHaveAttribute('aria-hidden', 'true');
+  const pendingAtOne = await pendingSummary.boundingBox();
+  expect(Math.abs(pendingAtOne.x - pendingAtTwo.x)).toBeLessThan(1);
+  await row.getByTestId('item-quantity-increment').tap();
+  await category.getByTestId('category-checkbox').tap();
+  await expect(category).toHaveAttribute('data-completed', 'true');
+  await trigger.tap();
+  await expect(row).toHaveCSS('background-color', 'rgb(227, 242, 232)');
+  await expect(trigger).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await page.screenshot({ path: test.info().outputPath('webkit-tablet-open.png') });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.evaluate(() => (document.documentElement.style.fontSize = '200%'));
+  await expect
+    .poll(async () => {
+      const positions = await Promise.all(
+        [name, addLabel].map((locator) =>
+          locator.evaluate(
+            (element) =>
+              element.getBoundingClientRect().left +
+              parseFloat(getComputedStyle(element).paddingLeft)
+          )
+        )
+      );
+      return Math.abs(positions[0] - positions[1]);
+    })
+    .toBeLessThan(1);
+  await expect
+    .poll(async () => {
+      const plus = await category.getByTestId('add-item-button-icon').boundingBox();
+      const checkbox = await row.getByTestId('item-checkbox').boundingBox();
+      return Math.abs(plus.x + plus.width / 2 - checkbox.x - checkbox.width / 2);
+    })
+    .toBeLessThan(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

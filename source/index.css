@@ -72,6 +72,8 @@ Created: 2025-09-19
 
   /* State - Success/Complete Colors */
   --success-bg: #f0fdf4;
+  --success-attention: #e3f2e8;
+  --success-control-hover: #d3e3db;
   --success-text: #16a34a;
   --success-text-dark: #15803d;
   --success-border: #86efac;

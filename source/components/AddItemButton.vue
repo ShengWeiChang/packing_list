@@ -13,7 +13,10 @@ Created: 2025-09-19
   <button
     class="touch-target flex w-full items-center justify-start rounded-md p-1 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:pl-2"
     data-testid="add-item-button"
-    :class="[categoryCompleted ? 'bg-success-state-bg' : 'bg-white hover:bg-interactive-hover']"
+    :class="[
+      categoryCompleted ? 'bg-success-state-bg' : 'bg-white hover:bg-interactive-hover',
+      { '!py-0 !pl-0': touchControls },
+    ]"
     @click="$emit('click')"
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
@@ -25,7 +28,7 @@ Created: 2025-09-19
       class="mr-2 flex size-9 flex-none items-center justify-center md:mr-3 md:size-6"
       :class="[
         isHovered ? 'text-primary' : 'text-secondary',
-        { 'tablet-touch-icon': touchControls },
+        { '!mr-1 min-h-[44px] min-w-[44px] md:!mr-2': touchControls },
       ]"
       data-testid="add-item-button-icon"
     >
@@ -39,7 +42,10 @@ Created: 2025-09-19
     <!-- Button label aligned with item name area -->
     <span
       class="min-w-0 grow text-left text-lg md:text-base"
-      :class="isHovered ? 'text-primary' : 'text-secondary'"
+      :class="[
+        isHovered ? 'text-primary' : 'text-secondary',
+        { 'pl-1 md:!text-lg': touchControls },
+      ]"
     >
       {{ $t('item.newItem') }}
     </span>
@@ -78,11 +84,3 @@ defineEmits<{ click: [] }>();
 // Hover state
 const isHovered = ref(false);
 </script>
-
-<style scoped>
-@media (min-width: 768px) {
-  .tablet-touch-icon {
-    margin-left: 2px;
-  }
-}
-</style>

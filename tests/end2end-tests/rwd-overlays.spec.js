@@ -134,6 +134,39 @@ test('short dialogs and narrow date editing fit without horizontal overflow', as
   await page.getByTestId('new-checklist-cancel').click();
   await expect(dialog).toHaveCount(0);
   await createList(page);
+  await page.setViewportSize({ width: 320, height: 200 });
+  await page.evaluate(() => (document.documentElement.style.fontSize = '200%'));
+  const checklistTrigger = page.locator('[data-testid^="overflow-trigger-checklist-"]').last();
+  await checklistTrigger.tap();
+  const menu = page.locator('[data-testid^="overflow-dropdown-checklist-"]');
+  await expect(menu).toBeVisible();
+  await expect.poll(async () => (await menu.boundingBox()).y).toBeGreaterThanOrEqual(0);
+  await expect
+    .poll(async () => {
+      const box = await menu.boundingBox();
+      return box.y + box.height;
+    })
+    .toBeLessThanOrEqual(200);
+  await expect
+    .poll(() => menu.evaluate((element) => element.scrollHeight > element.clientHeight))
+    .toBe(true);
+  await menu.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect(menu).toBeVisible();
+  await expect
+    .poll(() =>
+      menu.evaluate((element) => {
+        const last = element.lastElementChild.getBoundingClientRect();
+        const box = element.getBoundingClientRect();
+        return last.bottom <= box.bottom + 1 && last.top >= box.top - 1;
+      })
+    )
+    .toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+  await page.evaluate(() => (document.documentElement.style.fontSize = ''));
+  await page.setViewportSize({ width: 320, height: 300 });
   await page.getByTestId('checklist-name').click();
   for (const input of await page.locator('input[type="date"]').all()) {
     await input.scrollIntoViewIfNeeded();

@@ -189,6 +189,7 @@ Created: 2025-09-19
     >
       <PendingItemsCategory
         :items="pendingItemsForDisplay"
+        :touch-controls="touchControls"
         @update:item="$emit('update:item', $event)"
       />
     </div>
@@ -895,7 +896,9 @@ onUnmounted(() => cleanupEditingFocus());
 }
 
 .touch-layout .categories-masonry {
-  column-count: 1;
+  column-count: 4;
+  column-width: 340px;
+  contain: layout;
 }
 
 /* Prevent categories from breaking across columns */

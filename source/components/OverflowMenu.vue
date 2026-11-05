@@ -136,6 +136,8 @@ const props = defineProps({
   inlineActions: { type: Boolean, default: false },
   inlineExpanded: { type: Boolean, default: false },
   inlineControls: { type: String, default: undefined },
+  touchMinimal: { type: Boolean, default: false },
+  successSurface: { type: Boolean, default: false },
   itemId: {
     type: String,
     required: true,
@@ -208,16 +210,24 @@ const root = ref<HTMLElement | null>(null);
 const buttonClass = computed(() => {
   const frameSizeClass =
     props.triggerFrameSize === 'spacious' ? 'size-9 md:size-8' : 'size-9 md:size-6';
-  const baseClass = `touch-target ${frameSizeClass} flex items-center justify-center rounded-lg transition-all duration-200 hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1`;
-  const surfaceClass = props.inlineExpanded
-    ? 'bg-interactive-hover'
-    : props.transparentTrigger
-      ? 'bg-transparent'
-      : 'bg-control-bg';
+  const minimalSurface = props.menuType === 'item' || props.menuType === 'category';
+  const feedbackClass = props.touchMinimal
+    ? ''
+    : props.successSurface
+      ? 'hover:bg-success-state-control-hover'
+      : 'hover:bg-control-hover';
+  const baseClass = `touch-target ${frameSizeClass} flex items-center justify-center rounded-lg transition-colors duration-200 ${feedbackClass} focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1`;
+  const surfaceClass = minimalSurface
+    ? 'bg-transparent'
+    : props.inlineExpanded || (props.touchMinimal && showMenu.value)
+      ? 'bg-interactive-hover'
+      : props.transparentTrigger || props.touchMinimal
+        ? 'bg-transparent'
+        : 'bg-control-bg';
 
   // Green checkmark style when editing
   if (props.isEditing && !props.inlineActions) {
-    return `${baseClass} ${surfaceClass} opacity-100 text-success-state-text hover:text-success-state-text-dark hover:bg-success-state-bg`;
+    return `${baseClass} ${surfaceClass} opacity-100 text-success-state-text hover:text-success-state-text-dark`;
   }
 
   // Gray three-dot style when not editing
@@ -230,7 +240,7 @@ const buttonClass = computed(() => {
 
   // If using group-hover behavior (default), show on ancestor hover
   if (props.useGroupHover) {
-    return `${normalClass} md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 md:focus:opacity-100`;
+    return `${normalClass} md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 md:focus-visible:opacity-100`;
   }
 
   // Otherwise keep hidden unless forced or open
@@ -451,3 +461,12 @@ onUnmounted(() => {
   window.visualViewport?.removeEventListener('resize', positionDropdown);
 });
 </script>
+
+<style scoped>
+@media (any-pointer: coarse), (hover: none), (max-width: 767px) {
+  [data-testid^='overflow-dropdown-'] > button {
+    min-height: 44px;
+    font-size: 1rem;
+  }
+}
+</style>
