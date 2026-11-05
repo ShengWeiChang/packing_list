@@ -18,9 +18,9 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | Unit tests         | 309    |
 | Component tests    | 304    |
 | E2E tests          | 104    |
-| Line coverage      | 92.51% |
-| Statement coverage | 90.8%  |
-| Branch coverage    | 81.35% |
+| Line coverage      | 92.37% |
+| Statement coverage | 90.65% |
+| Branch coverage    | 81.28% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -162,7 +162,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | ------------ | ---------- | ------ | ------ |
 | scripts/     | 79.03%     | 63.2%  | 77.63% |
 | source/      | 78.05%     | 67.56% | 81.72% |
-| components/  | 92.13%     | 85.25% | 94.41% |
+| components/  | 91.72%     | 84.97% | 94.04% |
 | composables/ | 95.46%     | 86.14% | 97.62% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
@@ -180,7 +180,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | Topbar.vue                   | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
 | Sidebar.vue                  | 100%       | 100%   | 33    |
-| OverflowMenu.vue             | 94.79%     | 95.74% | 24    |
+| OverflowMenu.vue             | 90.09%     | 91.83% | 24    |
 | Category.vue                 | 89.5%      | 91.09% | 31    |
 | Checklist.vue                | 87.44%     | 91.58% | 42    |
 | Item.vue                     | 88.2%      | 92.09% | 31    |
@@ -841,39 +841,39 @@ This project uses three layers to balance speed and reliability.
 
 #### 8.2.7 Item.test.js (31 tests)
 
-| #   | Test                                                                       | What it verifies                       |
-| --- | -------------------------------------------------------------------------- | -------------------------------------- |
-| 1   | should display the item name                                               | Name rendering                         |
-| 2   | should render a checkbox input                                             | Checkbox exists                        |
-| 3   | should check the checkbox when item is packed                              | Checked state binding                  |
-| 4   | should apply line-through styling when item is packed                      | Packed visual style                    |
-| 5   | should display quantity value                                              | Quantity label                         |
-| 6   | should emit "update:item" with toggled isPacked when checkbox is clicked   | Checkbox toggle event                  |
-| 7   | should clear isPending when item becomes packed                            | Packed clears pending                  |
-| 8   | should enter edit mode when item name is clicked                           | Focus + select on edit                 |
-| 9   | should save edited name on Enter key                                       | Enter confirms edit                    |
-| 10  | should cancel edit mode on Escape key                                      | Escape cancels edit                    |
-| 11  | should emit "update:item" with incremented quantity                        | Quantity increment                     |
-| 12  | should emit "update:item" with decremented quantity                        | Quantity decrement                     |
-| 13  | should emit "delete:item" when quantity is 1 and delete button is clicked  | Delete at quantity 1                   |
-| 14  | should emit "update:item" with toggled isPending                           | Toggle pending                         |
-| 15  | should clear isPacked when item is marked as pending                       | Pending clears packed                  |
-| 16  | should emit "copy:item" when OverflowMenu triggers copy                    | Copy event forward                     |
-| 17  | should emit "update:item" on blur with changed name                        | Blur-save                              |
-| 18  | should not emit "update:item" on blur with empty name                      | Empty name guard                       |
-| 19  | should emit "delete:item" when OverflowMenu triggers delete                | Delete event forward                   |
-| 20  | should show action buttons on mouseenter                                   | Hover-in shows controls                |
-| 21  | should hide action buttons on mouseleave                                   | Hover-out hides controls               |
-| 22  | should not save during IME composition                                     | IME guard                              |
-| 23  | should enter edit mode when newlyCreatedItemId matches                     | Auto-focus + select                    |
-| 24  | should not enter edit mode when newlyCreatedItemId does not match          | No false trigger                       |
-| 25  | should not decrement quantity below 1                                      | Minimum quantity guard                 |
-| 26  | should apply cursor-grabbing when isDragging is true                       | Drag visual state                      |
-| 27  | retains an item draft after save failure until retry                       | Inline acknowledgement                 |
-| 28  | preserves a failed name draft when another edit entry is activated         | Failed draft and baseline retention    |
-| 29  | keeps the quantity-one delete action in the expanded touch region          | Quantity-one trash action              |
-| 30  | defers an inline action until composition ends and the name is saved       | Final IME text before action           |
-| 31  | waits for the name save before an inline action and retains a failed draft | Save acknowledgement and failure guard |
+| #   | Test                                                                             | What it verifies                       |
+| --- | -------------------------------------------------------------------------------- | -------------------------------------- |
+| 1   | keeps an item name draft on failed save and closes only after a successful retry | Inline acknowledgement                 |
+| 2   | should display the item name                                                     | Name rendering                         |
+| 3   | should render a checkbox input                                                   | Checkbox exists                        |
+| 4   | should check the checkbox when item is packed                                    | Checked state binding                  |
+| 5   | should apply line-through styling when item is packed                            | Packed visual style                    |
+| 6   | should display quantity value                                                    | Quantity label                         |
+| 7   | should emit "update:item" with toggled isPacked when checkbox is clicked         | Checkbox toggle event                  |
+| 8   | should clear isPending when item becomes packed                                  | Packed clears pending                  |
+| 9   | should enter edit mode when item name is clicked                                 | Focus + select on edit                 |
+| 10  | should save edited name on Enter key                                             | Enter confirms edit                    |
+| 11  | should cancel edit mode on Escape key                                            | Escape cancels edit                    |
+| 12  | should emit "update:item" with incremented quantity                              | Quantity increment                     |
+| 13  | should emit "update:item" with decremented quantity                              | Quantity decrement                     |
+| 14  | should emit "delete:item" when quantity is 1 and delete button is clicked        | Delete at quantity 1                   |
+| 15  | should emit "update:item" with toggled isPending                                 | Toggle pending                         |
+| 16  | should clear isPacked when item is marked as pending                             | Pending clears packed                  |
+| 17  | should emit "copy:item" when OverflowMenu triggers copy                          | Copy event forward                     |
+| 18  | should emit "update:item" on blur with changed name                              | Blur-save                              |
+| 19  | should not emit "update:item" on blur with empty name                            | Empty name guard                       |
+| 20  | should emit "delete:item" when OverflowMenu triggers delete                      | Delete event forward                   |
+| 21  | should show action buttons on mouseenter                                         | Hover-in shows controls                |
+| 22  | should hide action buttons on mouseleave                                         | Hover-out hides controls               |
+| 23  | should not save during IME composition                                           | IME guard                              |
+| 24  | should enter edit mode when newlyCreatedItemId matches                           | Auto-focus + select                    |
+| 25  | should not enter edit mode when newlyCreatedItemId does not match                | No false trigger                       |
+| 26  | should not decrement quantity below 1                                            | Minimum quantity guard                 |
+| 27  | should apply cursor-grabbing when isDragging is true                             | Drag visual state                      |
+| 28  | defers an inline action until composition ends and the name is saved             | Final IME text before action           |
+| 29  | waits for the name save before an inline action and retains a failed draft       | Save acknowledgement and failure guard |
+| 30  | preserves a failed name draft when another edit entry is activated               | Failed draft and baseline retention    |
+| 31  | keeps the quantity-one delete action in the expanded touch region                | Quantity-one trash action              |
 
 #### 8.2.8 OverflowMenu.test.js (24 tests)
 

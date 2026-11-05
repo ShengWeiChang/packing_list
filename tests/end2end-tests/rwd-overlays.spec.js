@@ -160,6 +160,14 @@ test('drawer popup traps focus and edit actions unlock their destination', async
       popup.evaluate((element) => Boolean(element.closest('[data-testid="overlay-sidebar"]')))
     )
     .toBe(true);
+  await trigger.focus();
+  await expect(popup).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(popup).toHaveCount(0);
+  await expect(drawer).toBeVisible();
+  await expect(trigger).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(popup.locator('button').first()).toBeFocused();
   await popup.locator('button').last().focus();
   await page.keyboard.press('Tab');
   await expect
@@ -171,6 +179,11 @@ test('drawer popup traps focus and edit actions unlock their destination', async
   await page.keyboard.press('Escape');
   await expect(trigger).toBeFocused();
   await expect(drawer).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(drawer).toHaveCount(0);
+  await expect(page.getByTestId('topbar-toggle')).toBeFocused();
+  await page.getByTestId('topbar-toggle').click();
+  await trigger.focus();
   await page.keyboard.press('Enter');
   await popup.locator('button').first().click();
   await expect(drawer).toHaveCount(0);

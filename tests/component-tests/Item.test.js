@@ -535,7 +535,7 @@ describe('Item', () => {
 });
 
 describe('Item touch editing boundaries', () => {
-  // Test Case 30: A toolbar action waits for the final IME model update.
+  // Test Case 28: A toolbar action waits for the final IME model update.
   it('defers an inline action until composition ends and the name is saved', async () => {
     const saveItemEdit = vi.fn().mockResolvedValue({ ...createMockItem(), name: '中文' });
     const w = mount(Item, {
@@ -561,7 +561,7 @@ describe('Item touch editing boundaries', () => {
       w.unmount();
     }
   });
-  // Test Case 31: Save acknowledgement gates actions and failures preserve the draft.
+  // Test Case 29: Save acknowledgement gates actions and failures preserve the draft.
   it('waits for the name save before an inline action and retains a failed draft', async () => {
     let finishSave;
     const saveItemEdit = vi
@@ -592,7 +592,7 @@ describe('Item touch editing boundaries', () => {
       w.unmount();
     }
   });
-  // Test Case 28: Repeated rename entry keeps a failed draft and the original optimistic baseline.
+  // Test Case 30: Repeated rename entry keeps a failed draft and the original optimistic baseline.
   it('preserves a failed name draft when another edit entry is activated', async () => {
     const saveItemEdit = vi.fn().mockResolvedValue(null);
     const w = mount(Item, {
@@ -617,7 +617,7 @@ describe('Item touch editing boundaries', () => {
       w.unmount();
     }
   });
-  // Test Case 29: Quantity one retains the trash action while pending and copy remain ordinary inline buttons.
+  // Test Case 31: Quantity one retains the trash action while pending and copy remain ordinary inline buttons.
   it('keeps the quantity-one delete action in the expanded touch region', async () => {
     const w = mount(Item, {
       props: { item: createMockItem(), touchControls: true, actionsOpen: true },

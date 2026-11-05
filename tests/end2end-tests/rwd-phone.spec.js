@@ -362,6 +362,12 @@ test('switches one open item and shares the direct rename flow', async ({ page }
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('item-inline-actions')).toHaveCount(0);
   await expect(await triggerFor(rows.nth(1))).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(rows.nth(1).getByTestId('item-inline-actions')).toBeVisible();
+  await expect(await triggerFor(rows.nth(1))).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('item-inline-actions')).toHaveCount(0);
+  await expect(await triggerFor(rows.nth(1))).toBeFocused();
   await (await triggerFor(rows.nth(0))).tap();
   await rows.nth(1).getByTestId('item-name').tap();
   await expect(rows.nth(1).getByTestId('item-edit-input')).toBeFocused();

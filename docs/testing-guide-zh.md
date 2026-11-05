@@ -18,9 +18,9 @@
 | Unit tests 單元測試           | 309    |
 | Component tests 組件測試      | 304    |
 | E2E tests E2E 測試            | 104    |
-| Line coverage 行覆蓋率        | 92.51% |
-| Statement coverage 語句覆蓋率 | 90.8%  |
-| Branch coverage 分支覆蓋率    | 81.35% |
+| Line coverage 行覆蓋率        | 92.37% |
+| Statement coverage 語句覆蓋率 | 90.65% |
+| Branch coverage 分支覆蓋率    | 81.28% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -162,7 +162,7 @@ tests/
 | ------------ | ---------- | ------ | ------ |
 | scripts/     | 79.03%     | 63.2%  | 77.63% |
 | source/      | 78.05%     | 67.56% | 81.72% |
-| components/  | 92.13%     | 85.25% | 94.41% |
+| components/  | 91.72%     | 84.97% | 94.04% |
 | composables/ | 95.46%     | 86.14% | 97.62% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
@@ -180,7 +180,7 @@ tests/
 | Topbar.vue                   | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
 | Sidebar.vue                  | 100%       | 100%   | 33    |
-| OverflowMenu.vue             | 94.79%     | 95.74% | 24    |
+| OverflowMenu.vue             | 90.09%     | 91.83% | 24    |
 | Category.vue                 | 89.5%      | 91.09% | 31    |
 | Checklist.vue                | 87.44%     | 91.58% | 42    |
 | Item.vue                     | 88.2%      | 92.09% | 31    |
@@ -841,39 +841,39 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 #### 8.2.7 Item.test.js（31）
 
-| #   | Test                                                                       | 測試重點                 |
-| --- | -------------------------------------------------------------------------- | ------------------------ |
-| 1   | should display the item name                                               | 名稱渲染                 |
-| 2   | should render a checkbox input                                             | checkbox 存在            |
-| 3   | should check checkbox when packed                                          | checked 綁定             |
-| 4   | should apply line-through when packed                                      | 打包樣式                 |
-| 5   | should display quantity value                                              | 數量標籤                 |
-| 6   | should emit toggled isPacked on checkbox click                             | checkbox 切換事件        |
-| 7   | should clear isPending when packed                                         | 打包清除 pending         |
-| 8   | should enter edit mode on name click                                       | 編輯時聚焦全選           |
-| 9   | should save on Enter                                                       | Enter 確認               |
-| 10  | should cancel on Escape                                                    | Escape 取消              |
-| 11  | should emit incremented quantity                                           | 數量 +1                  |
-| 12  | should emit decremented quantity                                           | 數量 -1                  |
-| 13  | should emit delete when quantity=1 and delete clicked                      | 刪除（數量1）            |
-| 14  | should emit toggled isPending                                              | 切換 pending             |
-| 15  | should clear isPacked when marked pending                                  | pending 清除 packed      |
-| 16  | should emit copy:item from OverflowMenu                                    | 複製轉發                 |
-| 17  | should emit update on blur with changed name                               | blur 儲存                |
-| 18  | should not emit on blur with empty name                                    | 空名稱檢查               |
-| 19  | should emit delete from OverflowMenu                                       | 刪除轉發                 |
-| 20  | should show action buttons on mouseenter                                   | hover 顯示               |
-| 21  | should hide action buttons on mouseleave                                   | hover 隱藏               |
-| 22  | should not save during IME composition                                     | IME 檢查                 |
-| 23  | should enter edit mode when newlyCreatedItemId matches                     | 新建自動聚焦全選         |
-| 24  | should not enter edit mode when ID doesn't match                           | 無誤觸發                 |
-| 25  | should not decrement quantity below 1                                      | 最小數量檢查             |
-| 26  | should apply cursor-grabbing when isDragging                               | 拖曳視覺狀態             |
-| 27  | 儲存失敗後保留物品草稿直到重試                                             | 行內寫入確認             |
-| 28  | preserves a failed name draft when another edit entry is activated         | 失敗草稿與 baseline 保留 |
-| 29  | keeps the quantity-one delete action in the expanded touch region          | 數量為一的刪除操作       |
-| 30  | defers an inline action until composition ends and the name is saved       | 操作前取得最終組字文字   |
-| 31  | waits for the name save before an inline action and retains a failed draft | 儲存確認與失敗保護       |
+| #   | Test                                                                             | 測試重點                 |
+| --- | -------------------------------------------------------------------------------- | ------------------------ |
+| 1   | keeps an item name draft on failed save and closes only after a successful retry | 行內寫入確認             |
+| 2   | should display the item name                                                     | 名稱渲染                 |
+| 3   | should render a checkbox input                                                   | checkbox 存在            |
+| 4   | should check the checkbox when item is packed                                    | checked 綁定             |
+| 5   | should apply line-through styling when item is packed                            | 打包樣式                 |
+| 6   | should display quantity value                                                    | 數量標籤                 |
+| 7   | should emit "update:item" with toggled isPacked when checkbox is clicked         | checkbox 切換事件        |
+| 8   | should clear isPending when item becomes packed                                  | 打包清除 pending         |
+| 9   | should enter edit mode when item name is clicked                                 | 編輯時聚焦全選           |
+| 10  | should save edited name on Enter key                                             | Enter 確認               |
+| 11  | should cancel edit mode on Escape key                                            | Escape 取消              |
+| 12  | should emit "update:item" with incremented quantity                              | 數量 +1                  |
+| 13  | should emit "update:item" with decremented quantity                              | 數量 -1                  |
+| 14  | should emit "delete:item" when quantity is 1 and delete button is clicked        | 刪除（數量1）            |
+| 15  | should emit "update:item" with toggled isPending                                 | 切換 pending             |
+| 16  | should clear isPacked when item is marked as pending                             | pending 清除 packed      |
+| 17  | should emit "copy:item" when OverflowMenu triggers copy                          | 複製轉發                 |
+| 18  | should emit "update:item" on blur with changed name                              | blur 儲存                |
+| 19  | should not emit "update:item" on blur with empty name                            | 空名稱檢查               |
+| 20  | should emit "delete:item" when OverflowMenu triggers delete                      | 刪除轉發                 |
+| 21  | should show action buttons on mouseenter                                         | hover 顯示               |
+| 22  | should hide action buttons on mouseleave                                         | hover 隱藏               |
+| 23  | should not save during IME composition                                           | IME 檢查                 |
+| 24  | should enter edit mode when newlyCreatedItemId matches                           | 新建自動聚焦全選         |
+| 25  | should not enter edit mode when newlyCreatedItemId does not match                | 無誤觸發                 |
+| 26  | should not decrement quantity below 1                                            | 最小數量檢查             |
+| 27  | should apply cursor-grabbing when isDragging is true                             | 拖曳視覺狀態             |
+| 28  | defers an inline action until composition ends and the name is saved             | 操作前取得最終組字文字   |
+| 29  | waits for the name save before an inline action and retains a failed draft       | 儲存確認與失敗保護       |
+| 30  | preserves a failed name draft when another edit entry is activated               | 失敗草稿與 baseline 保留 |
+| 31  | keeps the quantity-one delete action in the expanded touch region                | 數量為一的刪除操作       |
 
 #### 8.2.8 OverflowMenu.test.js（24）
 

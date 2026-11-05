@@ -15,7 +15,7 @@ Created: 2025-09-19
     ref="root"
     class="relative"
     :data-testid="`overflow-root-${props.menuType}-${props.itemId}`"
-    @keydown.esc.stop.prevent="dismissWithEscape"
+    @keydown.esc="handleRootEscape"
     @focusout="handleFocusOut"
   >
     <!-- Three-dot menu button or checkmark button when editing -->
@@ -309,6 +309,14 @@ function positionDropdown() {
 function dismissWithEscape() {
   showMenu.value = false;
   focusTrigger();
+}
+
+/** Let a closed menu pass Escape to its containing item or drawer. */
+function handleRootEscape(event: KeyboardEvent) {
+  if (!showMenu.value) return;
+  event.stopPropagation();
+  event.preventDefault();
+  dismissWithEscape();
 }
 
 // ---------- Menu Actions ----------
