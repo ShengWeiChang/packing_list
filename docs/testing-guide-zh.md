@@ -256,7 +256,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ### Responsive Interaction Evidence 響應式互動證據
 
-`rwd-phone.spec.js` 明確設定 touch context，驗證 phone／tablet 操作、真實命中區、名稱幾何、一次一件展開、reload 與長按排序，並包含桌面滑鼠回歸。`rwd-overlays.spec.js` 涵蓋抽屜焦點、巢狀 dialog、短畫面、原生日期與模擬鍵盤幾何／錯誤恢復。`webkit-rwd` 只執行 `rwd-webkit.spec.js`，Chromium 忽略此檔，CI 安裝兩個引擎。Emulation 及合成 viewport／IME 事件不證明原生 Pixel／iPhone 鍵盤或 iPad 實機舒適度；實機結果另行記錄。
+`rwd-phone.spec.js` 明確設定 touch context，驗證 phone／tablet 操作、真實命中區、名稱幾何、一次一件展開、reload 與長按排序，並包含桌面滑鼠回歸。`rwd-overlays.spec.js` 涵蓋抽屜焦點、巢狀 dialog、短畫面、原生日期與模擬鍵盤幾何／錯誤恢復。`webkit-rwd` 只執行 `rwd-webkit.spec.js`，Chromium 忽略此檔，CI 安裝兩個引擎。Emulation 及合成 viewport／IME 事件不證明原生鍵盤或實機舒適度；實機結果另行記錄。
+
+#### Responsive Manual Acceptance 響應式人工驗收
+
+- 使用隔離的測試清單，記錄 build 或 commit、日期、裝置、系統、瀏覽器、方向、輸入方式、步驟、預期與實際結果，以及 pass／fail／not run。需要時保留截圖或錄影；未測的裝置維持 not run。
+- 桌面滑鼠與鍵盤：檢查直接改名、hover 操作及其消失、Tab 與 Escape、靠近視窗邊緣的選單、抽屜／dialog 焦點順序、長名稱與 200% 縮放。
+- 手機觸控：不提示操作方式，找出三點；展開後調整數量與待買、切換物品、點外及捲動。數量為 1 時確認減量使用既有刪除流程。操作區開啟時編輯，再執行其他操作並確認名稱已儲存；重新整理檢查資料持久化。
+- 原生鍵盤：在底部新增物品、編輯長名稱、使用 IME 與候選字選擇、收起並重開鍵盤、旋轉及手動捲動。檢查可見性、舒適間距、草稿保留及非預期捲動。
+- 平板與手機浮層：檢查直向、橫向、平板分割畫面、空間足夠時的多欄、觸控入口可見性、跨分類拖曳、側欄轉場及減少動態效果。有外接鍵盤或滑鼠時檢查焦點與 Escape。請初次使用者在不提示下找數量、待買與改名，將觀察作為可用性線索。
+- 平板側欄回歸：有清單時反覆開合側欄，留意清單捲動區底部附近是否短暫出現水平捲動條或黑線。先前觸控模擬曾出現水平溢出，但回報黑線的確切來源尚未在實機直接證實。
 
 ## 7. CI/CD Execution Stages 持續整合執行階段
 

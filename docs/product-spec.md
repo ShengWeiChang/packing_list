@@ -183,6 +183,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Key features:
   - Create item: In a specified category, `isPacked=false`, `order = max order of that category + 1`.
   - Edit item: Tap/click the name to edit inline; the explicit Edit name action uses the same editor. Enter confirms, Escape cancels, and existing blur/IME and failed-draft handling remain.
+  - Design rationale: The name is a direct shortcut for frequent renaming; the explicit Edit name action makes that capability discoverable. Both entry points share the same editing and save behavior.
   - Touch actions: Visible category collapse and ellipsis controls and the item ellipsis remain available on touch layouts; their appearance is icon-only without individual backgrounds. An expanded item is highlighted as one row: gray in an incomplete category, light green in a completed category. The pending action uses a dark orange checked clipboard when selected and a plain clipboard otherwise. The item ellipsis directly opens a full-width region below the main row containing quantity, pending, Edit name, copy, and delete. It stays open during editing; other actions first save the name and wait for success. Opening it does not focus an input or change the name width/wrapping.
   - Expansion: One item per Checklist view; outside clicks close it without swallowing that click. Internal quick actions stay open; Escape from the region returns focus to its trigger. Category collapse, hidden/removed items and checklist switches clear invalid expansion.
   - Quantity: Minimum 1; at 1 the decrement action becomes delete. Collapsed touch rows show a quantity summary only above 1 and retain an active pending indicator in a consistent column.
@@ -281,6 +282,8 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 #### Responsive Design
 
 - Purpose: Provide a natural and smooth navigation and operation experience across different devices and window widths, specifically optimized for mobile touch interactions.
+- Design rationale: Desktop hover offers quick access without permanently crowding each row; touch layouts keep the ellipsis visible because touch users cannot rely on hover. The item actions expand below the row to keep the name stable and make several actions available together. Category and checklist management retain anchored menus; the category arrow expands or collapses its contents.
+- Layout and interaction are separate decisions: in touch layouts, available space determines category columns, while input capabilities and narrow widths determine touch-safe controls. A tablet can therefore show multiple columns and retain touch actions. The 44px target is a product interaction goal; exact column widths, spacing, and keyboard comfort buffer below describe the current implementation and may evolve without changing that goal.
 - Key features:
   - Breakpoints & behavior:
     - Mobile (<600px): Show `Topbar` (`md:hidden`), `Sidebar` as an overlay drawer (teleport to `body` with dimmed backdrop; click backdrop to close); main content blurs and pointer events are disabled.
@@ -310,6 +313,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Input editing is not occluded by the keyboard.
     - Menu buttons are always visible and easy to click.
     - Sidebar width is sufficient and fonts are clear.
+  - Physical-device acceptance: On a phone, exercise item actions, editing followed by another action, long names, scrolling, and adding items at the bottom with the native keyboard and IME; confirm the input remains usable. On a tablet, repeat in portrait, landscape, and split view, including multiple columns and sidebar open/close. When available, check an attached keyboard or mouse, including focus and Escape. Record device, OS, browser, steps, and results; emulated browsers do not establish native keyboard comfort or physical touch usability. See `testing-guide.md` for automated responsive evidence and its limits.
   - Drawer open: main content is blurred and non-interactive; clicking backdrop closes the drawer; body scroll restores after close.
   - Desktop refresh: `Sidebar` collapse state reflects `localStorage` value.
   - Masonry columns adjust at breakpoints; category cards don’t break across columns.

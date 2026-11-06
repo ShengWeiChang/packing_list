@@ -256,7 +256,16 @@ This project uses three layers to balance speed and reliability.
 
 ### Responsive Interaction Evidence
 
-`rwd-phone.spec.js` explicitly sets touch contexts and verifies phone/tablet actions, real hit areas, name geometry, once-one expansion, reload and long-press sorting, plus desktop mouse regression. `rwd-overlays.spec.js` covers drawer focus, nested dialogs, short screens, native dates and simulated keyboard geometry/error recovery. `webkit-rwd` runs only `rwd-webkit.spec.js`; Chromium ignores that file and CI installs both engines. Emulation and synthetic viewport/IME events do not prove native Pixel/iPhone keyboards or iPad hardware comfort; record physical-device results separately.
+`rwd-phone.spec.js` explicitly sets touch contexts and verifies phone/tablet actions, real hit areas, name geometry, once-one expansion, reload and long-press sorting, plus desktop mouse regression. `rwd-overlays.spec.js` covers drawer focus, nested dialogs, short screens, native dates and simulated keyboard geometry/error recovery. `webkit-rwd` runs only `rwd-webkit.spec.js`; Chromium ignores that file and CI installs both engines. Emulation and synthetic viewport/IME events do not prove native keyboard or physical-device comfort; record physical-device results separately.
+
+#### Responsive Manual Acceptance
+
+- Use an isolated test checklist and record the build or commit, date, device, OS, browser, orientation, input method, steps, expected and actual results, and pass/fail/not run. Save screenshots or recordings when useful. An untested device remains not run.
+- Desktop mouse and keyboard: Check direct renaming, hover actions and their dismissal, Tab and Escape, menus near viewport edges, drawer/dialog focus order, long names and 200% zoom.
+- Phone touch: Find the ellipsis without a hint; open, adjust quantity and pending, switch items, tap outside and scroll. At quantity 1, verify decrement uses the existing delete flow. Edit with the actions open, then perform another action and check the saved name. Reload to check persisted changes.
+- Native keyboard: Add items at the bottom, edit a long name, use an IME and its candidate selection, hide and reopen the keyboard, rotate, and scroll manually. Check visibility, comfortable spacing, draft preservation and unwanted scrolling.
+- Tablet and phone overlays: Check portrait, landscape and tablet split view, multiple columns where space allows, visible touch actions, cross-category drag, sidebar transitions and reduced motion. With an external keyboard or mouse, when available, check focus and Escape. Ask a first-time user to find quantity, pending and rename without prompting; treat observations as usability clues.
+- Tablet sidebar regression: Open and close it repeatedly with checklists present; look for a brief horizontal scrollbar or dark line near the bottom of the checklist scroll area. A prior simulated touch layout showed horizontal overflow, but the reported line's exact source was not directly confirmed on hardware.
 
 ## 7. CI/CD Execution Stages
 

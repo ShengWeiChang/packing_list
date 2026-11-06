@@ -342,9 +342,12 @@ Validation 驗證
 ### 3.12 Responsive Interaction Ownership 響應式互動責任
 
 - `useTouchLayout` 管理 Checklist 輸入能力訂閱與清理，Sidebar 寬度門檻獨立；Checklist 擁有一次展開的物品 ID，Category 轉送，Item 保留編輯／草稿狀態。不得持久化展開或複製 mutation handlers。
+- 保留可用版面空間與輸入能力的產品區分：寬的觸控檢視可以多欄，混合裝置仍必須能以觸控開啟物品操作。不要只用裝置名稱或 viewport 寬度推斷 hover 能力。
+- 兩個改名入口共用編輯器。編輯中接著執行其他操作時，維持先儲存再操作的順序與失敗草稿；僅展開操作區不得聚焦輸入框或讓物品名稱重新排版。點外關閉不可吞掉目標點擊；單純捲動不可觸發點外操作。
 - `source/index.css` 的 `touch-target` 在窄／coarse／no-hover 檢視放大真實控制；scoped `inline-action` 屬於 Item。待買完成鈕內含較小視覺圖示；觸控 overflow 命令維持至少44px高。已批准的 scoped class 名稱列入 ESLint whitelist。
 - `OverflowMenu` 的觸控物品／分類入口沒有個別底色，桌面 hover 時則依分類狀態顯示底色；Category 提供觸控可見性，Item 管理未完成與完成分類的整列 hover／展開回饋。維持 44px 觸控命中區與鍵盤焦點可見。
 - `Category` 管理較寬觸控版的物品間距；`Item` 與 `AddItemButton` 保持顯示／編輯字體和文字對齊一致，不移動加號或縮小觸控目標。
+- 觸控多欄容器使用 `contain: layout`，處理 Chromium 寬度變動時的重繪問題。調整此 containment 時，應一併檢查欄數隨寬度動態變化與 popup 定位。
 - 列內操作區是非 modal button group，觸發器提供名稱與 expanded／controls 關係。依原因關閉：Escape 回焦、點外保留目的焦點、改名聚焦輸入框。
 - `focusEditingInput` 管理編輯器 scrollport 幾何、暫態底部空間與清理；每個 scrollport 由一個啟用編輯器擁有。`useVisualViewport` 管理 modal viewport 訂閱。App 管理 modal 背景隔離與 body 捲動還原，上層 dialog 優先於抽屜。手機抽屜視覺離場時設為 inert 並對輔助科技隱藏，焦點回到適當的啟用表面。Popup 透過 `positionDropdownWithinViewport` 共用定位；優先 portal 至最近的 modal 祖先，否則使用 `body`，以維持焦點與 inert 歸屬。
 
