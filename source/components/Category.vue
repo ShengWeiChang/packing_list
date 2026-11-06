@@ -23,8 +23,10 @@ Created: 2025-09-19
     <!-- Category Header -->
     <div class="relative mb-3 flex items-center justify-between">
       <div class="flex min-w-0 grow items-center">
-        <div
-          class="mr-1 flex size-9 flex-none items-center justify-center rounded-lg focus-within:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-interactive-focus has-[:focus-visible]:ring-offset-1 md:mr-2 md:size-6"
+        <label
+          :for="`category-${category.id}-packed`"
+          class="touch-target mr-1 flex size-9 flex-none items-center justify-center rounded-lg focus-within:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-interactive-focus has-[:focus-visible]:ring-offset-1 md:mr-2 md:size-6"
+          :class="{ 'desktop-checkbox-inset': !touchControls }"
         >
           <input
             :id="`category-${category.id}-packed`"
@@ -49,8 +51,8 @@ Created: 2025-09-19
             @mousedown.stop
             @touchstart.stop
           />
-        </div>
-        <div class="min-w-0 grow">
+        </label>
+        <div class="-ml-1.5 min-w-0 grow md:-ml-1">
           <input
             v-if="isEditing"
             :id="`category-${category.id}-name`"
@@ -104,7 +106,14 @@ Created: 2025-09-19
         <!-- Collapse/Expand Button -->
         <button
           type="button"
-          class="ml-2 flex size-9 flex-none items-center justify-center rounded-lg bg-control-bg text-secondary transition-all duration-200 hover:bg-control-hover hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6 md:opacity-0 md:focus-visible:opacity-100 md:group-hover:opacity-100"
+          class="touch-target ml-2 flex size-9 flex-none items-center justify-center rounded-lg text-secondary transition-colors duration-200 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:size-6 md:opacity-0 md:focus-visible:opacity-100 md:group-hover:opacity-100"
+          :class="
+            touchControls
+              ? 'bg-transparent md:!opacity-100'
+              : isCompleted
+                ? 'bg-transparent hover:bg-success-state-control-hover'
+                : 'bg-transparent hover:bg-control-hover'
+          "
           :title="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-label="isCollapsed ? $t('category.expand') : $t('category.collapse')"
           :aria-expanded="!isCollapsed"
@@ -130,7 +139,11 @@ Created: 2025-09-19
           :item-id="category.id"
           menu-type="category"
           alignment="left"
+          :force-visible="touchControls"
+          :touch-minimal="touchControls"
+          :success-surface="isCompleted"
           class="ml-2"
+          :class="{ 'md:mr-1': !touchControls }"
           @edit="startEdit"
           @copy="$emit('copy:category', category.id)"
           @delete="handleDelete"
@@ -155,12 +168,15 @@ Created: 2025-09-19
       <div
         class="min-h-0 overflow-hidden"
         :aria-hidden="isCollapsed"
+        :inert="isCollapsed"
       >
         <div class="space-y-1 pt-1">
           <draggable
             v-model="draggableItems"
             item-key="id"
             :delay="200"
+            filter="button, input, label, a, [contenteditable], [data-testid=item-inline-actions]"
+            :prevent-on-filter="false"
             :delay-on-touch-only="true"
             :group="{
               name: 'items',
@@ -171,7 +187,13 @@ Created: 2025-09-19
             :ghost-class="'ghost-item'"
             :chosen-class="'chosen-item'"
             :drag-class="'drag-item'"
-            :class="['space-y-1', { 'min-h-12': showUnpackedOnly && visibleItems.length === 0 }]"
+            :class="[
+              'space-y-1',
+              {
+                'md:space-y-0': touchControls,
+                'min-h-12': showUnpackedOnly && visibleItems.length === 0,
+              },
+            ]"
             data-testid="category-items-draggable"
             :data-category-id="category.id"
             @start="onItemDragStart"
@@ -185,6 +207,8 @@ Created: 2025-09-19
               >
                 <Item
                   :item="item"
+                  :touch-controls="touchControls"
+                  :actions-open="openItemActionsId === item.id"
                   :newly-created-item-id="newlyCreatedItemId"
                   :category-completed="isCompleted"
                   :is-dragging="draggingItemId === item.id"
@@ -194,6 +218,8 @@ Created: 2025-09-19
                   :update-item-action="updateItemAction"
                   :retain-draft="retainDraft"
                   :edit-cancelled="editCancelled"
+                  @toggle-actions="$emit('toggle-item-actions', $event)"
+                  @close-actions="$emit('close-item-actions')"
                   @update:item="(...args) => $emit('update:item', ...args)"
                   @copy:item="$emit('copy:item', $event)"
                   @delete:item="$emit('delete:item', $event)"
@@ -204,6 +230,7 @@ Created: 2025-09-19
 
           <AddItemButton
             :category-completed="isCompleted"
+            :touch-controls="touchControls"
             @click="$emit('create:item', category.id)"
           />
         </div>
@@ -252,6 +279,8 @@ const draggable = draggableFor<Readonly<ItemDTO>>();
 
 // Props
 const props = defineProps({
+  touchControls: { type: Boolean, default: false },
+  openItemActionsId: { type: String as PropType<string | null>, default: null },
   commitEditOnBlur: { type: Boolean, default: false },
   retainDraft: { type: Function as PropType<RetainDraft | null>, default: null },
   editCancelled: { type: Function as PropType<EditCancelled | null>, default: null },
@@ -296,6 +325,9 @@ const props = defineProps({
 
 // Emits
 const emit = defineEmits<{
+  'toggle-item-actions': [id: string];
+  'close-item-actions': [];
+  'collapse:category': [id: string];
   'update:item': [item: ItemDTO, expected?: ItemDTO];
   'copy:item': [id: string];
   'delete:item': [id: string];
@@ -396,6 +428,7 @@ const isPartiallyCompleted = computed(() => {
  */
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value;
+  if (isCollapsed.value) emit('collapse:category', props.category.id);
 }
 
 /**
@@ -506,7 +539,8 @@ async function saveEdit() {
           editSaveFailed.value = true;
           isSavingEdit.value = false;
           await nextTick();
-          if (restoreFocus) editInput.value?.focus({ preventScroll: true });
+          if (restoreFocus)
+            cleanupEditingFocus = focusEditingInput(editInput.value, { select: false });
           return;
         }
       } finally {
@@ -655,6 +689,14 @@ onUnmounted(() => cleanupEditingFocus());
 </script>
 
 <style scoped>
+[data-testid='category-collapse-toggle'] {
+  -webkit-tap-highlight-color: transparent;
+}
+@media (min-width: 768px) {
+  .desktop-checkbox-inset {
+    margin-left: 0.5rem;
+  }
+}
 /* Drag and drop styles */
 .ghost-item {
   opacity: 0.3;

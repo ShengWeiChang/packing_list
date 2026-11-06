@@ -62,7 +62,7 @@
     "name": "分類名稱",
     "newCategory": "新增分類",
     "defaultName": "新分類",
-    "shoppingList": "待買/待辦",
+    "shoppingList": "待買",
     "itemsLeft": "項待處理",
     "expand": "展開",
     "collapse": "收合",
@@ -70,13 +70,15 @@
     "unpackAll": "取消打包此分類的所有物品"
   },
   "item": {
+    "editName": "編輯名稱",
+    "pending": "待買",
     "name": "物品名稱",
     "newItem": "新增物品",
     "defaultName": "新物品",
     "togglePacked": "切換打包狀態",
-    "markAsPending": "標記為待買/待辦",
-    "markedAsPending": "已標記為待買/待辦",
-    "markAsBought": "標記為已買/已辦",
+    "markAsPending": "標記為待買",
+    "markedAsPending": "已標記為待買",
+    "markAsBought": "標記為已買",
     "increaseQuantity": "增加數量",
     "decreaseQuantity": "減少數量"
   },

@@ -203,13 +203,13 @@ test.describe('Mobile Workflow (375px)', () => {
       await expect(filterToggle).toHaveAttribute('aria-pressed', 'false');
 
       const bounds = await filterToggle.boundingBox();
-      expect(bounds?.width).toBe(36);
-      expect(bounds?.height).toBe(36);
+      expect(bounds?.width).toBeGreaterThanOrEqual(44);
+      expect(bounds?.height).toBeGreaterThanOrEqual(44);
 
       const overflowToggle = page.locator('[data-testid^="overflow-trigger-checklist-"]').first();
       const overflowBounds = await overflowToggle.boundingBox();
-      expect(overflowBounds?.width).toBe(36);
-      expect(overflowBounds?.height).toBe(36);
+      expect(overflowBounds?.width).toBeGreaterThanOrEqual(44);
+      expect(overflowBounds?.height).toBeGreaterThanOrEqual(44);
       expect(bounds?.x).toBeLessThan(overflowBounds?.x ?? 0);
       expect(bounds?.y).toBe(overflowBounds?.y);
 

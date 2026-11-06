@@ -1,78 +1,79 @@
-/*
-================================================================================
-File: tests/unit-tests/utils/focusEditingInput.test.js
-Description: Unit tests for stable edit-input focus and viewport handling.
-Author: Sheng-Wei Chang
-License: MIT (SPDX: MIT)
-Created: 2026-10-20
-================================================================================
-*/
-
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { focusEditingInput } from '../../../source/utils/focusEditingInput';
 
 describe('focusEditingInput', () => {
+  let cleanup = () => {};
   afterEach(() => {
-    vi.unstubAllGlobals();
+    cleanup();
+    document.body.replaceChildren();
     vi.restoreAllMocks();
   });
 
-  // Test Case 1: Visible input should focus and select without scrolling
-  it('should focus without scrolling, select the name, and keep a visible input in place', () => {
-    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
-      callback();
-      return 1;
-    });
-    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
-    const input = document.createElement('input');
-    input.value = 'New Item';
-    document.body.append(input);
-    input.getBoundingClientRect = vi.fn(() => ({ top: 100, bottom: 130 }));
-    input.scrollIntoView = vi.fn();
-    const focusSpy = vi.spyOn(input, 'focus');
-    const selectSpy = vi.spyOn(input, 'select');
-
-    focusEditingInput(input);
-
-    expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
-    expect(selectSpy).toHaveBeenCalledOnce();
-    expect(input.scrollIntoView).not.toHaveBeenCalled();
-    input.remove();
-  });
-
-  // Test Case 2: A multi-stage viewport resize should keep monitoring until cleanup
-  it('should scroll when a later viewport resize occludes the input and stop after cleanup', () => {
+  /** Build a measurable scrollport and visual viewport.
+   * @param {number} top - Input top position.
+   * @returns {object} Test geometry and DOM.
+   */
+  function setup(top = 100) {
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
       callback();
       return 1;
     });
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
     const viewport = new EventTarget();
-    viewport.offsetTop = 0;
-    viewport.height = 800;
-    Object.defineProperty(window, 'visualViewport', {
-      configurable: true,
-      value: viewport,
-    });
+    Object.assign(viewport, { offsetTop: 0, height: 800 });
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
+    const port = document.createElement('div');
+    port.style.overflowY = 'auto';
+    port.style.paddingBottom = '10px';
+    Object.defineProperties(port, { clientHeight: { value: 800 }, scrollHeight: { value: 2000 } });
+    port.getBoundingClientRect = () => ({ top: 0, bottom: 800 });
     const input = document.createElement('input');
-    document.body.append(input);
-    input.getBoundingClientRect = vi.fn(() => ({ top: 700, bottom: 730 }));
-    input.scrollIntoView = vi.fn();
+    input.value = 'Draft';
+    port.append(input);
+    document.body.append(port);
+    input.getBoundingClientRect = () => ({ top, bottom: top + 30, height: 30 });
+    return { port, input, viewport };
+  }
 
-    const cleanup = focusEditingInput(input);
+  // Test Case 1: Focus/select a visible input without moving its scrollport.
+  it('keeps a visible input in place and restores temporary space', () => {
+    const { input, port } = setup();
+    const focus = vi.spyOn(input, 'focus');
+    cleanup = focusEditingInput(input);
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(input.selectionEnd).toBe(5);
+    expect(port.scrollTop).toBe(0);
+    cleanup();
+    expect(port.style.paddingBottom).toBe('10px');
+  });
 
-    viewport.height = 750;
-    viewport.dispatchEvent(new Event('resize'));
-    expect(input.scrollIntoView).not.toHaveBeenCalled();
-
+  // Test Case 2: Resize reserves a 28px buffer using the real scrollport.
+  it('scrolls by the minimum delta after keyboard resize and stops after cleanup', () => {
+    const { input, port, viewport } = setup(700);
+    cleanup = focusEditingInput(input);
     viewport.height = 600;
     viewport.dispatchEvent(new Event('resize'));
-
-    expect(input.scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto', block: 'nearest' });
+    expect(port.scrollTop).toBe(158);
+    expect(Number.parseFloat(port.style.paddingBottom)).toBeGreaterThan(28);
     cleanup();
+    const position = port.scrollTop;
+    viewport.height = 300;
     viewport.dispatchEvent(new Event('resize'));
-    expect(input.scrollIntoView).toHaveBeenCalledTimes(1);
-    input.remove();
+    expect(port.scrollTop).toBe(position);
+  });
+
+  // Test Case 3: A new editor owns cleanup; an older cleanup cannot erase its space.
+  it('transfers temporary space ownership between editors', () => {
+    const { input, port } = setup();
+    const first = focusEditingInput(input);
+    const other = document.createElement('input');
+    other.getBoundingClientRect = () => ({ top: 100, bottom: 130, height: 30 });
+    port.append(other);
+    cleanup = focusEditingInput(other);
+    first();
+    expect(port.style.paddingBottom).not.toBe('10px');
+    cleanup();
+    expect(port.style.paddingBottom).toBe('10px');
   });
 });

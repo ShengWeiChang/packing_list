@@ -34,7 +34,18 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: '**/rwd-webkit.spec.js',
       use: { browserName: 'chromium' },
+    },
+    {
+      name: 'webkit-rwd',
+      testMatch: '**/rwd-webkit.spec.js',
+      use: {
+        browserName: 'webkit',
+        viewport: { width: 390, height: 844 },
+        hasTouch: true,
+        isMobile: true,
+      },
     },
   ],
 

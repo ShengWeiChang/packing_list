@@ -110,6 +110,18 @@ export default [
             // CSS Modules / Scoped styles (defined in <style scoped>)
             'category-item',
             'categories-masonry',
+            'desktop-checkbox-inset',
+            'desktop-item-inset',
+            'tablet-touch-icon',
+            'touch-layout',
+            'touch-item',
+            'touch-item-menu',
+            'touch-quantity-summary',
+            'inline-action',
+            'inline-action-group',
+            'inline-quantity-group',
+            'inline-quantity-value',
+            'item-inline-actions',
             'dragging',
             'pending-items-grid',
             // vuedraggable dynamic classes (ghost-*, chosen-*, drag-*)

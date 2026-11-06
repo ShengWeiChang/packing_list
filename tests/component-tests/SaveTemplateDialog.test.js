@@ -12,7 +12,7 @@ Created: 2026-10-13
 // Imports
 // -----------------------------------------------------------------------------
 
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import { createI18n } from 'vue-i18n';
 
@@ -145,6 +145,7 @@ describe('SaveTemplateDialog', () => {
     expect(document.activeElement).toBe(wrapper.get('[data-testid="save-template-name"]').element);
 
     await wrapper.setProps({ visible: false });
+    await flushPromises();
     expect(document.activeElement).toBe(previousButton);
 
     wrapper.unmount();

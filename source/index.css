@@ -72,6 +72,8 @@ Created: 2025-09-19
 
   /* State - Success/Complete Colors */
   --success-bg: #f0fdf4;
+  --success-attention: #e3f2e8;
+  --success-control-hover: #d3e3db;
   --success-text: #16a34a;
   --success-text-dark: #15803d;
   --success-border: #86efac;
@@ -109,3 +111,17 @@ body {
 /* ============================================================================
  * Utility Classes (for cases where Tailwind classes aren't sufficient)
  * ============================================================================ */
+
+/* Real control hit areas on touch-capable or narrow layouts; icons stay compact. */
+@media (any-pointer: coarse), (hover: none), (max-width: 767px) {
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+    opacity: 1;
+  }
+  .touch-name {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+  }
+}

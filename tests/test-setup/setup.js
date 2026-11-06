@@ -47,6 +47,22 @@ Object.defineProperty(navigator, 'locks', {
   },
 });
 
+// jsdom has no input-capability queries; individual device tests override matches.
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  configurable: true,
+  value: vi.fn((media) => ({
+    media,
+    matches: false,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 // Mock scrollIntoView (not implemented in jsdom)
 Element.prototype.scrollIntoView = vi.fn();
 

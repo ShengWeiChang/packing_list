@@ -112,6 +112,7 @@ export default {
 
         'success-state': {
           bg: 'var(--success-bg)', // Success background
+          'control-hover': 'var(--success-control-hover)', // Completed category control hover
           text: 'var(--success-text)', // Success text
           'text-dark': 'var(--success-text-dark)', // Success text (darker)
           border: 'var(--success-border)', // Success border

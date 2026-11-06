@@ -15,7 +15,7 @@ Created: 2025-09-19
   >
     <!-- Toggle sidebar navigation -->
     <button
-      class="rounded-md p-2 hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
+      class="touch-target rounded-md p-2 hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :aria-label="$t('topbar.toggleNav')"
       data-testid="topbar-toggle"
       @click="$emit('toggle')"
@@ -29,7 +29,7 @@ Created: 2025-09-19
 
     <!-- New checklist action -->
     <button
-      class="rounded-md p-2 hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
+      class="touch-target rounded-md p-2 hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :aria-label="$t('topbar.newChecklist')"
       data-testid="topbar-new"
       @click="$emit('new')"

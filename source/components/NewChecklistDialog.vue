@@ -14,6 +14,7 @@ Created: 2026-10-13
   <div
     v-if="visible"
     class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+    :style="viewportStyle"
     role="presentation"
     data-testid="new-checklist-dialog-backdrop"
     @click.self="close"
@@ -21,8 +22,10 @@ Created: 2026-10-13
     <!-- Dialog -->
     <div
       ref="dialogRef"
-      class="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+      class="mx-4 w-full max-w-md overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
+      style="max-height: calc(100% - 2rem)"
       role="dialog"
+      tabindex="-1"
       aria-modal="true"
       aria-labelledby="new-checklist-dialog-title"
       data-testid="new-checklist-dialog"
@@ -218,6 +221,7 @@ Created: 2026-10-13
 import type { DeepReadonly, PropType } from 'vue';
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
+import { useVisualViewport } from '../composables/useVisualViewport';
 import type { RecommendedList } from '../models/contracts';
 import AppIcon from './AppIcon.vue';
 import type { ChecklistSelection, TemplateView } from './componentContracts';
@@ -243,6 +247,7 @@ const props = defineProps({
     default: () => [],
   },
 });
+const viewportStyle = useVisualViewport();
 
 const emit = defineEmits<{ close: []; select: [selection: ChecklistSelection] }>();
 
@@ -308,7 +313,11 @@ function handleDialogKeydown(event: KeyboardEvent) {
   const focusable = dialogRef.value?.querySelectorAll<HTMLElement>(
     'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
   );
-  if (!focusable?.length) return;
+  if (!focusable?.length) {
+    event.preventDefault();
+    dialogRef.value?.focus();
+    return;
+  }
   const first = focusable[0];
   const last = focusable[focusable.length - 1];
   if (event.shiftKey && document.activeElement === first) {
@@ -333,6 +342,7 @@ watch(
       await nextTick();
       emptyOptionRef.value?.focus();
     } else {
+      await nextTick();
       previouslyFocusedElement.value?.focus();
     }
   },

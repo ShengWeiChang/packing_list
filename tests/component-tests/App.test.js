@@ -317,7 +317,7 @@ describe('App', () => {
             props: ['checklistName', 'endDate', 'startDate'],
             emits: ['close'],
           },
-          teleport: { template: '<div><slot /></div>' },
+          teleport: true,
         },
       },
     });
@@ -1308,12 +1308,13 @@ describe('App', () => {
 
       dialog.vm.$emit('save', 'My draft');
       await flushPromises();
+      expect(mockSaveAsTemplate).toHaveBeenCalledTimes(1);
       expect(dialog.props('visible')).toBe(true);
-      expect(dialog.props('saveError')).toBe(true);
-      dialog.vm.$emit('save', 'My draft');
+      expect(wrapper.findComponent({ name: 'SaveTemplateDialog' }).props('saveError')).toBe(true);
+      wrapper.findComponent({ name: 'SaveTemplateDialog' }).vm.$emit('save', 'My draft');
       await flushPromises();
       expect(mockSaveAsTemplate).toHaveBeenLastCalledWith('cl-1', 'My draft');
-      expect(dialog.props('visible')).toBe(false);
+      expect(wrapper.findComponent({ name: 'SaveTemplateDialog' }).props('visible')).toBe(false);
     });
 
     // Test Case 50: Should create a checklist from a selected personal template
@@ -1424,11 +1425,12 @@ describe('App', () => {
 
       dialog.vm.$emit('select', { source: 'empty' });
       await flushPromises();
+      expect(mockCreateChecklist).toHaveBeenCalledTimes(1);
       expect(dialog.props('visible')).toBe(true);
-      expect(dialog.props('saveError')).toBe(true);
-      dialog.vm.$emit('select', { source: 'empty' });
+      expect(wrapper.findComponent({ name: 'NewChecklistDialog' }).props('saveError')).toBe(true);
+      wrapper.findComponent({ name: 'NewChecklistDialog' }).vm.$emit('select', { source: 'empty' });
       await flushPromises();
-      expect(dialog.props('visible')).toBe(false);
+      expect(wrapper.findComponent({ name: 'NewChecklistDialog' }).props('visible')).toBe(false);
       expect(mockCreateChecklist).toHaveBeenCalledTimes(2);
     });
 

@@ -13,7 +13,7 @@ Created: 2025-09-19
   <aside
     :class="[
       'flex flex-col border-r border-border-color-light bg-white p-2 transition-all duration-300 ease-in-out',
-      isMobile ? 'h-full' : 'h-screen',
+      isMobile ? 'h-full' : 'h-dvh',
       // Mobile: overlay drawer when expanded, hidden when collapsed
       isMobile
         ? [isExpanded ? 'w-72 translate-x-0' : 'w-72 -translate-x-full']
@@ -27,7 +27,7 @@ Created: 2025-09-19
   >
     <!-- Toggle Button -->
     <button
-      class="mb-2 flex w-full items-center rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
+      class="touch-target mb-2 flex w-full items-center rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :aria-label="$t('sidebar.toggle')"
       data-testid="sidebar-toggle"
       @click="$emit('toggle-sidebar')"
@@ -43,7 +43,7 @@ Created: 2025-09-19
 
     <!-- New Checklist Button -->
     <button
-      class="mb-4 flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
+      class="touch-target mb-4 flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :class="[isExpanded || isMobile ? 'pr-4' : '']"
       data-testid="sidebar-new-checklist"
       @click="$emit('create-checklist')"
@@ -115,6 +115,7 @@ Created: 2025-09-19
                 ]"
               >
                 <button
+                  class="touch-target"
                   :class="[
                     'min-w-0 grow py-3 text-left transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:py-2',
                     isExpanded || isMobile ? 'px-4 pr-8' : 'flex items-center justify-center px-3',
@@ -185,7 +186,7 @@ Created: 2025-09-19
     >
       <div class="relative">
         <button
-          class="flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg transition-colors duration-200 hover:bg-interactive-hover"
+          class="touch-target flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg transition-colors duration-200 hover:bg-interactive-hover"
           :class="[isExpanded || isMobile ? 'pr-4' : '']"
           :aria-expanded="showTemplatesMenu"
           :aria-label="$t('template.myTemplates')"
@@ -223,7 +224,7 @@ Created: 2025-09-19
             :class="{ 'bg-interactive-hover-light': selectedTemplateId === template.id }"
           >
             <button
-              class="min-w-0 grow truncate text-left text-sm text-primary"
+              class="touch-target min-w-0 grow truncate text-left text-sm text-primary"
               :title="template.name"
               :data-testid="`sidebar-template-use-${template.id}`"
               @click="openTemplateEditor(template.id)"
@@ -235,7 +236,7 @@ Created: 2025-09-19
       </div>
       <div class="relative">
         <button
-          class="flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg transition-colors duration-200 hover:bg-interactive-hover"
+          class="touch-target flex w-full items-center overflow-hidden whitespace-nowrap rounded-lg transition-colors duration-200 hover:bg-interactive-hover"
           :class="[isExpanded || isMobile ? 'pr-4' : '']"
           :aria-label="$t('language.switchLanguage')"
           :title="$t('language.switchLanguage')"
@@ -267,7 +268,7 @@ Created: 2025-09-19
           <button
             v-for="lang in availableLanguages"
             :key="lang.code"
-            class="flex w-full items-center px-4 py-2 text-base transition-colors duration-150 hover:bg-interactive-hover md:text-sm"
+            class="touch-target flex w-full items-center px-4 py-2 text-base transition-colors duration-150 hover:bg-interactive-hover md:text-sm"
             :class="
               currentLocale === lang.code
                 ? 'bg-interactive-hover-light font-medium text-primary'
@@ -564,6 +565,14 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+@media (min-width: 600px) and (any-pointer: coarse), (min-width: 600px) and (hover: none) {
+  [data-testid='sidebar-checklists-draggable'] > li > div {
+    padding-inline: 0;
+  }
+  [data-testid='sidebar-checklists-draggable'] > li > div > button.pr-8 {
+    padding-left: 0.75rem;
+  }
+}
 /* Checklist drag and drop styles */
 .ghost-checklist {
   opacity: 0.3;

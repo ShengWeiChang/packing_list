@@ -10,10 +10,12 @@ Created: 2025-09-19
 -->
 
 <template>
+  <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
   <div
     ref="root"
     class="relative"
     :data-testid="`overflow-root-${props.menuType}-${props.itemId}`"
+    @keydown.esc="handleRootEscape"
     @focusout="handleFocusOut"
   >
     <!-- Three-dot menu button or checkmark button when editing -->
@@ -21,15 +23,16 @@ Created: 2025-09-19
       ref="buttonRef"
       type="button"
       :class="buttonClass"
-      :aria-label="props.isEditing ? $t('common.save') : $t('common.moreOptions')"
-      aria-haspopup="true"
-      :aria-expanded="showMenu"
+      :aria-label="props.isEditing && !inlineActions ? $t('common.save') : $t('common.moreOptions')"
+      :aria-haspopup="inlineActions ? undefined : 'true'"
+      :aria-controls="inlineActions ? inlineControls : undefined"
+      :aria-expanded="inlineActions ? inlineExpanded : showMenu"
       :data-testid="`overflow-trigger-${props.menuType}-${props.itemId}`"
-      @click.stop="props.isEditing ? handleConfirmEdit() : toggleMenu()"
+      @click.stop="handleTriggerClick"
     >
       <!-- Checkmark icon when editing -->
       <AppIcon
-        v-if="props.isEditing"
+        v-if="props.isEditing && !inlineActions"
         name="confirm"
         :size="triggerIconSize"
       />
@@ -43,68 +46,73 @@ Created: 2025-09-19
     </button>
 
     <!-- Dropdown menu with edit and delete actions -->
-    <div
-      v-if="showMenu"
-      ref="dropdownRef"
-      :class="dropdownClass"
-      :style="dropdownStyle"
-      :data-testid="`overflow-dropdown-${props.menuType}-${props.itemId}`"
-    >
-      <button
-        class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
-        :data-testid="`overflow-action-edit-${props.menuType}-${props.itemId}`"
-        @click="handleEdit"
+    <Teleport :to="portalTarget">
+      <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
+      <div
+        v-if="showMenu"
+        ref="dropdownRef"
+        :class="dropdownClass"
+        :style="dropdownStyle"
+        :data-testid="`overflow-dropdown-${props.menuType}-${props.itemId}`"
+        @focusout="handleFocusOut"
+        @keydown.esc.stop.prevent="dismissWithEscape"
       >
-        <AppIcon
-          class="mr-2"
-          name="edit"
-          size="inline"
-        />
-        {{ $t('common.edit') }}
-      </button>
+        <button
+          class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
+          :data-testid="`overflow-action-edit-${props.menuType}-${props.itemId}`"
+          @click="handleEdit"
+        >
+          <AppIcon
+            class="mr-2"
+            name="edit"
+            size="inline"
+          />
+          {{ $t('common.edit') }}
+        </button>
 
-      <button
-        v-if="props.menuType !== 'template'"
-        class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
-        :data-testid="`overflow-action-copy-${props.menuType}-${props.itemId}`"
-        @click="handleCopy"
-      >
-        <AppIcon
-          class="mr-2"
-          name="copy"
-          size="inline"
-        />
-        {{ $t('common.copy') }}
-      </button>
+        <button
+          v-if="props.menuType !== 'template'"
+          class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
+          :data-testid="`overflow-action-copy-${props.menuType}-${props.itemId}`"
+          @click="handleCopy"
+        >
+          <AppIcon
+            class="mr-2"
+            name="copy"
+            size="inline"
+          />
+          {{ $t('common.copy') }}
+        </button>
 
-      <!-- Save as Template (checklist only) -->
-      <button
-        v-if="props.menuType === 'checklist'"
-        class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
-        :data-testid="`overflow-action-save-template-${props.menuType}-${props.itemId}`"
-        @click="handleSaveAsTemplate"
-      >
-        <AppIcon
-          class="mr-2"
-          name="saveTemplate"
-          size="inline"
-        />
-        {{ $t('template.saveAsTemplate') }}
-      </button>
+        <!-- Save as Template (checklist only) -->
+        <button
+          v-if="props.menuType === 'checklist'"
+          class="flex w-full items-center px-3 py-2 text-base text-primary hover:bg-interactive-hover focus:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:text-sm"
+          :data-testid="`overflow-action-save-template-${props.menuType}-${props.itemId}`"
+          @click="handleSaveAsTemplate"
+        >
+          <AppIcon
+            class="mr-2"
+            name="saveTemplate"
+            size="inline"
+          />
+          {{ $t('template.saveAsTemplate') }}
+        </button>
 
-      <button
-        class="flex w-full items-center px-3 py-2 text-base text-danger-text hover:bg-danger-bg focus:bg-danger-bg focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-danger-focus md:text-sm"
-        :data-testid="`overflow-action-delete-${props.menuType}-${props.itemId}`"
-        @click="handleDelete"
-      >
-        <AppIcon
-          class="mr-2"
-          name="delete"
-          size="inline"
-        />
-        {{ $t('common.delete') }}
-      </button>
-    </div>
+        <button
+          class="flex w-full items-center px-3 py-2 text-base text-danger-text hover:bg-danger-bg focus:bg-danger-bg focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-danger-focus md:text-sm"
+          :data-testid="`overflow-action-delete-${props.menuType}-${props.itemId}`"
+          @click="handleDelete"
+        >
+          <AppIcon
+            class="mr-2"
+            name="delete"
+            size="inline"
+          />
+          {{ $t('common.delete') }}
+        </button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -116,6 +124,7 @@ Created: 2025-09-19
 import type { PropType } from 'vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
+import { positionDropdownWithinViewport } from '../utils/positioning';
 import AppIcon from './AppIcon.vue';
 
 // ------------------------------------------------------------------------------
@@ -124,6 +133,11 @@ import AppIcon from './AppIcon.vue';
 
 // Props
 const props = defineProps({
+  inlineActions: { type: Boolean, default: false },
+  inlineExpanded: { type: Boolean, default: false },
+  inlineControls: { type: String, default: undefined },
+  touchMinimal: { type: Boolean, default: false },
+  successSurface: { type: Boolean, default: false },
   itemId: {
     type: String,
     required: true,
@@ -169,6 +183,7 @@ const props = defineProps({
 
 // Emits
 const emit = defineEmits<{
+  'toggle-inline': [];
   edit: [];
   copy: [];
   'save-as-template': [];
@@ -195,45 +210,81 @@ const root = ref<HTMLElement | null>(null);
 const buttonClass = computed(() => {
   const frameSizeClass =
     props.triggerFrameSize === 'spacious' ? 'size-9 md:size-8' : 'size-9 md:size-6';
-  const baseClass = `${frameSizeClass} flex items-center justify-center rounded-lg transition-all duration-200 hover:bg-control-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1`;
-  const surfaceClass = props.transparentTrigger ? 'bg-transparent' : 'bg-control-bg';
+  const minimalSurface = props.menuType === 'item' || props.menuType === 'category';
+  const feedbackClass = props.touchMinimal
+    ? ''
+    : props.successSurface
+      ? 'hover:bg-success-state-control-hover'
+      : 'hover:bg-control-hover';
+  const baseClass = `touch-target ${frameSizeClass} flex items-center justify-center rounded-lg transition-colors duration-200 ${feedbackClass} focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1`;
+  const surfaceClass = minimalSurface
+    ? 'bg-transparent'
+    : props.inlineExpanded || (props.touchMinimal && showMenu.value)
+      ? 'bg-interactive-hover'
+      : props.transparentTrigger || props.touchMinimal
+        ? 'bg-transparent'
+        : 'bg-control-bg';
 
   // Green checkmark style when editing
-  if (props.isEditing) {
-    return `${baseClass} ${surfaceClass} opacity-100 text-success-state-text hover:text-success-state-text-dark hover:bg-success-state-bg`;
+  if (props.isEditing && !props.inlineActions) {
+    return `${baseClass} ${surfaceClass} opacity-100 text-success-state-text hover:text-success-state-text-dark`;
   }
 
   // Gray three-dot style when not editing
   const normalClass = `${baseClass} ${surfaceClass} text-secondary hover:text-primary`;
 
   // Show the button when menu is open or forceVisible is true
-  if (showMenu.value || props.forceVisible) {
+  if (props.inlineActions || showMenu.value || props.forceVisible) {
     return `${normalClass} opacity-100`;
   }
 
   // If using group-hover behavior (default), show on ancestor hover
   if (props.useGroupHover) {
-    return `${normalClass} md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 md:focus:opacity-100`;
+    return `${normalClass} md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 md:focus-visible:opacity-100`;
   }
 
   // Otherwise keep hidden unless forced or open
   // Mobile: always visible, Desktop: only when forced
   // Also ensure visible when focused (keyboard navigation)
-  return `${normalClass} opacity-100 md:opacity-0 focus:opacity-100 md:focus:opacity-100`;
+  return `${normalClass} opacity-100 md:opacity-0 focus-visible:opacity-100 md:focus-visible:opacity-100`;
 });
 
 const triggerIconSize = computed(
   () => props.triggerIconSize ?? (props.menuType === 'item' ? 'inline' : 'control')
 );
 
+// Keep drawer commands inside its focus/inert owner, outside transformed cards.
+const portalTarget = ref<HTMLElement | string>('body');
+
 // Dropdown styling
 const dropdownClass = computed(
-  () => `mt-1 bg-white border border-border-color-light rounded-md shadow-lg z-50 w-auto max-w-xs`
+  () => `bg-white border border-border-color-light rounded-md shadow-lg z-50 w-auto max-w-xs`
 );
 
 // ------------------------------------------------------------------------------
 // Functions
 // ------------------------------------------------------------------------------
+
+/** A touch tap can use inline actions even on a hybrid device with a mouse. */
+function handleTriggerClick(event: PointerEvent) {
+  if (props.menuType === 'item' && (props.inlineActions || event.pointerType === 'touch')) {
+    showMenu.value = false;
+    window.dispatchEvent(
+      new CustomEvent('overflow-menu-open', { detail: { id: props.itemId, type: props.menuType } })
+    );
+    emit('toggle-inline');
+  } else if (props.isEditing) {
+    handleConfirmEdit();
+  } else {
+    toggleMenu(event.detail === 0);
+  }
+}
+
+/** Return focus only when a caller explicitly dismisses with Escape. */
+function focusTrigger() {
+  buttonRef.value?.focus({ preventScroll: true });
+}
+defineExpose({ focusTrigger });
 
 // ---------- Menu Positioning ----------
 
@@ -241,27 +292,43 @@ const dropdownClass = computed(
  * Calculate and apply dropdown position to avoid viewport overflow
  */
 function positionDropdown() {
-  if (!buttonRef.value || !dropdownRef.value) return;
+  if (!showMenu.value || !buttonRef.value || !dropdownRef.value) return;
   const btnRect = buttonRef.value.getBoundingClientRect();
+  const viewport = window.visualViewport;
+  const viewportWidth = viewport?.width ?? window.innerWidth;
+  dropdownRef.value.style.maxWidth = `${Math.max(1, viewportWidth - 16)}px`;
   const ddRect = dropdownRef.value.getBoundingClientRect();
+  const borders = dropdownRef.value.offsetHeight - dropdownRef.value.clientHeight;
+  const actionHeights = Array.from(
+    dropdownRef.value.querySelectorAll('button'),
+    (button) => button.getBoundingClientRect().height
+  );
+  const minVisibleHeight = Math.max(0, ...actionHeights) + borders;
+  dropdownStyle.value = positionDropdownWithinViewport(
+    btnRect,
+    { width: ddRect.width, height: dropdownRef.value.scrollHeight + borders },
+    {
+      left: viewport?.offsetLeft ?? 0,
+      top: viewport?.offsetTop ?? 0,
+      width: viewportWidth,
+      height: viewport?.height ?? window.innerHeight,
+    },
+    minVisibleHeight
+  );
+}
 
-  // Align dropdown right edge with the button's right edge
-  let left = btnRect.right - ddRect.width;
+/** Dismiss a keyboard-opened menu and return to its trigger. */
+function dismissWithEscape() {
+  showMenu.value = false;
+  focusTrigger();
+}
 
-  // Clamp within viewport with 8px padding
-  const minPadding = 8;
-  const maxLeft = window.innerWidth - ddRect.width - minPadding;
-  if (left < minPadding) left = minPadding;
-  if (left > maxLeft) left = maxLeft;
-
-  const top = btnRect.bottom + 6; // 6px gap
-
-  dropdownStyle.value = {
-    position: 'fixed',
-    left: `${left}px`,
-    top: `${top}px`,
-    zIndex: 9999,
-  };
+/** Let a closed menu pass Escape to its containing item or drawer. */
+function handleRootEscape(event: KeyboardEvent) {
+  if (!showMenu.value) return;
+  event.stopPropagation();
+  event.preventDefault();
+  dismissWithEscape();
 }
 
 // ---------- Menu Actions ----------
@@ -269,7 +336,7 @@ function positionDropdown() {
 /**
  * Toggle the overflow menu visibility and dispatch custom event
  */
-function toggleMenu() {
+function toggleMenu(focusFirst = false) {
   const willOpen = !showMenu.value;
   showMenu.value = willOpen;
 
@@ -280,6 +347,8 @@ function toggleMenu() {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         positionDropdown();
+        if (showMenu.value && focusFirst)
+          dropdownRef.value?.querySelector<HTMLButtonElement>('button')?.focus();
       });
     });
 
@@ -371,7 +440,8 @@ function closeMenu(event: MouseEvent) {
 /**
  * Close menu when user scrolls the page
  */
-function closeMenuOnScroll() {
+function closeMenuOnScroll(event: Event) {
+  if (event.target instanceof Node && dropdownRef.value?.contains(event.target)) return;
   showMenu.value = false;
 }
 
@@ -394,9 +464,12 @@ function closeWhenOtherOpens(event: Event) {
 
 // Set up event listeners
 onMounted(() => {
+  portalTarget.value = root.value?.closest<HTMLElement>('[aria-modal="true"]') ?? 'body';
   document.addEventListener('click', closeMenu);
   window.addEventListener('scroll', closeMenuOnScroll, true);
   window.addEventListener('overflow-menu-open', closeWhenOtherOpens);
+  window.addEventListener('resize', positionDropdown);
+  window.visualViewport?.addEventListener('resize', positionDropdown);
 });
 
 // Clean up event listeners
@@ -404,5 +477,16 @@ onUnmounted(() => {
   document.removeEventListener('click', closeMenu);
   window.removeEventListener('scroll', closeMenuOnScroll, true);
   window.removeEventListener('overflow-menu-open', closeWhenOtherOpens);
+  window.removeEventListener('resize', positionDropdown);
+  window.visualViewport?.removeEventListener('resize', positionDropdown);
 });
 </script>
+
+<style scoped>
+@media (any-pointer: coarse), (hover: none), (max-width: 767px) {
+  [data-testid^='overflow-dropdown-'] > button {
+    min-height: 44px;
+    font-size: 1rem;
+  }
+}
+</style>

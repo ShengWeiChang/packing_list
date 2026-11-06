@@ -10,7 +10,10 @@ Created: 2025-09-19
 -->
 
 <template>
-  <div>
+  <div
+    ref="checklistRoot"
+    :class="{ 'touch-layout': touchControls }"
+  >
     <!-- Checklist Header -->
     <div class="mb-2 px-2 pb-4 pt-2">
       <!-- Header content -->
@@ -115,7 +118,7 @@ Created: 2025-09-19
             type="button"
             data-testid="unpacked-items-filter-toggle"
             :class="[
-              'inline-flex size-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary focus-visible:ring-offset-1 md:size-8',
+              'touch-target inline-flex size-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary focus-visible:ring-offset-1 md:size-8',
               showUnpackedOnly
                 ? 'bg-theme-secondary text-theme-primary'
                 : 'text-secondary hover:bg-control-hover hover:text-primary',
@@ -179,13 +182,14 @@ Created: 2025-09-19
       />
     </div>
 
-    <!-- Pending Items (Virtual Category for to-buy / to-do) -->
+    <!-- Pending Items (Virtual Category for to-buy items) -->
     <div
       v-if="pendingItemsForDisplay.length > 0"
       class="category-item mb-3"
     >
       <PendingItemsCategory
         :items="pendingItemsForDisplay"
+        :touch-controls="touchControls"
         @update:item="$emit('update:item', $event)"
       />
     </div>
@@ -196,6 +200,8 @@ Created: 2025-09-19
         v-model="draggableCategories"
         item-key="id"
         :delay="200"
+        filter="button, input, label, a, [contenteditable], [data-testid=category-items-draggable]"
+        :prevent-on-filter="false"
         :delay-on-touch-only="true"
         :group="{
           name: 'categories',
@@ -217,6 +223,8 @@ Created: 2025-09-19
               :key="category.id"
               :data-category-id="category.id"
               :category="category"
+              :touch-controls="touchControls"
+              :open-item-actions-id="openItemActionsId"
               :items="items"
               :show-unpacked-only="showUnpackedOnly"
               :newly-created-item-id="newlyCreatedItemId"
@@ -229,6 +237,9 @@ Created: 2025-09-19
               :update-item-action="updateItemAction"
               :retain-draft="retainDraft"
               :edit-cancelled="editCancelled"
+              @toggle-item-actions="toggleItemActions"
+              @close-item-actions="openItemActionsId = null"
+              @collapse:category="closeCategoryActions"
               @update:item="(...args) => $emit('update:item', ...args)"
               @copy:item="$emit('copy:item', $event)"
               @delete:item="$emit('delete:item', $event)"
@@ -256,9 +267,10 @@ Created: 2025-09-19
 // ------------------------------------------------------------------------------
 
 import type { PropType } from 'vue';
-import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { useTouchLayout } from '../composables/useTouchLayout';
 import type { CategoryDTO, ChecklistDTO, ItemDTO } from '../models/contracts';
 import { putOnlyFromGroup } from '../utils/dragDrop';
 import { focusEditingInput } from '../utils/focusEditingInput';
@@ -381,6 +393,79 @@ const emit = defineEmits<{
 // States
 // ------------------------------------------------------------------------------
 
+const showUnpackedOnly = ref(false);
+const { touchControls } = useTouchLayout();
+const checklistRoot = ref<HTMLElement | null>(null);
+const openItemActionsId = ref<string | null>(null);
+
+/** Toggle the one active item across all categories. */
+function toggleItemActions(id: string) {
+  openItemActionsId.value = openItemActionsId.value === id ? null : id;
+}
+
+/** Close an item hidden by its category collapse control. */
+function closeCategoryActions(categoryId: string) {
+  if (
+    props.items.some(
+      (item) => item.id === openItemActionsId.value && item.categoryId === categoryId
+    )
+  ) {
+    openItemActionsId.value = null;
+  }
+}
+
+/** Capture a completed click without swallowing the user's outside action. */
+function closeOutsideItem(event: MouseEvent) {
+  if (!openItemActionsId.value) return;
+  const inside = event
+    .composedPath()
+    .some(
+      (node) =>
+        node instanceof HTMLElement &&
+        node.dataset.inlineItemId === openItemActionsId.value &&
+        checklistRoot.value?.contains(node)
+    );
+  if (!inside) openItemActionsId.value = null;
+}
+onMounted(() => document.addEventListener('click', closeOutsideItem, true));
+onUnmounted(() => document.removeEventListener('click', closeOutsideItem, true));
+watch(
+  () => props.checklist.id,
+  () => {
+    openItemActionsId.value = null;
+  }
+);
+watch(
+  () => [props.items, props.categories, showUnpackedOnly.value] as const,
+  () => {
+    const item = props.items.find((entry) => entry.id === openItemActionsId.value);
+    if (
+      !item ||
+      (showUnpackedOnly.value && item.isPacked) ||
+      !props.categories.some((category) => category.id === item.categoryId)
+    ) {
+      const active = document.activeElement;
+      const focusedItem =
+        active instanceof HTMLElement ? active.closest<HTMLElement>('[data-inline-item-id]') : null;
+      const restoreRemovedFocus =
+        focusedItem?.dataset.inlineItemId === openItemActionsId.value &&
+        checklistRoot.value?.contains(focusedItem);
+      openItemActionsId.value = null;
+      if (restoreRemovedFocus)
+        nextTick(() => {
+          if (document.activeElement !== document.body && document.activeElement?.isConnected)
+            return;
+          const candidates = checklistRoot.value?.querySelectorAll<HTMLElement>(
+            '[data-testid="item-name"], [data-testid="category-collapse-toggle"], [data-testid="add-item-button"]'
+          );
+          Array.from(candidates ?? [])
+            .find((element) => !element.closest('[inert]'))
+            ?.focus({ preventScroll: true });
+        });
+    }
+  }
+);
+
 // Editing state
 const isEditing = ref(false);
 const isSavingEdit = ref(false);
@@ -396,7 +481,6 @@ const startDateInput = ref<HTMLInputElement | null>(null);
 const endDateInput = ref<HTMLInputElement | null>(null);
 const isComposing = ref(false);
 const isAdjustingDates = ref(false); // Guard flag to prevent watcher infinite loops
-const showUnpackedOnly = ref(false);
 let cleanupEditingFocus = () => {};
 
 // Drag state
@@ -407,7 +491,7 @@ const isDraggingCategory = ref(false);
 // Computed
 // ------------------------------------------------------------------------------
 
-// Filter items that are marked as pending (to-buy / to-do)
+// Filter items that are marked as to buy
 const pendingItemsForDisplay = computed(() => {
   return props.items.filter(
     (item) => item.isPending && (!showUnpackedOnly.value || !item.isPacked)
@@ -561,7 +645,10 @@ async function saveEdit() {
           editSaveFailed.value = true;
           isSavingEdit.value = false;
           await nextTick();
-          (restoreFocus as HTMLInputElement | null)?.focus({ preventScroll: true });
+          if (restoreFocus)
+            cleanupEditingFocus = focusEditingInput(restoreFocus as HTMLInputElement, {
+              select: false,
+            });
           return;
         }
       } finally {
@@ -806,6 +893,12 @@ onUnmounted(() => cleanupEditingFocus());
   .categories-masonry {
     column-count: 4;
   }
+}
+
+.touch-layout .categories-masonry {
+  column-count: 4;
+  column-width: 340px;
+  contain: layout;
 }
 
 /* Prevent categories from breaking across columns */

@@ -42,7 +42,7 @@ export class Item implements ItemDTO {
    * @param {number} root0.quantity - Quantity of the item (1-999)
    * @param {string} root0.categoryId - ID of the category this item belongs to
    * @param {boolean} root0.isPacked - Whether the item is packed
-   * @param {boolean} root0.isPending - Whether the item is marked as pending (to-buy / to-do)
+   * @param {boolean} root0.isPending - Whether the item is marked as to buy
    * @param {string} root0.checklistId - ID of the checklist this item belongs to
    * @param {number} root0.order - Display order within category
    */

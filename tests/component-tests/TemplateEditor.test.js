@@ -8,7 +8,7 @@ Created: 2026-10-13
 ================================================================================
 */
 
-import { shallowMount } from '@vue/test-utils';
+import { flushPromises, mount, shallowMount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import { createI18n } from 'vue-i18n';
 
@@ -284,5 +284,45 @@ describe('TemplateEditor', () => {
       categories: [expect.objectContaining({ order: 0 })],
       items: [expect.objectContaining({ categoryId: newCategory.id, order: 0 })],
     });
+  });
+});
+
+describe('TemplateEditor touch integration', () => {
+  // Test Case 14: Real inline actions edit an isolated draft and save the last blurred name.
+  it('keeps touch changes isolated until saving the template snapshot', async () => {
+    const original = JSON.parse(JSON.stringify(template));
+    const w = mount(TemplateEditor, {
+      props: { template },
+      global: {
+        plugins: [i18n],
+        stubs: {
+          draggable: {
+            name: 'draggable',
+            props: ['modelValue'],
+            template:
+              '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template></div>',
+          },
+        },
+      },
+      attachTo: document.body,
+    });
+    try {
+      await w
+        .get('[data-testid^="overflow-trigger-item-"]')
+        .trigger('click', { pointerType: 'touch' });
+      await flushPromises();
+      await w.get('[data-testid="item-quantity-increment"]').trigger('click');
+      await w.get('[data-testid="item-action-edit"]').trigger('click');
+      await w.get('[data-testid="item-edit-input"]').setValue('Draft shirt');
+      w.get('[data-testid="item-edit-input"]').element.blur();
+      await flushPromises();
+      expect(template).toEqual(original);
+      expect(w.emitted('save')).toBeUndefined();
+      await w.get('[data-testid="template-editor-save"]').trigger('click');
+      expect(w.emitted('save')[0][0].items[0]).toMatchObject({ name: 'Draft shirt', quantity: 3 });
+      expect(template).toEqual(original);
+    } finally {
+      w.unmount();
+    }
   });
 });

@@ -31,6 +31,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Clipboard,
   ClipboardCheck,
   Copy,
   Ellipsis,
@@ -54,6 +55,7 @@ import { computed, useAttrs } from 'vue';
 const icons = {
   add: Plus,
   back: ArrowLeft,
+  clipboard: Clipboard,
   clipboardCheck: ClipboardCheck,
   collapse: ChevronUp,
   confirm: Check,
@@ -98,6 +100,7 @@ const props = defineProps({
       [
         'add',
         'back',
+        'clipboard',
         'clipboardCheck',
         'collapse',
         'confirm',
