@@ -692,15 +692,6 @@ aside[data-expanded='true'] [data-sidebar-label],
 aside[data-expanded='true'] [data-sidebar-checklist-label] {
   opacity: 1;
   transition-delay: 150ms;
-  animation: sidebar-label-reveal 150ms ease-in-out 150ms both;
-}
-@keyframes sidebar-label-reveal {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 aside[data-expanded='false'] [data-testid='sidebar-checklists-scrollport'] {
   overflow: clip;

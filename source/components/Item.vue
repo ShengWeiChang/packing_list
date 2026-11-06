@@ -12,6 +12,7 @@ Created: 2025-09-19
 <template>
   <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
   <div
+    ref="itemRoot"
     :class="[
       'group cursor-grab rounded-md px-0 py-0.5 transition-all duration-200',
       categoryCompleted ? 'bg-success-state-bg text-success-state-complete' : 'bg-white',
@@ -22,6 +23,7 @@ Created: 2025-09-19
     data-testid="item-row"
     :data-attention="actionsOpen ? 'true' : undefined"
     :data-completed="categoryCompleted ? 'true' : undefined"
+    :data-drag-hover-suppressed="suppressDragHover ? 'true' : undefined"
     :data-item-id="item.id"
     :data-inline-item-id="item.id"
     @keydown.esc="closeActionsFromKeyboard"
@@ -429,6 +431,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  suppressDragHover: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Emits
@@ -445,6 +451,7 @@ const emit = defineEmits<{
 // ------------------------------------------------------------------------------
 
 const actionsMenu = ref<InstanceType<typeof OverflowMenu> | null>(null);
+const itemRoot = ref<HTMLElement | null>(null);
 const touchActivated = ref(false);
 const touchPresentation = computed(() => props.touchControls || touchActivated.value);
 const isEditing = ref(false);
@@ -452,6 +459,12 @@ const isSavingEdit = ref(false);
 const isSavingPacked = ref(false);
 const editSaveFailed = ref(false);
 const isHovered = ref(false);
+watch(
+  () => props.suppressDragHover,
+  (suppressed) => {
+    if (suppressed && !itemRoot.value?.querySelector(':focus-visible')) isHovered.value = false;
+  }
+);
 const isQuantityHovered = ref(false);
 const editedName = ref('');
 let editBaseline: ItemDTO | null = null;
@@ -542,7 +555,7 @@ async function handlePackedChange(event: Event) {
 // Handle mouse enter - prevent hover state on touch devices to avoid accidental button clicks
 const handleMouseEnter = () => {
   // Only enable hover state if the device supports hover (i.e., has a mouse/pointer)
-  if (window.matchMedia('(hover: hover)').matches) {
+  if (!props.suppressDragHover && window.matchMedia('(hover: hover)').matches) {
     isHovered.value = true;
   }
 };
@@ -827,10 +840,10 @@ onUnmounted(() => cleanupEditingFocus());
   background-color: var(--success-attention);
 }
 @media (hover: hover) {
-  [data-testid='item-row']:hover {
+  [data-testid='item-row']:not([data-drag-hover-suppressed='true']):hover {
     background-color: var(--interactive-hover);
   }
-  [data-testid='item-row'][data-completed='true']:hover {
+  [data-testid='item-row'][data-completed='true']:not([data-drag-hover-suppressed='true']):hover {
     background-color: var(--success-attention);
   }
 }

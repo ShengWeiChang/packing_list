@@ -380,6 +380,10 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Drop restriction: Only allow drops within item containers (`group.put` check).
   - Visuals & motion:
     - `ghost/chosen/drag` classes for translucent, grab, and scale effects, ~200ms animations; keep masonry layout stable while dragging.
+    - On desktop, a dropped item or category remains at its previewed position while its save finishes. If the save fails, the visible order returns to the refreshed stored state; if only the follow-up read fails, the saved preview remains visible while the existing warning is shown.
+    - Category progress and packing controls reflect the displayed items during a pending move. A category packing request waits for its relevant moves to save and refresh; if a move or its follow-up read fails, that packing request is cancelled and the existing error or warning remains visible.
+    - An item dragged into a category with no visible items appears above Add Item during the drag, pushing the button down. Moving the pointer after a drop restores normal hover feedback; the source's next item or Add Item button does not retain a stale highlight.
+    - Sorting sidebar checklists does not replay the sidebar's expansion animation.
   - Persistence:
     - Item drag events send all affected source/target entries to one `updateMultipleItems` operation and reload data for consistency; orders persist across reloads.
 - Flow:

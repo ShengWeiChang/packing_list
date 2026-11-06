@@ -91,6 +91,14 @@ describe('AddItemButton', () => {
 
       const icon = wrapper.get('[data-testid="add-item-button-icon"]');
       expect(icon.classes()).toContain('text-primary');
+
+      await wrapper.setProps({ suppressDragHover: true });
+      expect(icon.classes()).toContain('text-secondary');
+      expect(button.classes()).not.toContain('hover:bg-interactive-hover');
+      await button.trigger('focus');
+      expect(icon.classes()).toContain('text-primary');
+      await wrapper.setProps({ suppressDragHover: false });
+      expect(button.classes()).toContain('hover:bg-interactive-hover');
     });
 
     // Test Case 6: Should revert to secondary text on mouseleave

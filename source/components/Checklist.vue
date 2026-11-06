@@ -228,6 +228,10 @@ Created: 2025-09-19
               :touch-controls="touchControls"
               :open-item-actions-id="openItemActionsId"
               :items="items"
+              :display-items="projectedItems"
+              :drag-baseline-items="dragBaselineItems"
+              :drag-preview-reset="dragPreviewReset"
+              :suppress-drag-hover="suppressDragHover"
               :show-unpacked-only="showUnpackedOnly"
               :newly-created-item-id="newlyCreatedItemId"
               :newly-created-category-id="newlyCreatedCategoryId"
@@ -236,6 +240,7 @@ Created: 2025-09-19
               :commit-edit-on-blur="commitEditOnBlur"
               :edit-error-code="editErrorCode"
               :set-category-packed-action="setCategoryPackedAction"
+              :wait-for-category-moves="waitForCategoryMoves"
               :update-item-action="updateItemAction"
               :retain-draft="retainDraft"
               :edit-cancelled="editCancelled"
@@ -251,6 +256,8 @@ Created: 2025-09-19
               @delete:category="$emit('delete:category', $event)"
               @set-category-packed="$emit('set-category-packed', $event)"
               @move:item="handleItemMove"
+              @drag:item-start="onItemDragStart"
+              @drag:item-end="onItemDragEnd"
             />
           </div>
         </template>
@@ -269,7 +276,16 @@ Created: 2025-09-19
 // ------------------------------------------------------------------------------
 
 import type { PropType } from 'vue';
-import { computed, nextTick, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  onUnmounted,
+  ref,
+  shallowRef,
+  watch,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { useTouchLayout } from '../composables/useTouchLayout';
@@ -385,8 +401,12 @@ const emit = defineEmits<{
   'copy:category': [id: string];
   'delete:category': [id: string];
   'create:category': [];
-  'reorder:categories': [categories: CategoryDTO[], expected: CategoryDTO[]];
-  'move:item': [move: ItemMove];
+  'reorder:categories': [
+    categories: CategoryDTO[],
+    expected: CategoryDTO[],
+    settled?: (awaitingRefresh?: boolean) => void,
+  ];
+  'move:item': [move: ItemMove, settled?: (succeeded: boolean, awaitingRefresh?: boolean) => void];
   'save-as-template': [id: string];
   'set-category-packed': [change: CategoryPackedChange];
 }>();
@@ -399,6 +419,92 @@ const showUnpackedOnly = ref(false);
 const { touchControls } = useTouchLayout();
 const checklistRoot = ref<HTMLElement | null>(null);
 const openItemActionsId = ref<string | null>(null);
+const dragBaselineItems = ref<Readonly<ItemDTO>[] | null>(null);
+const dragPreviewReset = ref(0);
+const suppressDragHover = ref(false);
+const pendingItemMoves = shallowRef<ItemMove[]>([]);
+const awaitingItemRefresh = new Set<ItemMove>();
+const itemMoveResults = new Map<ItemMove, Promise<boolean>>();
+let isDraggingItem = false;
+let restoreItemHover = () => {};
+
+/** Clear the item preview after pending saves and active drags have finished. */
+function resetItemPreviewWhenIdle() {
+  if (pendingItemMoves.value.length || isDraggingItem) return;
+  dragBaselineItems.value = null;
+  dragPreviewReset.value += 1;
+}
+
+watch(
+  () => props.items,
+  () => {
+    if (!awaitingItemRefresh.size) return;
+    pendingItemMoves.value = pendingItemMoves.value.filter(
+      (move) => !awaitingItemRefresh.has(move)
+    );
+    for (const move of awaitingItemRefresh) itemMoveResults.delete(move);
+    awaitingItemRefresh.clear();
+    void nextTick(resetItemPreviewWhenIdle);
+  }
+);
+
+// Only ordering fields are projected; other fields continue to follow fresh data.
+const projectedItems = computed(() =>
+  props.items.map((item) => {
+    const result = { ...item };
+    for (const move of pendingItemMoves.value) {
+      const update = move.items.find((entry) => entry.id === item.id);
+      if (update) {
+        result.categoryId = update.categoryId;
+        result.order = update.order;
+      }
+    }
+    return result;
+  })
+);
+
+/** Wait for relevant moves before capturing a category-wide packing batch. */
+async function waitForCategoryMoves(categoryId: string): Promise<boolean> {
+  for (;;) {
+    const relevant = pendingItemMoves.value.filter((move) =>
+      move.items.some(
+        (item) =>
+          item.categoryId === categoryId ||
+          move.expectedItems.find((previous) => previous.id === item.id)?.categoryId === categoryId
+      )
+    );
+    if (!relevant.length) return true;
+    const results = await Promise.all(
+      relevant.map((move) => itemMoveResults.get(move) ?? Promise.resolve(false))
+    );
+    if (results.some((succeeded) => !succeeded)) return false;
+  }
+}
+
+/** Capture the latest visible ordering before Sortable changes either list. */
+function onItemDragStart() {
+  isDraggingItem = true;
+  restoreItemHover();
+  suppressDragHover.value = !touchControls.value;
+  dragBaselineItems.value = projectedItems.value.map((item) => ({ ...item }));
+}
+
+/** Keep the old mouse position from highlighting the next row after a drop. */
+function onItemDragEnd(event: unknown) {
+  isDraggingItem = false;
+  void nextTick(resetItemPreviewWhenIdle);
+  if (touchControls.value) return;
+  const original = (event as { originalEvent?: MouseEvent }).originalEvent;
+  const position = original ? { x: original.clientX, y: original.clientY } : null;
+  const onMove = (move: MouseEvent) => {
+    if (position && move.clientX === position.x && move.clientY === position.y) return;
+    restoreItemHover();
+    suppressDragHover.value = false;
+  };
+  window.addEventListener('mousemove', onMove, true);
+  restoreItemHover = () => window.removeEventListener('mousemove', onMove, true);
+}
+onUnmounted(() => restoreItemHover());
 
 /** Toggle the one active item across all categories. */
 function toggleItemActions(id: string) {
@@ -506,18 +612,51 @@ const sortedCategories = computed(() => {
 });
 
 // Draggable categories (two-way binding with vuedraggable)
+const categoryPreview = ref<Readonly<CategoryDTO>[] | null>(null);
+let pendingCategoryMoves = 0;
+let awaitingCategoryRefresh = false;
+/** Clear the category preview after saves and active drags have finished. */
+function resetCategoryPreviewWhenIdle() {
+  if (!pendingCategoryMoves && !awaitingCategoryRefresh && !isDraggingCategory.value) {
+    categoryPreview.value = null;
+  }
+}
+watch(
+  () => props.categories,
+  () => {
+    if (!awaitingCategoryRefresh) return;
+    awaitingCategoryRefresh = false;
+    void nextTick(resetCategoryPreviewWhenIdle);
+  }
+);
 const draggableCategories = computed({
   get() {
-    return sortedCategories.value;
+    if (!categoryPreview.value) return sortedCategories.value;
+    const previews = categoryPreview.value.flatMap((preview) => {
+      const current = props.categories.find((category) => category.id === preview.id);
+      return current ? [{ ...current, order: preview.order }] : [];
+    });
+    const previewIds = new Set(categoryPreview.value.map((category) => category.id));
+    return [
+      ...previews,
+      ...sortedCategories.value.filter((category) => !previewIds.has(category.id)),
+    ];
   },
   set(newCategories) {
     // When vuedraggable updates the array, emit the reorder event
     const categoriesWithNewOrder = renumberOrder(newCategories);
+    categoryPreview.value = categoriesWithNewOrder;
+    pendingCategoryMoves += 1;
 
     emit(
       'reorder:categories',
       categoriesWithNewOrder,
-      newCategories.map((category) => ({ ...category }))
+      newCategories.map((category) => ({ ...category })),
+      (awaitingRefresh) => {
+        pendingCategoryMoves -= 1;
+        if (awaitingRefresh) awaitingCategoryRefresh = true;
+        void nextTick(resetCategoryPreviewWhenIdle);
+      }
     );
   },
 });
@@ -711,6 +850,7 @@ function onCategoryDragStart(event: DragStart) {
 function onCategoryDragEnd(_event: unknown) {
   draggingCategoryId.value = null;
   isDraggingCategory.value = false;
+  void nextTick(resetCategoryPreviewWhenIdle);
 }
 
 /**
@@ -726,7 +866,25 @@ function onCategoryUpdate(_event: unknown) {
  * @param {object} moveData - Move data containing item and reorder information
  */
 function handleItemMove(moveData: ItemMove) {
-  emit('move:item', moveData);
+  if (!moveData.items?.length) {
+    emit('move:item', moveData);
+    return;
+  }
+  let resolveMove: (succeeded: boolean) => void = () => {};
+  const result = new Promise<boolean>((resolve) => {
+    resolveMove = resolve;
+  });
+  itemMoveResults.set(moveData, result);
+  pendingItemMoves.value = [...pendingItemMoves.value, moveData];
+  emit('move:item', moveData, (succeeded, awaitingRefresh) => {
+    if (awaitingRefresh) awaitingItemRefresh.add(moveData);
+    else {
+      pendingItemMoves.value = pendingItemMoves.value.filter((entry) => entry !== moveData);
+      itemMoveResults.delete(moveData);
+    }
+    resolveMove(succeeded && !awaitingRefresh);
+    void nextTick(resetItemPreviewWhenIdle);
+  });
 }
 
 // --- Helpers ---

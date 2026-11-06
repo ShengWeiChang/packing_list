@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 724    |
+| Total tests 總測試數          | 743    |
 | Unit tests 單元測試           | 309    |
 | Component tests 組件測試      | 304    |
-| E2E tests E2E 測試            | 111    |
-| Line coverage 行覆蓋率        | 92.02% |
-| Statement coverage 語句覆蓋率 | 90.2%  |
-| Branch coverage 分支覆蓋率    | 80.69% |
+| E2E tests E2E 測試            | 130    |
+| Line coverage 行覆蓋率        | 90.48% |
+| Statement coverage 語句覆蓋率 | 88.36% |
+| Branch coverage 分支覆蓋率    | 79.11% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -31,7 +31,7 @@
 | --------- | ------------------------ | ----- | ------------------------------------------- |
 | Unit      | Vitest                   | 309   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 304   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 111   | 真實瀏覽器中的完整使用者流程                |
+| E2E       | Playwright               | 130   | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
@@ -123,7 +123,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 111 tests
+└── end2end-tests/                       # 130 tests
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
     ├── rwd-overlays.spec.js             #  5  tests
@@ -135,6 +135,7 @@ tests/
     ├── checklist-management.spec.js     #  6  tests
     ├── category-crud.spec.js            #  3  tests
     ├── drag-and-drop.spec.js            #  7  tests
+    ├── desktop-drag-presentation.spec.js # 19  tests
     ├── multi-tab-sync.spec.js           #  6  tests
     ├── template-management.spec.js      #  7  tests
     ├── recommended-lists.spec.js        #  1  test
@@ -162,8 +163,8 @@ tests/
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
 | scripts/     | 79.03%     | 63.2%  | 77.63% |
-| source/      | 77.52%     | 67.47% | 81.1%  |
-| components/  | 90.45%     | 83.23% | 93%    |
+| source/      | 78.02%     | 67.55% | 81.57% |
+| components/  | 85.85%     | 79.58% | 89.08% |
 | composables/ | 95.46%     | 86.14% | 97.62% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
@@ -173,7 +174,7 @@ tests/
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 77.52%     | 81.1%  | 68    |
+| App.vue                      | 78.02%     | 81.57% | 68    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
@@ -182,13 +183,13 @@ tests/
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
 | Sidebar.vue                  | 86.48%     | 89.05% | 33    |
 | OverflowMenu.vue             | 89.9%      | 92.38% | 24    |
-| Category.vue                 | 89.57%     | 91.15% | 31    |
-| Checklist.vue                | 87.44%     | 91.58% | 42    |
-| Item.vue                     | 88.2%      | 92.09% | 31    |
+| Category.vue                 | 85.86%     | 89.53% | 31    |
+| Checklist.vue                | 72.12%     | 76.89% | 42    |
+| Item.vue                     | 87.5%      | 91.71% | 31    |
 | NewChecklistDialog.vue       | 95%        | 95.94% | 12    |
 | PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
 | SaveTemplateDialog.vue       | 92.72%     | 93.87% | 10    |
-| TemplateEditor.vue           | 95.23%     | 97.1%  | 14    |
+| TemplateEditor.vue           | 95.55%     | 97.33% | 14    |
 
 ### Coverage Metrics Explained 覆蓋率指標說明
 
@@ -1110,7 +1111,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 9   | renders localized Traditional Chinese sticker copy                     | 語系文字與緊湊日期範圍 |
 | 10  | exposes one synchronized timeline to JavaScript and CSS                | 共用時間軸契約         |
 
-### 8.3 E2E Tests（111）
+### 8.3 E2E Tests（130）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1297,3 +1298,27 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 4   | tablet: sidebar presentation stays consistent in zh-TW  | 收合禁止捲動、中文字首與選單幾何             |
 | 5   | desktop: sidebar presentation stays consistent in en    | 收合禁止捲動、完整字首、縮放與焦點恢復       |
 | 6   | desktop: sidebar presentation stays consistent in zh-TW | 收合禁止捲動、中文字首與 ResizeObserver 後備 |
+
+#### 8.3.16 desktop-drag-presentation.spec.js（19）
+
+| #   | Test                                                                   | 測試重點                     |
+| --- | ---------------------------------------------------------------------- | ---------------------------- |
+| 1   | keeps same-category drop order during delayed storage                  | 同分類延遲儲存逐幀排序       |
+| 2   | keeps cross-category drop order during delayed storage                 | 跨分類延遲儲存逐幀排序       |
+| 3   | places the drag placeholder before Add Item in empty categories        | 空分類佔位與取消             |
+| 4   | places the drag placeholder before Add Item in filtered categories     | 篩選空分類佔位與取消         |
+| 5   | restores the original order when a drop cannot be saved                | 寫入失敗後復原               |
+| 6   | does not replay the sidebar label reveal after sorting                 | 側欄排序不重播展開動畫       |
+| 7   | preserves consecutive cross-category drops while storage is delayed    | 延遲儲存時連續跨分類拖曳     |
+| 8   | keeps category drop order during delayed storage                       | 分類延遲儲存逐幀排序         |
+| 9   | does not highlight Add Item after moving the last item from a category | 最後物品移走後按鈕 hover     |
+| 10  | keeps the saved drop visible when the follow-up read fails             | 成功儲存但讀取失敗時保留畫面 |
+| 11  | keeps a new drag intact when the previous write completes              | 前次儲存完成時後次拖曳保持   |
+| 12  | packs the displayed destination after its pending move saves           | 分類打包等待移動成功         |
+| 13  | cancels pending category packing when the move fails                   | 移動失敗時取消打包           |
+| 14  | keeps unequal category cards at the cross-column drop position         | 不同高度跨欄分類幾何         |
+| 15  | does not apply queued packing after leaving the checklist              | 切換清單時取消排隊打包       |
+| 16  | cancels queued packing when the saved move cannot be refreshed         | 重新讀取失敗時取消打包       |
+| 17  | shows projected progress when moving into a fully packed category      | 已打包分類的預覽進度         |
+| 18  | packs only remaining source items after the pending move saves         | 來源分類打包不含移走物品     |
+| 19  | keeps the pending drop correct while the packed filter changes         | 儲存期間切換過濾保留預覽     |

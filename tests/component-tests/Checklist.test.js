@@ -646,6 +646,18 @@ describe('Checklist', () => {
       expect(emitted[0][0]).toHaveLength(2);
       expect(emitted[0][0][0].id).toBe('cat-2');
       expect(emitted[0][0][1].id).toBe('cat-1');
+
+      expect(draggableComp.props('modelValue').map((category) => category.id)).toEqual([
+        'cat-2',
+        'cat-1',
+      ]);
+      emitted[0][2](false);
+      await wrapper.vm.$nextTick();
+      await wrapper.vm.$nextTick();
+      expect(draggableComp.props('modelValue').map((category) => category.id)).toEqual([
+        'cat-1',
+        'cat-2',
+      ]);
     });
   });
 
