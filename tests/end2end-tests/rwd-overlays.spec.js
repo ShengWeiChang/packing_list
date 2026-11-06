@@ -269,6 +269,11 @@ test('short dialogs and narrow date editing fit without horizontal overflow', as
   await page.keyboard.press('Escape');
   await oversizedActions.evaluate((element) => element.remove());
   await page.setViewportSize({ width: 320, height: 200 });
+  // Use predictable text metrics while retaining natural wrapping after width clamping.
+  const wrappedAction = await page.addStyleTag({
+    content:
+      '[data-testid^="overflow-action-save-template-checklist-"] { font-family: monospace; font-size: 24px; line-height: 28px; }',
+  });
   await page.evaluate(() => {
     const observer = new MutationObserver(() => {
       const button = document.querySelector(
@@ -276,16 +281,31 @@ test('short dialogs and narrow date editing fit without horizontal overflow', as
       );
       if (!button) return;
       observer.disconnect();
-      button.lastChild.textContent = 'Save packing checklist as travel template';
+      button.lastChild.textContent = 'Save as travel template';
     });
     observer.observe(document.body, { childList: true, subtree: true });
   });
   await checklistTrigger.tap();
   await expect(menu).toBeVisible();
-  await expect(saveTemplate).toContainText('Save packing checklist as travel template');
+  await expect(saveTemplate).toContainText('Save as travel template');
   await expect
     .poll(() => saveTemplate.evaluate((button) => button.getBoundingClientRect().height))
     .toBeGreaterThan(80);
+  const wrappedGeometry = await saveTemplate.evaluate((button) => {
+    const range = document.createRange();
+    range.selectNodeContents(button.lastChild);
+    return {
+      lines: range.getClientRects().length,
+      actionHeight: button.getBoundingClientRect().height,
+      menuHeight: button.parentElement.clientHeight,
+    };
+  });
+  expect(wrappedGeometry.lines).toBeGreaterThanOrEqual(2);
+  expect(wrappedGeometry.actionHeight).toBeLessThanOrEqual(wrappedGeometry.menuHeight);
+  const triggerBounds = await checklistTrigger.boundingBox();
+  const spaceAbove = triggerBounds.y - 14;
+  const spaceBelow = 200 - 14 - triggerBounds.y - triggerBounds.height;
+  expect(wrappedGeometry.actionHeight).toBeGreaterThan(Math.max(spaceAbove, spaceBelow));
   await saveTemplate.scrollIntoViewIfNeeded();
   await expect
     .poll(() =>
@@ -299,6 +319,7 @@ test('short dialogs and narrow date editing fit without horizontal overflow', as
   await saveTemplate.tap();
   await expect(page.getByTestId('save-template-name')).toBeVisible();
   await page.keyboard.press('Escape');
+  await wrappedAction.evaluate((element) => element.remove());
   await page.evaluate(() => (document.documentElement.style.fontSize = ''));
   await page.setViewportSize({ width: 320, height: 300 });
   await page.getByTestId('checklist-name').click();
