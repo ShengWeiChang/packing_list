@@ -341,6 +341,25 @@ test.describe('Drag & Drop', () => {
       const filterToggle = page.getByTestId('unpacked-items-filter-toggle');
       await filterToggle.click();
       await expect(targetCategory.getByTestId('item-row')).toHaveCount(0);
+      const dropArea = targetCategory.getByTestId('category-items-draggable');
+      const addButton = targetCategory.getByTestId('add-item-button');
+      const dropBounds = await dropArea.boundingBox();
+      const addBounds = await addButton.boundingBox();
+      expect(Math.abs(dropBounds.y - addBounds.y)).toBeLessThan(1);
+      expect(Math.abs(dropBounds.height - addBounds.height)).toBeLessThan(1);
+      const sourceProgress = await sourceCategory.getByTestId('progress-bar').boundingBox();
+      const targetProgress = await targetCategory.getByTestId('progress-bar').boundingBox();
+      const firstRow = await sourceCategory.getByTestId('item-row').first().boundingBox();
+      expect(
+        Math.abs(
+          addBounds.y -
+            targetProgress.y -
+            targetProgress.height -
+            (firstRow.y - sourceProgress.y - sourceProgress.height)
+        )
+      ).toBeLessThan(1);
+
+      await page.screenshot({ path: test.info().outputPath('filtered-empty-category.png') });
 
       await slowDragTo(
         page,

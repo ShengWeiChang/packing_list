@@ -246,11 +246,6 @@ export const recommendedListDefinitions = [
           'menstrualProducts',
           'skincare',
           'towel',
-        ],
-      },
-      {
-        id: 'sunProtection',
-        itemIds: [
           'sunscreen',
           'lipBalm',
           'afterSunCare',

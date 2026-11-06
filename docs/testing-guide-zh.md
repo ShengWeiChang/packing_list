@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 717    |
+| Total tests 總測試數          | 724    |
 | Unit tests 單元測試           | 309    |
 | Component tests 組件測試      | 304    |
-| E2E tests E2E 測試            | 104    |
-| Line coverage 行覆蓋率        | 92.37% |
-| Statement coverage 語句覆蓋率 | 90.65% |
-| Branch coverage 分支覆蓋率    | 81.28% |
+| E2E tests E2E 測試            | 111    |
+| Line coverage 行覆蓋率        | 92.41% |
+| Statement coverage 語句覆蓋率 | 90.64% |
+| Branch coverage 分支覆蓋率    | 81.09% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -31,7 +31,7 @@
 | --------- | ------------------------ | ----- | ------------------------------------------- |
 | Unit      | Vitest                   | 309   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 304   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 95    | 真實瀏覽器中的完整使用者流程                |
+| E2E       | Playwright               | 111   | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
@@ -123,11 +123,12 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 104 tests
+└── end2end-tests/                       # 111 tests
     ├── mobile-workflow.spec.js          # 10  tests
-    ├── rwd-phone.spec.js                #  7  tests
+    ├── rwd-phone.spec.js                #  8  tests
     ├── rwd-overlays.spec.js             #  5  tests
     ├── rwd-webkit.spec.js               #  3  tests
+    ├── sidebar-presentation.spec.js     #  6  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
@@ -161,12 +162,12 @@ tests/
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
 | scripts/     | 79.03%     | 63.2%  | 77.63% |
-| source/      | 78.05%     | 67.56% | 81.72% |
-| components/  | 91.72%     | 84.97% | 94.04% |
+| source/      | 77.52%     | 67.47% | 81.1%  |
+| components/  | 91.65%     | 84.3%  | 94.09% |
 | composables/ | 95.46%     | 86.14% | 97.62% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
-| utils/       | 97.43%     | 85.93% | 97.85% |
+| utils/       | 97.48%     | 86.46% | 97.9%  |
 
 ### By Component 各組件覆蓋率
 
@@ -179,9 +180,9 @@ tests/
 | ProgressBar.vue              | 100%       | 100%   | 8     |
 | Topbar.vue                   | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
-| Sidebar.vue                  | 100%       | 100%   | 33    |
-| OverflowMenu.vue             | 90.09%     | 91.83% | 24    |
-| Category.vue                 | 89.5%      | 91.09% | 31    |
+| Sidebar.vue                  | 98.05%     | 98.97% | 33    |
+| OverflowMenu.vue             | 89.9%      | 92.38% | 24    |
+| Category.vue                 | 89.57%     | 91.15% | 31    |
 | Checklist.vue                | 87.44%     | 91.58% | 42    |
 | Item.vue                     | 88.2%      | 92.09% | 31    |
 | NewChecklistDialog.vue       | 95%        | 95.94% | 12    |
@@ -677,12 +678,12 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ##### 8.1.6.1 recommendedLists.test.js（4）
 
-| #   | Test                                                                         | 測試重點         |
-| --- | ---------------------------------------------------------------------------- | ---------------- |
-| 1   | resolves complete localized recommended lists with valid category references | 在地化資料完整性 |
-| 2   | includes core clothing in every recommended list                             | 基本衣物涵蓋     |
-| 3   | falls back to English for unsupported locales                                | 語系後備         |
-| 4   | returns isolated resolved data                                               | 解析結果隔離     |
+| #   | Test                                                                         | 測試重點                     |
+| --- | ---------------------------------------------------------------------------- | ---------------------------- |
+| 1   | resolves complete localized recommended lists with valid category references | 在地化資料與炎熱防曬物品歸屬 |
+| 2   | includes core clothing in every recommended list                             | 基本衣物涵蓋                 |
+| 3   | falls back to English for unsupported locales                                | 語系後備                     |
+| 4   | returns isolated resolved data                                               | 解析結果隔離                 |
 
 #### 8.1.7 Scripts（17）
 
@@ -1109,7 +1110,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 9   | renders localized Traditional Chinese sticker copy                     | 語系文字與緊湊日期範圍 |
 | 10  | exposes one synchronized timeline to JavaScript and CSS                | 共用時間軸契約         |
 
-### 8.3 E2E Tests（104）
+### 8.3 E2E Tests（111）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1255,7 +1256,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 27  | 拒絕打包後排隊的待處理               | 跨分頁物品衝突       |
 | 28  | 拒絕待處理後排隊的分類打包           | 跨分頁原子批次       |
 
-#### 8.3.12 rwd-phone.spec.js (7 tests)
+#### 8.3.12 rwd-phone.spec.js (8 tests)
 
 | #   | Test                                                                  | 驗證內容                                 |
 | --- | --------------------------------------------------------------------- | ---------------------------------------- |
@@ -1266,6 +1267,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 5   | retains hover quick controls and the desktop command menu             | 桌面整列回饋、選單關閉、focus 與文字對齊 |
 | 6   | preserves touch sorting while excluding action buttons                | 觸控長按與持久化排序                     |
 | 7   | persists category sorting across tablet columns                       | 跨欄觸控拖曳與排序保存                   |
+| 8   | moves an unpacked item into an all-hidden category by touch           | 觸控拖放至已篩選分類與重載               |
 
 #### 8.3.13 rwd-overlays.spec.js（5）
 
@@ -1284,3 +1286,14 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit 觸控狀態、抽屜動畫與回焦           |
 | 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit 短 viewport 與日期幾何             |
 | 3   | WebKit tablet columns retain visible touch actions           | WebKit 平板欄數、觸控選單、待買字級與密度 |
+
+#### 8.3.15 sidebar-presentation.spec.js（6）
+
+| #   | Test                                                    | 測試重點                            |
+| --- | ------------------------------------------------------- | ----------------------------------- |
+| 1   | phone: sidebar presentation stays consistent in en      | 入口標籤、選單列幾何、捲動與 Escape |
+| 2   | phone: sidebar presentation stays consistent in zh-TW   | 在地化入口標籤與選單列幾何          |
+| 3   | tablet: sidebar presentation stays consistent in en     | 完整置中字首、標籤動畫與收合選單    |
+| 4   | tablet: sidebar presentation stays consistent in zh-TW  | 中文字形邊界與一致的設定選單        |
+| 5   | desktop: sidebar presentation stays consistent in en    | 完整置中字首、標籤動畫與收合選單    |
+| 6   | desktop: sidebar presentation stays consistent in zh-TW | 中文字形邊界與一致的設定選單        |

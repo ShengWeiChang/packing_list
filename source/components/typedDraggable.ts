@@ -45,6 +45,9 @@ type DraggableProps<T> = Omit<HTMLAttributes, 'onChange'> &
 export function draggableFor<T extends { id: string }>() {
   return draggable as unknown as new () => {
     $props: DraggableProps<T>;
-    $slots: { item: (props: { element: T; index: number }) => VNode[] };
+    $slots: {
+      item: (props: { element: T; index: number }) => VNode[];
+      footer?: () => VNode[];
+    };
   };
 }

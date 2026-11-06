@@ -95,7 +95,7 @@ describe('Category', () => {
       global: {
         stubs: {
           draggable: {
-            template: '<div><slot /></div>',
+            template: '<div><slot /><slot name="footer" /></div>',
             props: ['modelValue'],
           },
         },
@@ -356,7 +356,7 @@ describe('Category', () => {
             draggable: {
               name: 'draggable',
               template:
-                '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template></div>',
+                '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template><slot name="footer" /></div>',
               props: ['modelValue', 'itemKey', 'group', 'disabled'],
               emits: ['start', 'end', 'change', 'update:modelValue'],
             },

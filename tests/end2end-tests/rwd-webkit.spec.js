@@ -47,6 +47,18 @@ test('WebKit touch actions persist and drawer dismisses accessibly', async ({ pa
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('overlay-sidebar')).toHaveCount(0);
   await expect(page.getByTestId('topbar-toggle')).toBeFocused();
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  });
+  await page.getByTestId('sidebar-language-button').tap();
+  await expect(page.getByTestId('sidebar-language-dropdown')).toBeVisible();
+  expect(await page.evaluate(() => document.activeElement?.tagName)).toBe('BODY');
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('sidebar-language-dropdown')).toHaveCount(0);
+  await expect(page.getByTestId('sidebar-language-button')).toBeFocused();
 });
 
 // Test Case 2: A short WebKit dialog and native date fields remain reachable without horizontal overflow.
@@ -102,6 +114,8 @@ test('WebKit tablet columns retain visible touch actions', async ({ page }) => {
   await page.setViewportSize({ width: 820, height: 1180 });
   const sidebarSamples = await page.evaluate(async () => {
     const samples = [];
+    const textOffsets = [];
+    const menuFrames = [];
     for (let i = 0; i < 2; i++) {
       document.querySelector('aside [data-testid="sidebar-toggle"]').click();
       const start = performance.now();
@@ -109,17 +123,87 @@ test('WebKit tablet columns retain visible touch actions', async ({ page }) => {
         const sample = () => {
           const list = document.querySelector('aside [data-testid="sidebar-checklists-draggable"]');
           const scrollport = list?.closest('.overflow-y-auto');
-          if (scrollport) samples.push(scrollport.scrollWidth - scrollport.clientWidth);
+          const menu = document.querySelector('[data-sidebar-delayed-menu]');
+          if (menu && i === 0) {
+            const style = getComputedStyle(menu);
+            menuFrames.push({
+              elapsed: performance.now() - start,
+              opacity: Number(style.opacity),
+              visibility: style.visibility,
+            });
+          }
+          if (scrollport) {
+            samples.push(scrollport.scrollWidth - scrollport.clientWidth);
+            const label = list.querySelector('[data-sidebar-checklist-label]');
+            if (label)
+              textOffsets.push(
+                label.getBoundingClientRect().left - list.getBoundingClientRect().left
+              );
+          }
           if (performance.now() - start < 400) requestAnimationFrame(sample);
           else resolve();
         };
         requestAnimationFrame(sample);
       });
     }
-    return samples;
+    return { samples, textOffsets, menuFrames };
   });
-  expect(sidebarSamples.length).toBeGreaterThan(0);
-  expect(Math.max(...sidebarSamples)).toBeLessThanOrEqual(0);
+  const earlyFrames = sidebarSamples.menuFrames.filter((frame) => frame.elapsed < 200);
+  expect(earlyFrames.length).toBeGreaterThan(0);
+  expect(earlyFrames.every((frame) => frame.opacity === 0 && frame.visibility === 'hidden')).toBe(
+    true
+  );
+  expect(sidebarSamples.menuFrames.some((frame) => frame.elapsed > 330 && frame.opacity > 0)).toBe(
+    true
+  );
+  expect(sidebarSamples.samples.length).toBeGreaterThan(0);
+  expect(Math.max(...sidebarSamples.samples)).toBeLessThanOrEqual(0);
+  expect(
+    Math.max(...sidebarSamples.textOffsets) - Math.min(...sidebarSamples.textOffsets)
+  ).toBeLessThan(1);
+  const tile = page.getByTestId('sidebar-checklist-item').first();
+  const tileBounds = await tile.boundingBox();
+  const initialBounds = await tile.locator('[data-sidebar-initial]').boundingBox();
+  expect(
+    Math.abs(initialBounds.x + initialBounds.width / 2 - tileBounds.x - tileBounds.width / 2)
+  ).toBeLessThan(1);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(page.locator('aside')).toHaveCSS('transition-duration', '0s');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+  await page.getByTestId('sidebar-toggle').tap();
+  const drawer = page.getByTestId('overlay-sidebar');
+  await drawer.focus();
+  await page.getByTestId('sidebar-language-button').tap();
+  await expect(drawer).toBeFocused();
+  await expect(page.getByTestId('sidebar-language-dropdown')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(drawer).toBeVisible();
+  await expect(page.getByTestId('sidebar-language-dropdown')).toHaveCount(0);
+  await expect(page.getByTestId('sidebar-language-button')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(drawer).toHaveCount(0);
+
+  await page.getByTestId('sidebar-toggle').tap();
+  await drawer.focus();
+  await page.getByTestId('sidebar-language-button').tap();
+  const sidebarOverflow = drawer.locator('[data-testid^="overflow-trigger-checklist-"]').first();
+  await sidebarOverflow.tap();
+  const overflowMenu = drawer.locator('[data-testid^="overflow-dropdown-checklist-"]').first();
+  await expect(page.getByTestId('sidebar-language-dropdown')).toHaveCount(0);
+  await expect(overflowMenu).toBeVisible();
+  await page.getByTestId('sidebar-language-button').tap();
+  await expect(overflowMenu).toHaveCount(0);
+  await expect(page.getByTestId('sidebar-language-dropdown')).toBeVisible();
+  await sidebarOverflow.tap();
+  await expect(page.getByTestId('sidebar-language-dropdown')).toHaveCount(0);
+  await expect(overflowMenu).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(overflowMenu).toHaveCount(0);
+  await expect(drawer).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(drawer).toHaveCount(0);
+
   const cards = page.getByTestId('category-card');
   await expect
     .poll(async () => {
@@ -181,6 +265,26 @@ test('WebKit tablet columns retain visible touch actions', async ({ page }) => {
   expect((await complete.boundingBox()).width).toBeGreaterThanOrEqual(44);
   expect((await complete.locator('span').boundingBox()).width).toBe(20);
   await expect(pendingRow.locator('div > span').first()).toHaveCSS('font-size', '18px');
+  const itemTextInset = await name.evaluate((element) => {
+    const card = element.closest('[data-testid="category-card"]');
+    return (
+      element.getBoundingClientRect().left +
+      parseFloat(getComputedStyle(element).paddingLeft) -
+      card.getBoundingClientRect().left
+    );
+  });
+  const pendingTextInset = await pendingRow
+    .locator('div > span')
+    .first()
+    .evaluate((element) => {
+      const card = element.closest('[data-testid="pending-items-category"]');
+      return (
+        element.getBoundingClientRect().left +
+        parseFloat(getComputedStyle(element).paddingLeft) -
+        card.getBoundingClientRect().left
+      );
+    });
+  expect(Math.abs(itemTextInset - pendingTextInset)).toBeLessThan(1);
   await expect(pendingRow.getByTestId('pending-item-quantity')).toHaveCSS('font-size', '14px');
   const pendingSummary = row.getByTestId('item-pending-summary');
   const pendingAtTwo = await pendingSummary.boundingBox();

@@ -121,7 +121,9 @@ Created: 2025-09-19
               'touch-target inline-flex size-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary focus-visible:ring-offset-1 md:size-8',
               showUnpackedOnly
                 ? 'bg-theme-secondary text-theme-primary'
-                : 'text-secondary hover:bg-control-hover hover:text-primary',
+                : touchControls
+                  ? 'text-secondary'
+                  : 'text-secondary hover:bg-control-hover hover:text-primary',
             ]"
             :title="$t('checklist.showUnpackedOnly')"
             :aria-label="$t('checklist.showUnpackedOnly')"

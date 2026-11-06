@@ -191,7 +191,6 @@ Created: 2025-09-19
               'space-y-1',
               {
                 'md:space-y-0': touchControls,
-                'min-h-12': showUnpackedOnly && visibleItems.length === 0,
               },
             ]"
             data-testid="category-items-draggable"
@@ -226,13 +225,14 @@ Created: 2025-09-19
                 />
               </div>
             </template>
+            <template #footer>
+              <AddItemButton
+                :category-completed="isCompleted"
+                :touch-controls="touchControls"
+                @click="$emit('create:item', category.id)"
+              />
+            </template>
           </draggable>
-
-          <AddItemButton
-            :category-completed="isCompleted"
-            :touch-controls="touchControls"
-            @click="$emit('create:item', category.id)"
-          />
         </div>
       </div>
     </div>

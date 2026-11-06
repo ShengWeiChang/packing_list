@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 717    |
+| Total tests        | 724    |
 | Unit tests         | 309    |
 | Component tests    | 304    |
-| E2E tests          | 104    |
-| Line coverage      | 92.37% |
-| Statement coverage | 90.65% |
-| Branch coverage    | 81.28% |
+| E2E tests          | 111    |
+| Line coverage      | 92.41% |
+| Statement coverage | 90.64% |
+| Branch coverage    | 81.09% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -31,7 +31,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
 | Unit      | Vitest                   | 309   | Pure logic in models, services, composables, utils |
 | Component | Vitest + @vue/test-utils | 304   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 95    | Full user flows in a real browser                  |
+| E2E       | Playwright               | 111   | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -123,11 +123,12 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 104 tests
+└── end2end-tests/                       # 111 tests
     ├── mobile-workflow.spec.js          # 10  tests
-    ├── rwd-phone.spec.js                #  7  tests
+    ├── rwd-phone.spec.js                #  8  tests
     ├── rwd-overlays.spec.js             #  5  tests
     ├── rwd-webkit.spec.js               #  3  tests
+    ├── sidebar-presentation.spec.js     #  6  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
@@ -161,12 +162,12 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
 | scripts/     | 79.03%     | 63.2%  | 77.63% |
-| source/      | 78.05%     | 67.56% | 81.72% |
-| components/  | 91.72%     | 84.97% | 94.04% |
+| source/      | 77.52%     | 67.47% | 81.1%  |
+| components/  | 91.65%     | 84.3%  | 94.09% |
 | composables/ | 95.46%     | 86.14% | 97.62% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
-| utils/       | 97.43%     | 85.93% | 97.85% |
+| utils/       | 97.48%     | 86.46% | 97.9%  |
 
 ### By Component
 
@@ -179,9 +180,9 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | ProgressBar.vue              | 100%       | 100%   | 8     |
 | Topbar.vue                   | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
-| Sidebar.vue                  | 100%       | 100%   | 33    |
-| OverflowMenu.vue             | 90.09%     | 91.83% | 24    |
-| Category.vue                 | 89.5%      | 91.09% | 31    |
+| Sidebar.vue                  | 98.05%     | 98.97% | 33    |
+| OverflowMenu.vue             | 89.9%      | 92.38% | 24    |
+| Category.vue                 | 89.57%     | 91.15% | 31    |
 | Checklist.vue                | 87.44%     | 91.58% | 42    |
 | Item.vue                     | 88.2%      | 92.09% | 31    |
 | NewChecklistDialog.vue       | 95%        | 95.94% | 12    |
@@ -677,12 +678,12 @@ This project uses three layers to balance speed and reliability.
 
 ##### 8.1.6.1 recommendedLists.test.js (4 tests)
 
-| #   | Test                                                                         | What it verifies          |
-| --- | ---------------------------------------------------------------------------- | ------------------------- |
-| 1   | resolves complete localized recommended lists with valid category references | Localized data integrity  |
-| 2   | includes core clothing in every recommended list                             | Core wardrobe coverage    |
-| 3   | falls back to English for unsupported locales                                | Locale fallback           |
-| 4   | returns isolated resolved data                                               | Resolver output isolation |
+| #   | Test                                                                         | What it verifies                                   |
+| --- | ---------------------------------------------------------------------------- | -------------------------------------------------- |
+| 1   | resolves complete localized recommended lists with valid category references | Localized data and hot-weather sun care membership |
+| 2   | includes core clothing in every recommended list                             | Core wardrobe coverage                             |
+| 3   | falls back to English for unsupported locales                                | Locale fallback                                    |
+| 4   | returns isolated resolved data                                               | Resolver output isolation                          |
 
 #### 8.1.7 Scripts (17 tests)
 
@@ -1109,7 +1110,7 @@ This project uses three layers to balance speed and reliability.
 | 9   | renders localized Traditional Chinese sticker copy                     | Locale-aware copy and compact date range |
 | 10  | exposes one synchronized timeline to JavaScript and CSS                | Shared timing contract                   |
 
-### 8.3 E2E Tests (104 tests)
+### 8.3 E2E Tests (111 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -1255,7 +1256,7 @@ This project uses three layers to balance speed and reliability.
 | 27  | Reject queued pending after another tab packs the item               | Cross-tab item conflict            |
 | 28  | Reject queued category pack after another tab marks the item pending | Cross-tab atomic batch             |
 
-#### 8.3.12 rwd-phone.spec.js (7 tests)
+#### 8.3.12 rwd-phone.spec.js (8 tests)
 
 | #   | Test                                                                  | What it verifies                                               |
 | --- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
@@ -1266,6 +1267,7 @@ This project uses three layers to balance speed and reliability.
 | 5   | retains hover quick controls and the desktop command menu             | Desktop row feedback, menu dismissal, focus and text alignment |
 | 6   | preserves touch sorting while excluding action buttons                | Touch hold and persisted reorder                               |
 | 7   | persists category sorting across tablet columns                       | Cross-column touch drag and persistence                        |
+| 8   | moves an unpacked item into an all-hidden category by touch           | Touch drop into filtered footer and reload                     |
 
 #### 8.3.13 rwd-overlays.spec.js (5 tests)
 
@@ -1284,3 +1286,14 @@ This project uses three layers to balance speed and reliability.
 | 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit touch state, drawer motion and focus return                |
 | 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit short viewport and date geometry                           |
 | 3   | WebKit tablet columns retain visible touch actions           | WebKit tablet columns, touch menus, to-buy typography and density |
+
+#### 8.3.15 sidebar-presentation.spec.js (6 tests)
+
+| #   | Test                                                    | What it verifies                                                   |
+| --- | ------------------------------------------------------- | ------------------------------------------------------------------ |
+| 1   | phone: sidebar presentation stays consistent in en      | Entry labels, menu row geometry, scrolling and Escape              |
+| 2   | phone: sidebar presentation stays consistent in zh-TW   | Localized entry labels and menu row geometry                       |
+| 3   | tablet: sidebar presentation stays consistent in en     | Centered readable initials, label animation and collapsed popovers |
+| 4   | tablet: sidebar presentation stays consistent in zh-TW  | Chinese glyph bounds and consistent settings menus                 |
+| 5   | desktop: sidebar presentation stays consistent in en    | Centered readable initials, label animation and collapsed popovers |
+| 6   | desktop: sidebar presentation stays consistent in zh-TW | Chinese glyph bounds and consistent settings menus                 |

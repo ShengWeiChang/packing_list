@@ -42,14 +42,15 @@ Created: 2025-11-01
       <div
         v-for="item in pendingItems"
         :key="item.id"
-        class="group flex items-center rounded-md px-1 py-0.5 transition-all duration-200"
+        class="group flex items-center rounded-md px-0 py-0.5 transition-all duration-200"
+        :class="{ 'md:pl-2': !touchControls }"
         data-testid="pending-item-row"
         :data-item-id="item.id"
       >
         <!-- Completion button (left side) - mark as completed -->
         <button
           type="button"
-          class="touch-target mr-1.5 flex size-5 flex-none shrink-0 items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 sm:mr-2"
+          class="touch-target mr-1 flex size-9 flex-none shrink-0 items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-1 md:mr-2 md:size-6"
           :title="$t('item.markAsBought')"
           :aria-label="$t('item.markAsBought')"
           data-testid="pending-item-complete"
@@ -69,7 +70,7 @@ Created: 2025-11-01
         <!-- Item name and optional quantity -->
         <div class="flex min-w-0 grow items-center gap-1">
           <span
-            class="truncate text-base text-primary"
+            class="truncate px-1 text-base text-primary"
             :class="{ '!text-lg': touchControls }"
           >
             {{ item.name }}

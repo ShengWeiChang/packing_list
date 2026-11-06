@@ -19,12 +19,12 @@ export const recommendedListContentEn = {
       description: 'For business trips, with work essentials and professional attire.',
     },
     warm: {
-      name: 'Warm-Climate Travel',
+      name: 'Hot-Weather Travel',
       description:
         'For trips to hot, humid, sun-drenched destinations, including island and beach getaways.',
     },
     cold: {
-      name: 'Cold-Climate Travel',
+      name: 'Cold-Weather Travel',
       description: 'For trips to low-temperature, windy, or snowy destinations.',
     },
   },
@@ -38,8 +38,7 @@ export const recommendedListContentEn = {
     travelEssentials: 'Travel Essentials',
     businessClothing: 'Business Clothing',
     workGear: 'Work Gear',
-    warmWeatherClothing: 'Warm-Weather Clothing',
-    sunProtection: 'Sun Protection',
+    warmWeatherClothing: 'Hot-Weather Clothing',
     coldWeatherClothing: 'Cold-Weather Clothing',
   },
   items: {

@@ -138,15 +138,16 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 #### Recommended Lists
 
 - Purpose: Provide curated, read-only starting lists for common trip types without mixing them with personal templates.
-- Included recommended lists: General Travel, Business Trip, Warm-Climate Travel, and Cold-Climate Travel.
+- Included recommended lists: General Travel, Business Trip, Hot-Weather Travel, and Cold-Weather Travel.
 - Data design:
   - Locale-independent definitions contain stable recommended list/category/item IDs and membership.
   - English and Traditional Chinese content files contain display names and descriptions only.
   - Reused item IDs allow multiple recommended lists to reference one translated item without duplicating membership rules.
   - Every recommended list covers documents, payment, core clothing, personal care, health, electronics, and travel essentials; it then adds purpose- or climate-specific items instead of activity-specific equipment.
-  - The Warm-Climate Travel description explicitly includes island and beach destinations in addition to heat, humidity, and strong sun.
+  - The Hot-Weather Travel description explicitly includes island and beach destinations in addition to heat, humidity, and strong sun.
 - Interaction rules:
   - Recommended lists appear only in the new-checklist dialog and cannot be renamed, edited, deleted, or reordered.
+  - Hot-Weather Travel groups sun care items under Personal Care.
   - Selecting a recommended list creates an ordinary editable checklist; later edits never change the bundled source.
   - Switching locale changes recommended list choices in the dialog but does not translate already-created checklist snapshots.
 - Persistence:
@@ -576,6 +577,8 @@ The application uses a centralized color management system with semantic naming:
 - The drawer moves focus inside, wraps Tab/Shift+Tab, closes with Escape and restores its trigger. The background is inert; a higher dialog owns focus while the drawer is inert. Height-only resize preserves drawer state, and App restores the previous body scroll setting after the last modal closes.
 - Short command menus are teleported outside card transforms, fit above/below their trigger in the visual viewport, and scroll internally when space is limited. If neither side can fit a full command, the menu may overlap the trigger to make commands accessible. Keyboard opening focuses the first command; Escape restores the trigger.
 - Desktop: Inline sticky sidebar that can collapse to an icon-only mode; manual collapse/expand is persisted in localStorage.
+- The new-checklist, template, and language labels use the same fade timing. Collapsed checklist initials remain fully visible and centered; full names fade at their left origin before the centered initials appear after the width transition.
+- Template and language options use the command overflow menu typography, padding, and touch row height. Settings popovers retain a readable width beside a collapsed sidebar, constrain their height, and allow internal scrolling. Escape closes the open settings popover and restores its trigger before a second Escape closes a drawer.
 
 #### Content Layout
 

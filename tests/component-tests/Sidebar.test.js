@@ -546,9 +546,7 @@ describe('Sidebar', () => {
       const templateButtons = wrapper.findAll('[data-testid^="sidebar-template-use-"]');
 
       expect(templateButtons.map((button) => button.text())).toEqual(['First', 'Later']);
-      expect(templateButtons[0].element.parentElement.className).toContain(
-        'bg-interactive-hover-light'
-      );
+      expect(templateButtons[0].element.className).toContain('bg-interactive-hover-light');
     });
 
     // Test Case 31: Should display the empty state when no personal templates exist

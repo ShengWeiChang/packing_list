@@ -31,6 +31,19 @@ describe('recommendedLists', () => {
         expect(recommendedList.items.every((item) => item.name && item.quantity > 0)).toBe(true);
       }
     }
+
+    for (const locale of ['en', 'zh-TW']) {
+      const list = getRecommendedList('warm', locale);
+      expect(list.name).toBe(locale === 'en' ? 'Hot-Weather Travel' : '炎熱地區');
+      expect(getRecommendedList('cold', locale).name).toBe(
+        locale === 'en' ? 'Cold-Weather Travel' : '寒冷地區'
+      );
+      const personalCare = list.categories.find((category) => category.id === 'personalCare');
+      expect(list.categories.some((category) => category.id === 'sunProtection')).toBe(false);
+      for (const id of ['sunscreen', 'lipBalm', 'afterSunCare']) {
+        expect(list.items.find((item) => item.id === id)?.categoryId).toBe(personalCare.id);
+      }
+    }
   });
 
   // Test Case 2: Should include core clothing in every recommended list

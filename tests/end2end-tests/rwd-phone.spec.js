@@ -718,7 +718,28 @@ test.describe('mouse desktop', () => {
     await expect(pendingToggle).toHaveCSS('color', 'rgb(124, 45, 18)');
     const pendingRow = page.getByTestId('pending-item-row').first();
     await expect(pendingRow.locator('div > span').first()).toHaveCSS('font-size', '16px');
-    expect((await pendingRow.getByTestId('pending-item-complete').boundingBox()).width).toBe(20);
+    const pendingButton = pendingRow.getByTestId('pending-item-complete');
+    expect((await pendingButton.boundingBox()).width).toBe(24);
+    expect((await pendingButton.locator('span').boundingBox()).width).toBe(20);
+    const pendingCard = page.getByTestId('pending-items-category');
+    const [pendingCardBox, categoryCardBox, pendingIconBox, itemCheckboxBox] = await Promise.all([
+      pendingCard.boundingBox(),
+      category.boundingBox(),
+      pendingButton.locator('span').boundingBox(),
+      row.getByTestId('item-checkbox').boundingBox(),
+    ]);
+    expect(
+      Math.abs(
+        pendingIconBox.x +
+          pendingIconBox.width / 2 -
+          pendingCardBox.x -
+          (itemCheckboxBox.x + itemCheckboxBox.width / 2 - categoryCardBox.x)
+      )
+    ).toBeLessThan(1);
+    const pendingTextInset =
+      (await textStart(pendingRow.locator('div > span').first())) - pendingCardBox.x;
+    const itemTextInset = (await textStart(row.getByTestId('item-name'))) - categoryCardBox.x;
+    expect(Math.abs(pendingTextInset - itemTextInset)).toBeLessThan(1);
     await page.emulateMedia({ forcedColors: 'active' });
     await expect(pendingToggle.locator('svg')).toHaveClass(/lucide-clipboard-check/);
     await page.emulateMedia({ forcedColors: 'none' });
@@ -848,4 +869,49 @@ test('persists category sorting across tablet columns', async ({ page, context }
       )
     )
     .toEqual(order);
+});
+
+// Test Case 8: Touch-drag into a fully filtered category and retain the result after reload.
+test('moves an unpacked item into an all-hidden category by touch', async ({ page, context }) => {
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await createList(page);
+  const cards = page.getByTestId('category-card');
+  const source = cards.nth(0);
+  const target = cards.nth(1);
+  const sourceName = source.getByTestId('item-name').first();
+  const movedName = (await sourceName.textContent()).trim();
+  const oldNames = await target.getByTestId('item-name').allTextContents();
+  await target.getByTestId('category-checkbox').tap();
+  await page.getByTestId('unpacked-items-filter-toggle').tap();
+  await expect(target.getByTestId('item-row')).toHaveCount(0);
+  const add = target.getByTestId('add-item-button');
+  await expect(add).toBeVisible();
+  await sourceName.scrollIntoViewIfNeeded();
+  const start = await sourceName.boundingBox();
+  const end = await add.boundingBox();
+  expect(start.y).toBeGreaterThanOrEqual(0);
+  expect(end.y + end.height).toBeLessThanOrEqual(1180);
+  const from = { x: start.x + start.width / 2, y: start.y + start.height / 2 };
+  const to = { x: end.x + end.width / 2, y: end.y + end.height / 2 };
+  const client = await context.newCDPSession(page);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
+  await page.waitForTimeout(300);
+  for (let step = 1; step <= 20; step++) {
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [
+        { x: from.x + ((to.x - from.x) * step) / 20, y: from.y + ((to.y - from.y) * step) / 20 },
+      ],
+    });
+    await page.waitForTimeout(30);
+  }
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(target.getByTestId('item-name')).toHaveText([movedName]);
+  await page.getByTestId('unpacked-items-filter-toggle').tap();
+  await expect(target.getByTestId('item-name')).toHaveText([...oldNames, movedName]);
+  await page.reload();
+  await expect(page.getByTestId('category-card').nth(1).getByTestId('item-name')).toHaveText([
+    ...oldNames,
+    movedName,
+  ]);
 });

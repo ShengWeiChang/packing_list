@@ -22,7 +22,7 @@ export const recommendedListContentZhTw = {
       description: '適合需要工作用品、商務服裝的旅程',
     },
     warm: {
-      name: '暖熱地區',
+      name: '炎熱地區',
       description: '適合前往炎熱、潮濕、日照強烈的地區，以及海島或海灘旅程',
     },
     cold: {
@@ -40,8 +40,7 @@ export const recommendedListContentZhTw = {
     travelEssentials: '旅行用品',
     businessClothing: '商務服裝',
     workGear: '工作用品',
-    warmWeatherClothing: '暖熱氣候衣物',
-    sunProtection: '防曬用品',
+    warmWeatherClothing: '炎熱氣候衣物',
     coldWeatherClothing: '寒冷氣候衣物',
   },
   items: {

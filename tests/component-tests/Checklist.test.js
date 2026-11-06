@@ -117,7 +117,7 @@ describe('Checklist', () => {
           draggable: {
             name: 'draggable',
             template:
-              '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template></div>',
+              '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template><slot name="footer" /></div>',
             props: ['modelValue', 'itemKey', 'group'],
             emits: ['start', 'end', 'update', 'update:modelValue'],
           },
@@ -685,7 +685,7 @@ describe('Checklist inline item actions', () => {
     name: 'draggable',
     props: ['modelValue'],
     template:
-      '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template></div>',
+      '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template><slot name="footer" /></div>',
   };
   /**
    * Mount real category and item owners with only drag geometry stubbed.
