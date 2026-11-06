@@ -40,33 +40,42 @@ for (const scenario of scenarios) {
 
     for (const locale of ['en', 'zh-TW']) {
       test(`sidebar presentation stays consistent in ${locale}`, async ({ page }) => {
-        await page.addInitScript((language) => {
-          localStorage.setItem('user-locale', language);
-          localStorage.setItem(
-            'packingListApp',
-            JSON.stringify({
-              checklists: [
-                { id: 'trip-1', name: '新清單：日本與加拿大旅行', order: 1 },
-                { id: 'trip-2', name: 'Travel checklist with a longer name', order: 0 },
-              ],
-              categories: [],
-              items: [],
-              selectedChecklistId: 'trip-1',
-            })
-          );
-          localStorage.setItem(
-            'packingListTemplates',
-            JSON.stringify(
-              Array.from({ length: 20 }, (_, index) => ({
-                id: `template-${index}`,
-                name: `範本 Template ${index}`,
-                order: index,
+        await page.addInitScript(
+          ({ language, withoutObserver }) => {
+            if (withoutObserver) window.ResizeObserver = undefined;
+            localStorage.setItem('user-locale', language);
+            localStorage.setItem(
+              'packingListApp',
+              JSON.stringify({
+                checklists: [
+                  { id: 'trip-1', name: '新清單：日本與加拿大旅行', order: 30 },
+                  { id: 'trip-2', name: 'Travel checklist with a longer name', order: 29 },
+                  ...Array.from({ length: 28 }, (_, index) => ({
+                    id: `extra-${index}`,
+                    name: `長清單名稱 ${index}`,
+                    order: index,
+                  })),
+                ],
                 categories: [],
                 items: [],
-              }))
-            )
-          );
-        }, locale);
+                selectedChecklistId: 'trip-1',
+              })
+            );
+            localStorage.setItem(
+              'packingListTemplates',
+              JSON.stringify(
+                Array.from({ length: 20 }, (_, index) => ({
+                  id: `template-${index}`,
+                  name: `範本 Template ${index}`,
+                  order: index,
+                  categories: [],
+                  items: [],
+                }))
+              )
+            );
+          },
+          { language: locale, withoutObserver: scenario.name === 'desktop' && locale === 'zh-TW' }
+        );
         await page.goto('/');
         if (scenario.name === 'phone') await page.getByTestId('topbar-toggle').click();
         if (scenario.name === 'tablet') {
@@ -118,6 +127,17 @@ for (const scenario of scenarios) {
         expect(new Set(labelStyles.map((style) => style.x)).size).toBe(1);
         expect(new Set(labelStyles.map((style) => style.fontSize)).size).toBe(1);
         expect(new Set(labelStyles.map((style) => style.lineHeight)).size).toBe(1);
+        if (scenario.name === 'phone') {
+          const phoneScrollport = sidebar.getByTestId('sidebar-checklists-scrollport');
+          await expect(phoneScrollport).toHaveCSS('overflow-y', 'auto');
+          await phoneScrollport.evaluate((element) => {
+            element.scrollTop = 200;
+          });
+          expect(await phoneScrollport.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+          await phoneScrollport.evaluate((element) => {
+            element.scrollTop = 0;
+          });
+        }
 
         await page.getByTestId('sidebar-templates-button').click();
         const templateMenu = page.getByTestId('sidebar-templates-dropdown');
@@ -152,11 +172,33 @@ for (const scenario of scenarios) {
         await page.keyboard.press('Escape');
 
         if (scenario.name !== 'phone') {
+          const expandedScrollport = sidebar.getByTestId('sidebar-checklists-scrollport');
+          await expect(expandedScrollport).toHaveCSS('overflow-y', 'auto');
+          await expandedScrollport.evaluate((element) => {
+            element.scrollTop = 250;
+          });
+          expect(await expandedScrollport.evaluate((element) => element.scrollTop)).toBeGreaterThan(
+            0
+          );
           await page.getByTestId('sidebar-toggle').click();
           await expect(sidebar).toHaveAttribute('data-expanded', 'false');
           await expect(page.locator('main')).toHaveCSS('filter', 'none');
+          const scrollport = sidebar.getByTestId('sidebar-checklists-scrollport');
+          await expect(scrollport).toHaveCSS('overflow-y', 'clip');
+          expect(await scrollport.evaluate((element) => element.scrollTop)).toBe(0);
+          await scrollport.evaluate((element) => {
+            element.scrollTop = 200;
+          });
+          expect(await scrollport.evaluate((element) => element.scrollTop)).toBe(0);
+          const scrollBounds = await scrollport.boundingBox();
+          await page.mouse.move(scrollBounds.x + scrollBounds.width / 2, scrollBounds.y + 10);
+          await page.mouse.wheel(0, 400);
+          expect(await scrollport.evaluate((element) => element.scrollTop)).toBe(0);
           const tiles = sidebar.getByTestId('sidebar-checklist-item');
-          for (const tile of await tiles.all()) {
+          await expect(tiles.last()).toBeHidden();
+          await tiles.last().evaluate((element) => element.focus());
+          await expect(tiles.last()).not.toBeFocused();
+          for (const tile of (await tiles.all()).slice(0, 2)) {
             const initial = tile.locator('[data-sidebar-initial]');
             await expect(initial).toHaveCSS('opacity', '1');
             const geometry = await initial.evaluate((element) => {
@@ -177,6 +219,47 @@ for (const scenario of scenarios) {
             expect(Math.abs(geometry.center)).toBeLessThan(1);
             expect(Math.abs(geometry.railCenter)).toBeLessThan(1);
           }
+          const visibleCount = () =>
+            tiles.evaluateAll(
+              (elements) =>
+                elements.filter((element) => getComputedStyle(element).visibility === 'visible')
+                  .length
+            );
+          const beforeResize = await visibleCount();
+          expect(beforeResize).toBeGreaterThan(1);
+          await tiles.first().focus();
+          for (let index = 0; index < beforeResize; index++) await page.keyboard.press('Tab');
+          await expect(page.getByTestId('sidebar-templates-button')).toBeFocused();
+          if (scenario.name === 'desktop') {
+            const lastVisibleIndex = await tiles.evaluateAll((elements) =>
+              elements.findLastIndex(
+                (element) => getComputedStyle(element).visibility === 'visible'
+              )
+            );
+            await tiles.nth(lastVisibleIndex).focus();
+            await page.setViewportSize({ width: 1280, height: 500 });
+            await expect.poll(visibleCount).toBeLessThan(beforeResize);
+            await expect(page.getByTestId('sidebar-toggle')).toBeFocused();
+            await page.setViewportSize(scenario.viewport);
+            await expect.poll(visibleCount).toBe(beforeResize);
+          }
+          if (scenario.name === 'tablet' && locale === 'en') {
+            const client = await page.context().newCDPSession(page);
+            const point = {
+              x: scrollBounds.x + scrollBounds.width / 2,
+              y: scrollBounds.y + scrollBounds.height / 2,
+            };
+            await client.send('Input.dispatchTouchEvent', {
+              type: 'touchStart',
+              touchPoints: [point],
+            });
+            await client.send('Input.dispatchTouchEvent', {
+              type: 'touchMove',
+              touchPoints: [{ x: point.x, y: point.y - 100 }],
+            });
+            await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+            expect(await scrollport.evaluate((element) => element.scrollTop)).toBe(0);
+          }
           await page.screenshot({ path: test.info().outputPath('sidebar-collapsed.png') });
           await page.getByTestId('sidebar-language-button').click();
           expect(
@@ -186,6 +269,23 @@ for (const scenario of scenarios) {
           await page.keyboard.press('Escape');
           await page.getByTestId('sidebar-toggle').click();
           await expect(sidebar).toHaveAttribute('data-expanded', 'true');
+          const reopenedScrollport = sidebar.getByTestId('sidebar-checklists-scrollport');
+          await expect(reopenedScrollport).toHaveCSS('overflow-y', 'auto');
+          await expect
+            .poll(() =>
+              reopenedScrollport.evaluate((element) => element.scrollWidth - element.clientWidth)
+            )
+            .toBeLessThanOrEqual(0);
+          const lastTile = sidebar.getByTestId('sidebar-checklist-item').last();
+          await lastTile.scrollIntoViewIfNeeded();
+          expect(await reopenedScrollport.evaluate((element) => element.scrollTop)).toBeGreaterThan(
+            0
+          );
+          await lastTile.click();
+          await expect(lastTile).toHaveAttribute('aria-current', 'page');
+          await reopenedScrollport.evaluate((element) => {
+            element.scrollTop = 0;
+          });
           const animation = await labels.evaluateAll((elements) =>
             elements.map((element) => {
               const style = getComputedStyle(element);

@@ -112,6 +112,20 @@ test('WebKit tablet columns retain visible touch actions', async ({ page }) => {
   await selectGeneralRecommendedList(page);
   await page.getByTestId('checklist-name-input').press('Enter');
   await page.setViewportSize({ width: 820, height: 1180 });
+  await page.evaluate(() => {
+    const data = JSON.parse(localStorage.getItem('packingListApp'));
+    const original = data.checklists[0];
+    for (let index = 0; index < 25; index++) {
+      data.checklists.push({
+        ...original,
+        id: `webkit-list-${index}`,
+        name: `清單 ${index}`,
+        order: index + 2,
+      });
+    }
+    localStorage.setItem('packingListApp', JSON.stringify(data));
+  });
+  await page.reload();
   const sidebarSamples = await page.evaluate(async () => {
     const samples = [];
     const textOffsets = [];
@@ -167,6 +181,23 @@ test('WebKit tablet columns retain visible touch actions', async ({ page }) => {
   expect(
     Math.abs(initialBounds.x + initialBounds.width / 2 - tileBounds.x - tileBounds.width / 2)
   ).toBeLessThan(1);
+  const scrollport = page.getByTestId('sidebar-checklists-scrollport');
+  await expect(scrollport).toHaveCSS('overflow-y', 'clip');
+  await expect(page.getByTestId('sidebar-checklist-item').last()).toBeHidden();
+  await scrollport.evaluate((element) => {
+    element.scrollTop = 200;
+  });
+  expect(await scrollport.evaluate((element) => element.scrollTop)).toBe(0);
+  await page.getByTestId('sidebar-toggle').tap();
+  await expect(scrollport).toHaveCSS('overflow-y', 'auto');
+  await scrollport.evaluate((element) => {
+    element.scrollTop = 200;
+  });
+  expect(await scrollport.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await page.getByTestId('sidebar-toggle').tap();
+  await expect(scrollport).toHaveCSS('overflow-y', 'clip');
+  expect(await scrollport.evaluate((element) => element.scrollTop)).toBe(0);
+
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('aside')).toHaveCSS('transition-duration', '0s');
   await page.emulateMedia({ reducedMotion: 'no-preference' });

@@ -240,11 +240,34 @@ describe('Sidebar', () => {
 
   describe('collapsed state', () => {
     // Test Case 13: Should show first character of checklist name when collapsed
-    it('should show first character when collapsed on desktop', () => {
+    it('should show first character when collapsed on desktop', async () => {
       const wrapper = createWrapper({ isExpanded: false, isMobile: false });
-      // When collapsed, should show first character
       expect(wrapper.text()).toContain('J');
       expect(wrapper.text()).toContain('E');
+
+      const scrollport = wrapper.get('[data-testid="sidebar-checklists-scrollport"]');
+      const rows = wrapper.findAll('li[data-checklist-id]');
+      Object.defineProperty(scrollport.element, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({ top: 0, bottom: 100 }),
+      });
+      Object.defineProperty(rows[0].element, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({ top: 0, bottom: 40, height: 40 }),
+      });
+      Object.defineProperty(rows[1].element, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({ top: 80, bottom: 120, height: 40 }),
+      });
+      await wrapper.setProps({ checklists: createMockChecklists() });
+      await wrapper.vm.$nextTick();
+      await wrapper.vm.$nextTick();
+      expect(rows[0].classes()).not.toContain('invisible');
+      expect(rows[1].classes()).toContain('invisible');
+
+      await wrapper.setProps({ isExpanded: true });
+      expect(rows[1].classes()).not.toContain('invisible');
+      wrapper.unmount();
     });
   });
 

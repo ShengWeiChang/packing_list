@@ -28,6 +28,7 @@ Created: 2025-09-19
   >
     <!-- Toggle Button -->
     <button
+      ref="sidebarToggle"
       class="touch-target mb-2 flex w-full items-center rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
       :aria-label="$t('sidebar.toggle')"
       data-sidebar-control
@@ -70,7 +71,11 @@ Created: 2025-09-19
     </button>
 
     <!-- Checklist Items -->
-    <div class="mt-2 min-h-0 flex-1 overflow-y-auto">
+    <div
+      ref="checklistScrollport"
+      class="mt-2 min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+      data-testid="sidebar-checklists-scrollport"
+    >
       <div class="flex flex-col">
         <h1 class="mb-2 overflow-hidden whitespace-nowrap px-2 text-2xl font-bold md:text-xl">
           <span
@@ -108,6 +113,10 @@ Created: 2025-09-19
               :key="checklist.id"
               :data-checklist-id="checklist.id"
               class="whitespace-nowrap"
+              :class="{
+                invisible:
+                  !isExpanded && !isMobile && !visibleCollapsedChecklistIds.has(checklist.id),
+              }"
             >
               <div
                 class="group relative flex items-center rounded-lg px-1 transition-colors duration-200"
@@ -121,7 +130,7 @@ Created: 2025-09-19
                   class="touch-target"
                   :class="[
                     'relative min-w-0 grow overflow-hidden py-3 text-left transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:py-2',
-                    'px-4 pr-8',
+                    isExpanded || isMobile ? 'px-4 pr-8' : 'px-4 pr-0',
                     isExpanded || isMobile
                       ? [
                           selectedChecklistId === checklist.id
@@ -315,7 +324,7 @@ Created: 2025-09-19
 // ------------------------------------------------------------------------------
 
 import type { PropType } from 'vue';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { useTouchLayout } from '../composables/useTouchLayout';
@@ -401,6 +410,13 @@ const showTemplatesMenu = ref(false);
 const settingsRoot = ref<HTMLElement | null>(null);
 const templatesButtonRef = ref<HTMLButtonElement | null>(null);
 const languageButtonRef = ref<HTMLButtonElement | null>(null);
+
+// Only fully visible entries remain interactive while the narrow rail is clipped.
+const sidebarToggle = ref<HTMLButtonElement | null>(null);
+const checklistScrollport = ref<HTMLElement | null>(null);
+const visibleCollapsedChecklistIds = ref(new Set<string>());
+let checklistResizeObserver: ResizeObserver | undefined;
+let checklistResizeFrame: number | undefined;
 
 // Drag state
 const draggingChecklistId = ref<string | null>(null);
@@ -590,8 +606,64 @@ function onChecklistDragEnd(_event: unknown) {
 // Lifecycle Hooks
 // ------------------------------------------------------------------------------
 
+/** Keep clipped checklist entries out of keyboard and screen-reader navigation. */
+function updateVisibleCollapsedChecklists() {
+  const scrollport = checklistScrollport.value;
+  if (!scrollport || props.isExpanded || props.isMobile) return;
+
+  const bounds = scrollport.getBoundingClientRect();
+  const visible = new Set<string>();
+  for (const row of scrollport.querySelectorAll<HTMLElement>('li[data-checklist-id]')) {
+    const rect = row.getBoundingClientRect();
+    const id = row.dataset.checklistId;
+    if (id && rect.height > 0 && rect.top >= bounds.top && rect.bottom <= bounds.bottom) {
+      visible.add(id);
+    }
+  }
+  const focusedRow = document.activeElement?.closest<HTMLElement>('li[data-checklist-id]');
+  if (focusedRow && scrollport.contains(focusedRow)) {
+    const focusedId = focusedRow.dataset.checklistId;
+    if (focusedId && !visible.has(focusedId)) sidebarToggle.value?.focus({ preventScroll: true });
+  }
+  const previous = visibleCollapsedChecklistIds.value;
+  if (previous.size !== visible.size || [...visible].some((id) => !previous.has(id))) {
+    visibleCollapsedChecklistIds.value = visible;
+  }
+}
+
+/** Track animated viewport resizing when ResizeObserver is unavailable. */
+function scheduleCollapsedChecklistUpdate() {
+  if (checklistResizeFrame !== undefined) window.cancelAnimationFrame(checklistResizeFrame);
+  const deadline = window.performance.now() + 350;
+  const update = () => {
+    updateVisibleCollapsedChecklists();
+    if (!checklistResizeObserver && !props.isExpanded && window.performance.now() < deadline) {
+      checklistResizeFrame = window.requestAnimationFrame(update);
+    } else {
+      checklistResizeFrame = undefined;
+    }
+  };
+  checklistResizeFrame = window.requestAnimationFrame(update);
+}
+
+watch(
+  () => [props.isExpanded, props.isMobile, sortedChecklists.value] as const,
+  () => void nextTick(updateVisibleCollapsedChecklists),
+  { flush: 'post' }
+);
+
 // Set up event listeners for settings menus
 onMounted(() => {
+  if (typeof ResizeObserver !== 'undefined' && checklistScrollport.value) {
+    checklistResizeObserver = new ResizeObserver(updateVisibleCollapsedChecklists);
+    checklistResizeObserver.observe(checklistScrollport.value);
+    const list = checklistScrollport.value.querySelector(
+      '[data-testid="sidebar-checklists-draggable"]'
+    );
+    if (list) checklistResizeObserver.observe(list);
+  }
+  window.addEventListener('resize', scheduleCollapsedChecklistUpdate);
+  void nextTick(updateVisibleCollapsedChecklists);
   document.addEventListener('click', closeSettingsMenusOnClick);
   document.addEventListener('keydown', handleSettingsKeydown, true);
   window.addEventListener('overflow-menu-open', closeSettingsMenus);
@@ -600,6 +672,9 @@ onMounted(() => {
 
 // Clean up event listeners
 onUnmounted(() => {
+  checklistResizeObserver?.disconnect();
+  window.removeEventListener('resize', scheduleCollapsedChecklistUpdate);
+  if (checklistResizeFrame !== undefined) window.cancelAnimationFrame(checklistResizeFrame);
   document.removeEventListener('click', closeSettingsMenusOnClick);
   document.removeEventListener('keydown', handleSettingsKeydown, true);
   window.removeEventListener('overflow-menu-open', closeSettingsMenus);
@@ -627,8 +702,14 @@ aside[data-expanded='true'] [data-sidebar-checklist-label] {
     opacity: 1;
   }
 }
+aside[data-expanded='false'] [data-testid='sidebar-checklists-scrollport'] {
+  overflow: clip;
+}
 aside[data-expanded='false'] [data-testid='sidebar-checklists-draggable'] > li > div {
   padding-inline: 0;
+}
+aside[data-expanded='false'] [data-testid='sidebar-checklists-draggable'] > li > div > button {
+  min-width: min(44px, 100%);
 }
 [data-sidebar-initial] {
   opacity: 1;
@@ -692,7 +773,7 @@ aside[data-expanded='true'] [data-sidebar-initial] {
   [data-testid='sidebar-checklists-draggable'] > li > div {
     padding-inline: 0;
   }
-  [data-testid='sidebar-checklists-draggable'] > li > div > button.pr-8 {
+  [data-testid='sidebar-checklists-draggable'] > li > div > button {
     padding-left: 0.75rem;
   }
 }

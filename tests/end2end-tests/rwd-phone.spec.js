@@ -402,15 +402,22 @@ test.describe('touch tablet', () => {
         sidebarScrollport.evaluate((element) => element.scrollHeight > element.clientHeight)
       )
       .toBe(true);
+    await expect(sidebarScrollport).toHaveCSS('overflow-y', 'clip');
+    await sidebarScrollport.evaluate((element) => {
+      element.scrollTop = 300;
+    });
+    expect(await sidebarScrollport.evaluate((element) => element.scrollTop)).toBe(0);
+    await page.getByTestId('sidebar-toggle').tap();
+    await expect(sidebarScrollport).toHaveCSS('overflow-y', 'auto');
     await sidebarScrollport.evaluate((element) => {
       element.scrollTop = 300;
     });
     await expect
       .poll(() => sidebarScrollport.evaluate((element) => element.scrollTop))
       .toBeGreaterThan(0);
-    await sidebarScrollport.evaluate((element) => {
-      element.scrollTop = 0;
-    });
+    await page.getByTestId('sidebar-toggle').tap();
+    await expect(sidebarScrollport).toHaveCSS('overflow-y', 'clip');
+    expect(await sidebarScrollport.evaluate((element) => element.scrollTop)).toBe(0);
     const sidebarOverflowDuringToggle = () =>
       page.evaluate(async () => {
         const samples = [];

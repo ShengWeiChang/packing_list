@@ -18,9 +18,9 @@
 | Unit tests 單元測試           | 309    |
 | Component tests 組件測試      | 304    |
 | E2E tests E2E 測試            | 111    |
-| Line coverage 行覆蓋率        | 92.41% |
-| Statement coverage 語句覆蓋率 | 90.64% |
-| Branch coverage 分支覆蓋率    | 81.09% |
+| Line coverage 行覆蓋率        | 92.02% |
+| Statement coverage 語句覆蓋率 | 90.2%  |
+| Branch coverage 分支覆蓋率    | 80.69% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -163,7 +163,7 @@ tests/
 | ------------ | ---------- | ------ | ------ |
 | scripts/     | 79.03%     | 63.2%  | 77.63% |
 | source/      | 77.52%     | 67.47% | 81.1%  |
-| components/  | 91.65%     | 84.3%  | 94.09% |
+| components/  | 90.45%     | 83.23% | 93%    |
 | composables/ | 95.46%     | 86.14% | 97.62% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
@@ -180,7 +180,7 @@ tests/
 | ProgressBar.vue              | 100%       | 100%   | 8     |
 | Topbar.vue                   | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
-| Sidebar.vue                  | 98.05%     | 98.97% | 33    |
+| Sidebar.vue                  | 86.48%     | 89.05% | 33    |
 | OverflowMenu.vue             | 89.9%      | 92.38% | 24    |
 | Category.vue                 | 89.57%     | 91.15% | 31    |
 | Checklist.vue                | 87.44%     | 91.58% | 42    |
@@ -999,41 +999,41 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 #### 8.2.11 Sidebar.test.js（33）
 
-| #   | Test                                                        | 測試重點      |
-| --- | ----------------------------------------------------------- | ------------- |
-| 1   | should display checklist names when expanded                | 名稱渲染      |
-| 2   | should show the new checklist button                        | 按鈕存在      |
-| 3   | should display the sidebar title                            | 標題渲染      |
-| 4   | should render checklist item buttons                        | 按鈕渲染      |
-| 5   | should emit toggle-sidebar on hamburger click               | 切換事件      |
-| 6   | should emit create-checklist on new button click            | 新增事件      |
-| 7   | should emit select-checklist with ID on item click          | 選取事件      |
-| 8   | should emit copy-checklist from OverflowMenu                | 複製事件      |
-| 9   | should emit delete-checklist from OverflowMenu              | 刪除事件      |
-| 10  | should emit edit-checklist from OverflowMenu                | 編輯事件      |
-| 11  | should highlight the selected checklist                     | 選中樣式      |
-| 12  | should not highlight non-selected checklists                | 未選樣式      |
-| 13  | should show first character when collapsed                  | 收合顯示      |
-| 14  | should show language dropdown on button click               | 語言選單開啟  |
-| 15  | should change locale and close menu                         | 語言切換      |
-| 16  | should close language menu when focus leaves                | 焦點離開關閉  |
-| 17  | should close language menu on scroll                        | 捲動關閉      |
-| 18  | should close language menu on outside click                 | 外部點擊關閉  |
-| 19  | should set dragging state on drag start                     | 拖曳開始      |
-| 20  | should clear dragging state on drag end                     | 拖曳結束      |
-| 21  | should display checklists sorted by order                   | 排序顯示      |
-| 22  | should emit "move:checklists" when checklists are reordered | 重排事件      |
-| 23  | should display untitled placeholder                         | 未命名顯示    |
-| 24  | should apply positioning styles when language menu opens    | 下拉選單定位  |
-| 25  | should clean up document and window listeners on unmount    | 生命週期清理  |
-| 26  | should use matching language and template dropdown layouts  | 選單版面一致  |
-| 27  | should close the template menu after an outside click       | 外部點擊關閉  |
-| 28  | should emit edit-template when a template is selected       | Template 選擇 |
-| 29  | should hide template overflow menus on narrow screens       | 窄版排版      |
-| 30  | should sort templates and highlight the active template     | 排序與選取    |
-| 31  | should display an empty template state                      | 空狀態        |
-| 32  | should close the template menu with Escape                  | 鍵盤關閉      |
-| 33  | should forward save-as-template from checklist overflow     | 事件轉送      |
+| #   | Test                                                        | 測試重點       |
+| --- | ----------------------------------------------------------- | -------------- |
+| 1   | should display checklist names when expanded                | 名稱渲染       |
+| 2   | should show the new checklist button                        | 按鈕存在       |
+| 3   | should display the sidebar title                            | 標題渲染       |
+| 4   | should render checklist item buttons                        | 按鈕渲染       |
+| 5   | should emit toggle-sidebar on hamburger click               | 切換事件       |
+| 6   | should emit create-checklist on new button click            | 新增事件       |
+| 7   | should emit select-checklist with ID on item click          | 選取事件       |
+| 8   | should emit copy-checklist from OverflowMenu                | 複製事件       |
+| 9   | should emit delete-checklist from OverflowMenu              | 刪除事件       |
+| 10  | should emit edit-checklist from OverflowMenu                | 編輯事件       |
+| 11  | should highlight the selected checklist                     | 選中樣式       |
+| 12  | should not highlight non-selected checklists                | 未選樣式       |
+| 13  | should show first character when collapsed on desktop       | 字首與可見範圍 |
+| 14  | should show language dropdown on button click               | 語言選單開啟   |
+| 15  | should change locale and close menu                         | 語言切換       |
+| 16  | should close language menu when focus leaves                | 焦點離開關閉   |
+| 17  | should close language menu on scroll                        | 捲動關閉       |
+| 18  | should close language menu on outside click                 | 外部點擊關閉   |
+| 19  | should set dragging state on drag start                     | 拖曳開始       |
+| 20  | should clear dragging state on drag end                     | 拖曳結束       |
+| 21  | should display checklists sorted by order                   | 排序顯示       |
+| 22  | should emit "move:checklists" when checklists are reordered | 重排事件       |
+| 23  | should display untitled placeholder                         | 未命名顯示     |
+| 24  | should apply positioning styles when language menu opens    | 下拉選單定位   |
+| 25  | should clean up document and window listeners on unmount    | 生命週期清理   |
+| 26  | should use matching language and template dropdown layouts  | 選單版面一致   |
+| 27  | should close the template menu after an outside click       | 外部點擊關閉   |
+| 28  | should emit edit-template when a template is selected       | Template 選擇  |
+| 29  | should hide template overflow menus on narrow screens       | 窄版排版       |
+| 30  | should sort templates and highlight the active template     | 排序與選取     |
+| 31  | should display an empty template state                      | 空狀態         |
+| 32  | should close the template menu with Escape                  | 鍵盤關閉       |
+| 33  | should forward save-as-template from checklist overflow     | 事件轉送       |
 
 #### 8.2.12 NewChecklistDialog.test.js（12）
 
@@ -1263,7 +1263,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | touch actions remain open and persist quantity and pending state      | 手機命中區、選單、待買字級與持久化操作   |
 | 2   | keeps name geometry stable and makes checkbox edges actionable        | 名稱幾何與真實命中                       |
 | 3   | switches one open item and shares the direct rename flow              | 一次一件展開與改名                       |
-| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、側欄溢出、觸控選單與密度       |
+| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、收合側欄裁切、觸控選單與密度   |
 | 5   | retains hover quick controls and the desktop command menu             | 桌面整列回饋、選單關閉、focus 與文字對齊 |
 | 6   | preserves touch sorting while excluding action buttons                | 觸控長按與持久化排序                     |
 | 7   | persists category sorting across tablet columns                       | 跨欄觸控拖曳與排序保存                   |
@@ -1281,19 +1281,19 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 #### 8.3.14 rwd-webkit.spec.js（3）
 
-| #   | Test                                                         | 測試重點                                  |
-| --- | ------------------------------------------------------------ | ----------------------------------------- |
-| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit 觸控狀態、抽屜動畫與回焦           |
-| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit 短 viewport 與日期幾何             |
-| 3   | WebKit tablet columns retain visible touch actions           | WebKit 平板欄數、觸控選單、待買字級與密度 |
+| #   | Test                                                         | 測試重點                                      |
+| --- | ------------------------------------------------------------ | --------------------------------------------- |
+| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit 觸控狀態、抽屜動畫與回焦               |
+| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit 短 viewport 與日期幾何                 |
+| 3   | WebKit tablet columns retain visible touch actions           | WebKit 平板欄數、收合禁止捲動、觸控選單與密度 |
 
 #### 8.3.15 sidebar-presentation.spec.js（6）
 
-| #   | Test                                                    | 測試重點                            |
-| --- | ------------------------------------------------------- | ----------------------------------- |
-| 1   | phone: sidebar presentation stays consistent in en      | 入口標籤、選單列幾何、捲動與 Escape |
-| 2   | phone: sidebar presentation stays consistent in zh-TW   | 在地化入口標籤與選單列幾何          |
-| 3   | tablet: sidebar presentation stays consistent in en     | 完整置中字首、標籤動畫與收合選單    |
-| 4   | tablet: sidebar presentation stays consistent in zh-TW  | 中文字形邊界與一致的設定選單        |
-| 5   | desktop: sidebar presentation stays consistent in en    | 完整置中字首、標籤動畫與收合選單    |
-| 6   | desktop: sidebar presentation stays consistent in zh-TW | 中文字形邊界與一致的設定選單        |
+| #   | Test                                                    | 測試重點                                     |
+| --- | ------------------------------------------------------- | -------------------------------------------- |
+| 1   | phone: sidebar presentation stays consistent in en      | 入口標籤、選單幾何、手機清單捲動與 Escape    |
+| 2   | phone: sidebar presentation stays consistent in zh-TW   | 在地化入口標籤、選單幾何與手機清單捲動       |
+| 3   | tablet: sidebar presentation stays consistent in en     | 收合禁止觸控捲動、完整字首與選單幾何         |
+| 4   | tablet: sidebar presentation stays consistent in zh-TW  | 收合禁止捲動、中文字首與選單幾何             |
+| 5   | desktop: sidebar presentation stays consistent in en    | 收合禁止捲動、完整字首、縮放與焦點恢復       |
+| 6   | desktop: sidebar presentation stays consistent in zh-TW | 收合禁止捲動、中文字首與 ResizeObserver 後備 |

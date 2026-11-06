@@ -18,9 +18,9 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | Unit tests         | 309    |
 | Component tests    | 304    |
 | E2E tests          | 111    |
-| Line coverage      | 92.41% |
-| Statement coverage | 90.64% |
-| Branch coverage    | 81.09% |
+| Line coverage      | 92.02% |
+| Statement coverage | 90.2%  |
+| Branch coverage    | 80.69% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -163,7 +163,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | ------------ | ---------- | ------ | ------ |
 | scripts/     | 79.03%     | 63.2%  | 77.63% |
 | source/      | 77.52%     | 67.47% | 81.1%  |
-| components/  | 91.65%     | 84.3%  | 94.09% |
+| components/  | 90.45%     | 83.23% | 93%    |
 | composables/ | 95.46%     | 86.14% | 97.62% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.55%     | 82.84% | 95.28% |
@@ -180,7 +180,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | ProgressBar.vue              | 100%       | 100%   | 8     |
 | Topbar.vue                   | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
-| Sidebar.vue                  | 98.05%     | 98.97% | 33    |
+| Sidebar.vue                  | 86.48%     | 89.05% | 33    |
 | OverflowMenu.vue             | 89.9%      | 92.38% | 24    |
 | Category.vue                 | 89.57%     | 91.15% | 31    |
 | Checklist.vue                | 87.44%     | 91.58% | 42    |
@@ -1013,7 +1013,7 @@ This project uses three layers to balance speed and reliability.
 | 10  | should emit "edit-checklist" from OverflowMenu                  | Edit event           |
 | 11  | should highlight the selected checklist                         | Active style         |
 | 12  | should not highlight non-selected checklists                    | Inactive style       |
-| 13  | should show first character when collapsed on desktop           | Collapsed display    |
+| 13  | should show first character when collapsed on desktop           | Initials and bounds  |
 | 14  | should show language dropdown on language button click          | Menu open            |
 | 15  | should change locale and close menu when a language is selected | Locale change        |
 | 16  | should close language menu when focus leaves                    | Focus-out close      |
@@ -1263,7 +1263,7 @@ This project uses three layers to balance speed and reliability.
 | 1   | touch actions remain open and persist quantity and pending state      | Phone targets, menus, to-buy typography and persisted actions  |
 | 2   | keeps name geometry stable and makes checkbox edges actionable        | Name geometry and real hit areas                               |
 | 3   | switches one open item and shares the direct rename flow              | Once-one expansion and rename                                  |
-| 4   | fits tablet categories to available width while keeping touch actions | Tablet columns, sidebar overflow, touch menus and density      |
+| 4   | fits tablet categories to available width while keeping touch actions | Tablet columns, sidebar clipping, touch menus and density      |
 | 5   | retains hover quick controls and the desktop command menu             | Desktop row feedback, menu dismissal, focus and text alignment |
 | 6   | preserves touch sorting while excluding action buttons                | Touch hold and persisted reorder                               |
 | 7   | persists category sorting across tablet columns                       | Cross-column touch drag and persistence                        |
@@ -1281,19 +1281,19 @@ This project uses three layers to balance speed and reliability.
 
 #### 8.3.14 rwd-webkit.spec.js (3 tests)
 
-| #   | Test                                                         | What it verifies                                                  |
-| --- | ------------------------------------------------------------ | ----------------------------------------------------------------- |
-| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit touch state, drawer motion and focus return                |
-| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit short viewport and date geometry                           |
-| 3   | WebKit tablet columns retain visible touch actions           | WebKit tablet columns, touch menus, to-buy typography and density |
+| #   | Test                                                         | What it verifies                                                      |
+| --- | ------------------------------------------------------------ | --------------------------------------------------------------------- |
+| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit touch state, drawer motion and focus return                    |
+| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit short viewport and date geometry                               |
+| 3   | WebKit tablet columns retain visible touch actions           | WebKit tablet columns, collapsed scroll lock, touch menus and density |
 
 #### 8.3.15 sidebar-presentation.spec.js (6 tests)
 
-| #   | Test                                                    | What it verifies                                                   |
-| --- | ------------------------------------------------------- | ------------------------------------------------------------------ |
-| 1   | phone: sidebar presentation stays consistent in en      | Entry labels, menu row geometry, scrolling and Escape              |
-| 2   | phone: sidebar presentation stays consistent in zh-TW   | Localized entry labels and menu row geometry                       |
-| 3   | tablet: sidebar presentation stays consistent in en     | Centered readable initials, label animation and collapsed popovers |
-| 4   | tablet: sidebar presentation stays consistent in zh-TW  | Chinese glyph bounds and consistent settings menus                 |
-| 5   | desktop: sidebar presentation stays consistent in en    | Centered readable initials, label animation and collapsed popovers |
-| 6   | desktop: sidebar presentation stays consistent in zh-TW | Chinese glyph bounds and consistent settings menus                 |
+| #   | Test                                                    | What it verifies                                                    |
+| --- | ------------------------------------------------------- | ------------------------------------------------------------------- |
+| 1   | phone: sidebar presentation stays consistent in en      | Entry labels, menu geometry, phone list scrolling and Escape        |
+| 2   | phone: sidebar presentation stays consistent in zh-TW   | Localized entry labels, menu geometry and phone list scrolling      |
+| 3   | tablet: sidebar presentation stays consistent in en     | Collapsed touch scroll lock, visible initials and menu geometry     |
+| 4   | tablet: sidebar presentation stays consistent in zh-TW  | Collapsed scroll lock, Chinese initials and menu geometry           |
+| 5   | desktop: sidebar presentation stays consistent in en    | Collapsed scroll lock, visible initials, resize and focus recovery  |
+| 6   | desktop: sidebar presentation stays consistent in zh-TW | Collapsed scroll lock, Chinese initials and ResizeObserver fallback |
