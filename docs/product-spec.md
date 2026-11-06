@@ -574,7 +574,7 @@ The application uses a centralized color management system with semantic naming:
 
 - Mobile & narrow desktop: Sidebar becomes an overlay drawer (teleported to `body`) with a dimmed backdrop; clicking the backdrop closes it.
 - The drawer moves focus inside, wraps Tab/Shift+Tab, closes with Escape and restores its trigger. The background is inert; a higher dialog owns focus while the drawer is inert. Height-only resize preserves drawer state, and App restores the previous body scroll setting after the last modal closes.
-- Short command menus are teleported outside card transforms, fit above/below their trigger in the visual viewport, and scroll internally when space is limited. Keyboard opening focuses the first command; Escape restores the trigger.
+- Short command menus are teleported outside card transforms, fit above/below their trigger in the visual viewport, and scroll internally when space is limited. If neither side can fit a full command, the menu may overlap the trigger to make commands accessible. Keyboard opening focuses the first command; Escape restores the trigger.
 - Desktop: Inline sticky sidebar that can collapse to an icon-only mode; manual collapse/expand is persisted in localStorage.
 
 #### Content Layout

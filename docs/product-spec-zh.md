@@ -574,7 +574,7 @@ packing-list/
 
 - 手機與窄桌面: 抽屜式設計，teleport 至 `body` 並覆蓋主內容，搭配半透明遮罩；點擊遮罩關閉
 - 抽屜開啟時移入焦點、Tab／Shift+Tab 循環、Escape 關閉並回焦入口。背景為 inert；上層 dialog 擁有焦點時抽屜也為 inert。只有高度變化的 resize 保留抽屜狀態，最後一個 modal 關閉後由 App 還原原本的 body 捲動設定。
-- 短命令選單 teleport 至卡片 transform 之外，依 visual viewport 空間在入口上方／下方展開，空間有限時內部捲動。鍵盤開啟時聚焦首個命令，Escape 回焦入口。
+- 短命令選單 teleport 至卡片 transform 之外，依 visual viewport 空間在入口上方／下方展開，空間有限時內部捲動。若兩側空間都放不下一個完整命令，選單可以覆蓋入口，使命令仍可操作。鍵盤開啟時聚焦首個命令，Escape 回焦入口。
 - 桌面: 固定顯示，可手動收合為圖示模式；收合狀態會寫入 localStorage 以便記憶
 
 #### Content Layout 內容佈局

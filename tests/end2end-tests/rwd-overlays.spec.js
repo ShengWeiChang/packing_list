@@ -217,6 +217,11 @@ test('short dialogs and narrow date editing fit without horizontal overflow', as
   await createList(page);
   await page.setViewportSize({ width: 320, height: 200 });
   await page.evaluate(() => (document.documentElement.style.fontSize = '200%'));
+  // Force a command taller than the space on either side of the trigger.
+  // This exercises the fallback even when system fonts have different metrics.
+  const oversizedActions = await page.addStyleTag({
+    content: '[data-testid^="overflow-dropdown-checklist-"] > button { min-height: 120px; }',
+  });
   const checklistTrigger = page.locator('[data-testid^="overflow-trigger-checklist-"]').last();
   await checklistTrigger.tap();
   const menu = page.locator('[data-testid^="overflow-dropdown-checklist-"]');
@@ -246,6 +251,54 @@ test('short dialogs and narrow date editing fit without horizontal overflow', as
     .toBe(true);
   await page.keyboard.press('Escape');
   await expect(menu).toHaveCount(0);
+  await expect(checklistTrigger).toBeFocused();
+  await checklistTrigger.tap();
+  await expect(menu).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 240 });
+  await expect.poll(async () => (await menu.boundingBox()).y).toBeGreaterThanOrEqual(0);
+  await expect
+    .poll(async () => {
+      const box = await menu.boundingBox();
+      return box.y + box.height;
+    })
+    .toBeLessThanOrEqual(240);
+  const saveTemplate = page.locator('[data-testid^="overflow-action-save-template-checklist-"]');
+  await saveTemplate.scrollIntoViewIfNeeded();
+  await saveTemplate.tap();
+  await expect(page.getByTestId('save-template-name')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await oversizedActions.evaluate((element) => element.remove());
+  await page.setViewportSize({ width: 320, height: 200 });
+  await page.evaluate(() => {
+    const observer = new MutationObserver(() => {
+      const button = document.querySelector(
+        '[data-testid^="overflow-action-save-template-checklist-"]'
+      );
+      if (!button) return;
+      observer.disconnect();
+      button.lastChild.textContent = 'Save packing checklist as travel template';
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+  await checklistTrigger.tap();
+  await expect(menu).toBeVisible();
+  await expect(saveTemplate).toContainText('Save packing checklist as travel template');
+  await expect
+    .poll(() => saveTemplate.evaluate((button) => button.getBoundingClientRect().height))
+    .toBeGreaterThan(80);
+  await saveTemplate.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() =>
+      saveTemplate.evaluate((button) => {
+        const action = button.getBoundingClientRect();
+        const container = button.parentElement.getBoundingClientRect();
+        return action.top >= container.top - 1 && action.bottom <= container.bottom + 1;
+      })
+    )
+    .toBe(true);
+  await saveTemplate.tap();
+  await expect(page.getByTestId('save-template-name')).toBeVisible();
+  await page.keyboard.press('Escape');
   await page.evaluate(() => (document.documentElement.style.fontSize = ''));
   await page.setViewportSize({ width: 320, height: 300 });
   await page.getByTestId('checklist-name').click();

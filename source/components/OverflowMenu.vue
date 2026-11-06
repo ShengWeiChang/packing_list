@@ -258,7 +258,7 @@ const portalTarget = ref<HTMLElement | string>('body');
 
 // Dropdown styling
 const dropdownClass = computed(
-  () => `mt-1 bg-white border border-border-color-light rounded-md shadow-lg z-50 w-auto max-w-xs`
+  () => `bg-white border border-border-color-light rounded-md shadow-lg z-50 w-auto max-w-xs`
 );
 
 // ------------------------------------------------------------------------------
@@ -294,15 +294,27 @@ defineExpose({ focusTrigger });
 function positionDropdown() {
   if (!showMenu.value || !buttonRef.value || !dropdownRef.value) return;
   const btnRect = buttonRef.value.getBoundingClientRect();
-  const ddRect = dropdownRef.value.getBoundingClientRect();
-
   const viewport = window.visualViewport;
-  dropdownStyle.value = positionDropdownWithinViewport(btnRect, ddRect, {
-    left: viewport?.offsetLeft ?? 0,
-    top: viewport?.offsetTop ?? 0,
-    width: viewport?.width ?? window.innerWidth,
-    height: viewport?.height ?? window.innerHeight,
-  });
+  const viewportWidth = viewport?.width ?? window.innerWidth;
+  dropdownRef.value.style.maxWidth = `${Math.max(1, viewportWidth - 16)}px`;
+  const ddRect = dropdownRef.value.getBoundingClientRect();
+  const borders = dropdownRef.value.offsetHeight - dropdownRef.value.clientHeight;
+  const actionHeights = Array.from(
+    dropdownRef.value.querySelectorAll('button'),
+    (button) => button.getBoundingClientRect().height
+  );
+  const minVisibleHeight = Math.max(0, ...actionHeights) + borders;
+  dropdownStyle.value = positionDropdownWithinViewport(
+    btnRect,
+    { width: ddRect.width, height: dropdownRef.value.scrollHeight + borders },
+    {
+      left: viewport?.offsetLeft ?? 0,
+      top: viewport?.offsetTop ?? 0,
+      width: viewportWidth,
+      height: viewport?.height ?? window.innerHeight,
+    },
+    minVisibleHeight
+  );
 }
 
 /** Dismiss a keyboard-opened menu and return to its trigger. */

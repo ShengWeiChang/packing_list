@@ -65,7 +65,8 @@ export function positionDropdownAbove(
 export function positionDropdownWithinViewport(
   anchor: Pick<DOMRect, 'right' | 'top' | 'bottom'>,
   menu: Pick<DOMRect, 'width' | 'height'>,
-  viewport: { left: number; top: number; width: number; height: number }
+  viewport: { left: number; top: number; width: number; height: number },
+  minVisibleHeight = 0
 ) {
   const edge = 8;
   const gap = 6;
@@ -74,7 +75,10 @@ export function positionDropdownWithinViewport(
   const below = Math.max(0, bottomEdge - anchor.bottom - gap);
   const above = Math.max(0, anchor.top - gap - topEdge);
   const openAbove = menu.height > below && above > below;
-  const maxHeight = Math.max(1, openAbove ? above : below);
+  const available = Math.max(1, openAbove ? above : below);
+  const viewportHeight = Math.max(1, bottomEdge - topEdge);
+  const overlapAnchor = available < Math.min(minVisibleHeight, viewportHeight);
+  const maxHeight = overlapAnchor ? viewportHeight : available;
   const height = Math.min(menu.height, maxHeight);
   const left = Math.max(
     viewport.left + edge,
@@ -82,7 +86,10 @@ export function positionDropdownWithinViewport(
   );
   const top = Math.max(
     topEdge,
-    Math.min(openAbove ? anchor.top - gap - height : anchor.bottom + gap, bottomEdge - height)
+    Math.min(
+      overlapAnchor ? topEdge : openAbove ? anchor.top - gap - height : anchor.bottom + gap,
+      bottomEdge - height
+    )
   );
   return {
     position: 'fixed' as const,

@@ -28,6 +28,14 @@ describe('positioning utils', () => {
     expect(tall.top).toBe('48px');
     expect(tall.maxHeight).toBe('246px');
     expect(tall.overflowY).toBe('auto');
+    const short = positionDropdownWithinViewport(
+      { right: 220, top: 80, bottom: 130 },
+      { width: 160, height: 400 },
+      { left: 0, top: 0, width: 320, height: 200 },
+      80
+    );
+    expect(short.top).toBe('8px');
+    expect(short.maxHeight).toBe('184px');
   });
   // ---------------------------------------------------------------------------
   // Test Group 1: Dropdown Positioning

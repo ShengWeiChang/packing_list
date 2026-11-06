@@ -60,6 +60,30 @@ test('WebKit short dialogs and date fields fit the narrow viewport', async ({ pa
   expect(bounds.y + bounds.height).toBeLessThanOrEqual(300);
   await selectGeneralRecommendedList(page);
   await page.getByTestId('checklist-name-input').press('Enter');
+  await page.setViewportSize({ width: 320, height: 200 });
+  await page.evaluate(() => (document.documentElement.style.fontSize = '300%'));
+  const oversizedActions = await page.addStyleTag({
+    content: '[data-testid^="overflow-dropdown-checklist-"] > button { min-height: 120px; }',
+  });
+  const trigger = page.locator('[data-testid^="overflow-trigger-checklist-"]').last();
+  await trigger.tap();
+  const menu = page.locator('[data-testid^="overflow-dropdown-checklist-"]');
+  await expect(menu).toBeVisible();
+  await expect.poll(async () => (await menu.boundingBox()).y).toBeGreaterThanOrEqual(0);
+  await expect
+    .poll(async () => {
+      const box = await menu.boundingBox();
+      return box.y + box.height;
+    })
+    .toBeLessThanOrEqual(200);
+  const saveTemplate = page.locator('[data-testid^="overflow-action-save-template-checklist-"]');
+  await saveTemplate.scrollIntoViewIfNeeded();
+  await saveTemplate.tap();
+  await expect(page.getByTestId('save-template-name')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await oversizedActions.evaluate((element) => element.remove());
+  await page.evaluate(() => (document.documentElement.style.fontSize = ''));
+  await page.setViewportSize({ width: 320, height: 300 });
   await page.getByTestId('checklist-name').click();
   for (const field of await page.locator('input[type="date"]').all()) {
     const box = await field.boundingBox();
