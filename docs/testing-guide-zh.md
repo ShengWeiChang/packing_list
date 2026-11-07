@@ -14,10 +14,10 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 743    |
+| Total tests 總測試數          | 751    |
 | Unit tests 單元測試           | 309    |
 | Component tests 組件測試      | 304    |
-| E2E tests E2E 測試            | 130    |
+| E2E tests E2E 測試            | 138    |
 | Line coverage 行覆蓋率        | 90.48% |
 | Statement coverage 語句覆蓋率 | 88.36% |
 | Branch coverage 分支覆蓋率    | 79.11% |
@@ -31,7 +31,7 @@
 | --------- | ------------------------ | ----- | ------------------------------------------- |
 | Unit      | Vitest                   | 309   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 304   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 130   | 真實瀏覽器中的完整使用者流程                |
+| E2E       | Playwright               | 138   | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
@@ -123,7 +123,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 130 tests
+└── end2end-tests/                       # 138 tests
     ├── touchDragHelpers.js              # 長按微動與原生捲動手勢
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
@@ -137,6 +137,7 @@ tests/
     ├── category-crud.spec.js            #  3  tests
     ├── drag-and-drop.spec.js            #  7  tests
     ├── desktop-drag-presentation.spec.js # 19  tests
+    ├── category-motion.spec.js          #  8  tests
     ├── multi-tab-sync.spec.js           #  6  tests
     ├── template-management.spec.js      #  7  tests
     ├── recommended-lists.spec.js        #  1  test
@@ -1112,7 +1113,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 9   | renders localized Traditional Chinese sticker copy                     | 語系文字與緊湊日期範圍 |
 | 10  | exposes one synchronized timeline to JavaScript and CSS                | 共用時間軸契約         |
 
-### 8.3 E2E Tests（130）
+### 8.3 E2E Tests（138）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1323,3 +1324,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 17  | shows projected progress when moving into a fully packed category      | 已打包分類的預覽進度         |
 | 18  | packs only remaining source items after the pending move saves         | 來源分類打包不含移走物品     |
 | 19  | keeps the pending drop correct while the packed filter changes         | 儲存期間切換過濾保留預覽     |
+
+#### 8.3.17 category-motion.spec.js（8）
+
+| #   | Test                                                             | 驗證內容                       |
+| --- | ---------------------------------------------------------------- | ------------------------------ |
+| 1   | desktop: animates category reflow when a tall category collapses | 桌面換欄重排                   |
+| 2   | desktop: animates category siblings before releasing a drag      | 桌面放手前讓位與排序保存       |
+| 3   | tablet: animates category reflow when a tall category collapses  | 平板換欄重排                   |
+| 4   | tablet: animates category siblings before releasing a drag       | 觸控啟動、放手前位移與排序保存 |
+| 5   | phone: animates category reflow when a tall category collapses   | 單欄重排與展開時避免重疊       |
+| 6   | phone: animates category siblings before releasing a drag        | 觸控啟動、放手前位移與排序保存 |
+| 7   | settles rapid collapse reversals and viewport changes            | 反向操作、清理與無水平溢位     |
+| 8   | honors reduced motion and cancels active reflow                  | 即時動態偏好與直接完成版面     |

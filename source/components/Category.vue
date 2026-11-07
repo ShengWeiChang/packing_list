@@ -273,10 +273,10 @@ import type {
 import Item from './Item.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import ProgressBar from './ProgressBar.vue';
-import { draggableFor, useTouchDragThreshold } from './typedDraggable';
+import { draggableFor, useDraggableControls } from './typedDraggable';
 
 const draggable = draggableFor<Readonly<ItemDTO>>();
-const itemDraggable = useTouchDragThreshold();
+const itemDraggable = useDraggableControls();
 
 // ------------------------------------------------------------------------------
 // Props & Emits
@@ -739,6 +739,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+@media (prefers-reduced-motion: reduce) {
+  [data-testid='category-items-container'] {
+    transition: none;
+  }
+}
 [data-testid='category-collapse-toggle'] {
   -webkit-tap-highlight-color: transparent;
 }

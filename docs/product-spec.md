@@ -365,8 +365,8 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Implementation: Uses **CSS Columns (Masonry)** layout.
     - Characteristics:
       - Pros: High space utilization; category cards of varying heights stack tightly like bricks with no vertical gaps.
-      - Cons: No smooth sliding animation during drag (due to browser recalculating columns causing instant jumps); layout order is "top-to-bottom, then left-to-right" (N-shaped), unlike the Z-shaped order of a horizontal grid; new items may appear at the bottom of the first column instead of the far right.
-    - Decision: To achieve optimal space utilization and visual aesthetics on wide screens, the masonry layout is retained, accepting the limitation of a less fluid dragging feel.
+      - Trade-off: Height changes can redistribute cards between columns. Reading order remains "top-to-bottom, then left-to-right" (N-shaped); a new card may appear below the first column rather than at the far right.
+    - Decision: Retain compact masonry and animate displaced cards during category dragging and collapse/expand reflow, so the prospective layout is visible before release.
 - Key features:
   - Checklist dragging (`Sidebar.vue` with `vuedraggable` group: `checklists`):
     - Reorder checklists in the sidebar; after drop, set checklists' `order = 0..n`.
@@ -379,7 +379,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Cross-category move: Update the moved item’s `categoryId`; insert before the next visible target item, or at the complete target-category end when dropped after all visible items or when none are visible; renumber both source and target categories to `order = 0..n`.
     - Drop restriction: Only allow drops within item containers (`group.put` check).
   - Visuals & motion:
-    - `ghost/chosen/drag` classes for translucent, grab, and scale effects, ~200ms animations; keep masonry layout stable while dragging.
+    - `ghost/chosen/drag` distinguish the insertion placeholder from the grabbed visual. Category movement uses approximately 200ms easing through one Sortable animation owner; the floating preview follows the pointer without easing. Reduced motion disables sorting and collapse movement.
     - On desktop, a dropped item or category remains at its previewed position while its save finishes. If the save fails, the visible order returns to the refreshed stored state; if only the follow-up read fails, the saved preview remains visible while the existing warning is shown.
     - Category progress and packing controls reflect the displayed items during a pending move. A category packing request waits for its relevant moves to save and refresh; if a move or its follow-up read fails, that packing request is cancelled and the existing error or warning remains visible.
     - An item dragged into a category with no visible items appears above Add Item during the drag, pushing the button down. Moving the pointer after a drop restores normal hover feedback; the source's next item or Add Item button does not retain a stale highlight.
@@ -475,8 +475,9 @@ packing-list/
     │   ├── TemplateEditor.vue        # Isolated personal template editor
     │   ├── Topbar.vue                # Top bar for mobile
     │   ├── componentContracts.ts     # Shared component action/event/draft types
-    │   └── typedDraggable.ts         # Typed draggable and touch-hold adapter
+    │   └── typedDraggable.ts         # Typed drag controls and animation adapter
     ├── composables/                  # Vue composables (state + logic)
+    │   ├── useMasonryMotion.ts        # Observed column reflow through Sortable motion
     │   ├── usePackingLists.ts        # Core state and CRUD logic
     │   ├── useTemplates.ts           # Template state and CRUD logic
     │   ├── useTouchLayout.ts         # Checklist input-capability subscriptions

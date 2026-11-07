@@ -212,7 +212,8 @@ Created: 2025-09-19
           pull: true,
           put: putOnlyFromGroup('categories'),
         }"
-        :animation="200"
+        :animation="animationDuration"
+        easing="cubic-bezier(0.2, 0, 0, 1)"
         :ghost-class="'ghost-category'"
         :chosen-class="'chosen-category'"
         :drag-class="'drag-category'"
@@ -290,6 +291,7 @@ import {
 } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { useMasonryMotion } from '../composables/useMasonryMotion';
 import { useTouchLayout } from '../composables/useTouchLayout';
 import type { CategoryDTO, ChecklistDTO, ItemDTO } from '../models/contracts';
 import { isolateDragPreview, putOnlyFromGroup } from '../utils/dragDrop';
@@ -313,7 +315,7 @@ import type {
 import OverflowMenu from './OverflowMenu.vue';
 import PendingItemsCategory from './PendingItemsCategory.vue';
 import ProgressBar from './ProgressBar.vue';
-import { draggableFor, useTouchDragThreshold } from './typedDraggable';
+import { draggableFor, useDraggableControls } from './typedDraggable';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
@@ -322,7 +324,8 @@ import { draggableFor, useTouchDragThreshold } from './typedDraggable';
 const { t } = useI18n();
 
 const draggable = draggableFor<Readonly<CategoryDTO>>();
-const categoryDraggable = useTouchDragThreshold();
+const categoryDraggable = useDraggableControls();
+const { animationDuration } = useMasonryMotion(categoryDraggable, () => isDraggingCategory.value);
 
 // ------------------------------------------------------------------------------
 // Props & Emits
@@ -1077,26 +1080,12 @@ onUnmounted(() => cleanupEditingFocus());
   margin-bottom: 0.75rem; /* gap-3 */
   display: inline-block;
   width: 100%;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Sortable updates the preview transform from its current matrix on every touch move. */
 .category-item.sortable-fallback {
   transition: none;
   transform: none;
-}
-
-/* Layout preservation during drag */
-.categories-masonry.dragging > * {
-  transition:
-    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, opacity;
-}
-
-/* Smooth transitions for masonry items */
-.categories-masonry > * {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Success animation */

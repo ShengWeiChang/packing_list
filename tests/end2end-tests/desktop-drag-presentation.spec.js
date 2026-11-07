@@ -655,6 +655,14 @@ test('keeps unequal category cards at the cross-column drop position', async ({ 
         requestAnimationFrame(frame);
       })
   );
+  // Re-enter the resting target after the final sibling animation, like a small hand adjustment.
+  await page.mouse.move(endX - 2, endY - 2);
+  await page.mouse.move(endX, endY);
+  await page.evaluate(async () => {
+    await Promise.all(
+      document.getAnimations().map((animation) => animation.finished.catch(() => {}))
+    );
+  });
   const preview = await source.boundingBox();
   const targetPreview = await target.boundingBox();
   expect(Math.abs(preview.x - original.x)).toBeGreaterThan(100);

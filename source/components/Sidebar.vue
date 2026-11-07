@@ -335,7 +335,7 @@ import type { ChecklistDTO } from '../models/contracts';
 import AppIcon from './AppIcon.vue';
 import type { DragStart, TemplateView } from './componentContracts';
 import OverflowMenu from './OverflowMenu.vue';
-import { draggableFor, useTouchDragThreshold } from './typedDraggable';
+import { draggableFor, useDraggableControls } from './typedDraggable';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
@@ -352,7 +352,7 @@ const availableLanguages = [
 ];
 
 const draggable = draggableFor<Readonly<ChecklistDTO>>();
-const checklistDraggable = useTouchDragThreshold();
+const checklistDraggable = useDraggableControls();
 
 // ------------------------------------------------------------------------------
 // Props & Emits

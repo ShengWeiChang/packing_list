@@ -968,6 +968,12 @@ test('preserves touch sorting while excluding action buttons', async ({
       await card.getByTestId('item-edit-input').press('Escape');
       if (densePage.viewportSize().width < 600) {
         await densePage.getByTestId('topbar-toggle').tap();
+        await expect
+          .poll(
+            async () =>
+              (await densePage.getByRole('complementary', { name: 'Sidebar' }).boundingBox()).x
+          )
+          .toBe(0);
       }
       await checkTouchHold(
         densePage,
@@ -987,14 +993,22 @@ test('persists category sorting across tablet columns', async ({ page, context }
   for (const button of await page.getByTestId('category-collapse-toggle').all()) {
     if ((await button.getAttribute('aria-expanded')) === 'true') await button.tap();
   }
+  // Raw touch coordinates must be captured after the collapse reflow has settled.
+  await page.evaluate(async () => {
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    await Promise.all(
+      document.getAnimations().map((animation) => animation.finished.catch(() => {}))
+    );
+  });
   const cards = page.getByTestId('category-card');
   const boxes = await Promise.all((await cards.all()).map((card) => card.boundingBox()));
-  const targetIndex = boxes.findIndex((box) => box.x > boxes[0].x + 20);
+  const targetIndex = boxes.findLastIndex((box) => box.x > boxes[0].x + 20);
   expect(targetIndex).toBeGreaterThan(0);
   const firstId = await cards.first().getAttribute('data-category-id');
   const source = boxes[0];
   const target = boxes[targetIndex];
-  const start = { x: source.x + 5, y: source.y + 5 };
+  const title = await cards.first().getByTestId('category-name').boundingBox();
+  const start = { x: title.x + title.width / 2, y: title.y + title.height / 2 };
   const end = { x: target.x + target.width / 2, y: target.y + target.height / 2 };
   const client = await context.newCDPSession(page);
   await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
@@ -1004,6 +1018,7 @@ test('persists category sorting across tablet columns', async ({ page, context }
     touchPoints: [{ x: start.x + 2, y: start.y + 2 }],
   });
   await page.waitForTimeout(240);
+  await expect(page.locator('.chosen-category')).toHaveCount(1);
   for (let step = 1; step <= 20; step++) {
     await client.send('Input.dispatchTouchEvent', {
       type: 'touchMove',

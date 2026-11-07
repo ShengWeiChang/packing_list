@@ -336,12 +336,13 @@ Validation 驗證
 - Composable 集合輸出為深唯讀，選取 ID 仍可寫入 `string | null`，computed 選取實體可能為 `undefined`。泛型 loader 保留 `T | null`，寫入成功與刷新失敗分別回報；packing-only history 只保存不可變的狀態快照。
 - `componentContracts.ts` 定義共用 action／event／draft 契約；runtime props 的 constructor、required、default 與 validator 保留，事件 tuple 保留可選第二個 baseline。儲存 callback 為 Promise，失敗可能回傳 null；App 的泛型 action runner 保留完整參數及回傳型別。
 - `typedDraggable.ts` 只描述實際使用的 vuedraggable 4.1.0 API，以同一 runtime 元件提供依 list entity 型別化的 model、item slot 與 change payload；此具依據的第三方 assertion 不新增 wrapper，也不容許 any 擴散。`vueAttributes.d.ts` 僅補充 data attributes，沒有通用元件 shim。
-- Facade 的 `useTouchDragThreshold` 管理 vuedraggable 4.1.0 `_sortable` 邊界，在建構後及手勢前透過 Sortable `option()` API 重設長按移動門檻。它統一 native／fallback 的 DPR 差異，並在卸載時移除 listeners；升級相依套件時須重查此版本相關邊界與觸控微動測試。
+- Facade 的 `useDraggableControls` 管理 vuedraggable 4.1.0 `_sortable` 邊界，在建構後及手勢前透過 Sortable `option()` API 重設長按移動門檻。它統一 native／fallback 的 DPR 差異，並在卸載時移除 listeners；升級相依套件時須重查此版本相關邊界與觸控微動測試。它也套用目前減少動態偏好的排序設定。
 - Legacy 日期在元件 props／draft 中仍為 unknown；狹窄 DOM、RegExp 與 Date／比較操作的 assertion 保留原生轉換行為，不代表資料已驗證。唯讀範本的 baseline 複製 snapshot records 與 arrays 後傳入既有 DTO service 契約，保留相同欄位與比較內容。
 - 已接受的依賴限制：沿用 Vue base config 的 `skipLibCheck: true`，因 vue-i18n 11.4.16 匯入 Vue 3.5.44 未提供的 `GenericComponentInstance`（TS2724）。此設定略過 `.d.ts` 內部檢查，包含本地 declarations；應用／模板程式與 API 使用仍受檢查。Vue／i18n 升級時重新評估，宣告不相容修復後移除此例外。
 
 ### 3.12 Responsive Interaction Ownership 響應式互動責任
 
+- `useMasonryMotion` 僅觀測分類尺寸與直接子節點變動，將重排交給同一 Sortable 動畫 state manager；分類拖曳時交由原生 drag-over 動畫處理。分類高度過渡時，同欄卡片直接跟隨排版變化，換欄仍以動畫移動。不可在 wrapper 另加互搶的 transform transition。Resize、減少動態與卸載會清理所管理的 timer／transform；浮動預覽獨立處理。
 - `useTouchLayout` 管理 Checklist 輸入能力訂閱與清理，Sidebar 寬度門檻獨立；Checklist 擁有一次展開的物品 ID，Category 轉送，Item 保留編輯／草稿狀態。不得持久化展開或複製 mutation handlers。
 - 保留可用版面空間與輸入能力的產品區分：寬的觸控檢視可以多欄，混合裝置仍必須能以觸控開啟物品操作。不要只用裝置名稱或 viewport 寬度推斷 hover 能力。
 - 兩個改名入口共用編輯器。編輯中接著執行其他操作時，維持先儲存再操作的順序與失敗草稿；僅展開操作區不得聚焦輸入框或讓物品名稱重新排版。點外關閉不可吞掉目標點擊；單純捲動不可觸發點外操作。

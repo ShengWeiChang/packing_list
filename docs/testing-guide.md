@@ -14,10 +14,10 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 743    |
+| Total tests        | 751    |
 | Unit tests         | 309    |
 | Component tests    | 304    |
-| E2E tests          | 130    |
+| E2E tests          | 138    |
 | Line coverage      | 90.48% |
 | Statement coverage | 88.36% |
 | Branch coverage    | 79.11% |
@@ -31,7 +31,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
 | Unit      | Vitest                   | 309   | Pure logic in models, services, composables, utils |
 | Component | Vitest + @vue/test-utils | 304   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 130   | Full user flows in a real browser                  |
+| E2E       | Playwright               | 138   | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -123,7 +123,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 130 tests
+└── end2end-tests/                       # 138 tests
     ├── touchDragHelpers.js              # Hold-motion and native-scroll gestures
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
@@ -137,6 +137,7 @@ tests/
     ├── category-crud.spec.js            #  3  tests
     ├── drag-and-drop.spec.js            #  7  tests
     ├── desktop-drag-presentation.spec.js # 19  tests
+    ├── category-motion.spec.js          #  8  tests
     ├── multi-tab-sync.spec.js           #  6  tests
     ├── template-management.spec.js      #  7  tests
     ├── recommended-lists.spec.js        #  1  test
@@ -1112,7 +1113,7 @@ This project uses three layers to balance speed and reliability.
 | 9   | renders localized Traditional Chinese sticker copy                     | Locale-aware copy and compact date range |
 | 10  | exposes one synchronized timeline to JavaScript and CSS                | Shared timing contract                   |
 
-### 8.3 E2E Tests (130 tests)
+### 8.3 E2E Tests (138 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -1323,3 +1324,16 @@ This project uses three layers to balance speed and reliability.
 | 17  | shows projected progress when moving into a fully packed category      | Projected progress in a packed category                  |
 | 18  | packs only remaining source items after the pending move saves         | Source packing excludes the moved item                   |
 | 19  | keeps the pending drop correct while the packed filter changes         | Preserve pending placement when the filter changes       |
+
+#### 8.3.17 category-motion.spec.js (8 tests)
+
+| #   | Test                                                             | What it verifies                                      |
+| --- | ---------------------------------------------------------------- | ----------------------------------------------------- |
+| 1   | desktop: animates category reflow when a tall category collapses | Desktop cross-column reflow                           |
+| 2   | desktop: animates category siblings before releasing a drag      | Desktop drag-over animation and persisted order       |
+| 3   | tablet: animates category reflow when a tall category collapses  | Tablet cross-column reflow                            |
+| 4   | tablet: animates category siblings before releasing a drag       | Touch activation, pre-drop motion and persisted order |
+| 5   | phone: animates category reflow when a tall category collapses   | Single-column reflow and overlap-free expansion       |
+| 6   | phone: animates category siblings before releasing a drag        | Touch activation, pre-drop motion and persisted order |
+| 7   | settles rapid collapse reversals and viewport changes            | Interruption, cleanup and no horizontal overflow      |
+| 8   | honors reduced motion and cancels active reflow                  | Live motion preference and immediate layout           |
