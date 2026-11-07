@@ -8,6 +8,8 @@ License: MIT (SPDX: MIT)
 
 import { expect, test } from '@playwright/test';
 
+import { checkTouchHold } from './touchDragHelpers.js';
+
 const scenarios = [
   { name: 'phone', viewport: { width: 390, height: 844 }, hasTouch: true },
   { name: 'tablet', viewport: { width: 820, height: 1180 }, hasTouch: true },
@@ -114,6 +116,16 @@ for (const scenario of scenarios) {
         const labels = sidebar.locator('[data-sidebar-label]');
         await expect(labels).toHaveCount(3);
         for (const label of await labels.all()) await expect(label).toHaveCSS('opacity', '1');
+        if (scenario.hasTouch && locale === 'en') {
+          const client = await page.context().newCDPSession(page);
+          await checkTouchHold(page, client, sidebar.getByTestId('sidebar-checklist-item').first());
+          await checkTouchHold(
+            page,
+            client,
+            sidebar.locator('[data-testid^=overflow-trigger-checklist-]').first(),
+            { shouldDrag: false }
+          );
+        }
         const labelStyles = await labels.evaluateAll((elements) =>
           elements.map((element) => {
             const style = getComputedStyle(element);

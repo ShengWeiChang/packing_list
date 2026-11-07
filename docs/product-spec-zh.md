@@ -292,7 +292,7 @@
     - 桌面（≥1000px）：`Sidebar` 採固定佈局（`sticky top-0`），可展開 `w-52`/收合 `w-16`，桌面手動收合狀態記錄於 `localStorage('sidebar-manually-collapsed')`。
   - 手機版優化 (Mobile Optimization)：
     - 互動優化：
-      - 長按拖曳：為防止誤觸，手機版拖曳需長按 200ms 觸發（`vuedraggable` 設定）。
+      - 長按拖曳：手機與平板保留長按 200ms，容忍手指小幅移動。長按完成前開始滑動會取消拖曳，讓頁面正常捲動；短點及管理控制項保留原有操作。
       - 觸控區域：核心控制採 44×44 CSS px 產品目標，以實際 button／label 而非圖示量測；這不代表完整 WCAG 合規宣告。
       - 鍵盤避讓：以防止捲動的方式聚焦編輯輸入框；使用 visual viewport 與 scrollport 範圍的交集、最小無動畫捲動與可縮小的舒適留白。Dialog 表面跟隨可見 viewport 範圍，必要時在內部捲動。
       - 輸入能力：`useTouchLayout` 在 Checklist 內共用寬度（<768px）、任一 coarse pointer 與 no-hover queries 並清理訂閱。觸控安全呈現獨立於 Sidebar 斷點；混合裝置實際 touch 點物品三點也可開列內操作。
@@ -475,7 +475,7 @@ packing-list/
     │   ├── TemplateEditor.vue        # 獨立個人範本 editor
     │   ├── Topbar.vue                # 手機版頂部工具欄
     │   ├── componentContracts.ts     # 共用元件 action／event／draft 型別
-    │   └── typedDraggable.ts         # 依 entity 型別化的拖曳介面
+    │   └── typedDraggable.ts         # 型別化拖曳與觸控長按 adapter
     ├── composables/                  # Vue組合式函數
     │   ├── usePackingLists.ts        # 核心業務邏輯組合函數
     │   ├── useTemplates.ts           # 範本 state 與 CRUD 邏輯

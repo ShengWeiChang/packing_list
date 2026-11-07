@@ -124,6 +124,7 @@ tests/
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
 └── end2end-tests/                       # 130 tests
+    ├── touchDragHelpers.js              # 長按微動與原生捲動手勢
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
     ├── rwd-overlays.spec.js             #  5  tests
@@ -1259,16 +1260,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 #### 8.3.12 rwd-phone.spec.js (8 tests)
 
-| #   | Test                                                                  | 驗證內容                                             |
-| --- | --------------------------------------------------------------------- | ---------------------------------------------------- |
-| 1   | touch actions remain open and persist quantity and pending state      | 手機命中區、選單、待買字級與持久化操作               |
-| 2   | keeps name geometry stable and makes checkbox edges actionable        | 名稱幾何與真實命中                                   |
-| 3   | switches one open item and shares the direct rename flow              | 一次一件展開與改名                                   |
-| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、收合側欄裁切、觸控選單與密度               |
-| 5   | retains hover quick controls and the desktop command menu             | 桌面整列回饋、選單關閉、focus 與文字對齊             |
-| 6   | preserves touch sorting while excluding action buttons                | 手機／平板抓取位置、捲動／取消／卸載清理與持久化排序 |
-| 7   | persists category sorting across tablet columns                       | 跨欄觸控抓取位置與排序保存                           |
-| 8   | moves an unpacked item into an all-hidden category by touch           | 觸控拖放至已篩選分類與重載                           |
+| #   | Test                                                                  | 驗證內容                                                |
+| --- | --------------------------------------------------------------------- | ------------------------------------------------------- |
+| 1   | touch actions remain open and persist quantity and pending state      | 手機命中區、選單、待買字級與持久化操作                  |
+| 2   | keeps name geometry stable and makes checkbox edges actionable        | 名稱幾何與真實命中                                      |
+| 3   | switches one open item and shares the direct rename flow              | 一次一件展開與改名                                      |
+| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、收合側欄裁切、觸控選單與密度                  |
+| 5   | retains hover quick controls and the desktop command menu             | 桌面整列回饋、選單關閉、focus 與文字對齊                |
+| 6   | preserves touch sorting while excluding action buttons                | 手機／平板長按微動、DPR、原生捲動、抓取位置、清理與排序 |
+| 7   | persists category sorting across tablet columns                       | 長按微動、跨欄抓取位置與排序保存                        |
+| 8   | moves an unpacked item into an all-hidden category by touch           | 觸控拖放至已篩選分類與重載                              |
 
 #### 8.3.13 rwd-overlays.spec.js（5）
 
@@ -1290,14 +1291,14 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 #### 8.3.15 sidebar-presentation.spec.js（6）
 
-| #   | Test                                                    | 測試重點                                     |
-| --- | ------------------------------------------------------- | -------------------------------------------- |
-| 1   | phone: sidebar presentation stays consistent in en      | 入口標籤、選單幾何、手機清單捲動與 Escape    |
-| 2   | phone: sidebar presentation stays consistent in zh-TW   | 在地化入口標籤、選單幾何與手機清單捲動       |
-| 3   | tablet: sidebar presentation stays consistent in en     | 收合禁止觸控捲動、完整字首與選單幾何         |
-| 4   | tablet: sidebar presentation stays consistent in zh-TW  | 收合禁止捲動、中文字首與選單幾何             |
-| 5   | desktop: sidebar presentation stays consistent in en    | 收合禁止捲動、完整字首、縮放與焦點恢復       |
-| 6   | desktop: sidebar presentation stays consistent in zh-TW | 收合禁止捲動、中文字首與 ResizeObserver 後備 |
+| #   | Test                                                    | 測試重點                                              |
+| --- | ------------------------------------------------------- | ----------------------------------------------------- |
+| 1   | phone: sidebar presentation stays consistent in en      | 入口標籤、長按微動／三點排除、選單、清單捲動與 Escape |
+| 2   | phone: sidebar presentation stays consistent in zh-TW   | 在地化入口標籤、選單幾何與手機清單捲動                |
+| 3   | tablet: sidebar presentation stays consistent in en     | 長按微動／三點排除、收合捲動鎖、字首與選單幾何        |
+| 4   | tablet: sidebar presentation stays consistent in zh-TW  | 收合禁止捲動、中文字首與選單幾何                      |
+| 5   | desktop: sidebar presentation stays consistent in en    | 收合禁止捲動、完整字首、縮放與焦點恢復                |
+| 6   | desktop: sidebar presentation stays consistent in zh-TW | 收合禁止捲動、中文字首與 ResizeObserver 後備          |
 
 #### 8.3.16 desktop-drag-presentation.spec.js（19）
 

@@ -89,11 +89,14 @@ Created: 2025-09-19
           </span>
         </h1>
         <draggable
+          ref="checklistDraggable"
           v-model="draggableChecklists"
           item-key="id"
           tag="ul"
           :delay="200"
           :delay-on-touch-only="true"
+          filter="[data-testid^=overflow-trigger-checklist-]"
+          :prevent-on-filter="false"
           :group="{
             name: 'checklists',
             pull: false,
@@ -332,7 +335,7 @@ import type { ChecklistDTO } from '../models/contracts';
 import AppIcon from './AppIcon.vue';
 import type { DragStart, TemplateView } from './componentContracts';
 import OverflowMenu from './OverflowMenu.vue';
-import { draggableFor } from './typedDraggable';
+import { draggableFor, useTouchDragThreshold } from './typedDraggable';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
@@ -349,6 +352,7 @@ const availableLanguages = [
 ];
 
 const draggable = draggableFor<Readonly<ChecklistDTO>>();
+const checklistDraggable = useTouchDragThreshold();
 
 // ------------------------------------------------------------------------------
 // Props & Emits

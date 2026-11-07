@@ -124,6 +124,7 @@ tests/
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
 └── end2end-tests/                       # 130 tests
+    ├── touchDragHelpers.js              # Hold-motion and native-scroll gestures
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
     ├── rwd-overlays.spec.js             #  5  tests
@@ -1259,16 +1260,16 @@ This project uses three layers to balance speed and reliability.
 
 #### 8.3.12 rwd-phone.spec.js (8 tests)
 
-| #   | Test                                                                  | What it verifies                                                                |
-| --- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| 1   | touch actions remain open and persist quantity and pending state      | Phone targets, menus, to-buy typography and persisted actions                   |
-| 2   | keeps name geometry stable and makes checkbox edges actionable        | Name geometry and real hit areas                                                |
-| 3   | switches one open item and shares the direct rename flow              | Once-one expansion and rename                                                   |
-| 4   | fits tablet categories to available width while keeping touch actions | Tablet columns, sidebar clipping, touch menus and density                       |
-| 5   | retains hover quick controls and the desktop command menu             | Desktop row feedback, menu dismissal, focus and text alignment                  |
-| 6   | preserves touch sorting while excluding action buttons                | Phone/tablet grab position, scroll/cancel/unmount cleanup and persisted reorder |
-| 7   | persists category sorting across tablet columns                       | Cross-column touch grab position and persistence                                |
-| 8   | moves an unpacked item into an all-hidden category by touch           | Touch drop into filtered footer and reload                                      |
+| #   | Test                                                                  | What it verifies                                                                    |
+| --- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| 1   | touch actions remain open and persist quantity and pending state      | Phone targets, menus, to-buy typography and persisted actions                       |
+| 2   | keeps name geometry stable and makes checkbox edges actionable        | Name geometry and real hit areas                                                    |
+| 3   | switches one open item and shares the direct rename flow              | Once-one expansion and rename                                                       |
+| 4   | fits tablet categories to available width while keeping touch actions | Tablet columns, sidebar clipping, touch menus and density                           |
+| 5   | retains hover quick controls and the desktop command menu             | Desktop row feedback, menu dismissal, focus and text alignment                      |
+| 6   | preserves touch sorting while excluding action buttons                | Phone/tablet hold jitter, DPR, native scrolling, grab position, cleanup and reorder |
+| 7   | persists category sorting across tablet columns                       | Hold jitter, cross-column grab position and persistence                             |
+| 8   | moves an unpacked item into an all-hidden category by touch           | Touch drop into filtered footer and reload                                          |
 
 #### 8.3.13 rwd-overlays.spec.js (5 tests)
 
@@ -1290,14 +1291,14 @@ This project uses three layers to balance speed and reliability.
 
 #### 8.3.15 sidebar-presentation.spec.js (6 tests)
 
-| #   | Test                                                    | What it verifies                                                    |
-| --- | ------------------------------------------------------- | ------------------------------------------------------------------- |
-| 1   | phone: sidebar presentation stays consistent in en      | Entry labels, menu geometry, phone list scrolling and Escape        |
-| 2   | phone: sidebar presentation stays consistent in zh-TW   | Localized entry labels, menu geometry and phone list scrolling      |
-| 3   | tablet: sidebar presentation stays consistent in en     | Collapsed touch scroll lock, visible initials and menu geometry     |
-| 4   | tablet: sidebar presentation stays consistent in zh-TW  | Collapsed scroll lock, Chinese initials and menu geometry           |
-| 5   | desktop: sidebar presentation stays consistent in en    | Collapsed scroll lock, visible initials, resize and focus recovery  |
-| 6   | desktop: sidebar presentation stays consistent in zh-TW | Collapsed scroll lock, Chinese initials and ResizeObserver fallback |
+| #   | Test                                                    | What it verifies                                                      |
+| --- | ------------------------------------------------------- | --------------------------------------------------------------------- |
+| 1   | phone: sidebar presentation stays consistent in en      | Entry labels, hold jitter/menu exclusion, menus, scrolling and Escape |
+| 2   | phone: sidebar presentation stays consistent in zh-TW   | Localized entry labels, menu geometry and phone list scrolling        |
+| 3   | tablet: sidebar presentation stays consistent in en     | Hold jitter/menu exclusion, collapsed scroll lock, initials and menus |
+| 4   | tablet: sidebar presentation stays consistent in zh-TW  | Collapsed scroll lock, Chinese initials and menu geometry             |
+| 5   | desktop: sidebar presentation stays consistent in en    | Collapsed scroll lock, visible initials, resize and focus recovery    |
+| 6   | desktop: sidebar presentation stays consistent in zh-TW | Collapsed scroll lock, Chinese initials and ResizeObserver fallback   |
 
 #### 8.3.16 desktop-drag-presentation.spec.js (19 tests)
 

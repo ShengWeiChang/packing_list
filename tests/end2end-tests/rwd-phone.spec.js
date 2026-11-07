@@ -7,9 +7,10 @@ Created: 2026-10-30
 ================================================================================
 */
 
-import { expect, test } from '@playwright/test';
+import { devices, expect, test } from '@playwright/test';
 
 import { selectGeneralRecommendedList } from './checklistHelpers.js';
+import { checkTouchHold, checkTouchScroll } from './touchDragHelpers.js';
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
@@ -820,13 +821,23 @@ async function expectPreviewAtFinger(page, source, start, finger) {
 }
 
 // Test Case 6: Action buttons remain excluded; phone/tablet previews follow touch during sorting, scrolling and cancellation.
-test('preserves touch sorting while excluding action buttons', async ({ page, context }) => {
+test('preserves touch sorting while excluding action buttons', async ({
+  page,
+  context,
+  browser,
+}) => {
   await createList(page);
   const client = await context.newCDPSession(page);
   for (const width of [390, 1024]) {
     await page.setViewportSize({ width, height: 844 });
     const rows = page.getByTestId('category-card').first().getByTestId('item-row');
     const firstId = await rows.nth(0).getAttribute('data-item-id');
+    await checkTouchHold(page, client, rows.nth(0).getByTestId('item-name'));
+    await checkTouchHold(page, client, rows.nth(0).getByTestId('item-name'), {
+      jitter: 8,
+      shouldDrag: false,
+    });
+    await checkTouchScroll(page, client, rows.nth(0).getByTestId('item-name'));
     await (await triggerFor(rows.nth(0))).tap();
     const quantity = Number(
       (await rows.nth(0).getByTestId('item-quantity-value').textContent()).replace(/\D/g, '')
@@ -849,7 +860,12 @@ test('preserves touch sorting while excluding action buttons', async ({ page, co
     const start = { x: name.x + name.width / 2, y: name.y + name.height / 2 };
     const end = { x: start.x, y: target.y + target.height };
     await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
-    await page.waitForTimeout(280);
+    await page.waitForTimeout(60);
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: start.x + 2, y: start.y + 2 }],
+    });
+    await page.waitForTimeout(220);
     for (let step = 1; step <= 8; step++) {
       await client.send('Input.dispatchTouchEvent', {
         type: 'touchMove',
@@ -923,6 +939,45 @@ test('preserves touch sorting while excluding action buttons', async ({ page, co
       await client.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
     }
   }
+  // Exercise both native-capable hybrid and Android fallback setup at high pixel density.
+  for (const device of [
+    { viewport: { width: 1024, height: 844 }, hasTouch: true, isMobile: true },
+    devices['Pixel 7'],
+  ]) {
+    const denseContext = await browser.newContext({
+      ...device,
+      deviceScaleFactor: 3,
+      baseURL: new URL(page.url()).origin,
+    });
+    try {
+      const densePage = await denseContext.newPage();
+      const denseClient = await denseContext.newCDPSession(densePage);
+      await createList(densePage);
+      const card = densePage.getByTestId('category-card').first();
+      await checkTouchHold(densePage, denseClient, card.getByTestId('item-name').first());
+      await checkTouchHold(densePage, denseClient, card.getByTestId('item-name').first(), {
+        jitter: 8,
+        shouldDrag: false,
+      });
+      await checkTouchHold(densePage, denseClient, card.getByTestId('category-name'));
+      await checkTouchHold(densePage, denseClient, card.getByTestId('category-checkbox'), {
+        shouldDrag: false,
+      });
+      await card.getByTestId('item-name').first().tap();
+      await expect(card.getByTestId('item-edit-input')).toBeVisible();
+      await card.getByTestId('item-edit-input').press('Escape');
+      if (densePage.viewportSize().width < 600) {
+        await densePage.getByTestId('topbar-toggle').tap();
+      }
+      await checkTouchHold(
+        densePage,
+        denseClient,
+        densePage.getByTestId('sidebar-checklist-item').first()
+      );
+    } finally {
+      await denseContext.close();
+    }
+  }
 });
 
 // Test Case 7: Categories can be touch-dragged between columns and retain their order.
@@ -943,7 +998,12 @@ test('persists category sorting across tablet columns', async ({ page, context }
   const end = { x: target.x + target.width / 2, y: target.y + target.height / 2 };
   const client = await context.newCDPSession(page);
   await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(60);
+  await client.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [{ x: start.x + 2, y: start.y + 2 }],
+  });
+  await page.waitForTimeout(240);
   for (let step = 1; step <= 20; step++) {
     await client.send('Input.dispatchTouchEvent', {
       type: 'touchMove',

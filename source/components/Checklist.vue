@@ -199,6 +199,7 @@ Created: 2025-09-19
     <!-- Categories Grid -->
     <div>
       <draggable
+        ref="categoryDraggable"
         v-model="draggableCategories"
         item-key="id"
         :delay="200"
@@ -312,7 +313,7 @@ import type {
 import OverflowMenu from './OverflowMenu.vue';
 import PendingItemsCategory from './PendingItemsCategory.vue';
 import ProgressBar from './ProgressBar.vue';
-import { draggableFor } from './typedDraggable';
+import { draggableFor, useTouchDragThreshold } from './typedDraggable';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
@@ -321,6 +322,7 @@ import { draggableFor } from './typedDraggable';
 const { t } = useI18n();
 
 const draggable = draggableFor<Readonly<CategoryDTO>>();
+const categoryDraggable = useTouchDragThreshold();
 
 // ------------------------------------------------------------------------------
 // Props & Emits

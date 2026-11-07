@@ -292,7 +292,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Desktop (≥1000px): `Sidebar` is sticky (fixed within layout) and can expand (`w-52`) or collapse (`w-16`); manual collapse state is remembered in `localStorage('sidebar-manually-collapsed')`.
   - Mobile Optimization:
     - Interaction Optimization:
-      - Long Press Drag: To prevent accidental touches, dragging on mobile requires a 200ms long press (configured in `vuedraggable`).
+      - Long Press Drag: Phone and tablet dragging requires a 200ms hold, tolerating small finger movements. Sliding before the hold completes cancels dragging so the page can scroll; short taps and management controls retain their regular actions.
       - Touch Targets: The product target is 44×44 CSS px for core controls, measured on the real button/label rather than its icon. This is not a claim of complete WCAG conformance.
       - Keyboard Avoidance: Focus editing inputs with scroll prevention; use the intersection of visual viewport and scrollport bounds, minimal non-animated scrolling, and a shrinking comfort buffer. Dialog surfaces follow visible viewport bounds and scroll internally when needed.
       - Input capabilities: `useTouchLayout` shares width (<768px), any coarse pointer, and no-hover queries within a Checklist and cleans up subscriptions. Touch-safe presentation is independent of Sidebar breakpoints; actual touch on an item trigger also reaches inline actions on a hybrid device.
@@ -475,7 +475,7 @@ packing-list/
     │   ├── TemplateEditor.vue        # Isolated personal template editor
     │   ├── Topbar.vue                # Top bar for mobile
     │   ├── componentContracts.ts     # Shared component action/event/draft types
-    │   └── typedDraggable.ts         # Entity-typed draggable facade
+    │   └── typedDraggable.ts         # Typed draggable and touch-hold adapter
     ├── composables/                  # Vue composables (state + logic)
     │   ├── usePackingLists.ts        # Core state and CRUD logic
     │   ├── useTemplates.ts           # Template state and CRUD logic

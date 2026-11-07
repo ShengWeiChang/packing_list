@@ -172,6 +172,7 @@ Created: 2025-09-19
       >
         <div class="space-y-1 pt-1">
           <draggable
+            ref="itemDraggable"
             v-model="draggableItems"
             item-key="id"
             :delay="200"
@@ -272,9 +273,10 @@ import type {
 import Item from './Item.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import ProgressBar from './ProgressBar.vue';
-import { draggableFor } from './typedDraggable';
+import { draggableFor, useTouchDragThreshold } from './typedDraggable';
 
 const draggable = draggableFor<Readonly<ItemDTO>>();
+const itemDraggable = useTouchDragThreshold();
 
 // ------------------------------------------------------------------------------
 // Props & Emits
