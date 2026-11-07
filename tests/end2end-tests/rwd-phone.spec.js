@@ -794,42 +794,135 @@ test.describe('mouse desktop', () => {
   });
 });
 
-// Test Case 6: Holding a real touch on a control does not drag; the existing name-area long press can still reorder.
+/**
+ * Check that the rendered preview preserves the grabbed point and original width.
+ * @param {import('@playwright/test').Page} page - Browser page.
+ * @param {{ x: number, y: number, width: number, height: number }} source - Initial source box.
+ * @param {{ x: number, y: number }} start - Initial finger point.
+ * @param {{ x: number, y: number }} finger - Current finger point.
+ */
+async function expectPreviewAtFinger(page, source, start, finger) {
+  const preview = page.locator('.sortable-fallback');
+  await expect(preview).toHaveCount(1);
+  await expect
+    .poll(async () => {
+      const box = await preview.boundingBox();
+      return Math.max(
+        Math.abs(box.x + (box.width * (start.x - source.x)) / source.width - finger.x),
+        Math.abs(box.y + (box.height * (start.y - source.y)) / source.height - finger.y)
+      );
+    })
+    .toBeLessThan(4);
+  expect(Math.abs((await preview.boundingBox()).width - source.width)).toBeLessThan(1);
+  await expect(preview).toHaveCSS('pointer-events', 'none');
+  await expect(preview).toHaveAttribute('inert', '');
+  await expect(preview).toHaveAttribute('aria-hidden', 'true');
+}
+
+// Test Case 6: Action buttons remain excluded; phone/tablet previews follow touch during sorting, scrolling and cancellation.
 test('preserves touch sorting while excluding action buttons', async ({ page, context }) => {
   await createList(page);
-  const rows = page.getByTestId('category-card').first().getByTestId('item-row');
-  const firstId = await rows.nth(0).getAttribute('data-item-id');
   const client = await context.newCDPSession(page);
-  await (await triggerFor(rows.nth(0))).tap();
-  const plus = await rows.nth(0).getByTestId('item-quantity-increment').boundingBox();
-  await client.send('Input.dispatchTouchEvent', {
-    type: 'touchStart',
-    touchPoints: [{ x: plus.x + plus.width / 2, y: plus.y + plus.height / 2 }],
-  });
-  await page.waitForTimeout(280);
-  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await expect(rows.nth(0).getByTestId('item-quantity-value')).toHaveText('×2');
-  expect(await rows.nth(0).getAttribute('data-item-id')).toBe(firstId);
-  await (await triggerFor(rows.nth(0))).tap();
-  const start = await rows.nth(0).getByTestId('item-name').boundingBox();
-  const target = await rows.nth(1).getByTestId('item-name').boundingBox();
-  const x = start.x + start.width / 2;
-  const y = start.y + start.height / 2;
-  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
-  await page.waitForTimeout(280);
-  for (let step = 1; step <= 8; step++) {
+  for (const width of [390, 1024]) {
+    await page.setViewportSize({ width, height: 844 });
+    const rows = page.getByTestId('category-card').first().getByTestId('item-row');
+    const firstId = await rows.nth(0).getAttribute('data-item-id');
+    await (await triggerFor(rows.nth(0))).tap();
+    const quantity = Number(
+      (await rows.nth(0).getByTestId('item-quantity-value').textContent()).replace(/\D/g, '')
+    );
+    const plus = await rows.nth(0).getByTestId('item-quantity-increment').boundingBox();
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: plus.x + plus.width / 2, y: plus.y + plus.height / 2 }],
+    });
+    await page.waitForTimeout(280);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect(rows.nth(0).getByTestId('item-quantity-value')).toHaveText(`×${quantity + 1}`);
+    expect(await rows.nth(0).getAttribute('data-item-id')).toBe(firstId);
+    await expect(page.locator('.sortable-fallback')).toHaveCount(0);
+    await (await triggerFor(rows.nth(0))).tap();
+    await rows.nth(0).scrollIntoViewIfNeeded();
+    const source = await rows.nth(0).locator('..').boundingBox();
+    const name = await rows.nth(0).getByTestId('item-name').boundingBox();
+    const target = await rows.nth(1).getByTestId('item-name').boundingBox();
+    const start = { x: name.x + name.width / 2, y: name.y + name.height / 2 };
+    const end = { x: start.x, y: target.y + target.height };
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
+    await page.waitForTimeout(280);
+    for (let step = 1; step <= 8; step++) {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: end.x, y: start.y + ((end.y - start.y) * step) / 8 }],
+      });
+      await page.waitForTimeout(30);
+    }
+    await expectPreviewAtFinger(page, source, start, end);
+    await page.screenshot({ path: test.info().outputPath(`touch-preview-${width}.png`) });
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect(page.locator('.sortable-fallback')).toHaveCount(0);
+    await expect(rows.nth(1)).toHaveAttribute('data-item-id', firstId);
+    await page.reload();
+    await expect(rows.nth(1)).toHaveAttribute('data-item-id', firstId);
+
+    // A fresh gesture keeps its grab offset when the page scrolls and cleans up on touchcancel.
+    await rows.nth(0).scrollIntoViewIfNeeded();
+    const cancelSource = await rows.nth(0).locator('..').boundingBox();
+    const cancelName = await rows.nth(0).getByTestId('item-name').boundingBox();
+    const cancelStart = {
+      x: cancelName.x + cancelName.width / 3,
+      y: cancelName.y + cancelName.height / 2,
+    };
+    const cancelEnd = { x: cancelStart.x + 13, y: cancelStart.y + 13 };
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [cancelStart],
+    });
+    await page.waitForTimeout(280);
     await client.send('Input.dispatchTouchEvent', {
       type: 'touchMove',
-      touchPoints: [{ x, y: y + ((target.y + target.height - y) * step) / 8 }],
+      touchPoints: [{ x: cancelStart.x + 12, y: cancelStart.y + 12 }],
     });
-    await page.waitForTimeout(30);
+    await expect(page.locator('.sortable-fallback')).toHaveCount(1);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [cancelEnd] });
+    await expectPreviewAtFinger(page, cancelSource, cancelStart, cancelEnd);
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    await page.evaluate(() => window.scrollBy(0, 80));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(scrollBefore);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [cancelEnd] });
+    await expectPreviewAtFinger(page, cancelSource, cancelStart, cancelEnd);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+    await expect(page.locator('.sortable-fallback')).toHaveCount(0);
+    await expect(page.locator('.ghost-item')).toHaveCount(0);
+
+    if (width === 1024) {
+      // Remote removal destroys the owning view while its touch preview is active.
+      await rows.nth(0).scrollIntoViewIfNeeded();
+      const nameBox = await rows.nth(0).getByTestId('item-name').boundingBox();
+      const point = { x: nameBox.x + nameBox.width / 2, y: nameBox.y + nameBox.height / 2 };
+      await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+      await page.waitForTimeout(280);
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: point.x + 10, y: point.y + 10 }],
+      });
+      await expect(page.locator('.sortable-fallback')).toHaveCount(1);
+      await page.evaluate(() => {
+        const newValue = JSON.stringify({ checklists: [], categories: [], items: [] });
+        localStorage.setItem('packingListApp', newValue);
+        window.dispatchEvent(
+          new StorageEvent('storage', {
+            key: 'packingListApp',
+            newValue,
+            storageArea: localStorage,
+          })
+        );
+      });
+      await expect(page.getByTestId('category-card')).toHaveCount(0);
+      await expect(page.locator('.sortable-fallback')).toHaveCount(0);
+      await client.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+    }
   }
-  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await expect(rows.nth(1)).toHaveAttribute('data-item-id', firstId);
-  await page.reload();
-  await expect(
-    page.getByTestId('category-card').first().getByTestId('item-row').nth(1)
-  ).toHaveAttribute('data-item-id', firstId);
 });
 
 // Test Case 7: Categories can be touch-dragged between columns and retain their order.
@@ -863,7 +956,9 @@ test('persists category sorting across tablet columns', async ({ page, context }
     });
     await page.waitForTimeout(30);
   }
+  await expectPreviewAtFinger(page, source, start, end);
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(page.locator('.sortable-fallback')).toHaveCount(0);
   await expect.poll(async () => cards.first().getAttribute('data-category-id')).not.toBe(firstId);
   const order = await cards.evaluateAll((elements) =>
     elements.map((element) => element.getAttribute('data-category-id'))
@@ -894,6 +989,7 @@ test('moves an unpacked item into an all-hidden category by touch', async ({ pag
   const add = target.getByTestId('add-item-button');
   await expect(add).toBeVisible();
   await sourceName.scrollIntoViewIfNeeded();
+  const sourceBox = await source.getByTestId('item-row').first().locator('..').boundingBox();
   const start = await sourceName.boundingBox();
   const end = await add.boundingBox();
   expect(start.y).toBeGreaterThanOrEqual(0);
@@ -912,7 +1008,11 @@ test('moves an unpacked item into an all-hidden category by touch', async ({ pag
     });
     await page.waitForTimeout(30);
   }
+  await expectPreviewAtFinger(page, sourceBox, from, to);
+  const ghostBox = await target.locator('.ghost-item').boundingBox();
+  expect(ghostBox.y + ghostBox.height).toBeLessThanOrEqual((await add.boundingBox()).y + 1);
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(page.locator('.sortable-fallback')).toHaveCount(0);
   await expect(target.getByTestId('item-name')).toHaveText([movedName]);
   await page.getByTestId('unpacked-items-filter-toggle').tap();
   await expect(target.getByTestId('item-name')).toHaveText([...oldNames, movedName]);

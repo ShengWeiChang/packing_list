@@ -178,6 +178,7 @@ Created: 2025-09-19
             filter="button, input, label, a, [contenteditable], [data-testid=item-inline-actions]"
             :prevent-on-filter="false"
             :delay-on-touch-only="true"
+            :fallback-on-body="true"
             :group="{
               name: 'items',
               pull: true,
@@ -251,7 +252,7 @@ import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vu
 
 import { Category } from '../models/Category';
 import type { CategoryDTO, ItemDTO } from '../models/contracts';
-import { putOnlyFromGroup } from '../utils/dragDrop';
+import { isolateDragPreview, putOnlyFromGroup } from '../utils/dragDrop';
 import { focusEditingInput } from '../utils/focusEditingInput';
 import { insertAtVisibleIndex, renumberOrder, reorderVisibleSlots } from '../utils/order';
 import AddItemButton from './AddItemButton.vue';
@@ -375,6 +376,7 @@ let isUnmounted = false;
 
 // Drag state
 const draggingItemId = ref<string | null>(null);
+let cleanupDragPreview: (() => void) | undefined;
 const dragPreview = ref<Readonly<ItemDTO>[] | null>(null);
 let dragPreviewFilter = false;
 watch(
@@ -619,6 +621,8 @@ function handleDelete() {
  * @param {object} event - Sortable drag event
  */
 function onItemDragStart(event: DragStart) {
+  cleanupDragPreview?.();
+  cleanupDragPreview = isolateDragPreview();
   emit('drag:item-start');
   const item = event.item.querySelector<HTMLElement>('[data-item-id]');
   if (item) {
@@ -631,6 +635,8 @@ function onItemDragStart(event: DragStart) {
  * @param {object} event - Sortable drag event
  */
 function onItemDragEnd(event: unknown) {
+  cleanupDragPreview?.();
+  cleanupDragPreview = undefined;
   draggingItemId.value = null;
   emit('drag:item-end', event);
 }
@@ -718,6 +724,7 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  cleanupDragPreview?.();
   if (isEditing.value && editBaseline && editedName.value !== editBaseline.name) {
     props.retainDraft?.({ name: editedName.value });
   }
@@ -762,6 +769,11 @@ onUnmounted(() => {
   box-shadow:
     0 10px 15px -3px var(--shadow-medium),
     0 4px 6px -2px var(--shadow-light);
+}
+
+/* Keep the floating preview in viewport pixels; Sortable owns its translation. */
+.drag-item.sortable-fallback {
+  transform: none;
 }
 
 /* Drag handle */

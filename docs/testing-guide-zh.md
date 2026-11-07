@@ -1259,16 +1259,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 #### 8.3.12 rwd-phone.spec.js (8 tests)
 
-| #   | Test                                                                  | 驗證內容                                 |
-| --- | --------------------------------------------------------------------- | ---------------------------------------- |
-| 1   | touch actions remain open and persist quantity and pending state      | 手機命中區、選單、待買字級與持久化操作   |
-| 2   | keeps name geometry stable and makes checkbox edges actionable        | 名稱幾何與真實命中                       |
-| 3   | switches one open item and shares the direct rename flow              | 一次一件展開與改名                       |
-| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、收合側欄裁切、觸控選單與密度   |
-| 5   | retains hover quick controls and the desktop command menu             | 桌面整列回饋、選單關閉、focus 與文字對齊 |
-| 6   | preserves touch sorting while excluding action buttons                | 觸控長按與持久化排序                     |
-| 7   | persists category sorting across tablet columns                       | 跨欄觸控拖曳與排序保存                   |
-| 8   | moves an unpacked item into an all-hidden category by touch           | 觸控拖放至已篩選分類與重載               |
+| #   | Test                                                                  | 驗證內容                                             |
+| --- | --------------------------------------------------------------------- | ---------------------------------------------------- |
+| 1   | touch actions remain open and persist quantity and pending state      | 手機命中區、選單、待買字級與持久化操作               |
+| 2   | keeps name geometry stable and makes checkbox edges actionable        | 名稱幾何與真實命中                                   |
+| 3   | switches one open item and shares the direct rename flow              | 一次一件展開與改名                                   |
+| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、收合側欄裁切、觸控選單與密度               |
+| 5   | retains hover quick controls and the desktop command menu             | 桌面整列回饋、選單關閉、focus 與文字對齊             |
+| 6   | preserves touch sorting while excluding action buttons                | 手機／平板抓取位置、捲動／取消／卸載清理與持久化排序 |
+| 7   | persists category sorting across tablet columns                       | 跨欄觸控抓取位置與排序保存                           |
+| 8   | moves an unpacked item into an all-hidden category by touch           | 觸控拖放至已篩選分類與重載                           |
 
 #### 8.3.13 rwd-overlays.spec.js（5）
 

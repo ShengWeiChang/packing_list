@@ -205,6 +205,7 @@ Created: 2025-09-19
         filter="button, input, label, a, [contenteditable], [data-testid=category-items-draggable]"
         :prevent-on-filter="false"
         :delay-on-touch-only="true"
+        :fallback-on-body="true"
         :group="{
           name: 'categories',
           pull: true,
@@ -290,7 +291,7 @@ import { useI18n } from 'vue-i18n';
 
 import { useTouchLayout } from '../composables/useTouchLayout';
 import type { CategoryDTO, ChecklistDTO, ItemDTO } from '../models/contracts';
-import { putOnlyFromGroup } from '../utils/dragDrop';
+import { isolateDragPreview, putOnlyFromGroup } from '../utils/dragDrop';
 import { focusEditingInput } from '../utils/focusEditingInput';
 import { renumberOrder } from '../utils/order';
 import AddCategoryButton from './AddCategoryButton.vue';
@@ -593,6 +594,7 @@ let cleanupEditingFocus = () => {};
 
 // Drag state
 const draggingCategoryId = ref<string | null>(null);
+let cleanupDragPreview: (() => void) | undefined;
 const isDraggingCategory = ref(false);
 
 // ------------------------------------------------------------------------------
@@ -836,6 +838,8 @@ function handleDelete() {
  * @param {object} event - Sortable drag event
  */
 function onCategoryDragStart(event: DragStart) {
+  cleanupDragPreview?.();
+  cleanupDragPreview = isolateDragPreview();
   const categoryElement = event.item.querySelector<HTMLElement>('[data-category-id]') || event.item;
   if (categoryElement.dataset.categoryId) {
     draggingCategoryId.value = categoryElement.dataset.categoryId;
@@ -848,6 +852,8 @@ function onCategoryDragStart(event: DragStart) {
  * @param {object} _event - Sortable drag event (unused)
  */
 function onCategoryDragEnd(_event: unknown) {
+  cleanupDragPreview?.();
+  cleanupDragPreview = undefined;
   draggingCategoryId.value = null;
   isDraggingCategory.value = false;
   void nextTick(resetCategoryPreviewWhenIdle);
@@ -987,6 +993,7 @@ watch(editedEndDate, (newEndDate) => {
 });
 
 onBeforeUnmount(() => {
+  cleanupDragPreview?.();
   if (
     isEditing.value &&
     editBaseline &&
@@ -1069,6 +1076,12 @@ onUnmounted(() => cleanupEditingFocus());
   display: inline-block;
   width: 100%;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sortable updates the preview transform from its current matrix on every touch move. */
+.category-item.sortable-fallback {
+  transition: none;
+  transform: none;
 }
 
 /* Layout preservation during drag */

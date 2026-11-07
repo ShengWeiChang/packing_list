@@ -1259,16 +1259,16 @@ This project uses three layers to balance speed and reliability.
 
 #### 8.3.12 rwd-phone.spec.js (8 tests)
 
-| #   | Test                                                                  | What it verifies                                               |
-| --- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
-| 1   | touch actions remain open and persist quantity and pending state      | Phone targets, menus, to-buy typography and persisted actions  |
-| 2   | keeps name geometry stable and makes checkbox edges actionable        | Name geometry and real hit areas                               |
-| 3   | switches one open item and shares the direct rename flow              | Once-one expansion and rename                                  |
-| 4   | fits tablet categories to available width while keeping touch actions | Tablet columns, sidebar clipping, touch menus and density      |
-| 5   | retains hover quick controls and the desktop command menu             | Desktop row feedback, menu dismissal, focus and text alignment |
-| 6   | preserves touch sorting while excluding action buttons                | Touch hold and persisted reorder                               |
-| 7   | persists category sorting across tablet columns                       | Cross-column touch drag and persistence                        |
-| 8   | moves an unpacked item into an all-hidden category by touch           | Touch drop into filtered footer and reload                     |
+| #   | Test                                                                  | What it verifies                                                                |
+| --- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 1   | touch actions remain open and persist quantity and pending state      | Phone targets, menus, to-buy typography and persisted actions                   |
+| 2   | keeps name geometry stable and makes checkbox edges actionable        | Name geometry and real hit areas                                                |
+| 3   | switches one open item and shares the direct rename flow              | Once-one expansion and rename                                                   |
+| 4   | fits tablet categories to available width while keeping touch actions | Tablet columns, sidebar clipping, touch menus and density                       |
+| 5   | retains hover quick controls and the desktop command menu             | Desktop row feedback, menu dismissal, focus and text alignment                  |
+| 6   | preserves touch sorting while excluding action buttons                | Phone/tablet grab position, scroll/cancel/unmount cleanup and persisted reorder |
+| 7   | persists category sorting across tablet columns                       | Cross-column touch grab position and persistence                                |
+| 8   | moves an unpacked item into an all-hidden category by touch           | Touch drop into filtered footer and reload                                      |
 
 #### 8.3.13 rwd-overlays.spec.js (5 tests)
 

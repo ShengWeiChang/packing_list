@@ -24,6 +24,7 @@ type DraggableProps<T> = Omit<HTMLAttributes, 'onChange'> &
     tag?: string;
     delay?: number;
     delayOnTouchOnly?: boolean;
+    fallbackOnBody?: boolean;
     filter?: string;
     preventOnFilter?: boolean;
     group?: { name: string; pull: boolean; put: boolean | ReturnType<typeof putOnlyFromGroup> };

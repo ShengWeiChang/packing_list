@@ -383,6 +383,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - On desktop, a dropped item or category remains at its previewed position while its save finishes. If the save fails, the visible order returns to the refreshed stored state; if only the follow-up read fails, the saved preview remains visible while the existing warning is shown.
     - Category progress and packing controls reflect the displayed items during a pending move. A category packing request waits for its relevant moves to save and refresh; if a move or its follow-up read fails, that packing request is cancelled and the existing error or warning remains visible.
     - An item dragged into a category with no visible items appears above Add Item during the drag, pushing the button down. Moving the pointer after a drop restores normal hover feedback; the source's next item or Add Item button does not retain a stale highlight.
+    - Touch-dragged item and category previews retain the grabbed point as the finger moves or the page scrolls, without inheriting card clipping or easing. A single floating visual copy is non-interactive and hidden from assistive navigation; it is removed when the gesture ends, is cancelled, or its view is destroyed.
     - Sorting sidebar checklists does not replay the sidebar's expansion animation.
   - Persistence:
     - Item drag events send all affected source/target entries to one `updateMultipleItems` operation and reload data for consistency; orders persist across reloads.
@@ -505,7 +506,7 @@ packing-list/
     │   └── templateService.ts        # Personal template localStorage implementation
     └── utils/                        # Utilities
         ├── constants.ts              # App constants and THEME_COLORS
-        ├── dragDrop.ts               # Drag source group guard
+        ├── dragDrop.ts               # Drag group guard and preview isolation
         ├── focusEditingInput.ts      # Inline edit focus and visibility
         ├── helpers.ts                # IDs, dates, JSON clone and debounce
         ├── instantiateTemplate.ts    # Shared template-shaped materialization
