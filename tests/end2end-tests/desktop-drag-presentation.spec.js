@@ -120,7 +120,24 @@ async function recordDropFrames(page) {
           );
           const moved = document.querySelector('[data-testid="item-row"][data-item-id="a0"]');
           const rect = moved?.getBoundingClientRect();
-          window.dragFrameRects.push(rect ? { x: rect.x, y: rect.y } : null);
+          const checkbox = moved?.querySelector('[data-testid="item-checkbox"]');
+          const name = moved?.querySelector('[data-testid="item-name"]');
+          const range = document.createRange();
+          if (name) range.selectNodeContents(name);
+          const add = moved
+            ?.closest('[data-testid="category-card"]')
+            ?.querySelector('[data-testid="add-item-button"]');
+          window.dragFrameRects.push(
+            rect
+              ? {
+                  x: rect.x,
+                  y: rect.y,
+                  checkboxY: checkbox?.getBoundingClientRect().y,
+                  textY: name ? range.getBoundingClientRect().y : null,
+                  addY: add?.getBoundingClientRect().y,
+                }
+              : null
+          );
           if (++count < 12) requestAnimationFrame(sample);
         };
         requestAnimationFrame(sample);
@@ -222,6 +239,17 @@ for (const packedTarget of [false, true]) {
     const source = page.locator('[data-testid="item-row"][data-item-id="a0"]');
     const target = page.locator('[data-testid="category-items-draggable"][data-category-id="b"]');
     const addButton = target.getByTestId('add-item-button');
+    const rowAlignment = (element) => {
+      const origin = element.closest('[data-testid="category-card"]').getBoundingClientRect().x;
+      const range = document.createRange();
+      range.selectNodeContents(element.querySelector('[data-testid="item-name"]'));
+      return {
+        checkbox:
+          element.querySelector('[data-testid="item-checkbox"]').getBoundingClientRect().x - origin,
+        text: range.getBoundingClientRect().x - origin,
+      };
+    };
+    const originalAlignment = await source.evaluate(rowAlignment);
     const before = await addButton.boundingBox();
     const beforeTarget = await target.boundingBox();
     await startDrag(page, source, addButton);
@@ -244,9 +272,47 @@ for (const packedTarget of [false, true]) {
     await expect
       .poll(async () => Math.abs((await addButton.boundingBox()).y - before.y))
       .toBeLessThan(2);
-    await startDrag(page, source, addButton);
+    // Exercise a quick entry through the bottom edge, rather than the slow centered path above.
+    const from = await source.boundingBox();
+    const to = await addButton.boundingBox();
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width / 2 + 12, from.y + from.height / 2 + 12, {
+      steps: 4,
+    });
+    await page.mouse.move(to.x + to.width / 2, to.y + to.height - 2);
     await expect(ghost).toBeVisible();
+    // Sortable's append-to-empty branch can place the native placeholder after
+    // the footer in DOM order. CSS order still paints the footer underneath it.
+    await target.evaluate((element) => element.appendChild(element.querySelector('.ghost-item')));
+    const alignment = await ghost.evaluate(rowAlignment);
+    expect(Math.abs(alignment.checkbox - originalAlignment.checkbox)).toBeLessThan(1);
+    expect(Math.abs(alignment.text - originalAlignment.text)).toBeLessThan(1);
+    await expect(ghost).toHaveCSS('outline-style', 'dashed');
+    const inserted = await ghost.getByTestId('item-row').boundingBox();
+    const insertedParts = await ghost.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element.querySelector('[data-testid="item-name"]'));
+      return {
+        checkboxY: element.querySelector('[data-testid="item-checkbox"]').getBoundingClientRect().y,
+        textY: range.getBoundingClientRect().y,
+        addY: element
+          .closest('[data-testid="category-card"]')
+          .querySelector('[data-testid="add-item-button"]')
+          .getBoundingClientRect().y,
+      };
+    });
+    await recordDropFrames(page);
     await page.mouse.up();
+    await expect.poll(() => page.evaluate(() => window.dragFrameRects.length)).toBe(12);
+    for (const rect of await page.evaluate(() => window.dragFrameRects)) {
+      expect(rect).not.toBeNull();
+      expect(Math.abs(rect.x - inserted.x)).toBeLessThan(0.5);
+      expect(Math.abs(rect.y - inserted.y)).toBeLessThan(0.5);
+      for (const key of ['checkboxY', 'textY', 'addY']) {
+        expect(Math.abs(rect[key] - insertedParts[key])).toBeLessThan(0.5);
+      }
+    }
     await expect(target.getByTestId('item-row')).toHaveCount(1);
     await expect(target.getByTestId('item-row').first()).toHaveAttribute('data-item-id', 'a0');
     if (packedTarget) {

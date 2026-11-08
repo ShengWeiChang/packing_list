@@ -14,10 +14,10 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 751    |
+| Total tests        | 759    |
 | Unit tests         | 309    |
 | Component tests    | 304    |
-| E2E tests          | 138    |
+| E2E tests          | 146    |
 | Line coverage      | 90.48% |
 | Statement coverage | 88.36% |
 | Branch coverage    | 79.11% |
@@ -31,7 +31,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
 | Unit      | Vitest                   | 309   | Pure logic in models, services, composables, utils |
 | Component | Vitest + @vue/test-utils | 304   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 138   | Full user flows in a real browser                  |
+| E2E       | Playwright               | 146   | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -123,7 +123,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 138 tests
+└── end2end-tests/                       # 146 tests
     ├── touchDragHelpers.js              # Hold-motion and native-scroll gestures
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
@@ -138,6 +138,7 @@ tests/
     ├── drag-and-drop.spec.js            #  7  tests
     ├── desktop-drag-presentation.spec.js # 19  tests
     ├── category-motion.spec.js          #  8  tests
+    ├── interaction-feedback.spec.js      #  8  tests
     ├── multi-tab-sync.spec.js           #  6  tests
     ├── template-management.spec.js      #  7  tests
     ├── recommended-lists.spec.js        #  1  test
@@ -1113,7 +1114,7 @@ This project uses three layers to balance speed and reliability.
 | 9   | renders localized Traditional Chinese sticker copy                     | Locale-aware copy and compact date range |
 | 10  | exposes one synchronized timeline to JavaScript and CSS                | Shared timing contract                   |
 
-### 8.3 E2E Tests (138 tests)
+### 8.3 E2E Tests (146 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -1303,27 +1304,27 @@ This project uses three layers to balance speed and reliability.
 
 #### 8.3.16 desktop-drag-presentation.spec.js (19 tests)
 
-| #   | Test                                                                   | What it verifies                                         |
-| --- | ---------------------------------------------------------------------- | -------------------------------------------------------- |
-| 1   | keeps same-category drop order during delayed storage                  | Same-category frames during delayed save                 |
-| 2   | keeps cross-category drop order during delayed storage                 | Cross-category frames during delayed save                |
-| 3   | places the drag placeholder before Add Item in empty categories        | Empty target placeholder and cancellation                |
-| 4   | places the drag placeholder before Add Item in filtered categories     | Filtered-empty placeholder and cancellation              |
-| 5   | restores the original order when a drop cannot be saved                | Restore order after a failed write                       |
-| 6   | does not replay the sidebar label reveal after sorting                 | Sidebar sorting does not replay reveal                   |
-| 7   | preserves consecutive cross-category drops while storage is delayed    | Consecutive cross-category drops during a delayed save   |
-| 8   | keeps category drop order during delayed storage                       | Category frames during delayed save                      |
-| 9   | does not highlight Add Item after moving the last item from a category | Add Item hover after the last item moves                 |
-| 10  | keeps the saved drop visible when the follow-up read fails             | Preserve display after a committed write and failed read |
-| 11  | keeps a new drag intact when the previous write completes              | A prior write finishing during a new drag                |
-| 12  | packs the displayed destination after its pending move saves           | Packing waits for a successful move                      |
-| 13  | cancels pending category packing when the move fails                   | Cancel packing when the move fails                       |
-| 14  | keeps unequal category cards at the cross-column drop position         | Unequal cross-column card geometry                       |
-| 15  | does not apply queued packing after leaving the checklist              | Cancel queued packing on navigation                      |
-| 16  | cancels queued packing when the saved move cannot be refreshed         | Cancel packing if refresh fails                          |
-| 17  | shows projected progress when moving into a fully packed category      | Projected progress in a packed category                  |
-| 18  | packs only remaining source items after the pending move saves         | Source packing excludes the moved item                   |
-| 19  | keeps the pending drop correct while the packed filter changes         | Preserve pending placement when the filter changes       |
+| #   | Test                                                                   | What it verifies                                                  |
+| --- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 1   | keeps same-category drop order during delayed storage                  | Same-category frames during delayed save                          |
+| 2   | keeps cross-category drop order during delayed storage                 | Cross-category frames during delayed save                         |
+| 3   | places the drag placeholder before Add Item in empty categories        | Empty target, cancellation and stable drop with footer reordering |
+| 4   | places the drag placeholder before Add Item in filtered categories     | Filtered-empty target, cancellation and stable drop               |
+| 5   | restores the original order when a drop cannot be saved                | Restore order after a failed write                                |
+| 6   | does not replay the sidebar label reveal after sorting                 | Sidebar sorting does not replay reveal                            |
+| 7   | preserves consecutive cross-category drops while storage is delayed    | Consecutive cross-category drops during a delayed save            |
+| 8   | keeps category drop order during delayed storage                       | Category frames during delayed save                               |
+| 9   | does not highlight Add Item after moving the last item from a category | Add Item hover after the last item moves                          |
+| 10  | keeps the saved drop visible when the follow-up read fails             | Preserve display after a committed write and failed read          |
+| 11  | keeps a new drag intact when the previous write completes              | A prior write finishing during a new drag                         |
+| 12  | packs the displayed destination after its pending move saves           | Packing waits for a successful move                               |
+| 13  | cancels pending category packing when the move fails                   | Cancel packing when the move fails                                |
+| 14  | keeps unequal category cards at the cross-column drop position         | Unequal cross-column card geometry                                |
+| 15  | does not apply queued packing after leaving the checklist              | Cancel queued packing on navigation                               |
+| 16  | cancels queued packing when the saved move cannot be refreshed         | Cancel packing if refresh fails                                   |
+| 17  | shows projected progress when moving into a fully packed category      | Projected progress in a packed category                           |
+| 18  | packs only remaining source items after the pending move saves         | Source packing excludes the moved item                            |
+| 19  | keeps the pending drop correct while the packed filter changes         | Preserve pending placement when the filter changes                |
 
 #### 8.3.17 category-motion.spec.js (8 tests)
 
@@ -1337,3 +1338,16 @@ This project uses three layers to balance speed and reliability.
 | 6   | phone: animates category siblings before releasing a drag        | Touch activation, pre-drop motion and persisted order |
 | 7   | settles rapid collapse reversals and viewport changes            | Interruption, cleanup and no horizontal overflow      |
 | 8   | honors reduced motion and cancels active reflow                  | Live motion preference and immediate layout           |
+
+#### 8.3.18 interaction-feedback.spec.js (8 tests)
+
+| #   | Test                                                                                | What it verifies                                                    |
+| --- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| 1   | desktop: keeps normal and completed feedback consistent and animates inline actions | Normal/completed feedback, item outline and alignment               |
+| 2   | desktop: accepts items into a collapsed category and retains counts and order       | Aligned item outline, retraction, leaving and saved counts          |
+| 3   | tablet: keeps normal and completed feedback consistent and animates inline actions  | Touch action motion, item outline and row alignment                 |
+| 4   | tablet: accepts items into a collapsed category and retains counts and order        | Aligned touch item outline, retraction/cancellation and saved order |
+| 5   | phone: keeps normal and completed feedback consistent and animates inline actions   | Touch action motion, item outline and row alignment                 |
+| 6   | phone: accepts items into a collapsed category and retains counts and order         | Aligned touch item outline, retraction/cancellation and saved order |
+| 7   | ends an old name edit when dragging a different item                                | Unchanged/changed edit teardown and saved name                      |
+| 8   | honors reduced motion for inline action expansion                                   | Immediate expansion, usable controls and Escape                     |

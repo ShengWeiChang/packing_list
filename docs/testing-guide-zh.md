@@ -14,10 +14,10 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 751    |
+| Total tests 總測試數          | 759    |
 | Unit tests 單元測試           | 309    |
 | Component tests 組件測試      | 304    |
-| E2E tests E2E 測試            | 138    |
+| E2E tests E2E 測試            | 146    |
 | Line coverage 行覆蓋率        | 90.48% |
 | Statement coverage 語句覆蓋率 | 88.36% |
 | Branch coverage 分支覆蓋率    | 79.11% |
@@ -31,7 +31,7 @@
 | --------- | ------------------------ | ----- | ------------------------------------------- |
 | Unit      | Vitest                   | 309   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 304   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 138   | 真實瀏覽器中的完整使用者流程                |
+| E2E       | Playwright               | 146   | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
@@ -123,7 +123,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 138 tests
+└── end2end-tests/                       # 146 tests
     ├── touchDragHelpers.js              # 長按微動與原生捲動手勢
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
@@ -138,6 +138,7 @@ tests/
     ├── drag-and-drop.spec.js            #  7  tests
     ├── desktop-drag-presentation.spec.js # 19  tests
     ├── category-motion.spec.js          #  8  tests
+    ├── interaction-feedback.spec.js      #  8  tests
     ├── multi-tab-sync.spec.js           #  6  tests
     ├── template-management.spec.js      #  7  tests
     ├── recommended-lists.spec.js        #  1  test
@@ -1113,7 +1114,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 9   | renders localized Traditional Chinese sticker copy                     | 語系文字與緊湊日期範圍 |
 | 10  | exposes one synchronized timeline to JavaScript and CSS                | 共用時間軸契約         |
 
-### 8.3 E2E Tests（138）
+### 8.3 E2E Tests（146）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1303,27 +1304,27 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 #### 8.3.16 desktop-drag-presentation.spec.js（19）
 
-| #   | Test                                                                   | 測試重點                     |
-| --- | ---------------------------------------------------------------------- | ---------------------------- |
-| 1   | keeps same-category drop order during delayed storage                  | 同分類延遲儲存逐幀排序       |
-| 2   | keeps cross-category drop order during delayed storage                 | 跨分類延遲儲存逐幀排序       |
-| 3   | places the drag placeholder before Add Item in empty categories        | 空分類佔位與取消             |
-| 4   | places the drag placeholder before Add Item in filtered categories     | 篩選空分類佔位與取消         |
-| 5   | restores the original order when a drop cannot be saved                | 寫入失敗後復原               |
-| 6   | does not replay the sidebar label reveal after sorting                 | 側欄排序不重播展開動畫       |
-| 7   | preserves consecutive cross-category drops while storage is delayed    | 延遲儲存時連續跨分類拖曳     |
-| 8   | keeps category drop order during delayed storage                       | 分類延遲儲存逐幀排序         |
-| 9   | does not highlight Add Item after moving the last item from a category | 最後物品移走後按鈕 hover     |
-| 10  | keeps the saved drop visible when the follow-up read fails             | 成功儲存但讀取失敗時保留畫面 |
-| 11  | keeps a new drag intact when the previous write completes              | 前次儲存完成時後次拖曳保持   |
-| 12  | packs the displayed destination after its pending move saves           | 分類打包等待移動成功         |
-| 13  | cancels pending category packing when the move fails                   | 移動失敗時取消打包           |
-| 14  | keeps unequal category cards at the cross-column drop position         | 不同高度跨欄分類幾何         |
-| 15  | does not apply queued packing after leaving the checklist              | 切換清單時取消排隊打包       |
-| 16  | cancels queued packing when the saved move cannot be refreshed         | 重新讀取失敗時取消打包       |
-| 17  | shows projected progress when moving into a fully packed category      | 已打包分類的預覽進度         |
-| 18  | packs only remaining source items after the pending move saves         | 來源分類打包不含移走物品     |
-| 19  | keeps the pending drop correct while the packed filter changes         | 儲存期間切換過濾保留預覽     |
+| #   | Test                                                                   | 測試重點                                   |
+| --- | ---------------------------------------------------------------------- | ------------------------------------------ |
+| 1   | keeps same-category drop order during delayed storage                  | 同分類延遲儲存逐幀排序                     |
+| 2   | keeps cross-category drop order during delayed storage                 | 跨分類延遲儲存逐幀排序                     |
+| 3   | places the drag placeholder before Add Item in empty categories        | 空分類佔位、取消與 footer 順序下的穩定落點 |
+| 4   | places the drag placeholder before Add Item in filtered categories     | 篩選空分類佔位、取消與穩定落點             |
+| 5   | restores the original order when a drop cannot be saved                | 寫入失敗後復原                             |
+| 6   | does not replay the sidebar label reveal after sorting                 | 側欄排序不重播展開動畫                     |
+| 7   | preserves consecutive cross-category drops while storage is delayed    | 延遲儲存時連續跨分類拖曳                   |
+| 8   | keeps category drop order during delayed storage                       | 分類延遲儲存逐幀排序                       |
+| 9   | does not highlight Add Item after moving the last item from a category | 最後物品移走後按鈕 hover                   |
+| 10  | keeps the saved drop visible when the follow-up read fails             | 成功儲存但讀取失敗時保留畫面               |
+| 11  | keeps a new drag intact when the previous write completes              | 前次儲存完成時後次拖曳保持                 |
+| 12  | packs the displayed destination after its pending move saves           | 分類打包等待移動成功                       |
+| 13  | cancels pending category packing when the move fails                   | 移動失敗時取消打包                         |
+| 14  | keeps unequal category cards at the cross-column drop position         | 不同高度跨欄分類幾何                       |
+| 15  | does not apply queued packing after leaving the checklist              | 切換清單時取消排隊打包                     |
+| 16  | cancels queued packing when the saved move cannot be refreshed         | 重新讀取失敗時取消打包                     |
+| 17  | shows projected progress when moving into a fully packed category      | 已打包分類的預覽進度                       |
+| 18  | packs only remaining source items after the pending move saves         | 來源分類打包不含移走物品                   |
+| 19  | keeps the pending drop correct while the packed filter changes         | 儲存期間切換過濾保留預覽                   |
 
 #### 8.3.17 category-motion.spec.js（8）
 
@@ -1337,3 +1338,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 6   | phone: animates category siblings before releasing a drag        | 觸控啟動、放手前位移與排序保存 |
 | 7   | settles rapid collapse reversals and viewport changes            | 反向操作、清理與無水平溢位     |
 | 8   | honors reduced motion and cancels active reflow                  | 即時動態偏好與直接完成版面     |
+
+#### 8.3.18 interaction-feedback.spec.js（8）
+
+| #   | Test                                                                                | 驗證內容                               |
+| --- | ----------------------------------------------------------------------------------- | -------------------------------------- |
+| 1   | desktop: keeps normal and completed feedback consistent and animates inline actions | 一般／完成回饋、物品虛線與對齊         |
+| 2   | desktop: accepts items into a collapsed category and retains counts and order       | 物品虛線對齊、收回、拖離與數量保存     |
+| 3   | tablet: keeps normal and completed feedback consistent and animates inline actions  | 觸控操作列動效、物品虛線與對齊         |
+| 4   | tablet: accepts items into a collapsed category and retains counts and order        | 觸控物品虛線對齊、收回／取消與排序保存 |
+| 5   | phone: keeps normal and completed feedback consistent and animates inline actions   | 觸控操作列動效、物品虛線與對齊         |
+| 6   | phone: accepts items into a collapsed category and retains counts and order         | 觸控物品虛線對齊、收回／取消與排序保存 |
+| 7   | ends an old name edit when dragging a different item                                | 未改名／已改名的編輯收尾與保存         |
+| 8   | honors reduced motion for inline action expansion                                   | 直接展開、可用控制項與 Escape          |

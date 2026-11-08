@@ -34,9 +34,7 @@ export function useMasonryMotion(
       const changes: DraggableReflow[] = [];
       // A collapsing grid already moves same-column siblings continuously. Starting
       // another easing on each resize would make them lag behind its growing height.
-      const changingHeight = [
-        ...root.querySelectorAll('[data-testid="category-items-container"]'),
-      ].some(
+      const changingHeight = [...root.querySelectorAll('[data-height-motion]')].some(
         (element) =>
           typeof element.getAnimations === 'function' &&
           element.getAnimations().some((animation) => animation.playState === 'running')

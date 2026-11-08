@@ -229,6 +229,7 @@ Created: 2025-09-19
               :data-category-id="category.id"
               :category="category"
               :touch-controls="touchControls"
+              :item-drag-active="isDraggingItem"
               :open-item-actions-id="openItemActionsId"
               :items="items"
               :display-items="projectedItems"
@@ -431,12 +432,12 @@ const suppressDragHover = ref(false);
 const pendingItemMoves = shallowRef<ItemMove[]>([]);
 const awaitingItemRefresh = new Set<ItemMove>();
 const itemMoveResults = new Map<ItemMove, Promise<boolean>>();
-let isDraggingItem = false;
+const isDraggingItem = ref(false);
 let restoreItemHover = () => {};
 
 /** Clear the item preview after pending saves and active drags have finished. */
 function resetItemPreviewWhenIdle() {
-  if (pendingItemMoves.value.length || isDraggingItem) return;
+  if (pendingItemMoves.value.length || isDraggingItem.value) return;
   dragBaselineItems.value = null;
   dragPreviewReset.value += 1;
 }
@@ -489,7 +490,11 @@ async function waitForCategoryMoves(categoryId: string): Promise<boolean> {
 
 /** Capture the latest visible ordering before Sortable changes either list. */
 function onItemDragStart() {
-  isDraggingItem = true;
+  // Sortable prevents pointer focus transfer. Explicitly finish the old edit when dragging.
+  const active = document.activeElement;
+  if (active instanceof HTMLInputElement && active.dataset.testid === 'item-edit-input')
+    active.blur();
+  isDraggingItem.value = true;
   restoreItemHover();
   suppressDragHover.value = !touchControls.value;
   dragBaselineItems.value = projectedItems.value.map((item) => ({ ...item }));
@@ -497,7 +502,7 @@ function onItemDragStart() {
 
 /** Keep the old mouse position from highlighting the next row after a drop. */
 function onItemDragEnd(event: unknown) {
-  isDraggingItem = false;
+  isDraggingItem.value = false;
   void nextTick(resetItemPreviewWhenIdle);
   if (touchControls.value) return;
   const original = (event as { originalEvent?: MouseEvent }).originalEvent;

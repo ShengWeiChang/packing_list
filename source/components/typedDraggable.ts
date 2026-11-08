@@ -31,6 +31,7 @@ type DraggableProps<T> = Omit<HTMLAttributes, 'onChange'> &
     preventOnFilter?: boolean;
     group?: { name: string; pull: boolean; put: boolean | ReturnType<typeof putOnlyFromGroup> };
     animation?: number;
+    sort?: boolean;
     easing?: string;
     ghostClass?: string;
     chosenClass?: string;

@@ -853,6 +853,8 @@ test('preserves touch sorting while excluding action buttons', async ({
     expect(await rows.nth(0).getAttribute('data-item-id')).toBe(firstId);
     await expect(page.locator('.sortable-fallback')).toHaveCount(0);
     await (await triggerFor(rows.nth(0))).tap();
+    // Closing now animates; capture the final row bounds before synthesizing a hold.
+    await expect(rows.nth(0).getByTestId('item-inline-actions')).toHaveCount(0);
     await rows.nth(0).scrollIntoViewIfNeeded();
     const source = await rows.nth(0).locator('..').boundingBox();
     const name = await rows.nth(0).getByTestId('item-name').boundingBox();
@@ -878,6 +880,16 @@ test('preserves touch sorting while excluding action buttons', async ({
     await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect(page.locator('.sortable-fallback')).toHaveCount(0);
     await expect(rows.nth(1)).toHaveAttribute('data-item-id', firstId);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          (id) =>
+            JSON.parse(localStorage.getItem('packingListApp')).items.find((item) => item.id === id)
+              .order,
+          firstId
+        )
+      )
+      .toBe(1);
     await page.reload();
     await expect(rows.nth(1)).toHaveAttribute('data-item-id', firstId);
 
