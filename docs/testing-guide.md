@@ -288,7 +288,7 @@ This project uses three layers to balance speed and reliability.
 
 ## 8. Complete Test Inventory
 
-### 8.1 Unit Tests (309 tests)
+### 8.1 Unit Tests (317 tests)
 
 #### 8.1.1 Models (40 tests)
 
@@ -352,7 +352,7 @@ This project uses three layers to balance speed and reliability.
 | 2   | trims its name and round-trips snapshot content  | Serialization        |
 | 3   | rejects a non-string or too-long name            | Name validation      |
 
-#### 8.1.2 Services (126 tests)
+#### 8.1.2 Services (133 tests)
 
 ##### 8.1.2.1 localStorageService.test.js (87 tests)
 
@@ -507,7 +507,7 @@ This project uses three layers to balance speed and reliability.
 | 26  | preserves nested template fields and isolates newly materialized runtime state              | Snapshot preservation and fresh state        |
 | 27  | does not silently repair missing legacy names when duplicating raw records                  | Existing failure and byte preservation       |
 
-#### 8.1.3 Composables (69 tests)
+#### 8.1.3 Composables (70 tests)
 
 ##### 8.1.3.1 usePackingLists.test.js (52 tests)
 
@@ -741,7 +741,7 @@ This project uses three layers to balance speed and reliability.
 | 1   | rejects explicit any in a TypeScript application component              | Prevent explicit any in typed application scripts |
 | 2   | parses typed Vue props without applying JavaScript undefined-name rules | Allow TS types without false JS diagnostics       |
 
-### 8.2 Component Tests (304 tests)
+### 8.2 Component Tests (314 tests)
 
 #### 8.2.1 App.test.js (68 tests)
 
@@ -1142,7 +1142,7 @@ This project uses three layers to balance speed and reliability.
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | Completed touch cross-list add/remove                         |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | Completed mouse cross-list add/remove                         |
 
-### 8.3 E2E Tests (146 tests)
+### 8.3 E2E Tests (161 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -1290,16 +1290,16 @@ This project uses three layers to balance speed and reliability.
 
 #### 8.3.12 rwd-phone.spec.js (8 tests)
 
-| #   | Test                                                                  | What it verifies                                                                    |
-| --- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| 1   | touch actions remain open and persist quantity and pending state      | Phone targets, menus, to-buy typography and persisted actions                       |
-| 2   | keeps name geometry stable and makes checkbox edges actionable        | Name geometry and real hit areas                                                    |
-| 3   | switches one open item and shares the direct rename flow              | Once-one expansion and rename                                                       |
-| 4   | fits tablet categories to available width while keeping touch actions | Tablet columns, sidebar clipping, touch menus and density                           |
-| 5   | retains hover quick controls and the desktop command menu             | Desktop row feedback, menu dismissal, focus and text alignment                      |
-| 6   | preserves touch sorting while excluding action buttons                | Phone/tablet hold jitter, DPR, native scrolling, grab position, cleanup and reorder |
-| 7   | persists category sorting across tablet columns                       | Hold jitter, cross-column grab position and persistence                             |
-| 8   | moves an unpacked item into an all-hidden category by touch           | Touch drop into filtered footer and reload                                          |
+| #   | Test                                                                  | What it verifies                                                                            |
+| --- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| 1   | touch actions remain open and persist quantity and pending state      | Phone targets, menus, to-buy typography and persisted actions                               |
+| 2   | keeps name geometry stable and makes checkbox edges actionable        | Name geometry and real hit areas                                                            |
+| 3   | switches one open item and shares the direct rename flow              | Once-one expansion and rename                                                               |
+| 4   | fits tablet categories to available width while keeping touch actions | Tablet columns, sidebar clipping, touch menus and density                                   |
+| 5   | retains hover quick controls and the desktop command menu             | Desktop row feedback, menu dismissal, focus and text alignment                              |
+| 6   | preserves touch sorting while excluding action buttons                | Phone/tablet hold jitter, DPR, native scroll completion, grab position, cleanup and reorder |
+| 7   | persists category sorting across tablet columns                       | Hold jitter, cross-column grab position and persistence                                     |
+| 8   | moves an unpacked item into an all-hidden category by touch           | Touch drop into filtered footer and reload                                                  |
 
 #### 8.3.13 rwd-overlays.spec.js (5 tests)
 

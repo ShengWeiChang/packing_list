@@ -40,15 +40,39 @@ export async function checkTouchScroll(page, client, target) {
   const box = await target.boundingBox();
   const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   const before = await page.evaluate(() => window.scrollY);
-  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
-  for (let step = 1; step <= 8; step++) {
+  const scrollState = await page.evaluateHandle(() => {
+    const state = { ended: false };
+    const onScroll = () => (state.ended = false);
+    const onEnd = () => (state.ended = true);
+    document.addEventListener('scroll', onScroll);
+    document.addEventListener('scrollend', onEnd);
+    return {
+      state,
+      cleanup: () => {
+        document.removeEventListener('scroll', onScroll);
+        document.removeEventListener('scrollend', onEnd);
+      },
+    };
+  });
+  try {
     await client.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: [{ x: start.x, y: start.y - step * 20 }],
+      type: 'touchStart',
+      touchPoints: [start],
     });
-    await page.waitForTimeout(16);
+    for (let step = 1; step <= 8; step++) {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: start.x, y: start.y - step * 20 }],
+      });
+      await page.waitForTimeout(16);
+    }
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before);
+    // A subsequent tap must run after native momentum ends, not just after movement starts.
+    await expect.poll(() => scrollState.evaluate(({ state }) => state.ended)).toBe(true);
+    await expect(page.locator('.sortable-fallback, .chosen-item, .chosen-category')).toHaveCount(0);
+  } finally {
+    await scrollState.evaluate(({ cleanup }) => cleanup());
+    await scrollState.dispose();
   }
-  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before);
-  await expect(page.locator('.sortable-fallback, .chosen-item, .chosen-category')).toHaveCount(0);
 }

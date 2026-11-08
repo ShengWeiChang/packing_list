@@ -288,7 +288,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ## 8. Complete Test Inventory 完整測試案例清單
 
-### 8.1 Unit Tests（309）
+### 8.1 Unit Tests（317）
 
 #### 8.1.1 Models（40）
 
@@ -352,7 +352,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | trims its name and round-trips snapshot content  | 序列化     |
 | 3   | rejects a non-string or too-long name            | 名稱驗證   |
 
-#### 8.1.2 Services（126）
+#### 8.1.2 Services（133）
 
 ##### 8.1.2.1 localStorageService.test.js（87）
 
@@ -507,7 +507,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 26  | 保留範本巢狀欄位並隔離新建立的 runtime 狀態                                   | Snapshot 保留與全新狀態      |
 | 27  | 複製原始資料時不偷偷修復缺漏的舊名稱                                          | 既有失敗行為與原文保留       |
 
-#### 8.1.3 Composables（69）
+#### 8.1.3 Composables（70）
 
 ##### 8.1.3.1 usePackingLists.test.js（52）
 
@@ -741,7 +741,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | rejects explicit any in a TypeScript application component              | 防止 TS 應用 scripts 使用 explicit any |
 | 2   | parses typed Vue props without applying JavaScript undefined-name rules | 允許 TS 型別且不誤報 JS 診斷           |
 
-### 8.2 Component Tests（304）
+### 8.2 Component Tests（314）
 
 #### 8.2.1 App.test.js（68）
 
@@ -1142,7 +1142,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | 觸控跨清單正常新增／移除              |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | 滑鼠跨清單正常新增／移除              |
 
-### 8.3 E2E Tests（146）
+### 8.3 E2E Tests（161）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1290,16 +1290,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 #### 8.3.12 rwd-phone.spec.js (8 tests)
 
-| #   | Test                                                                  | 驗證內容                                                |
-| --- | --------------------------------------------------------------------- | ------------------------------------------------------- |
-| 1   | touch actions remain open and persist quantity and pending state      | 手機命中區、選單、待買字級與持久化操作                  |
-| 2   | keeps name geometry stable and makes checkbox edges actionable        | 名稱幾何與真實命中                                      |
-| 3   | switches one open item and shares the direct rename flow              | 一次一件展開與改名                                      |
-| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、收合側欄裁切、觸控選單與密度                  |
-| 5   | retains hover quick controls and the desktop command menu             | 桌面整列回饋、選單關閉、focus 與文字對齊                |
-| 6   | preserves touch sorting while excluding action buttons                | 手機／平板長按微動、DPR、原生捲動、抓取位置、清理與排序 |
-| 7   | persists category sorting across tablet columns                       | 長按微動、跨欄抓取位置與排序保存                        |
-| 8   | moves an unpacked item into an all-hidden category by touch           | 觸控拖放至已篩選分類與重載                              |
+| #   | Test                                                                  | 驗證內容                                                    |
+| --- | --------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 1   | touch actions remain open and persist quantity and pending state      | 手機命中區、選單、待買字級與持久化操作                      |
+| 2   | keeps name geometry stable and makes checkbox edges actionable        | 名稱幾何與真實命中                                          |
+| 3   | switches one open item and shares the direct rename flow              | 一次一件展開與改名                                          |
+| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、收合側欄裁切、觸控選單與密度                      |
+| 5   | retains hover quick controls and the desktop command menu             | 桌面整列回饋、選單關閉、focus 與文字對齊                    |
+| 6   | preserves touch sorting while excluding action buttons                | 手機／平板長按微動、DPR、原生捲動完成、抓取位置、清理與排序 |
+| 7   | persists category sorting across tablet columns                       | 長按微動、跨欄抓取位置與排序保存                            |
+| 8   | moves an unpacked item into an all-hidden category by touch           | 觸控拖放至已篩選分類與重載                                  |
 
 #### 8.3.13 rwd-overlays.spec.js（5）
 

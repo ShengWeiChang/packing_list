@@ -607,7 +607,7 @@ describe('Sidebar', () => {
     });
   });
 
-  // Test Group 10: Pending checklist ordering
+  // Test Group 13: Pending checklist ordering
   describe('pending checklist ordering', () => {
     const names = (wrapper) =>
       wrapper.findAll('[data-sidebar-checklist-label]').map((label) => label.text());
