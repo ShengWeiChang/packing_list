@@ -1163,4 +1163,43 @@ describe('usePackingLists', () => {
     expect(checklists[0]).toMatchObject({ name: 'Remote trip', order: 3 });
     remote.dispose();
   });
+
+  // Test Case 52: A drag retains its original membership baseline across later reads
+  it('rejects stale drag membership without overwriting a remotely added item', async () => {
+    const api = usePackingLists();
+    await api.initialize();
+    const checklist = await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+    const source = await api.createCategory({ name: 'Source' });
+    const destination = await api.createCategory({ name: 'Destination' });
+    const moved = await api.createItem({ name: 'Moved', categoryId: source.id });
+    const target = await api.createItem({ name: 'Target', categoryId: destination.id });
+    const expectedItems = api.items.value.map((item) => ({ ...item }));
+    const remote = new LocalStorageService();
+    const added = await remote.createItem(checklist.id, {
+      name: 'Added remotely',
+      categoryId: destination.id,
+      order: 1,
+    });
+    await api.initialize();
+
+    const result = await api.updateMultipleItems(
+      [
+        { ...target, order: 0 },
+        { ...moved, categoryId: destination.id, order: 1 },
+      ],
+      { fields: ['order', 'categoryId'], expectedItems }
+    );
+
+    expect(result).toBeNull();
+    expect(api.operationError.value).toBe('conflict');
+    expect(await remote.getItemById(checklist.id, moved.id)).toMatchObject({
+      categoryId: source.id,
+      order: 0,
+    });
+    expect(await remote.getItemById(checklist.id, added.id)).toMatchObject({
+      categoryId: destination.id,
+      order: 1,
+    });
+    remote.dispose();
+  });
 });

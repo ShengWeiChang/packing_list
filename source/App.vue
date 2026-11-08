@@ -1185,15 +1185,24 @@ async function handleChecklistDelete(checklistId: string) {
  */
 async function handleChecklistMove(
   reorderedChecklists: ChecklistDTO[],
-  expectedChecklists?: ChecklistDTO[]
+  expectedChecklists?: ChecklistDTO[],
+  settled?: (succeeded: boolean, awaitingRefresh?: boolean) => void
 ) {
-  // Update all checklists in a single transaction to avoid race conditions
-  const result = await handleAsyncAction(
-    updateMultipleChecklists,
-    reorderedChecklists,
-    expectedChecklists
-  );
-  if (!result) await getChecklists?.();
+  let succeeded = false;
+  let awaitingRefresh = false;
+  try {
+    // Update all checklists in a single transaction to avoid race conditions.
+    const result = await handleAsyncAction(
+      updateMultipleChecklists,
+      reorderedChecklists,
+      expectedChecklists
+    );
+    if (!result) await getChecklists?.();
+    succeeded = !!result;
+    awaitingRefresh = !!result && !!checklistRefreshAfterSaveFailed?.value;
+  } finally {
+    settled?.(succeeded, awaitingRefresh);
+  }
 }
 
 // ---------- Template Handlers ----------

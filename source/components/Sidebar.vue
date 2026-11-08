@@ -398,7 +398,11 @@ const emit = defineEmits<{
   'edit-checklist': [id: string];
   'copy-checklist': [id: string];
   'delete-checklist': [id: string];
-  'move:checklists': [checklists: ChecklistDTO[], expected: ChecklistDTO[]];
+  'move:checklists': [
+    checklists: ChecklistDTO[],
+    expected: ChecklistDTO[],
+    settled?: (succeeded: boolean, awaitingRefresh?: boolean) => void,
+  ];
   'save-as-template': [id: string];
   'edit-template': [id: string];
   'delete-template': [id: string];
@@ -453,9 +457,38 @@ const sortedTemplates = computed(() => {
 });
 
 // Draggable checklists (two-way binding with vuedraggable)
+const checklistPreview = ref<Readonly<ChecklistDTO>[] | null>(null);
+let pendingChecklistMoves = 0;
+let awaitingChecklistRefresh = false;
+
+/** Keep the last dropped order until all saves and their refreshes have finished. */
+function resetChecklistPreviewWhenIdle() {
+  if (!pendingChecklistMoves && !awaitingChecklistRefresh && !draggingChecklistId.value) {
+    checklistPreview.value = null;
+  }
+}
+
+watch(
+  () => props.checklists,
+  () => {
+    if (!awaitingChecklistRefresh) return;
+    awaitingChecklistRefresh = false;
+    void nextTick(resetChecklistPreviewWhenIdle);
+  }
+);
+
 const draggableChecklists = computed({
   get() {
-    return sortedChecklists.value;
+    if (!checklistPreview.value) return sortedChecklists.value;
+    // Project only ordering: concurrent renames, additions and deletions remain current.
+    const previewIds = new Set(checklistPreview.value.map((checklist) => checklist.id));
+    return [
+      ...checklistPreview.value.flatMap((preview) => {
+        const current = props.checklists.find((checklist) => checklist.id === preview.id);
+        return current ? [{ ...current, order: preview.order }] : [];
+      }),
+      ...sortedChecklists.value.filter((checklist) => !previewIds.has(checklist.id)),
+    ];
   },
   set(newChecklists) {
     // Keep the first visible checklist newest after a drag-and-drop reorder.
@@ -464,10 +497,18 @@ const draggableChecklists = computed({
       order: newChecklists.length - index - 1,
     }));
 
+    checklistPreview.value = checklistsWithNewOrder;
+    pendingChecklistMoves += 1;
+
     emit(
       'move:checklists',
       checklistsWithNewOrder,
-      newChecklists.map((checklist) => ({ ...checklist }))
+      newChecklists.map((checklist) => ({ ...checklist })),
+      (_succeeded, awaitingRefresh) => {
+        pendingChecklistMoves -= 1;
+        if (awaitingRefresh) awaitingChecklistRefresh = true;
+        void nextTick(resetChecklistPreviewWhenIdle);
+      }
     );
   },
 });
@@ -604,6 +645,7 @@ function onChecklistDragStart(event: DragStart) {
  */
 function onChecklistDragEnd(_event: unknown) {
   draggingChecklistId.value = null;
+  void nextTick(resetChecklistPreviewWhenIdle);
 }
 
 // ------------------------------------------------------------------------------
@@ -651,7 +693,7 @@ function scheduleCollapsedChecklistUpdate() {
 }
 
 watch(
-  () => [props.isExpanded, props.isMobile, sortedChecklists.value] as const,
+  () => [props.isExpanded, props.isMobile, draggableChecklists.value] as const,
   () => void nextTick(updateVisibleCollapsedChecklists),
   { flush: 'post' }
 );

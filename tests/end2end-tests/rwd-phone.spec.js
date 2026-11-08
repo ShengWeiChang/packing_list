@@ -926,6 +926,16 @@ test('preserves touch sorting while excluding action buttons', async ({
     if (width === 1024) {
       // Remote removal destroys the owning view while its touch preview is active.
       await rows.nth(0).scrollIntoViewIfNeeded();
+      // Cancellation restores the DOM before Sortable's return animation ends.
+      // Do not capture a new raw hold while its target is still marked animated.
+      await page.evaluate(async () => {
+        for (let frame = 0; frame < 3; frame++) {
+          await new Promise(requestAnimationFrame);
+        }
+        await Promise.all(
+          document.getAnimations().map((animation) => animation.finished.catch(() => {}))
+        );
+      });
       const nameBox = await rows.nth(0).getByTestId('item-name').boundingBox();
       const point = { x: nameBox.x + nameBox.width / 2, y: nameBox.y + nameBox.height / 2 };
       await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });

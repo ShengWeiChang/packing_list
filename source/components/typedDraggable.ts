@@ -44,11 +44,24 @@ type DraggableProps<T> = Omit<HTMLAttributes, 'onChange'> &
     onChange?: (event: DragChange<T>) => void;
   };
 
+type DropMutation = 'onAdd' | 'onRemove' | 'onUpdate';
+type DraggableDropEvent = {
+  item: HTMLElement;
+  from: HTMLElement;
+  oldIndex: number;
+  originalEvent?: { type: string };
+};
+type DropCallback = (event: DraggableDropEvent) => void;
+
 export type DraggableControl = {
   $el: HTMLElement;
   _sortable?: {
     nativeDraggable: boolean;
-    option: (name: 'touchStartThreshold' | 'animation', value: number) => void;
+    option: {
+      (name: 'touchStartThreshold' | 'animation', value: number): void;
+      (name: DropMutation): DropCallback | undefined;
+      (name: DropMutation, value: DropCallback | undefined): void;
+    };
     captureAnimationState: () => void;
     removeAnimationState: (element: HTMLElement) => void;
     addAnimationState: (state: { target: HTMLElement; rect: DOMRect }) => void;
@@ -74,6 +87,25 @@ export function useDraggableControls() {
       sortable.option('animation', reduce ? 0 : 200);
       if (reduce) cancelDraggableMotion(control.value);
     };
+    // Sortable treats touchcancel as a drop and calls vuedraggable's mutation
+    // callbacks before emitting end. Stop those callbacks before any model setter
+    // or change listener can persist the canceled position. Both source and
+    // receiver install this guard, including receivers with an empty model.
+    const restoreCallbacks = (['onAdd', 'onRemove', 'onUpdate'] as const).map((name) => {
+      const original = sortable.option(name);
+      const guarded: DropCallback = (event) => {
+        if (event.originalEvent?.type !== 'touchcancel') {
+          original?.(event);
+          return;
+        }
+        // Match vuedraggable's DOM rollback before Vue gets control again. In a
+        // cross-list drop this runs for both add and remove; restoring twice is safe.
+        event.item.remove();
+        event.from.insertBefore(event.item, event.from.children[event.oldIndex] ?? null);
+      };
+      sortable.option(name, guarded);
+      return () => sortable.option(name, original);
+    });
     apply();
     // Recheck DPR before each gesture, including a hybrid device moved between displays.
     root.addEventListener('pointerdown', apply, true);
@@ -81,6 +113,7 @@ export function useDraggableControls() {
     cleanup = () => {
       root.removeEventListener('pointerdown', apply, true);
       root.removeEventListener('touchstart', apply, true);
+      restoreCallbacks.forEach((restore) => restore());
     };
   });
   onBeforeUnmount(() => cleanup?.());

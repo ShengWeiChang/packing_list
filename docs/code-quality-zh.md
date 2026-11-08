@@ -342,6 +342,9 @@ Validation 驗證
 
 ### 3.12 Responsive Interaction Ownership 響應式互動責任
 
+- `useDraggableControls` 在 `touchcancel` 時，於 vuedraggable 修改 model 前攔截 Sortable `onAdd`／`onRemove`／`onUpdate`，將 DOM 還原到原 parent／index，並讓 end 清理繼續執行。所有拖曳表面包含空的收合接收區都使用此 guard；正常 `touchend` 與滑鼠放置保留原 callback。清理時還原 callback 與 listener，升級套件時重查 callback 順序與 DOM 還原。
+- Sidebar 擁有僅排序的待儲存清單 projection 與未完成儲存計數；App 在儲存或失敗復原後確認收尾。保留 props 的最新欄位與成員，刷新無法完成時保留已儲存預覽，待後續讀取後釋放。先前收尾不得清除後續待處理移動或進行中的手勢。
+- 物品拖曳批次從完整來源／目標 baseline 推導 `expectedCategoryMembership`，包含隱藏物品與空接收區。`LocalStorageService.updateMultipleItems` 在 write lock 內、寫入前驗證受影響分類範圍與完整物品 ID 集合；不符時以 `conflict` 原子拒絕批次。一般名稱／打包批次不傳這個拖曳專用 option，保留欄位意圖合併。
 - `useMasonryMotion` 僅觀測分類尺寸與直接子節點變動，將重排交給同一 Sortable 動畫 state manager；分類拖曳時交由原生 drag-over 動畫處理。分類內容與物品操作列以 `data-height-motion` 標示高度過渡的 owner；過渡時同欄卡片直接跟隨排版變化，換欄仍以動畫移動。不可在 wrapper 另加互搶的 transform transition。Resize、減少動態與卸載會清理所管理的 timer／transform；浮動預覽獨立處理。
 - `useTouchLayout` 管理 Checklist 輸入能力訂閱與清理，Sidebar 寬度門檻獨立；Checklist 擁有一次展開的物品 ID，Category 轉送，Item 保留編輯／草稿狀態。不得持久化展開或複製 mutation handlers。物品拖曳透過既有儲存／失敗流程讓舊名稱編輯器失焦。Category 擁有收合時使用的獨立空接收區，將新增轉交既有移動 handler，且隱藏或沒有物品拖曳時須停用該 Sortable。 接收區的 MutationObserver 將原生佔位轉為進度條下方的暫時視覺快照；原生 ghost 隱藏，observer 在卸載時清理，快照保留到收回動畫結束，且不參與儲存資料。
 - 保留可用版面空間與輸入能力的產品區分：寬的觸控檢視可以多欄，混合裝置仍必須能以觸控開啟物品操作。不要只用裝置名稱或 viewport 寬度推斷 hover 能力。

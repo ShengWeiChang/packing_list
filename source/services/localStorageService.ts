@@ -45,6 +45,7 @@ import {
 import type {
   ChecklistSourceOptions,
   CommittedItem,
+  ItemBatchStorageOptions,
   StoredAppData,
   StoredChecklist,
   StoredRecord,
@@ -782,12 +783,14 @@ export class LocalStorageService extends DataService {
    * @param {string} checklistId - Checklist ID
    * @param {Array<object>} itemsToUpdate - Items to update (each must include id)
    * @param {Array<object>} [expectedItems] - Items before editing.
+   * @param {object} [options] - Optional drag membership preconditions.
    * @returns {Promise<Array<object>>} Updated Item objects
    */
   async updateMultipleItems(
     checklistId: string,
     itemsToUpdate: ItemMutation[],
-    expectedItems?: ItemMutation[]
+    expectedItems?: ItemMutation[],
+    options: ItemBatchStorageOptions = {}
   ): Promise<CommittedItem[]> {
     return this._withWriteLock(async () => {
       const currentData = await this.getData();
@@ -796,6 +799,36 @@ export class LocalStorageService extends DataService {
         items: (currentData.items || []).map((item) => ({ ...item })),
       };
       const items = data.items;
+      const membership = options.expectedCategoryMembership;
+      if (membership) {
+        const expectedCategories = new Set(membership.map((entry) => entry.categoryId));
+        for (const item of itemsToUpdate) {
+          const expected = expectedItems?.find((entry) => entry.id === item.id);
+          if (!expected) throw new StorageError('conflict', 'A drag baseline is required');
+          if (item.order !== expected.order || item.categoryId !== expected.categoryId) {
+            if (
+              !expected.categoryId ||
+              !item.categoryId ||
+              !expectedCategories.has(expected.categoryId) ||
+              !expectedCategories.has(item.categoryId)
+            ) {
+              throw new StorageError('conflict', 'The affected category baseline is incomplete');
+            }
+          }
+        }
+        for (const { categoryId, itemIds } of membership) {
+          const expectedIds = new Set(itemIds);
+          const currentMembers = items.filter(
+            (item) => item.checklistId === checklistId && item.categoryId === categoryId
+          );
+          if (
+            currentMembers.length !== expectedIds.size ||
+            currentMembers.some((item) => !expectedIds.has(item.id))
+          ) {
+            throw new StorageError('conflict', 'The category membership changed in another tab');
+          }
+        }
+      }
       const updatedItems = itemsToUpdate.map((item) => new Item({ ...item, checklistId }));
       const indexes = updatedItems.map((item) =>
         items.findIndex(

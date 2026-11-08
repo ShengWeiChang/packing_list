@@ -873,6 +873,22 @@ export function usePackingLists() {
     const itemIds = new Set(itemData.map((item) => item.id));
     const previousItems = items.value.filter((item) => itemIds.has(item.id));
     const baseline = (expectedItems ?? previousItems).map((item) => item.toJSON?.() ?? { ...item });
+    // Drag baselines cover complete source/target categories, including filtered items.
+    // Check their membership inside the write lock so another tab cannot add a tied order.
+    const membershipCategories = new Set(
+      fields?.includes('order') && expectedItems
+        ? itemData
+            .flatMap((item) => [
+              item.categoryId,
+              baseline.find((entry) => entry.id === item.id)?.categoryId,
+            ])
+            .filter((id): id is string => typeof id === 'string')
+        : []
+    );
+    const expectedCategoryMembership = [...membershipCategories].map((categoryId) => ({
+      categoryId,
+      itemIds: baseline.filter((item) => item.categoryId === categoryId).map((item) => item.id),
+    }));
     const result = await loadData(() => {
       const intendedItems = fields
         ? itemData.map((item) => {
@@ -883,7 +899,11 @@ export function usePackingLists() {
             };
           })
         : itemData;
-      return dataService.updateMultipleItems(checklistId, intendedItems, baseline);
+      return expectedCategoryMembership.length
+        ? dataService.updateMultipleItems(checklistId, intendedItems, baseline, {
+            expectedCategoryMembership,
+          })
+        : dataService.updateMultipleItems(checklistId, intendedItems, baseline);
     }, 'Error updating items');
     if (result) {
       if (selectedChecklistId.value !== checklistId || selectionRevision !== selectionAtStart) {

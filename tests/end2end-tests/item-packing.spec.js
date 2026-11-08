@@ -139,10 +139,21 @@ test.describe('Item Packing Workflow', () => {
       // Entering edit mode must not trigger the former delayed center-scroll jump.
       const itemNames = page.getByTestId('item-name');
       const scrollTarget = itemNames.nth(Math.floor((await itemNames.count()) / 2));
+      await page.evaluate(async () => {
+        for (let frame = 0; frame < 3; frame++) {
+          await new Promise(requestAnimationFrame);
+        }
+        await Promise.all(
+          document.getAnimations().map((animation) => animation.finished.catch(() => {}))
+        );
+      });
       await scrollTarget.evaluate((element) => {
         const targetTop = element.getBoundingClientRect().top + window.scrollY;
         window.scrollTo(0, targetTop - 100);
       });
+      // Let actionability settle masonry and perform any pre-click scrolling first.
+      // The assertion below measures editing-induced scrolling, not Playwright's setup.
+      await scrollTarget.click({ trial: true });
       const scrollMetricsBeforeEdit = await page.evaluate(() => ({
         top: window.scrollY,
         max: document.documentElement.scrollHeight - window.innerHeight,

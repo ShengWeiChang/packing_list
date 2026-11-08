@@ -1315,7 +1315,178 @@ describe('LocalStorageService', () => {
   // ---------------------------------------------------------------------------
 
   describe('batch item updates', () => {
-    // Test Case 79: Multiple item updates should use one storage write
+    // Test Case 79: A source addition should invalidate the complete drag membership.
+    // Test Case 80: A target addition should reject a stale move without duplicate orders.
+    // Test Case 81: An addition to an empty target should invalidate the drag baseline.
+    it.each(['source', 'target', 'empty target'])(
+      'rejects a stale move after an addition in %s without writing duplicate orders',
+      async (changedCategory) => {
+        const checklist = await service.createChecklist({ name: 'Trip' }, { source: 'empty' });
+        const source = await service.createCategory(checklist.id, { name: 'Source' });
+        const target = await service.createCategory(checklist.id, { name: 'Target' });
+        const moved = await service.createItem(checklist.id, {
+          name: 'M',
+          categoryId: source.id,
+          order: 0,
+        });
+        const existing =
+          changedCategory === 'empty target'
+            ? null
+            : await service.createItem(checklist.id, {
+                name: 'T',
+                categoryId: target.id,
+                order: 0,
+              });
+        const baseline = await service.getItems(checklist.id);
+        const otherTab = new LocalStorageService();
+        const added = await otherTab.createItem(checklist.id, {
+          name: 'N',
+          categoryId: changedCategory === 'source' ? source.id : target.id,
+          order: existing ? 1 : 0,
+        });
+        const before = mockStorage.packingListApp;
+        const saveSpy = vi.spyOn(service, '_saveData');
+        await expect(
+          service.updateMultipleItems(
+            checklist.id,
+            [
+              ...(existing ? [existing] : []),
+              { ...moved, categoryId: target.id, order: existing ? 1 : 0 },
+            ],
+            baseline,
+            {
+              expectedCategoryMembership: [
+                { categoryId: source.id, itemIds: [moved.id] },
+                { categoryId: target.id, itemIds: existing ? [existing.id] : [] },
+              ],
+            }
+          )
+        ).rejects.toMatchObject({ code: 'conflict' });
+        expect(saveSpy).not.toHaveBeenCalled();
+        expect(mockStorage.packingListApp).toBe(before);
+        expect(await service.getItemById(checklist.id, added.id)).toEqual(added);
+      }
+    );
+
+    // Test Case 82: Unrelated edits should merge while hidden item slots remain unchanged.
+    it('preserves unrelated concurrent fields and hidden slots when membership is unchanged', async () => {
+      const checklist = await service.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await service.createCategory(checklist.id, { name: 'Clothing' });
+      const other = await service.createCategory(checklist.id, { name: 'Other' });
+      const rows = [];
+      for (const [order, name] of ['First', 'Hidden', 'Last'].entries()) {
+        rows.push(
+          await service.createItem(checklist.id, {
+            name,
+            categoryId: category.id,
+            order,
+            isPacked: order === 1,
+          })
+        );
+      }
+      const otherTab = new LocalStorageService();
+      await otherTab.updateItem(
+        checklist.id,
+        { ...rows[0], name: 'Renamed', isPending: true },
+        rows[0]
+      );
+      await otherTab.createItem(checklist.id, {
+        name: 'Unrelated',
+        categoryId: other.id,
+        order: 0,
+      });
+      const result = await service.updateMultipleItems(
+        checklist.id,
+        [{ ...rows[0], order: 2 }, rows[1], { ...rows[2], order: 0 }],
+        rows,
+        {
+          expectedCategoryMembership: [
+            { categoryId: category.id, itemIds: rows.map((row) => row.id) },
+          ],
+        }
+      );
+      expect(result[0]).toMatchObject({ name: 'Renamed', isPending: true, order: 2 });
+      expect(result[1]).toEqual(rows[1]);
+      expect(result[2].order).toBe(0);
+    });
+
+    // Test Case 83: Ordinary packing batches should allow unrelated membership changes.
+    it('allows ordinary packing batches after an unrelated membership change', async () => {
+      const checklist = await service.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await service.createCategory(checklist.id, { name: 'Clothing' });
+      const first = await service.createItem(checklist.id, {
+        name: 'First',
+        categoryId: category.id,
+      });
+      await new LocalStorageService().createItem(checklist.id, {
+        name: 'New',
+        categoryId: category.id,
+      });
+      const result = await service.updateMultipleItems(
+        checklist.id,
+        [{ ...first, isPacked: true }],
+        [first]
+      );
+      expect(result[0].isPacked).toBe(true);
+      expect(await service.getItems(checklist.id)).toHaveLength(2);
+    });
+
+    // Test Case 84: Moves should require source and empty target membership baselines.
+    it('requires both source and empty target membership baselines for moves', async () => {
+      const checklist = await service.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const source = await service.createCategory(checklist.id, { name: 'Source' });
+      const target = await service.createCategory(checklist.id, { name: 'Target' });
+      const moved = await service.createItem(checklist.id, { name: 'M', categoryId: source.id });
+      const before = mockStorage.packingListApp;
+      await expect(
+        service.updateMultipleItems(checklist.id, [{ ...moved, categoryId: target.id }], [moved], {
+          expectedCategoryMembership: [{ categoryId: source.id, itemIds: [moved.id] }],
+        })
+      ).rejects.toMatchObject({ code: 'conflict' });
+      expect(mockStorage.packingListApp).toBe(before);
+    });
+
+    // Test Case 85: Removing an untouched hidden row should invalidate a stale reorder.
+    it('rejects a same-category reorder after an untouched hidden row is removed', async () => {
+      const checklist = await service.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await service.createCategory(checklist.id, { name: 'Clothing' });
+      const first = await service.createItem(checklist.id, {
+        name: 'First',
+        categoryId: category.id,
+        order: 0,
+      });
+      const hidden = await service.createItem(checklist.id, {
+        name: 'Hidden',
+        categoryId: category.id,
+        order: 1,
+        isPacked: true,
+      });
+      const last = await service.createItem(checklist.id, {
+        name: 'Last',
+        categoryId: category.id,
+        order: 2,
+      });
+      await new LocalStorageService().deleteItem(checklist.id, hidden.id);
+      const before = mockStorage.packingListApp;
+      await expect(
+        service.updateMultipleItems(
+          checklist.id,
+          [
+            { ...first, order: 2 },
+            { ...last, order: 0 },
+          ],
+          [first, hidden, last],
+          {
+            expectedCategoryMembership: [
+              { categoryId: category.id, itemIds: [first.id, hidden.id, last.id] },
+            ],
+          }
+        )
+      ).rejects.toMatchObject({ code: 'conflict' });
+      expect(mockStorage.packingListApp).toBe(before);
+    });
+
+    // Test Case 86: Multiple item updates should use one storage write
     it('should update multiple items atomically with one storage write', async () => {
       const checklist = await service.createChecklist({ name: 'Batch' }, { source: 'empty' });
       const category = await service.createCategory(checklist.id, { name: 'Clothing' });
@@ -1342,7 +1513,7 @@ describe('LocalStorageService', () => {
       expect(saveSpy).toHaveBeenCalledTimes(1);
     });
 
-    // Test Case 80: Failed batches should preserve both storage and cache state
+    // Test Case 87: Failed batches should preserve both storage and cache state
     it('should keep the original state when validation or storage fails', async () => {
       const checklist = await service.createChecklist({ name: 'Batch' }, { source: 'empty' });
       const category = await service.createCategory(checklist.id, { name: 'Clothing' });

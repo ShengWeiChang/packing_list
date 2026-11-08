@@ -380,13 +380,16 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Drop restriction: Only allow drops within item containers (`group.put` check).
   - Visuals & motion:
     - `ghost/chosen/drag` distinguish the insertion placeholder from the grabbed visual. Category movement uses approximately 200ms easing through one Sortable animation owner; the floating preview follows the pointer without easing. Reduced motion disables sorting and collapse movement. Item insertion previews use inset dashed outlines with checkbox and text aligned to existing items; a collapsed receiving card itself has no outline.
-    - On desktop, a dropped item or category remains at its previewed position while its save finishes. If the save fails, the visible order returns to the refreshed stored state; if only the follow-up read fails, the saved preview remains visible while the existing warning is shown.
+    - A dropped sidebar checklist, item, or category remains at its previewed position while its save finishes. If the save fails, the visible order returns to the refreshed stored state; if only the follow-up read fails, the saved preview remains visible while the existing warning is shown.
     - Category progress and packing controls reflect the displayed items during a pending move. A category packing request waits for its relevant moves to save and refresh; if a move or its follow-up read fails, that packing request is cancelled and the existing error or warning remains visible.
     - An item dragged into a category with no visible items appears above Add Item during the drag, pushing the button down. Moving the pointer after a drop restores normal hover feedback; the source's next item or Add Item button does not retain a stale highlight.
     - Touch-dragged item and category previews retain the grabbed point as the finger moves or the page scrolls, without inheriting card clipping or easing. A single floating visual copy is non-interactive and hidden from assistive navigation; it is removed when the gesture ends, is cancelled, or its view is destroyed.
     - Sorting sidebar checklists does not replay the sidebar's expansion animation.
+    - Sidebar pending order changes only ordering, retaining current names and added/deleted checklists; an earlier save cannot clear a later pending drop.
+    - A system `touchcancel` restores the pre-drag source/target position without saving the cancelled reorder or move, including empty, filtered and collapsed receivers; completed earlier edits remain saved. Normal touch release still saves.
   - Persistence:
     - Item drag events send all affected source/target entries to one `updateMultipleItems` operation and reload data for consistency; orders persist across reloads.
+    - Before that write, compare the complete affected categories’ item-ID sets with the drag baseline inside the write lock. Concurrent additions, deletions or moves that change membership reject the whole drag as a conflict and refresh the stored order; unrelated names/status changes and unchanged hidden-item slots remain compatible.
 - Flow:
   - Press and hold on a checklist, item, or category → drag to the target position/category → drop → reorder/save.
 - Validation:

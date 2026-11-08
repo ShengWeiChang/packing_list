@@ -339,7 +339,6 @@ import type {
 import Item from './Item.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import ProgressBar from './ProgressBar.vue';
-import type { DraggableControl } from './typedDraggable';
 import { draggableFor, useDraggableControls } from './typedDraggable';
 
 const draggable = draggableFor<Readonly<ItemDTO>>();
@@ -459,7 +458,7 @@ watch(
 // Collapse state
 const isCollapsed = ref(false);
 const collapsedDropItems = ref<Readonly<ItemDTO>[]>([]);
-const collapsedReceiver = ref<DraggableControl | null>(null);
+const collapsedReceiver = useDraggableControls();
 const collapsedPreview = ref<Readonly<ItemDTO> | null>(null);
 const showCollapsedPreview = ref(false);
 let stopCollapsedPreview = () => {};

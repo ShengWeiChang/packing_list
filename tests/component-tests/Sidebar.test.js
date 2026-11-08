@@ -14,7 +14,7 @@ Created: 2026-02-11
 // Imports
 // -----------------------------------------------------------------------------
 
-import { shallowMount } from '@vue/test-utils';
+import { flushPromises, shallowMount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createI18n } from 'vue-i18n';
 
@@ -604,6 +604,71 @@ describe('Sidebar', () => {
       await checklistMenu.vm.$emit('save-as-template');
 
       expect(wrapper.emitted('save-as-template')).toEqual([['cl-2']]);
+    });
+  });
+
+  // Test Group 10: Pending checklist ordering
+  describe('pending checklist ordering', () => {
+    const names = (wrapper) =>
+      wrapper.findAll('[data-sidebar-checklist-label]').map((label) => label.text());
+
+    // Test Case 34: Pending order preserves current names and hands off to saved props
+    it('keeps the dropped order while preserving refreshed checklist fields', async () => {
+      const original = createMockChecklists();
+      const wrapper = createWrapper();
+      const drag = wrapper.findComponent({ name: 'draggable' });
+      drag.vm.$emit('update:modelValue', original);
+      await wrapper.vm.$nextTick();
+      expect(names(wrapper)).toEqual(['Japan Trip', 'Europe Tour']);
+
+      await wrapper.setProps({ checklists: [{ ...original[0], name: 'Renamed' }, original[1]] });
+      expect(names(wrapper)).toEqual(['Renamed', 'Europe Tour']);
+      await wrapper.setProps({
+        checklists: [
+          { ...original[0], name: 'Renamed', order: 1 },
+          { ...original[1], order: 0 },
+        ],
+      });
+      wrapper.emitted('move:checklists')[0][2](true, false);
+      await wrapper.vm.$nextTick();
+      expect(names(wrapper)).toEqual(['Renamed', 'Europe Tour']);
+    });
+
+    // Test Case 35: An earlier save cannot clear a newer pending drop
+    it('keeps the latest drop until all saves settle and restores persisted order on failure', async () => {
+      const original = createMockChecklists();
+      const wrapper = createWrapper();
+      const drag = wrapper.findComponent({ name: 'draggable' });
+      drag.vm.$emit('update:modelValue', original);
+      await wrapper.vm.$nextTick();
+      const first = wrapper.emitted('move:checklists')[0];
+      drag.vm.$emit('update:modelValue', [first[0][1], first[0][0]]);
+      await wrapper.vm.$nextTick();
+      await wrapper.setProps({ checklists: first[0] });
+      first[2](true, false);
+      await wrapper.vm.$nextTick();
+      expect(names(wrapper)).toEqual(['Europe Tour', 'Japan Trip']);
+
+      wrapper.emitted('move:checklists')[1][2](false, false);
+      await flushPromises();
+      expect(names(wrapper)).toEqual(['Japan Trip', 'Europe Tour']);
+    });
+
+    // Test Case 36: A committed drop remains projected until a failed refresh is retried
+    it('retains committed order when refresh fails and releases it on a later read', async () => {
+      const original = createMockChecklists();
+      const wrapper = createWrapper();
+      const drag = wrapper.findComponent({ name: 'draggable' });
+      drag.vm.$emit('update:modelValue', original);
+      await wrapper.vm.$nextTick();
+      const move = wrapper.emitted('move:checklists')[0];
+      move[2](true, true);
+      await wrapper.vm.$nextTick();
+      expect(names(wrapper)).toEqual(['Japan Trip', 'Europe Tour']);
+
+      await wrapper.setProps({ checklists: move[0] });
+      await wrapper.setProps({ checklists: original });
+      expect(names(wrapper)).toEqual(['Europe Tour', 'Japan Trip']);
     });
   });
 });
