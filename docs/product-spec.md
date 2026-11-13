@@ -49,7 +49,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Build Tool: Vite 8.3.5
 - CSS Framework: Tailwind CSS 3.4.17
 - Internationalization: Vue I18n 11.4.16
-- Drag and Drop: vuedraggable 4.1.0
+- Drag and Drop: vuedraggable 4.1.0 with a local SortableJS 1.14.0 touch-completion patch
 - Icon System: `@lucide/vue` through the local `AppIcon` adapter; semantic names, size slots, and accessibility modes remain project-owned
 - Additional Tools: PostCSS, Autoprefixer
 
@@ -138,15 +138,16 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 #### Recommended Lists
 
 - Purpose: Provide curated, read-only starting lists for common trip types without mixing them with personal templates.
-- Included recommended lists: General Travel, Business Trip, Warm-Climate Travel, and Cold-Climate Travel.
+- Included recommended lists: General Travel, Business Trip, Hot-Weather Travel, and Cold-Weather Travel.
 - Data design:
   - Locale-independent definitions contain stable recommended list/category/item IDs and membership.
   - English and Traditional Chinese content files contain display names and descriptions only.
   - Reused item IDs allow multiple recommended lists to reference one translated item without duplicating membership rules.
   - Every recommended list covers documents, payment, core clothing, personal care, health, electronics, and travel essentials; it then adds purpose- or climate-specific items instead of activity-specific equipment.
-  - The Warm-Climate Travel description explicitly includes island and beach destinations in addition to heat, humidity, and strong sun.
+  - The Hot-Weather Travel description explicitly includes island and beach destinations in addition to heat, humidity, and strong sun.
 - Interaction rules:
   - Recommended lists appear only in the new-checklist dialog and cannot be renamed, edited, deleted, or reordered.
+  - Hot-Weather Travel groups sun care items under Personal Care.
   - Selecting a recommended list creates an ordinary editable checklist; later edits never change the bundled source.
   - Switching locale changes recommended list choices in the dialog but does not translate already-created checklist snapshots.
 - Persistence:
@@ -166,7 +167,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Reorder categories: Drag to update `order` (starting at 0); persists and remains after reload.
   - Progress display: Calculate completion percentage based on `isPacked` of items within the category.
   - Pack/unpack all: A checkbox to the left of the category title reflects unchecked, mixed, and checked states and updates every item in one atomic storage operation.
-  - Category Collapse: Click the arrow button next to the category title to collapse/expand the item list. Title and progress bar remain visible when collapsed to improve browsing efficiency for long lists.
+  - Category Collapse: Click the arrow button next to the category title to collapse/expand the item list. Title and progress bar remain visible when collapsed to improve browsing efficiency for long lists. A collapsed card accepts external items at the complete category end and stays collapsed; counts and progress update through the existing move/save flow. While hovering, a passive one-item preview temporarily expands below progress; leaving or dropping retracts it with a height transition, while the collapsed contents remain hidden.
 - Flow:
   - Add → rename → delete → drag to reorder → collapse/expand.
 - Validation:
@@ -182,12 +183,12 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Purpose: Manage individual item entries in a checklist, supporting create/edit/delete, toggle packing, and drag reorder/move; updates progress in real time.
 - Key features:
   - Create item: In a specified category, `isPacked=false`, `order = max order of that category + 1`.
-  - Edit item: Tap/click the name to edit inline; the explicit Edit name action uses the same editor. Enter confirms, Escape cancels, and existing blur/IME and failed-draft handling remain.
+  - Edit item: Tap/click the name to edit inline; the explicit Edit name action uses the same editor. Enter confirms, Escape cancels, and existing blur/IME and failed-draft handling remain. Dragging another item explicitly blurs the active name editor, saving changes or keeping a failed draft visible.
   - Design rationale: The name is a direct shortcut for frequent renaming; the explicit Edit name action makes that capability discoverable. Both entry points share the same editing and save behavior.
-  - Touch actions: Visible category collapse and ellipsis controls and the item ellipsis remain available on touch layouts; their appearance is icon-only without individual backgrounds. An expanded item is highlighted as one row: gray in an incomplete category, light green in a completed category. The pending action uses a dark orange checked clipboard when selected and a plain clipboard otherwise. The item ellipsis directly opens a full-width region below the main row containing quantity, pending, Edit name, copy, and delete. It stays open during editing; other actions first save the name and wait for success. Opening it does not focus an input or change the name width/wrapping.
+  - Touch actions: Visible category collapse and ellipsis controls and the item ellipsis remain available on touch layouts; their appearance is icon-only without individual backgrounds. An expanded item is highlighted as one row: gray in an incomplete category, light green in a completed category. The pending action uses a dark orange checked clipboard when selected and a plain clipboard otherwise. The item ellipsis directly opens a full-width region below the main row containing quantity, pending, Edit name, copy, and delete. It stays open during editing; other actions first save the name and wait for success. Opening it does not focus an input or change the name width/wrapping. Opening and closing animate height to push subsequent items continuously; reduced motion makes this immediate, and closing controls become inert during the transition.
   - Expansion: One item per Checklist view; outside clicks close it without swallowing that click. Internal quick actions stay open; Escape from the region returns focus to its trigger. Category collapse, hidden/removed items and checklist switches clear invalid expansion.
   - Quantity: Minimum 1; at 1 the decrement action becomes delete. Collapsed touch rows show a quantity summary only above 1 and retain an active pending indicator in a consistent column.
-  - Desktop actions: Preserve mouse hover quick controls and the short management popup; highlight the entire item row in gray or light green according to category completion, with a gray or green background under the hovered button to match the category. Category/checklist ellipses retain their anchored command menus; on touch layouts each command has at least a 44px target and 16px text. The category arrow controls category visibility.
+  - Desktop actions: Preserve mouse hover quick controls and the short management popup; highlight the entire item row in gray or light green according to category completion, with a gray or green background under the hovered button to match the category. Category/checklist ellipses retain their anchored command menus; on touch layouts each command has at least a 44px target and 16px text. The category arrow controls category visibility. Hovering category or item names uses the same gray/green control-hover colors as the arrow and ellipsis; touch views retain transparent icon controls.
   - Edit Mode:
     - Uses `box-shadow` instead of `border-bottom` to avoid layout shifts.
     - Input field styling matches display text exactly (font size, line height, padding) to ensure seamless toggle.
@@ -291,7 +292,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Desktop (≥1000px): `Sidebar` is sticky (fixed within layout) and can expand (`w-52`) or collapse (`w-16`); manual collapse state is remembered in `localStorage('sidebar-manually-collapsed')`.
   - Mobile Optimization:
     - Interaction Optimization:
-      - Long Press Drag: To prevent accidental touches, dragging on mobile requires a 200ms long press (configured in `vuedraggable`).
+      - Long Press Drag: Phone and tablet dragging requires a 200ms hold, tolerating small finger movements. Sliding before the hold completes cancels dragging so the page can scroll; short taps and management controls retain their regular actions.
       - Touch Targets: The product target is 44×44 CSS px for core controls, measured on the real button/label rather than its icon. This is not a claim of complete WCAG conformance.
       - Keyboard Avoidance: Focus editing inputs with scroll prevention; use the intersection of visual viewport and scrollport bounds, minimal non-animated scrolling, and a shrinking comfort buffer. Dialog surfaces follow visible viewport bounds and scroll internally when needed.
       - Input capabilities: `useTouchLayout` shares width (<768px), any coarse pointer, and no-hover queries within a Checklist and cleans up subscriptions. Touch-safe presentation is independent of Sidebar breakpoints; actual touch on an item trigger also reaches inline actions on a hybrid device.
@@ -364,8 +365,8 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Implementation: Uses **CSS Columns (Masonry)** layout.
     - Characteristics:
       - Pros: High space utilization; category cards of varying heights stack tightly like bricks with no vertical gaps.
-      - Cons: No smooth sliding animation during drag (due to browser recalculating columns causing instant jumps); layout order is "top-to-bottom, then left-to-right" (N-shaped), unlike the Z-shaped order of a horizontal grid; new items may appear at the bottom of the first column instead of the far right.
-    - Decision: To achieve optimal space utilization and visual aesthetics on wide screens, the masonry layout is retained, accepting the limitation of a less fluid dragging feel.
+      - Trade-off: Height changes can redistribute cards between columns. Reading order remains "top-to-bottom, then left-to-right" (N-shaped); a new card may appear below the first column rather than at the far right.
+    - Decision: Retain compact masonry and animate displaced cards during category dragging and collapse/expand reflow, so the prospective layout is visible before release.
 - Key features:
   - Checklist dragging (`Sidebar.vue` with `vuedraggable` group: `checklists`):
     - Reorder checklists in the sidebar; after drop, set checklists' `order = 0..n`.
@@ -378,9 +379,17 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Cross-category move: Update the moved item’s `categoryId`; insert before the next visible target item, or at the complete target-category end when dropped after all visible items or when none are visible; renumber both source and target categories to `order = 0..n`.
     - Drop restriction: Only allow drops within item containers (`group.put` check).
   - Visuals & motion:
-    - `ghost/chosen/drag` classes for translucent, grab, and scale effects, ~200ms animations; keep masonry layout stable while dragging.
+    - `ghost/chosen/drag` distinguish the insertion placeholder from the grabbed visual. Category movement uses approximately 200ms easing through one Sortable animation owner; the floating preview follows the pointer without easing. Reduced motion disables sorting and collapse movement. Item insertion previews use inset dashed outlines with checkbox and text aligned to existing items; a collapsed receiving card itself has no outline.
+    - A dropped sidebar checklist, item, or category remains at its previewed position while its save finishes. If the save fails, the visible order returns to the refreshed stored state; if only the follow-up read fails, the saved preview remains visible while the existing warning is shown.
+    - Category progress and packing controls reflect the displayed items during a pending move. A category packing request waits for its relevant moves to save and refresh; if a move or its follow-up read fails, that packing request is cancelled and the existing error or warning remains visible.
+    - An item dragged into a category with no visible items appears above Add Item during the drag, pushing the button down. Moving the pointer after a drop restores normal hover feedback; the source's next item or Add Item button does not retain a stale highlight.
+    - Touch-dragged item and category previews retain the grabbed point as the finger moves or the page scrolls, without inheriting card clipping or easing. A single floating visual copy is non-interactive and hidden from assistive navigation; it is removed when the gesture ends, is cancelled, or its view is destroyed.
+    - Sorting sidebar checklists does not replay the sidebar's expansion animation.
+    - Sidebar pending order changes only ordering, retaining current names and added/deleted checklists; an earlier save cannot clear a later pending drop.
+    - A system `touchcancel` restores the pre-drag source/target position without saving the cancelled reorder or move, including empty, filtered and collapsed receivers; completed earlier edits remain saved. Normal touch release still saves.
   - Persistence:
     - Item drag events send all affected source/target entries to one `updateMultipleItems` operation and reload data for consistency; orders persist across reloads.
+    - Before that write, compare the complete affected categories’ item-ID sets with the drag baseline inside the write lock. Concurrent additions, deletions or moves that change membership reject the whole drag as a conflict and refresh the stored order; unrelated names/status changes and unchanged hidden-item slots remain compatible.
 - Flow:
   - Press and hold on a checklist, item, or category → drag to the target position/category → drop → reorder/save.
 - Validation:
@@ -439,7 +448,10 @@ packing-list/
 ├── tsconfig.type-tests.json          # Compile-only contract scope
 ├── scripts/                          # Verification and repository utilities
 │   ├── checkTypeScriptScope.js        # Source roots and TypeScript-only guard
-│   └── checkTypeScriptContracts.js    # Expected TS and template diagnostic probes
+│   ├── checkTypeScriptContracts.js    # Expected TS and template diagnostic probes
+│   └── check-sortable-patch.js        # Verify the patched Sortable dependency
+├── patches/                          # Version-specific dependency patches
+│   └── sortablejs+1.14.0.patch       # Touch completion click-guard repair
 ├── public/                           # Static assets
 │   └── favicon.svg                   # Site favicon (primary green with white checkmark)
 ├── docs/                             # Project documentation
@@ -469,8 +481,9 @@ packing-list/
     │   ├── TemplateEditor.vue        # Isolated personal template editor
     │   ├── Topbar.vue                # Top bar for mobile
     │   ├── componentContracts.ts     # Shared component action/event/draft types
-    │   └── typedDraggable.ts         # Entity-typed draggable facade
+    │   └── typedDraggable.ts         # Typed drag controls and animation adapter
     ├── composables/                  # Vue composables (state + logic)
+    │   ├── useMasonryMotion.ts        # Observed column reflow through Sortable motion
     │   ├── usePackingLists.ts        # Core state and CRUD logic
     │   ├── useTemplates.ts           # Template state and CRUD logic
     │   ├── useTouchLayout.ts         # Checklist input-capability subscriptions
@@ -500,7 +513,7 @@ packing-list/
     │   └── templateService.ts        # Personal template localStorage implementation
     └── utils/                        # Utilities
         ├── constants.ts              # App constants and THEME_COLORS
-        ├── dragDrop.ts               # Drag source group guard
+        ├── dragDrop.ts               # Drag group guard and preview isolation
         ├── focusEditingInput.ts      # Inline edit focus and visibility
         ├── helpers.ts                # IDs, dates, JSON clone and debounce
         ├── instantiateTemplate.ts    # Shared template-shaped materialization
@@ -576,6 +589,9 @@ The application uses a centralized color management system with semantic naming:
 - The drawer moves focus inside, wraps Tab/Shift+Tab, closes with Escape and restores its trigger. The background is inert; a higher dialog owns focus while the drawer is inert. Height-only resize preserves drawer state, and App restores the previous body scroll setting after the last modal closes.
 - Short command menus are teleported outside card transforms, fit above/below their trigger in the visual viewport, and scroll internally when space is limited. If neither side can fit a full command, the menu may overlap the trigger to make commands accessible. Keyboard opening focuses the first command; Escape restores the trigger.
 - Desktop: Inline sticky sidebar that can collapse to an icon-only mode; manual collapse/expand is persisted in localStorage.
+- On desktop and tablet, a collapsed sidebar cannot scroll; only complete visible checklist rows remain interactive. Expanding restores the full, vertically scrollable list; collapse returns the list to the top.
+- The new-checklist, template, and language labels use the same fade timing. Collapsed checklist initials remain fully visible and centered; full names fade at their left origin before the centered initials appear after the width transition.
+- Template and language options use the command overflow menu typography, padding, and touch row height. Settings popovers retain a readable width beside a collapsed sidebar, constrain their height, and allow internal scrolling. Escape closes the open settings popover and restores its trigger before a second Escape closes a drawer.
 
 #### Content Layout
 

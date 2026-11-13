@@ -821,13 +821,24 @@ async function handleItemDelete(itemId: string) {
  * Handle item drag-and-drop movement or reordering within categories
  * @param {object} moveData - Move data containing item, category IDs, and reordered items
  */
-async function handleItemMove(moveData: ItemMove) {
-  if (!['move', 'reorder'].includes(moveData.type) || !moveData.items?.length) return;
-  const result = await handleAsyncAction(updateMultipleItems, moveData.items, {
-    fields: ['order', 'categoryId'],
-    expectedItems: moveData.expectedItems,
-  });
-  if (!result) await getItems?.();
+async function handleItemMove(
+  moveData: ItemMove,
+  settled?: (succeeded: boolean, awaitingRefresh?: boolean) => void
+) {
+  let succeeded = false;
+  let awaitingRefresh = false;
+  try {
+    if (!['move', 'reorder'].includes(moveData.type) || !moveData.items?.length) return;
+    const result = await handleAsyncAction(updateMultipleItems, moveData.items, {
+      fields: ['order', 'categoryId'],
+      expectedItems: moveData.expectedItems,
+    });
+    if (!result) await getItems?.();
+    succeeded = !!result;
+    awaitingRefresh = !!result && !!checklistRefreshAfterSaveFailed?.value;
+  } finally {
+    settled?.(succeeded, awaitingRefresh);
+  }
 }
 
 // ---------- Category Handlers ----------
@@ -982,14 +993,21 @@ function handlePackingHistoryKeydown(event: KeyboardEvent) {
  */
 async function handleCategoryReorder(
   reorderedCategories: CategoryDTO[],
-  expectedCategories?: CategoryDTO[]
+  expectedCategories?: CategoryDTO[],
+  settled?: (awaitingRefresh?: boolean) => void
 ) {
-  const result = await handleAsyncAction(
-    updateMultipleCategories,
-    reorderedCategories,
-    expectedCategories
-  );
-  if (!result) await getCategories?.();
+  let awaitingRefresh = false;
+  try {
+    const result = await handleAsyncAction(
+      updateMultipleCategories,
+      reorderedCategories,
+      expectedCategories
+    );
+    if (!result) await getCategories?.();
+    awaitingRefresh = !!result && !!checklistRefreshAfterSaveFailed?.value;
+  } finally {
+    settled?.(awaitingRefresh);
+  }
 }
 
 // ---------- Checklist Handlers ----------
@@ -1167,15 +1185,24 @@ async function handleChecklistDelete(checklistId: string) {
  */
 async function handleChecklistMove(
   reorderedChecklists: ChecklistDTO[],
-  expectedChecklists?: ChecklistDTO[]
+  expectedChecklists?: ChecklistDTO[],
+  settled?: (succeeded: boolean, awaitingRefresh?: boolean) => void
 ) {
-  // Update all checklists in a single transaction to avoid race conditions
-  const result = await handleAsyncAction(
-    updateMultipleChecklists,
-    reorderedChecklists,
-    expectedChecklists
-  );
-  if (!result) await getChecklists?.();
+  let succeeded = false;
+  let awaitingRefresh = false;
+  try {
+    // Update all checklists in a single transaction to avoid race conditions.
+    const result = await handleAsyncAction(
+      updateMultipleChecklists,
+      reorderedChecklists,
+      expectedChecklists
+    );
+    if (!result) await getChecklists?.();
+    succeeded = !!result;
+    awaitingRefresh = !!result && !!checklistRefreshAfterSaveFailed?.value;
+  } finally {
+    settled?.(succeeded, awaitingRefresh);
+  }
 }
 
 // ---------- Template Handlers ----------

@@ -14,7 +14,7 @@ Created: 2026-02-11
 // Imports
 // -----------------------------------------------------------------------------
 
-import { shallowMount } from '@vue/test-utils';
+import { flushPromises, shallowMount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createI18n } from 'vue-i18n';
 
@@ -240,11 +240,34 @@ describe('Sidebar', () => {
 
   describe('collapsed state', () => {
     // Test Case 13: Should show first character of checklist name when collapsed
-    it('should show first character when collapsed on desktop', () => {
+    it('should show first character when collapsed on desktop', async () => {
       const wrapper = createWrapper({ isExpanded: false, isMobile: false });
-      // When collapsed, should show first character
       expect(wrapper.text()).toContain('J');
       expect(wrapper.text()).toContain('E');
+
+      const scrollport = wrapper.get('[data-testid="sidebar-checklists-scrollport"]');
+      const rows = wrapper.findAll('li[data-checklist-id]');
+      Object.defineProperty(scrollport.element, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({ top: 0, bottom: 100 }),
+      });
+      Object.defineProperty(rows[0].element, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({ top: 0, bottom: 40, height: 40 }),
+      });
+      Object.defineProperty(rows[1].element, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({ top: 80, bottom: 120, height: 40 }),
+      });
+      await wrapper.setProps({ checklists: createMockChecklists() });
+      await wrapper.vm.$nextTick();
+      await wrapper.vm.$nextTick();
+      expect(rows[0].classes()).not.toContain('invisible');
+      expect(rows[1].classes()).toContain('invisible');
+
+      await wrapper.setProps({ isExpanded: true });
+      expect(rows[1].classes()).not.toContain('invisible');
+      wrapper.unmount();
     });
   });
 
@@ -546,9 +569,7 @@ describe('Sidebar', () => {
       const templateButtons = wrapper.findAll('[data-testid^="sidebar-template-use-"]');
 
       expect(templateButtons.map((button) => button.text())).toEqual(['First', 'Later']);
-      expect(templateButtons[0].element.parentElement.className).toContain(
-        'bg-interactive-hover-light'
-      );
+      expect(templateButtons[0].element.className).toContain('bg-interactive-hover-light');
     });
 
     // Test Case 31: Should display the empty state when no personal templates exist
@@ -583,6 +604,71 @@ describe('Sidebar', () => {
       await checklistMenu.vm.$emit('save-as-template');
 
       expect(wrapper.emitted('save-as-template')).toEqual([['cl-2']]);
+    });
+  });
+
+  // Test Group 13: Pending checklist ordering
+  describe('pending checklist ordering', () => {
+    const names = (wrapper) =>
+      wrapper.findAll('[data-sidebar-checklist-label]').map((label) => label.text());
+
+    // Test Case 34: Pending order preserves current names and hands off to saved props
+    it('keeps the dropped order while preserving refreshed checklist fields', async () => {
+      const original = createMockChecklists();
+      const wrapper = createWrapper();
+      const drag = wrapper.findComponent({ name: 'draggable' });
+      drag.vm.$emit('update:modelValue', original);
+      await wrapper.vm.$nextTick();
+      expect(names(wrapper)).toEqual(['Japan Trip', 'Europe Tour']);
+
+      await wrapper.setProps({ checklists: [{ ...original[0], name: 'Renamed' }, original[1]] });
+      expect(names(wrapper)).toEqual(['Renamed', 'Europe Tour']);
+      await wrapper.setProps({
+        checklists: [
+          { ...original[0], name: 'Renamed', order: 1 },
+          { ...original[1], order: 0 },
+        ],
+      });
+      wrapper.emitted('move:checklists')[0][2](true, false);
+      await wrapper.vm.$nextTick();
+      expect(names(wrapper)).toEqual(['Renamed', 'Europe Tour']);
+    });
+
+    // Test Case 35: An earlier save cannot clear a newer pending drop
+    it('keeps the latest drop until all saves settle and restores persisted order on failure', async () => {
+      const original = createMockChecklists();
+      const wrapper = createWrapper();
+      const drag = wrapper.findComponent({ name: 'draggable' });
+      drag.vm.$emit('update:modelValue', original);
+      await wrapper.vm.$nextTick();
+      const first = wrapper.emitted('move:checklists')[0];
+      drag.vm.$emit('update:modelValue', [first[0][1], first[0][0]]);
+      await wrapper.vm.$nextTick();
+      await wrapper.setProps({ checklists: first[0] });
+      first[2](true, false);
+      await wrapper.vm.$nextTick();
+      expect(names(wrapper)).toEqual(['Europe Tour', 'Japan Trip']);
+
+      wrapper.emitted('move:checklists')[1][2](false, false);
+      await flushPromises();
+      expect(names(wrapper)).toEqual(['Japan Trip', 'Europe Tour']);
+    });
+
+    // Test Case 36: A committed drop remains projected until a failed refresh is retried
+    it('retains committed order when refresh fails and releases it on a later read', async () => {
+      const original = createMockChecklists();
+      const wrapper = createWrapper();
+      const drag = wrapper.findComponent({ name: 'draggable' });
+      drag.vm.$emit('update:modelValue', original);
+      await wrapper.vm.$nextTick();
+      const move = wrapper.emitted('move:checklists')[0];
+      move[2](true, true);
+      await wrapper.vm.$nextTick();
+      expect(names(wrapper)).toEqual(['Japan Trip', 'Europe Tour']);
+
+      await wrapper.setProps({ checklists: move[0] });
+      await wrapper.setProps({ checklists: original });
+      expect(names(wrapper)).toEqual(['Europe Tour', 'Japan Trip']);
     });
   });
 });

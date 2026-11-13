@@ -28,3 +28,15 @@ export function putOnlyFromGroup(allowedGroupName: string) {
     return fromGroupName === allowedGroupName;
   };
 }
+
+/** Keep Sortable's floating visual copy out of keyboard and screen-reader navigation. */
+export function isolateDragPreview() {
+  const preview = document.querySelector<HTMLElement>('.sortable-fallback');
+  if (preview) {
+    preview.inert = true;
+    preview.setAttribute('aria-hidden', 'true');
+  }
+  // Sortable destroy() drops without an event and does not remove a body-mounted copy.
+  // Capture this gesture's node so an unrelated view cannot clear a newer preview.
+  return () => preview?.remove();
+}

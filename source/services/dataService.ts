@@ -23,6 +23,7 @@ import type {
 import type {
   ChecklistSourceOptions,
   CommittedItem,
+  ItemBatchStorageOptions,
   StoredAppData,
   StoredChecklist,
   StoredRecord,
@@ -222,7 +223,8 @@ export class DataService {
   async updateMultipleItems(
     _checklistId: string,
     _items: ItemMutation[],
-    _expected?: ItemMutation[]
+    _expected?: ItemMutation[],
+    _options: ItemBatchStorageOptions = {}
   ): Promise<CommittedItem[]> {
     throw new Error('Not implemented');
   }

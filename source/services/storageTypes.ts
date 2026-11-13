@@ -59,6 +59,11 @@ export type ChecklistSourceOptions = {
   expectedTemplate?: TemplateDTO;
 };
 
+/** Drag-only preconditions; ordinary packing/name batches keep field-level merging. */
+export interface ItemBatchStorageOptions {
+  expectedCategoryMembership?: { categoryId: string; itemIds: string[] }[];
+}
+
 export type StorageErrorCode =
   | 'unavailable'
   | 'corrupt'

@@ -151,7 +151,7 @@ Created: 2026-10-13
 
         <div
           v-if="activeList === 'template'"
-          class="max-h-72 space-y-2 overflow-y-auto"
+          class="space-y-2"
         >
           <button
             v-for="template in templates"
@@ -172,7 +172,7 @@ Created: 2026-10-13
 
         <div
           v-else
-          class="max-h-72 space-y-2 overflow-y-auto"
+          class="space-y-2"
         >
           <button
             v-for="recommendedList in recommendedLists"

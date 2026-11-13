@@ -117,7 +117,7 @@ describe('Checklist', () => {
           draggable: {
             name: 'draggable',
             template:
-              '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template></div>',
+              '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template><slot name="footer" /></div>',
             props: ['modelValue', 'itemKey', 'group'],
             emits: ['start', 'end', 'update', 'update:modelValue'],
           },
@@ -646,6 +646,18 @@ describe('Checklist', () => {
       expect(emitted[0][0]).toHaveLength(2);
       expect(emitted[0][0][0].id).toBe('cat-2');
       expect(emitted[0][0][1].id).toBe('cat-1');
+
+      expect(draggableComp.props('modelValue').map((category) => category.id)).toEqual([
+        'cat-2',
+        'cat-1',
+      ]);
+      emitted[0][2](false);
+      await wrapper.vm.$nextTick();
+      await wrapper.vm.$nextTick();
+      expect(draggableComp.props('modelValue').map((category) => category.id)).toEqual([
+        'cat-1',
+        'cat-2',
+      ]);
     });
   });
 
@@ -685,7 +697,7 @@ describe('Checklist inline item actions', () => {
     name: 'draggable',
     props: ['modelValue'],
     template:
-      '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template></div>',
+      '<div><template v-for="item in modelValue" :key="item.id"><slot name="item" :element="item" /></template><slot name="footer" /></div>',
   };
   /**
    * Mount real category and item owners with only drag geometry stubbed.

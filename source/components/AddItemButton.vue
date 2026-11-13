@@ -11,14 +11,20 @@ Created: 2025-09-19
 
 <template>
   <button
+    ref="buttonRef"
     class="touch-target flex w-full items-center justify-start rounded-md p-1 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus md:pl-2"
     data-testid="add-item-button"
+    :data-drag-hover-suppressed="suppressDragHover ? 'true' : undefined"
     :class="[
-      categoryCompleted ? 'bg-success-state-bg' : 'bg-white hover:bg-interactive-hover',
+      categoryCompleted
+        ? 'bg-success-state-bg'
+        : suppressDragHover
+          ? 'bg-white'
+          : 'bg-white hover:bg-interactive-hover',
       { '!py-0 !pl-0': touchControls },
     ]"
     @click="$emit('click')"
-    @mouseenter="isHovered = true"
+    @mouseenter="isHovered = !suppressDragHover"
     @mouseleave="isHovered = false"
     @focus="isHovered = true"
     @blur="isHovered = false"
@@ -57,7 +63,7 @@ Created: 2025-09-19
 // Imports
 // ------------------------------------------------------------------------------
 
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 import AppIcon from './AppIcon.vue';
 
@@ -66,8 +72,9 @@ import AppIcon from './AppIcon.vue';
 // ------------------------------------------------------------------------------
 
 // Props
-defineProps({
+const props = defineProps({
   touchControls: { type: Boolean, default: false },
+  suppressDragHover: { type: Boolean, default: false },
   categoryCompleted: {
     type: Boolean,
     default: false,
@@ -83,4 +90,11 @@ defineEmits<{ click: [] }>();
 
 // Hover state
 const isHovered = ref(false);
+const buttonRef = ref<HTMLButtonElement | null>(null);
+watch(
+  () => props.suppressDragHover,
+  (suppressed) => {
+    if (suppressed && !buttonRef.value?.matches(':focus-visible')) isHovered.value = false;
+  }
+);
 </script>

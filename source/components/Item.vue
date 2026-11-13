@@ -12,6 +12,7 @@ Created: 2025-09-19
 <template>
   <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
   <div
+    ref="itemRoot"
     :class="[
       'group cursor-grab rounded-md px-0 py-0.5 transition-all duration-200',
       categoryCompleted ? 'bg-success-state-bg text-success-state-complete' : 'bg-white',
@@ -22,6 +23,7 @@ Created: 2025-09-19
     data-testid="item-row"
     :data-attention="actionsOpen ? 'true' : undefined"
     :data-completed="categoryCompleted ? 'true' : undefined"
+    :data-drag-hover-suppressed="suppressDragHover ? 'true' : undefined"
     :data-item-id="item.id"
     :data-inline-item-id="item.id"
     @keydown.esc="closeActionsFromKeyboard"
@@ -265,104 +267,120 @@ Created: 2025-09-19
         @confirm-edit="saveEdit"
       />
     </div>
-    <div
-      v-if="touchPresentation && actionsOpen"
-      :id="`item-${item.id}-actions`"
-      class="item-inline-actions flex flex-wrap items-center justify-between gap-1 border-t border-border-color-light px-2"
-      role="group"
-      :aria-label="$t('common.moreOptions')"
-      data-testid="item-inline-actions"
+    <Transition
+      name="item-actions"
+      @before-leave="hideInlineActions"
     >
-      <div class="inline-action-group inline-quantity-group">
-        <button
-          type="button"
-          class="inline-action"
-          data-testid="item-quantity-decrement"
-          :aria-label="item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')"
-          @pointerdown.prevent
-          @click="runInlineAction(item.quantity === 1 ? handleDelete : decrementQuantity)"
-        >
-          <AppIcon
-            :name="item.quantity === 1 ? 'delete' : 'decrease'"
-            size="inline"
-          />
-        </button>
-        <span
-          class="inline-quantity-value"
-          data-testid="item-quantity-value"
-          >×{{ item.quantity }}</span
-        >
-        <button
-          type="button"
-          class="inline-action"
-          data-testid="item-quantity-increment"
-          :aria-label="$t('item.increaseQuantity')"
-          @pointerdown.prevent
-          @click="runInlineAction(incrementQuantity)"
-        >
-          <AppIcon
-            name="add"
-            size="inline"
-          />
-        </button>
+      <div
+        v-if="touchPresentation && actionsOpen"
+        class="grid grid-rows-[1fr]"
+        data-height-motion
+        :inert="!actionsOpen"
+        :aria-hidden="!actionsOpen"
+      >
+        <div class="min-h-0 overflow-hidden">
+          <div
+            :id="`item-${item.id}-actions`"
+            class="item-inline-actions flex flex-wrap items-center justify-between gap-1 border-t border-border-color-light px-2"
+            role="group"
+            :aria-label="$t('common.moreOptions')"
+            data-testid="item-inline-actions"
+          >
+            <div class="inline-action-group inline-quantity-group">
+              <button
+                type="button"
+                class="inline-action"
+                data-testid="item-quantity-decrement"
+                :aria-label="
+                  item.quantity === 1 ? $t('common.delete') : $t('item.decreaseQuantity')
+                "
+                @pointerdown.prevent
+                @click="runInlineAction(item.quantity === 1 ? handleDelete : decrementQuantity)"
+              >
+                <AppIcon
+                  :name="item.quantity === 1 ? 'delete' : 'decrease'"
+                  size="inline"
+                />
+              </button>
+              <span
+                class="inline-quantity-value"
+                data-testid="item-quantity-value"
+                >×{{ item.quantity }}</span
+              >
+              <button
+                type="button"
+                class="inline-action"
+                data-testid="item-quantity-increment"
+                :aria-label="$t('item.increaseQuantity')"
+                @pointerdown.prevent
+                @click="runInlineAction(incrementQuantity)"
+              >
+                <AppIcon
+                  name="add"
+                  size="inline"
+                />
+              </button>
+            </div>
+            <div class="inline-action-group">
+              <button
+                type="button"
+                class="inline-action"
+                :class="{ 'text-pending-foreground': item.isPending }"
+                data-testid="item-pending-toggle"
+                :aria-label="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
+                :aria-pressed="item.isPending"
+                @pointerdown.prevent
+                @click="runInlineAction(togglePending)"
+              >
+                <AppIcon
+                  :name="item.isPending ? 'clipboardCheck' : 'clipboard'"
+                  size="inline"
+                />
+              </button>
+              <button
+                type="button"
+                class="inline-action"
+                data-testid="item-action-edit"
+                :aria-label="$t('item.editName')"
+                @pointerdown.prevent
+                @click="startEdit"
+              >
+                <AppIcon
+                  name="edit"
+                  size="inline"
+                />
+              </button>
+              <button
+                type="button"
+                class="inline-action"
+                data-testid="item-action-copy"
+                :aria-label="$t('common.copy')"
+                @pointerdown.prevent
+                @click="runInlineAction(() => $emit('copy:item', item.id))"
+              >
+                <AppIcon
+                  name="copy"
+                  size="inline"
+                />
+              </button>
+              <button
+                type="button"
+                class="inline-action text-danger-text"
+                data-testid="item-action-delete"
+                :aria-label="$t('common.delete')"
+                @pointerdown.prevent
+                @click="runInlineAction(handleDelete)"
+              >
+                <AppIcon
+                  name="delete"
+                  size="inline"
+                />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="inline-action-group">
-        <button
-          type="button"
-          class="inline-action"
-          :class="{ 'text-pending-foreground': item.isPending }"
-          data-testid="item-pending-toggle"
-          :aria-label="item.isPending ? $t('item.markedAsPending') : $t('item.markAsPending')"
-          :aria-pressed="item.isPending"
-          @pointerdown.prevent
-          @click="runInlineAction(togglePending)"
-        >
-          <AppIcon
-            :name="item.isPending ? 'clipboardCheck' : 'clipboard'"
-            size="inline"
-          />
-        </button>
-        <button
-          type="button"
-          class="inline-action"
-          data-testid="item-action-edit"
-          :aria-label="$t('item.editName')"
-          @pointerdown.prevent
-          @click="startEdit"
-        >
-          <AppIcon
-            name="edit"
-            size="inline"
-          />
-        </button>
-        <button
-          type="button"
-          class="inline-action"
-          data-testid="item-action-copy"
-          :aria-label="$t('common.copy')"
-          @pointerdown.prevent
-          @click="runInlineAction(() => $emit('copy:item', item.id))"
-        >
-          <AppIcon
-            name="copy"
-            size="inline"
-          />
-        </button>
-        <button
-          type="button"
-          class="inline-action text-danger-text"
-          data-testid="item-action-delete"
-          :aria-label="$t('common.delete')"
-          @pointerdown.prevent
-          @click="runInlineAction(handleDelete)"
-        >
-          <AppIcon
-            name="delete"
-            size="inline"
-          />
-        </button>
-      </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
@@ -429,6 +447,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  suppressDragHover: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Emits
@@ -445,6 +467,7 @@ const emit = defineEmits<{
 // ------------------------------------------------------------------------------
 
 const actionsMenu = ref<InstanceType<typeof OverflowMenu> | null>(null);
+const itemRoot = ref<HTMLElement | null>(null);
 const touchActivated = ref(false);
 const touchPresentation = computed(() => props.touchControls || touchActivated.value);
 const isEditing = ref(false);
@@ -452,6 +475,18 @@ const isSavingEdit = ref(false);
 const isSavingPacked = ref(false);
 const editSaveFailed = ref(false);
 const isHovered = ref(false);
+watch(
+  () => props.suppressDragHover,
+  (suppressed) => {
+    if (suppressed && !itemRoot.value?.querySelector(':focus-visible')) isHovered.value = false;
+    if (
+      !suppressed &&
+      window.matchMedia('(hover: hover)').matches &&
+      itemRoot.value?.matches(':hover')
+    )
+      isHovered.value = true;
+  }
+);
 const isQuantityHovered = ref(false);
 const editedName = ref('');
 let editBaseline: ItemDTO | null = null;
@@ -542,7 +577,7 @@ async function handlePackedChange(event: Event) {
 // Handle mouse enter - prevent hover state on touch devices to avoid accidental button clicks
 const handleMouseEnter = () => {
   // Only enable hover state if the device supports hover (i.e., has a mouse/pointer)
-  if (window.matchMedia('(hover: hover)').matches) {
+  if (!props.suppressDragHover && window.matchMedia('(hover: hover)').matches) {
     isHovered.value = true;
   }
 };
@@ -563,6 +598,12 @@ async function toggleActions() {
   }
   touchActivated.value = true;
   emit('toggle-actions', props.item.id);
+}
+
+/** Remove closing controls from focus and accessibility while the height animates out. */
+function hideInlineActions(element: Element) {
+  if (element instanceof HTMLElement) element.inert = true;
+  element.setAttribute('aria-hidden', 'true');
 }
 
 /** Only Escape inside this non-modal item restores focus to its own trigger. */
@@ -820,6 +861,21 @@ onUnmounted(() => cleanupEditingFocus());
 </script>
 
 <style scoped>
+.item-actions-enter-active,
+.item-actions-leave-active {
+  transition: grid-template-rows 300ms ease-in-out;
+}
+.item-actions-enter-from,
+.item-actions-leave-to {
+  grid-template-rows: 0fr;
+}
+@media (prefers-reduced-motion: reduce) {
+  .item-actions-enter-active,
+  .item-actions-leave-active {
+    transition: none;
+  }
+}
+
 [data-attention='true'] {
   background-color: var(--interactive-hover);
 }
@@ -827,10 +883,19 @@ onUnmounted(() => cleanupEditingFocus());
   background-color: var(--success-attention);
 }
 @media (hover: hover) {
-  [data-testid='item-row']:hover {
+  [data-testid='item-row']:not([data-drag-hover-suppressed='true']) .touch-name:hover,
+  .inline-action:hover {
+    background-color: var(--control-hover);
+  }
+  [data-testid='item-row'][data-completed='true']:not([data-drag-hover-suppressed='true'])
+    .touch-name:hover,
+  [data-testid='item-row'][data-completed='true'] .inline-action:hover {
+    background-color: var(--success-control-hover);
+  }
+  [data-testid='item-row']:not([data-drag-hover-suppressed='true']):hover {
     background-color: var(--interactive-hover);
   }
-  [data-testid='item-row'][data-completed='true']:hover {
+  [data-testid='item-row'][data-completed='true']:not([data-drag-hover-suppressed='true']):hover {
     background-color: var(--success-attention);
   }
 }

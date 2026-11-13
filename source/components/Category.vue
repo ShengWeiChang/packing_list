@@ -12,7 +12,7 @@ Created: 2025-09-19
 <template>
   <div
     :class="[
-      'group rounded-xl p-3 shadow-md transition-all duration-200 hover:shadow-lg',
+      'group relative rounded-xl p-3 shadow-md transition-all duration-200 hover:shadow-lg',
       isCompleted ? 'bg-success-state-bg' : 'bg-white',
     ]"
     data-testid="category-card"
@@ -72,7 +72,7 @@ Created: 2025-09-19
           />
           <h3
             v-else
-            class="cursor-pointer rounded p-1 text-2xl font-semibold leading-snug text-primary hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus md:text-xl"
+            class="cursor-pointer rounded p-1 text-2xl font-semibold leading-snug text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus md:text-xl"
             style="word-break: break-word; overflow-wrap: break-word"
             role="button"
             tabindex="0"
@@ -164,6 +164,7 @@ Created: 2025-09-19
       class="grid transition-[grid-template-rows] duration-300 ease-in-out"
       :class="isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
       data-testid="category-items-container"
+      data-height-motion
     >
       <div
         class="min-h-0 overflow-hidden"
@@ -172,12 +173,14 @@ Created: 2025-09-19
       >
         <div class="space-y-1 pt-1">
           <draggable
+            ref="itemDraggable"
             v-model="draggableItems"
             item-key="id"
             :delay="200"
             filter="button, input, label, a, [contenteditable], [data-testid=item-inline-actions]"
             :prevent-on-filter="false"
             :delay-on-touch-only="true"
+            :fallback-on-body="true"
             :group="{
               name: 'items',
               pull: true,
@@ -188,10 +191,9 @@ Created: 2025-09-19
             :chosen-class="'chosen-item'"
             :drag-class="'drag-item'"
             :class="[
-              'space-y-1',
+              'gap-1',
               {
-                'md:space-y-0': touchControls,
-                'min-h-12': showUnpackedOnly && visibleItems.length === 0,
+                'md:gap-0': touchControls,
               },
             ]"
             data-testid="category-items-draggable"
@@ -212,6 +214,7 @@ Created: 2025-09-19
                   :newly-created-item-id="newlyCreatedItemId"
                   :category-completed="isCompleted"
                   :is-dragging="draggingItemId === item.id"
+                  :suppress-drag-hover="suppressDragHover"
                   :save-item-edit="saveItemEdit"
                   :commit-edit-on-blur="commitEditOnBlur"
                   :edit-error-code="editErrorCode"
@@ -226,16 +229,83 @@ Created: 2025-09-19
                 />
               </div>
             </template>
+            <template #footer>
+              <AddItemButton
+                :category-completed="isCompleted"
+                :touch-controls="touchControls"
+                :suppress-drag-hover="suppressDragHover"
+                @click="$emit('create:item', category.id)"
+              />
+            </template>
           </draggable>
-
-          <AddItemButton
-            :category-completed="isCompleted"
-            :touch-controls="touchControls"
-            @click="$emit('create:item', category.id)"
-          />
         </div>
       </div>
     </div>
+    <Transition
+      name="collapsed-preview"
+      @after-leave="clearCollapsedPreview"
+    >
+      <div
+        v-if="isCollapsed && showCollapsedPreview && collapsedPreview"
+        class="pointer-events-none grid grid-rows-[1fr]"
+        data-height-motion
+        aria-hidden="true"
+        inert
+      >
+        <div class="min-h-0 overflow-hidden">
+          <div class="pt-1">
+            <div
+              class="flex items-center rounded-md px-0 py-0.5"
+              :class="{ 'md:pl-2': !touchControls }"
+              data-testid="collapsed-drop-preview"
+            >
+              <span
+                class="touch-target mr-1 flex size-9 flex-none items-center justify-center md:mr-2 md:size-6"
+              >
+                <input
+                  :checked="collapsedPreview.isPacked"
+                  type="checkbox"
+                  disabled
+                  tabindex="-1"
+                  class="size-5 accent-control-accent md:size-4"
+                />
+              </span>
+              <span
+                class="min-w-0 grow break-words px-1 py-0.5 text-lg leading-snug md:text-base"
+                data-testid="collapsed-preview-name"
+                :class="[
+                  { 'md:!text-lg': touchControls },
+                  collapsedPreview.isPacked
+                    ? isCompleted
+                      ? 'text-control-accent line-through'
+                      : 'text-secondary line-through'
+                    : '',
+                ]"
+                >{{ collapsedPreview.name }}</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+    <draggable
+      v-show="isCollapsed && itemDragActive"
+      ref="collapsedReceiver"
+      v-model="collapsedDropItems"
+      item-key="id"
+      :sort="false"
+      :disabled="!isCollapsed || !itemDragActive"
+      :group="{ name: 'items', pull: false, put: putOnlyFromGroup('items') }"
+      ghost-class="collapsed-item-ghost"
+      class="absolute inset-0 rounded-xl"
+      data-testid="collapsed-category-drop"
+      aria-hidden="true"
+      @change="onCollapsedItemChange"
+    >
+      <template #item="{ element: item }">
+        <div :data-item-id="item.id" />
+      </template>
+    </draggable>
   </div>
 </template>
 
@@ -245,11 +315,11 @@ Created: 2025-09-19
 // ------------------------------------------------------------------------------
 
 import type { PropType } from 'vue';
-import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { Category } from '../models/Category';
 import type { CategoryDTO, ItemDTO } from '../models/contracts';
-import { putOnlyFromGroup } from '../utils/dragDrop';
+import { isolateDragPreview, putOnlyFromGroup } from '../utils/dragDrop';
 import { focusEditingInput } from '../utils/focusEditingInput';
 import { insertAtVisibleIndex, renumberOrder, reorderVisibleSlots } from '../utils/order';
 import AddItemButton from './AddItemButton.vue';
@@ -269,9 +339,10 @@ import type {
 import Item from './Item.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import ProgressBar from './ProgressBar.vue';
-import { draggableFor } from './typedDraggable';
+import { draggableFor, useDraggableControls } from './typedDraggable';
 
 const draggable = draggableFor<Readonly<ItemDTO>>();
+const itemDraggable = useDraggableControls();
 
 // ------------------------------------------------------------------------------
 // Props & Emits
@@ -280,6 +351,7 @@ const draggable = draggableFor<Readonly<ItemDTO>>();
 // Props
 const props = defineProps({
   touchControls: { type: Boolean, default: false },
+  itemDragActive: { type: Boolean, default: false },
   openItemActionsId: { type: String as PropType<string | null>, default: null },
   commitEditOnBlur: { type: Boolean, default: false },
   retainDraft: { type: Function as PropType<RetainDraft | null>, default: null },
@@ -289,6 +361,10 @@ const props = defineProps({
   editErrorCode: { type: String as PropType<string | null>, default: null },
   setCategoryPackedAction: {
     type: Function as PropType<SetCategoryPackedAction | null>,
+    default: null,
+  },
+  waitForCategoryMoves: {
+    type: Function as PropType<((categoryId: string) => Promise<boolean>) | null>,
     default: null,
   },
   updateItemAction: { type: Function as PropType<UpdateItemAction | null>, default: null },
@@ -309,6 +385,10 @@ const props = defineProps({
     type: Array as PropType<readonly Readonly<ItemDTO>[]>,
     required: true,
   },
+  displayItems: {
+    type: Array as PropType<readonly Readonly<ItemDTO>[] | null>,
+    default: null,
+  },
   newlyCreatedItemId: {
     type: String as PropType<string | null>,
     default: null,
@@ -321,6 +401,12 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  dragBaselineItems: {
+    type: Array as PropType<readonly Readonly<ItemDTO>[] | null>,
+    default: null,
+  },
+  dragPreviewReset: { type: Number, default: 0 },
+  suppressDragHover: { type: Boolean, default: false },
 });
 
 // Emits
@@ -336,6 +422,8 @@ const emit = defineEmits<{
   'copy:category': [id: string];
   'delete:category': [id: string];
   'move:item': [move: ItemMove];
+  'drag:item-start': [];
+  'drag:item-end': [event: unknown];
   'set-category-packed': [change: CategoryPackedChange];
 }>();
 
@@ -353,20 +441,70 @@ let editBaseline: CategoryDTO | null = null;
 const editInput = ref<HTMLInputElement | null>(null);
 const isComposing = ref(false);
 let cleanupEditingFocus = () => {};
+let isUnmounted = false;
 
 // Drag state
 const draggingItemId = ref<string | null>(null);
+let cleanupDragPreview: (() => void) | undefined;
+const dragPreview = ref<Readonly<ItemDTO>[] | null>(null);
+let dragPreviewFilter = false;
+watch(
+  () => props.dragPreviewReset,
+  () => {
+    dragPreview.value = null;
+  }
+);
 
 // Collapse state
 const isCollapsed = ref(false);
+const collapsedDropItems = ref<Readonly<ItemDTO>[]>([]);
+const collapsedReceiver = useDraggableControls();
+const collapsedPreview = ref<Readonly<ItemDTO> | null>(null);
+const showCollapsedPreview = ref(false);
+let stopCollapsedPreview = () => {};
+
+// Sortable inserts its native placeholder before committing modelValue. Observe only
+// that receiver so the preview is transient and never modifies saved item state.
+onMounted(() => {
+  const root = collapsedReceiver.value?.$el;
+  if (!root || typeof MutationObserver === 'undefined') return;
+  const observer = new MutationObserver(() => {
+    const ghost = root.querySelector<HTMLElement>('.collapsed-item-ghost');
+    const id =
+      ghost?.dataset.itemId ?? ghost?.querySelector<HTMLElement>('[data-item-id]')?.dataset.itemId;
+    const item = (props.displayItems ?? props.items).find((entry) => entry.id === id);
+    if (props.itemDragActive && isCollapsed.value && item) {
+      collapsedPreview.value = { ...item };
+      showCollapsedPreview.value = true;
+    } else showCollapsedPreview.value = false;
+  });
+  observer.observe(root, { childList: true });
+  stopCollapsedPreview = () => observer.disconnect();
+});
+watch(
+  () => props.itemDragActive,
+  (active) => {
+    if (!active) showCollapsedPreview.value = false;
+  }
+);
+watch(isCollapsed, (collapsed) => {
+  if (!collapsed) showCollapsedPreview.value = false;
+});
+
+/** Keep the last visual snapshot until its closing animation has finished. */
+function clearCollapsedPreview() {
+  if (!showCollapsedPreview.value) collapsedPreview.value = null;
+}
 
 // ------------------------------------------------------------------------------
 // Computed
 // ------------------------------------------------------------------------------
 
-// Sorted items for this category (filtered from all items, then sorted by order)
+// Use the displayed membership for progress, packing controls, and visible rows.
 const sortedItems = computed(() => {
-  const filteredItems = props.items.filter((item) => item.categoryId === props.category.id);
+  const filteredItems = (props.displayItems ?? props.items).filter(
+    (item) => item.categoryId === props.category.id
+  );
   // Sort by order field to maintain correct sequence
   return filteredItems.sort((a, b) => (a.order || 0) - (b.order || 0));
 });
@@ -390,17 +528,21 @@ function isItemVisible(item: Readonly<ItemDTO>) {
 // Draggable items (two-way binding with vuedraggable)
 const draggableItems = computed({
   get() {
-    return visibleItems.value;
+    if (!dragPreview.value || dragPreviewFilter !== props.showUnpackedOnly) {
+      return visibleItems.value;
+    }
+    const previews = dragPreview.value.flatMap((preview) => {
+      const current = (props.displayItems ?? props.items).find((item) => item.id === preview.id);
+      const item = current ? { ...preview, ...current, categoryId: props.category.id } : null;
+      return item && isItemVisible(item) ? [item] : [];
+    });
+    const baselineIds = new Set((props.dragBaselineItems ?? props.items).map((item) => item.id));
+    return [...previews, ...visibleItems.value.filter((item) => !baselineIds.has(item.id))];
   },
-  set(_newItems) {
-    // This setter is intentionally empty (no-op) since we handle ALL drag events via @change event
-    // - evt.added: Cross-category move (target side)
-    // - evt.removed: Cross-category move (source side)
-    // - evt.moved: Same-category reorder
-    //
-    // The setter must exist for v-model to work, but it does nothing.
-    // The actual data updates happen via emit('move:item') in @change handler,
-    // then flow back through props → sortedItems → getter.
+  set(newItems) {
+    // Keep Sortable's dropped order visible while the guarded write completes.
+    dragPreview.value = newItems;
+    dragPreviewFilter = props.showUnpackedOnly;
   },
 });
 
@@ -447,13 +589,14 @@ async function toggleCategoryPacked(event: Event) {
     categoryId: props.category.id,
     isPacked: requested,
   };
-  if (!props.setCategoryPackedAction) {
-    emit('set-category-packed', change);
-    return;
-  }
   isSavingPacked.value = true;
   try {
-    await props.setCategoryPackedAction(change);
+    if (props.waitForCategoryMoves && !(await props.waitForCategoryMoves(props.category.id))) {
+      return;
+    }
+    if (isUnmounted) return;
+    if (props.setCategoryPackedAction) await props.setCategoryPackedAction(change);
+    else emit('set-category-packed', change);
   } finally {
     isSavingPacked.value = false;
   }
@@ -585,6 +728,9 @@ function handleDelete() {
  * @param {object} event - Sortable drag event
  */
 function onItemDragStart(event: DragStart) {
+  cleanupDragPreview?.();
+  cleanupDragPreview = isolateDragPreview();
+  emit('drag:item-start');
   const item = event.item.querySelector<HTMLElement>('[data-item-id]');
   if (item) {
     draggingItemId.value = item.dataset.itemId!;
@@ -593,17 +739,32 @@ function onItemDragStart(event: DragStart) {
 
 /**
  * Clear dragging item ID when drag ends
- * @param {object} _event - Sortable drag event (unused)
+ * @param {object} event - Sortable drag event
  */
-function onItemDragEnd(_event: unknown) {
+function onItemDragEnd(event: unknown) {
+  cleanupDragPreview?.();
+  cleanupDragPreview = undefined;
   draggingItemId.value = null;
+  emit('drag:item-end', event);
+}
+
+/** Receive an item without exposing or rearranging a collapsed category's hidden rows. */
+function onCollapsedItemChange(event: ItemDragChange) {
+  if (event.added) {
+    onItemChange({ added: { ...event.added, newIndex: visibleItems.value.length } });
+  }
+  collapsedDropItems.value = [];
 }
 
 /**
- * Handle item reorder or move events from vue-draggable
- * @param {object} event - Sortable change event with added/removed/moved properties
+ * Handle item reorder or move events from vue-draggable.
+ * @param {object} event - Sortable change event.
  */
 function onItemChange(event: ItemDragChange) {
+  const baseline = props.dragBaselineItems ?? props.items;
+  const categoryItems = baseline
+    .filter((entry) => entry.categoryId === props.category.id)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
   // Case 1: Cross-category move (target side)
   // When an item is dragged from another category to this one
   // Note: event.removed is intentionally ignored.
@@ -612,10 +773,10 @@ function onItemChange(event: ItemDragChange) {
     const item = event.added.element;
     const newIndex = event.added.newIndex;
 
-    const sourceItems = props.items
+    const sourceItems = baseline
       .filter((entry) => entry.categoryId === item.categoryId && entry.id !== item.id)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
-    const targetItems = sortedItems.value.filter((entry) => entry.id !== item.id);
+    const targetItems = categoryItems.filter((entry) => entry.id !== item.id);
     const movedItem = {
       ...item,
       categoryId: props.category.id,
@@ -631,9 +792,7 @@ function onItemChange(event: ItemDragChange) {
     emit('move:item', {
       type: 'move',
       items: [...reorderedSourceItems, ...reorderedTargetItems],
-      expectedItems: props.items.map((entry) =>
-        entry.id === item.id ? { ...item } : { ...entry }
-      ),
+      expectedItems: baseline.map((entry) => (entry.id === item.id ? { ...item } : { ...entry })),
     });
   }
 
@@ -643,18 +802,18 @@ function onItemChange(event: ItemDragChange) {
     const oldIndex = event.moved.oldIndex;
     const newIndex = event.moved.newIndex;
 
-    const reorderedVisibleItems = [...visibleItems.value];
+    const reorderedVisibleItems = categoryItems.filter(isItemVisible);
     const [removed] = reorderedVisibleItems.splice(oldIndex, 1);
     reorderedVisibleItems.splice(newIndex, 0, removed!);
     const itemsWithNewOrder = reorderVisibleSlots(
-      sortedItems.value,
+      categoryItems,
       reorderedVisibleItems,
       isItemVisible
     );
 
     emit('move:item', {
       items: itemsWithNewOrder,
-      expectedItems: props.items.map((entry) =>
+      expectedItems: baseline.map((entry) =>
         entry.id === event.moved!.element?.id ? { ...event.moved!.element } : { ...entry }
       ),
       categoryId: props.category.id,
@@ -680,15 +839,61 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  stopCollapsedPreview();
+  cleanupDragPreview?.();
   if (isEditing.value && editBaseline && editedName.value !== editBaseline.name) {
     props.retainDraft?.({ name: editedName.value });
   }
   if (editSaveFailed.value) props.editCancelled?.('category', props.category.id);
 });
-onUnmounted(() => cleanupEditingFocus());
+onUnmounted(() => {
+  isUnmounted = true;
+  cleanupEditingFocus();
+});
 </script>
 
 <style scoped>
+[data-testid='collapsed-category-drop'] :deep(.collapsed-item-ghost) {
+  display: none;
+}
+.ghost-item,
+[data-testid='collapsed-drop-preview'] {
+  background-color: var(--ghost-background);
+  outline: 2px dashed var(--ghost-border);
+  outline-offset: -2px;
+  border-radius: 0.375rem;
+  opacity: 0.5;
+}
+/* Keep insertion geometry normal rather than inheriting grabbed-row effects. */
+.ghost-item :deep([data-testid='item-row']) {
+  transform: none;
+  opacity: 1;
+  box-shadow: none;
+}
+.collapsed-preview-enter-active,
+.collapsed-preview-leave-active {
+  transition: grid-template-rows 300ms ease-in-out;
+}
+.collapsed-preview-enter-from,
+.collapsed-preview-leave-to {
+  grid-template-rows: 0fr;
+}
+@media (hover: hover) {
+  [data-testid='category-name']:hover {
+    background-color: var(--control-hover);
+  }
+  [data-completed='true'] [data-testid='category-name']:hover {
+    background-color: var(--success-control-hover);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-testid='category-items-container'],
+  .collapsed-preview-enter-active,
+  .collapsed-preview-leave-active {
+    transition: none;
+  }
+}
 [data-testid='category-collapse-toggle'] {
   -webkit-tap-highlight-color: transparent;
 }
@@ -698,12 +903,14 @@ onUnmounted(() => cleanupEditingFocus());
   }
 }
 /* Drag and drop styles */
-.ghost-item {
-  opacity: 0.3;
-  background: var(--ghost-background);
-  border: 2px dashed var(--ghost-border);
+/* Gap follows visual order even when Sortable appends a ghost after the footer. */
+[data-testid='category-items-draggable'] {
+  display: flex;
+  flex-direction: column;
 }
-
+[data-testid='category-items-draggable'] > [data-testid='add-item-button'] {
+  order: 1;
+}
 .chosen-item {
   cursor: grabbing !important;
 }
@@ -714,6 +921,11 @@ onUnmounted(() => cleanupEditingFocus());
   box-shadow:
     0 10px 15px -3px var(--shadow-medium),
     0 4px 6px -2px var(--shadow-light);
+}
+
+/* Keep the floating preview in viewport pixels; Sortable owns its translation. */
+.drag-item.sortable-fallback {
+  transform: none;
 }
 
 /* Drag handle */

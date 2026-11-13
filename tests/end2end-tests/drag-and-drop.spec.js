@@ -66,11 +66,18 @@ async function createAndConfirmChecklist(page, name) {
  * @param {import('@playwright/test').Page} page - Active Playwright page.
  * @param {import('@playwright/test').Locator} source - Locator for the item to drag.
  * @param {import('@playwright/test').Locator} target - Locator for the destination item.
- * @param {{ settleInTarget?: boolean }} [options] - Whether to move within the target before release.
+ * @param {{ settleInTarget?: boolean, beforeTarget?: boolean }} [options] - Target placement intent.
  */
-async function slowDragTo(page, source, target, { settleInTarget = false } = {}) {
+async function slowDragTo(
+  page,
+  source,
+  target,
+  { settleInTarget = false, beforeTarget = false } = {}
+) {
+  await waitForLayoutMotion(page);
   const srcBox = await source.boundingBox();
-  const tgtBox = await target.boundingBox();
+  const targetElement = await target.elementHandle();
+  const tgtBox = await targetElement.boundingBox();
   const srcCenter = { x: srcBox.x + srcBox.width / 2, y: srcBox.y + srcBox.height / 2 };
   const tgtCenter = { x: tgtBox.x + tgtBox.width / 2, y: tgtBox.y + tgtBox.height / 2 };
 
@@ -80,9 +87,12 @@ async function slowDragTo(page, source, target, { settleInTarget = false } = {})
   // Move in small steps so the sortable library picks up the drag
   const steps = 40;
   for (let i = 1; i <= steps; i++) {
+    // Track the original visible row as masonry moves; its leading edge means "before".
+    const live = beforeTarget ? await targetElement.boundingBox() : null;
+    const aim = live ? { x: live.x + live.width / 2, y: live.y + 2 } : tgtCenter;
     await page.mouse.move(
-      srcCenter.x + ((tgtCenter.x - srcCenter.x) * i) / steps,
-      srcCenter.y + ((tgtCenter.y - srcCenter.y) * i) / steps
+      srcCenter.x + ((aim.x - srcCenter.x) * i) / steps,
+      srcCenter.y + ((aim.y - srcCenter.y) * i) / steps
     );
     await waitForNextAnimationFrame(page);
   }
@@ -95,6 +105,19 @@ async function slowDragTo(page, source, target, { settleInTarget = false } = {})
   }
 
   await page.mouse.up();
+}
+
+/**
+ * Wait for rendered layout motion before aiming synthetic pointer coordinates.
+ * @param {import('@playwright/test').Page} page - Active browser page.
+ */
+async function waitForLayoutMotion(page) {
+  await page.evaluate(async () => {
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    await Promise.all(
+      document.getAnimations().map((animation) => animation.finished.catch(() => {}))
+    );
+  });
 }
 
 // -----------------------------------------------------------------------------
@@ -294,7 +317,8 @@ test.describe('Drag & Drop', () => {
       await slowDragTo(
         page,
         sourceCategory.getByTestId('item-row').first(),
-        targetCategory.getByTestId('item-row').first()
+        targetCategory.getByTestId('item-row').first(),
+        { beforeTarget: true }
       );
       await expect(
         targetCategory.getByTestId('item-name').filter({ hasText: movedItemName })
@@ -341,6 +365,25 @@ test.describe('Drag & Drop', () => {
       const filterToggle = page.getByTestId('unpacked-items-filter-toggle');
       await filterToggle.click();
       await expect(targetCategory.getByTestId('item-row')).toHaveCount(0);
+      const dropArea = targetCategory.getByTestId('category-items-draggable');
+      const addButton = targetCategory.getByTestId('add-item-button');
+      const dropBounds = await dropArea.boundingBox();
+      const addBounds = await addButton.boundingBox();
+      expect(Math.abs(dropBounds.y - addBounds.y)).toBeLessThan(1);
+      expect(Math.abs(dropBounds.height - addBounds.height)).toBeLessThan(1);
+      const sourceProgress = await sourceCategory.getByTestId('progress-bar').boundingBox();
+      const targetProgress = await targetCategory.getByTestId('progress-bar').boundingBox();
+      const firstRow = await sourceCategory.getByTestId('item-row').first().boundingBox();
+      expect(
+        Math.abs(
+          addBounds.y -
+            targetProgress.y -
+            targetProgress.height -
+            (firstRow.y - sourceProgress.y - sourceProgress.height)
+        )
+      ).toBeLessThan(1);
+
+      await page.screenshot({ path: test.info().outputPath('filtered-empty-category.png') });
 
       await slowDragTo(
         page,
@@ -384,6 +427,7 @@ test.describe('Drag & Drop', () => {
       const itemId = await source.evaluate(
         (element) => element.closest('[data-item-id]').dataset.itemId
       );
+      await waitForLayoutMotion(page);
       const sourceBox = await source.boundingBox();
       const origin = {
         x: sourceBox.x + sourceBox.width / 2,
@@ -401,6 +445,7 @@ test.describe('Drag & Drop', () => {
         page.getByTestId('item-name').filter({ hasText: 'Renamed in second tab' })
       ).toBeVisible();
 
+      await waitForLayoutMotion(page);
       const targetBox = await target.boundingBox();
       const destination = {
         x: targetBox.x + targetBox.width / 2,

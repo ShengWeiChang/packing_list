@@ -136,6 +136,7 @@ const props = defineProps({
   inlineActions: { type: Boolean, default: false },
   inlineExpanded: { type: Boolean, default: false },
   inlineControls: { type: String, default: undefined },
+  focusTriggerOnOpen: { type: Boolean, default: false },
   touchMinimal: { type: Boolean, default: false },
   successSurface: { type: Boolean, default: false },
   itemId: {
@@ -276,6 +277,7 @@ function handleTriggerClick(event: PointerEvent) {
   } else if (props.isEditing) {
     handleConfirmEdit();
   } else {
+    if (props.focusTriggerOnOpen && !showMenu.value) focusTrigger();
     toggleMenu(event.detail === 0);
   }
 }

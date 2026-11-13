@@ -238,9 +238,15 @@ function deleteItem(itemId: string) {
 }
 
 /** @param {object} moveData - Item move or reorder payload */
-function moveItem(moveData: ItemMove) {
-  if (!['move', 'reorder'].includes(moveData.type)) return;
-  for (const item of moveData.items || []) updateItem(item);
+function moveItem(moveData: ItemMove, settled?: (succeeded: boolean) => void) {
+  let succeeded = false;
+  try {
+    if (!['move', 'reorder'].includes(moveData.type)) return;
+    for (const item of moveData.items || []) updateItem(item);
+    succeeded = true;
+  } finally {
+    settled?.(succeeded);
+  }
 }
 
 /** Create a category in the draft. */
@@ -295,8 +301,16 @@ function deleteCategory(categoryId: string) {
 }
 
 /** @param {Array<object>} categories - Reordered draft categories */
-function reorderCategories(categories: CategoryDTO[]) {
-  draftCategories.value = categories;
+function reorderCategories(
+  categories: CategoryDTO[],
+  _expected?: CategoryDTO[],
+  settled?: () => void
+) {
+  try {
+    draftCategories.value = categories;
+  } finally {
+    settled?.();
+  }
 }
 
 /** Emit a storage-safe template snapshot. */

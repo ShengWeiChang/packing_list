@@ -48,6 +48,25 @@ test.describe('Mobile Workflow (375px)', () => {
       // Sidebar should be visible
       const sidebar = page.locator('aside');
       await expect(sidebar).toBeVisible();
+
+      const labels = [
+        page.getByTestId('sidebar-new-checklist').locator('span'),
+        page.getByTestId('sidebar-templates-button').locator('span').last(),
+        page.getByTestId('sidebar-language-button').locator('span').last(),
+      ];
+      const positions = await Promise.all(labels.map((label) => label.boundingBox()));
+      expect(
+        Math.max(...positions.map((box) => box.x)) - Math.min(...positions.map((box) => box.x))
+      ).toBeLessThan(1);
+      for (const label of labels) await expect(label).toHaveCSS('font-size', '18px');
+      await page.getByTestId('sidebar-language-button').click();
+      await expect(page.getByTestId('sidebar-language-option-en')).toHaveCSS('font-size', '16px');
+      await page.getByTestId('sidebar-language-button').click();
+      await page.getByTestId('sidebar-templates-button').click();
+      await expect(page.getByTestId('sidebar-templates-dropdown').locator('p')).toHaveCSS(
+        'font-size',
+        '16px'
+      );
     });
 
     // Test Case 3: Should close sidebar when overlay backdrop is clicked
@@ -217,6 +236,9 @@ test.describe('Mobile Workflow (375px)', () => {
 
       await expect(filterToggle).toHaveAttribute('aria-pressed', 'true');
       await expect(itemRows).toHaveCount(initialItemCount - 1);
+      await filterToggle.click();
+      await expect(filterToggle).toHaveAttribute('aria-pressed', 'false');
+      await expect(filterToggle).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     });
   });
 });

@@ -121,7 +121,9 @@ Created: 2025-09-19
               'touch-target inline-flex size-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-primary focus-visible:ring-offset-1 md:size-8',
               showUnpackedOnly
                 ? 'bg-theme-secondary text-theme-primary'
-                : 'text-secondary hover:bg-control-hover hover:text-primary',
+                : touchControls
+                  ? 'text-secondary'
+                  : 'text-secondary hover:bg-control-hover hover:text-primary',
             ]"
             :title="$t('checklist.showUnpackedOnly')"
             :aria-label="$t('checklist.showUnpackedOnly')"
@@ -197,18 +199,21 @@ Created: 2025-09-19
     <!-- Categories Grid -->
     <div>
       <draggable
+        ref="categoryDraggable"
         v-model="draggableCategories"
         item-key="id"
         :delay="200"
         filter="button, input, label, a, [contenteditable], [data-testid=category-items-draggable]"
         :prevent-on-filter="false"
         :delay-on-touch-only="true"
+        :fallback-on-body="true"
         :group="{
           name: 'categories',
           pull: true,
           put: putOnlyFromGroup('categories'),
         }"
-        :animation="200"
+        :animation="animationDuration"
+        easing="cubic-bezier(0.2, 0, 0, 1)"
         :ghost-class="'ghost-category'"
         :chosen-class="'chosen-category'"
         :drag-class="'drag-category'"
@@ -224,8 +229,13 @@ Created: 2025-09-19
               :data-category-id="category.id"
               :category="category"
               :touch-controls="touchControls"
+              :item-drag-active="isDraggingItem"
               :open-item-actions-id="openItemActionsId"
               :items="items"
+              :display-items="projectedItems"
+              :drag-baseline-items="dragBaselineItems"
+              :drag-preview-reset="dragPreviewReset"
+              :suppress-drag-hover="suppressDragHover"
               :show-unpacked-only="showUnpackedOnly"
               :newly-created-item-id="newlyCreatedItemId"
               :newly-created-category-id="newlyCreatedCategoryId"
@@ -234,6 +244,7 @@ Created: 2025-09-19
               :commit-edit-on-blur="commitEditOnBlur"
               :edit-error-code="editErrorCode"
               :set-category-packed-action="setCategoryPackedAction"
+              :wait-for-category-moves="waitForCategoryMoves"
               :update-item-action="updateItemAction"
               :retain-draft="retainDraft"
               :edit-cancelled="editCancelled"
@@ -249,6 +260,8 @@ Created: 2025-09-19
               @delete:category="$emit('delete:category', $event)"
               @set-category-packed="$emit('set-category-packed', $event)"
               @move:item="handleItemMove"
+              @drag:item-start="onItemDragStart"
+              @drag:item-end="onItemDragEnd"
             />
           </div>
         </template>
@@ -267,12 +280,22 @@ Created: 2025-09-19
 // ------------------------------------------------------------------------------
 
 import type { PropType } from 'vue';
-import { computed, nextTick, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  onUnmounted,
+  ref,
+  shallowRef,
+  watch,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { useMasonryMotion } from '../composables/useMasonryMotion';
 import { useTouchLayout } from '../composables/useTouchLayout';
 import type { CategoryDTO, ChecklistDTO, ItemDTO } from '../models/contracts';
-import { putOnlyFromGroup } from '../utils/dragDrop';
+import { isolateDragPreview, putOnlyFromGroup } from '../utils/dragDrop';
 import { focusEditingInput } from '../utils/focusEditingInput';
 import { renumberOrder } from '../utils/order';
 import AddCategoryButton from './AddCategoryButton.vue';
@@ -293,7 +316,7 @@ import type {
 import OverflowMenu from './OverflowMenu.vue';
 import PendingItemsCategory from './PendingItemsCategory.vue';
 import ProgressBar from './ProgressBar.vue';
-import { draggableFor } from './typedDraggable';
+import { draggableFor, useDraggableControls } from './typedDraggable';
 
 // ------------------------------------------------------------------------------
 // Internationalization (i18n)
@@ -302,6 +325,8 @@ import { draggableFor } from './typedDraggable';
 const { t } = useI18n();
 
 const draggable = draggableFor<Readonly<CategoryDTO>>();
+const categoryDraggable = useDraggableControls();
+const { animationDuration } = useMasonryMotion(categoryDraggable, () => isDraggingCategory.value);
 
 // ------------------------------------------------------------------------------
 // Props & Emits
@@ -383,8 +408,12 @@ const emit = defineEmits<{
   'copy:category': [id: string];
   'delete:category': [id: string];
   'create:category': [];
-  'reorder:categories': [categories: CategoryDTO[], expected: CategoryDTO[]];
-  'move:item': [move: ItemMove];
+  'reorder:categories': [
+    categories: CategoryDTO[],
+    expected: CategoryDTO[],
+    settled?: (awaitingRefresh?: boolean) => void,
+  ];
+  'move:item': [move: ItemMove, settled?: (succeeded: boolean, awaitingRefresh?: boolean) => void];
   'save-as-template': [id: string];
   'set-category-packed': [change: CategoryPackedChange];
 }>();
@@ -397,6 +426,96 @@ const showUnpackedOnly = ref(false);
 const { touchControls } = useTouchLayout();
 const checklistRoot = ref<HTMLElement | null>(null);
 const openItemActionsId = ref<string | null>(null);
+const dragBaselineItems = ref<Readonly<ItemDTO>[] | null>(null);
+const dragPreviewReset = ref(0);
+const suppressDragHover = ref(false);
+const pendingItemMoves = shallowRef<ItemMove[]>([]);
+const awaitingItemRefresh = new Set<ItemMove>();
+const itemMoveResults = new Map<ItemMove, Promise<boolean>>();
+const isDraggingItem = ref(false);
+let restoreItemHover = () => {};
+
+/** Clear the item preview after pending saves and active drags have finished. */
+function resetItemPreviewWhenIdle() {
+  if (pendingItemMoves.value.length || isDraggingItem.value) return;
+  dragBaselineItems.value = null;
+  dragPreviewReset.value += 1;
+}
+
+watch(
+  () => props.items,
+  () => {
+    if (!awaitingItemRefresh.size) return;
+    pendingItemMoves.value = pendingItemMoves.value.filter(
+      (move) => !awaitingItemRefresh.has(move)
+    );
+    for (const move of awaitingItemRefresh) itemMoveResults.delete(move);
+    awaitingItemRefresh.clear();
+    void nextTick(resetItemPreviewWhenIdle);
+  }
+);
+
+// Only ordering fields are projected; other fields continue to follow fresh data.
+const projectedItems = computed(() =>
+  props.items.map((item) => {
+    const result = { ...item };
+    for (const move of pendingItemMoves.value) {
+      const update = move.items.find((entry) => entry.id === item.id);
+      if (update) {
+        result.categoryId = update.categoryId;
+        result.order = update.order;
+      }
+    }
+    return result;
+  })
+);
+
+/** Wait for relevant moves before capturing a category-wide packing batch. */
+async function waitForCategoryMoves(categoryId: string): Promise<boolean> {
+  for (;;) {
+    const relevant = pendingItemMoves.value.filter((move) =>
+      move.items.some(
+        (item) =>
+          item.categoryId === categoryId ||
+          move.expectedItems.find((previous) => previous.id === item.id)?.categoryId === categoryId
+      )
+    );
+    if (!relevant.length) return true;
+    const results = await Promise.all(
+      relevant.map((move) => itemMoveResults.get(move) ?? Promise.resolve(false))
+    );
+    if (results.some((succeeded) => !succeeded)) return false;
+  }
+}
+
+/** Capture the latest visible ordering before Sortable changes either list. */
+function onItemDragStart() {
+  // Sortable prevents pointer focus transfer. Explicitly finish the old edit when dragging.
+  const active = document.activeElement;
+  if (active instanceof HTMLInputElement && active.dataset.testid === 'item-edit-input')
+    active.blur();
+  isDraggingItem.value = true;
+  restoreItemHover();
+  suppressDragHover.value = !touchControls.value;
+  dragBaselineItems.value = projectedItems.value.map((item) => ({ ...item }));
+}
+
+/** Keep the old mouse position from highlighting the next row after a drop. */
+function onItemDragEnd(event: unknown) {
+  isDraggingItem.value = false;
+  void nextTick(resetItemPreviewWhenIdle);
+  if (touchControls.value) return;
+  const original = (event as { originalEvent?: MouseEvent }).originalEvent;
+  const position = original ? { x: original.clientX, y: original.clientY } : null;
+  const onMove = (move: MouseEvent) => {
+    if (position && move.clientX === position.x && move.clientY === position.y) return;
+    restoreItemHover();
+    suppressDragHover.value = false;
+  };
+  window.addEventListener('mousemove', onMove, true);
+  restoreItemHover = () => window.removeEventListener('mousemove', onMove, true);
+}
+onUnmounted(() => restoreItemHover());
 
 /** Toggle the one active item across all categories. */
 function toggleItemActions(id: string) {
@@ -485,6 +604,7 @@ let cleanupEditingFocus = () => {};
 
 // Drag state
 const draggingCategoryId = ref<string | null>(null);
+let cleanupDragPreview: (() => void) | undefined;
 const isDraggingCategory = ref(false);
 
 // ------------------------------------------------------------------------------
@@ -504,18 +624,51 @@ const sortedCategories = computed(() => {
 });
 
 // Draggable categories (two-way binding with vuedraggable)
+const categoryPreview = ref<Readonly<CategoryDTO>[] | null>(null);
+let pendingCategoryMoves = 0;
+let awaitingCategoryRefresh = false;
+/** Clear the category preview after saves and active drags have finished. */
+function resetCategoryPreviewWhenIdle() {
+  if (!pendingCategoryMoves && !awaitingCategoryRefresh && !isDraggingCategory.value) {
+    categoryPreview.value = null;
+  }
+}
+watch(
+  () => props.categories,
+  () => {
+    if (!awaitingCategoryRefresh) return;
+    awaitingCategoryRefresh = false;
+    void nextTick(resetCategoryPreviewWhenIdle);
+  }
+);
 const draggableCategories = computed({
   get() {
-    return sortedCategories.value;
+    if (!categoryPreview.value) return sortedCategories.value;
+    const previews = categoryPreview.value.flatMap((preview) => {
+      const current = props.categories.find((category) => category.id === preview.id);
+      return current ? [{ ...current, order: preview.order }] : [];
+    });
+    const previewIds = new Set(categoryPreview.value.map((category) => category.id));
+    return [
+      ...previews,
+      ...sortedCategories.value.filter((category) => !previewIds.has(category.id)),
+    ];
   },
   set(newCategories) {
     // When vuedraggable updates the array, emit the reorder event
     const categoriesWithNewOrder = renumberOrder(newCategories);
+    categoryPreview.value = categoriesWithNewOrder;
+    pendingCategoryMoves += 1;
 
     emit(
       'reorder:categories',
       categoriesWithNewOrder,
-      newCategories.map((category) => ({ ...category }))
+      newCategories.map((category) => ({ ...category })),
+      (awaitingRefresh) => {
+        pendingCategoryMoves -= 1;
+        if (awaitingRefresh) awaitingCategoryRefresh = true;
+        void nextTick(resetCategoryPreviewWhenIdle);
+      }
     );
   },
 });
@@ -695,6 +848,8 @@ function handleDelete() {
  * @param {object} event - Sortable drag event
  */
 function onCategoryDragStart(event: DragStart) {
+  cleanupDragPreview?.();
+  cleanupDragPreview = isolateDragPreview();
   const categoryElement = event.item.querySelector<HTMLElement>('[data-category-id]') || event.item;
   if (categoryElement.dataset.categoryId) {
     draggingCategoryId.value = categoryElement.dataset.categoryId;
@@ -707,8 +862,11 @@ function onCategoryDragStart(event: DragStart) {
  * @param {object} _event - Sortable drag event (unused)
  */
 function onCategoryDragEnd(_event: unknown) {
+  cleanupDragPreview?.();
+  cleanupDragPreview = undefined;
   draggingCategoryId.value = null;
   isDraggingCategory.value = false;
+  void nextTick(resetCategoryPreviewWhenIdle);
 }
 
 /**
@@ -724,7 +882,25 @@ function onCategoryUpdate(_event: unknown) {
  * @param {object} moveData - Move data containing item and reorder information
  */
 function handleItemMove(moveData: ItemMove) {
-  emit('move:item', moveData);
+  if (!moveData.items?.length) {
+    emit('move:item', moveData);
+    return;
+  }
+  let resolveMove: (succeeded: boolean) => void = () => {};
+  const result = new Promise<boolean>((resolve) => {
+    resolveMove = resolve;
+  });
+  itemMoveResults.set(moveData, result);
+  pendingItemMoves.value = [...pendingItemMoves.value, moveData];
+  emit('move:item', moveData, (succeeded, awaitingRefresh) => {
+    if (awaitingRefresh) awaitingItemRefresh.add(moveData);
+    else {
+      pendingItemMoves.value = pendingItemMoves.value.filter((entry) => entry !== moveData);
+      itemMoveResults.delete(moveData);
+    }
+    resolveMove(succeeded && !awaitingRefresh);
+    void nextTick(resetItemPreviewWhenIdle);
+  });
 }
 
 // --- Helpers ---
@@ -827,6 +1003,7 @@ watch(editedEndDate, (newEndDate) => {
 });
 
 onBeforeUnmount(() => {
+  cleanupDragPreview?.();
   if (
     isEditing.value &&
     editBaseline &&
@@ -908,20 +1085,12 @@ onUnmounted(() => cleanupEditingFocus());
   margin-bottom: 0.75rem; /* gap-3 */
   display: inline-block;
   width: 100%;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Layout preservation during drag */
-.categories-masonry.dragging > * {
-  transition:
-    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, opacity;
-}
-
-/* Smooth transitions for masonry items */
-.categories-masonry > * {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+/* Sortable updates the preview transform from its current matrix on every touch move. */
+.category-item.sortable-fallback {
+  transition: none;
+  transform: none;
 }
 
 /* Success animation */

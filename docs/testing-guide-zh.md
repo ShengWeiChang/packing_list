@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 717    |
-| Unit tests 單元測試           | 309    |
-| Component tests 組件測試      | 304    |
-| E2E tests E2E 測試            | 104    |
-| Line coverage 行覆蓋率        | 92.37% |
-| Statement coverage 語句覆蓋率 | 90.65% |
-| Branch coverage 分支覆蓋率    | 81.28% |
+| Total tests 總測試數          | 793    |
+| Unit tests 單元測試           | 317    |
+| Component tests 組件測試      | 314    |
+| E2E tests E2E 測試            | 162    |
+| Line coverage 行覆蓋率        | 89.86% |
+| Statement coverage 語句覆蓋率 | 87.68% |
+| Branch coverage 分支覆蓋率    | 78.26% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,9 +29,9 @@
 
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 309   | models、services、composables、utils 純邏輯 |
-| Component | Vitest + @vue/test-utils | 304   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 95    | 真實瀏覽器中的完整使用者流程                |
+| Unit      | Vitest                   | 317   | models、services、composables、utils 純邏輯 |
+| Component | Vitest + @vue/test-utils | 314   | Vue 組件渲染、事件、狀態                    |
+| E2E       | Playwright               | 162   | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
@@ -72,7 +72,7 @@ tests/
 │   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
 │   └── fixtures/                        # Typed probe and deliberately invalid inputs
 │
-├── unit-tests/                          # 309 tests
+├── unit-tests/                          # 317 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -80,13 +80,13 @@ tests/
 │   │   ├── Category.test.js             #  9  tests
 │   │   └── Checklist.test.js            # 11  tests
 │   │   └── Template.test.js             #  3  tests
-│   ├── services/                        # 126 tests
-│   │   ├── localStorageService.test.js  # 80  tests
+│   ├── services/                        # 133 tests
+│   │   ├── localStorageService.test.js  # 87  tests
 │   │   ├── templateService.test.js      # 15  tests
 │   │   ├── storageTransaction.test.js  # 27  tests
 │   │   └── recommendedListService.test.js  #  4  tests
-│   ├── composables/                     # 69  tests
-│   │   └── usePackingLists.test.js      # 51  tests
+│   ├── composables/                     # 70  tests
+│   │   └── usePackingLists.test.js      # 52  tests
 │   │   └── useTemplates.test.js         # 16  tests
 │   │   └── useTouchLayout.test.js       #  1  test
 │   │   └── useVisualViewport.test.js    #  1  test
@@ -105,13 +105,14 @@ tests/
 │       ├── eslintTypeScript.test.js     #  2  tests
 │       └── verifyFeature.test.js        #  5  tests
 │
-├── component-tests/                     # 304 tests
+├── component-tests/                     # 314 tests
 │   ├── App.test.js                      # 68  tests
 │   ├── PackingCompletionOverlay.test.js # 10  tests
 │   ├── AppIcon.test.js                  #  4  tests
 │   ├── Checklist.test.js                # 42  tests
 │   ├── Item.test.js                     # 31  tests
-│   ├── Sidebar.test.js                  # 33  tests
+│   ├── Sidebar.test.js                  # 36  tests
+│   ├── typedDraggable.test.js           #  7  tests
 │   ├── Category.test.js                 # 31  tests
 │   ├── OverflowMenu.test.js             # 24  tests
 │   ├── ProgressBar.test.js              #  8  tests
@@ -123,17 +124,24 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 104 tests
+└── end2end-tests/                       # 162 tests
+    ├── touchDragHelpers.js              # 長按微動與原生捲動手勢
     ├── mobile-workflow.spec.js          # 10  tests
-    ├── rwd-phone.spec.js                #  7  tests
+    ├── rwd-phone.spec.js                #  8  tests
     ├── rwd-overlays.spec.js             #  5  tests
     ├── rwd-webkit.spec.js               #  3  tests
+    ├── sidebar-presentation.spec.js     #  6  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
     ├── checklist-management.spec.js     #  6  tests
     ├── category-crud.spec.js            #  3  tests
     ├── drag-and-drop.spec.js            #  7  tests
+    ├── desktop-drag-presentation.spec.js # 19  tests
+    ├── drag-settlement.spec.js           # 15  tests
+    ├── drag-membership-conflict.spec.js  #  1  test
+    ├── category-motion.spec.js          #  8  tests
+    ├── interaction-feedback.spec.js      #  8  tests
     ├── multi-tab-sync.spec.js           #  6  tests
     ├── template-management.spec.js      #  7  tests
     ├── recommended-lists.spec.js        #  1  test
@@ -161,33 +169,33 @@ tests/
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
 | scripts/     | 79.03%     | 63.2%  | 77.63% |
-| source/      | 78.05%     | 67.56% | 81.72% |
-| components/  | 91.72%     | 84.97% | 94.04% |
-| composables/ | 95.46%     | 86.14% | 97.62% |
+| source/      | 78.3%      | 67.46% | 81.84% |
+| components/  | 84.16%     | 77.42% | 87.36% |
+| composables/ | 95.04%     | 85.26% | 97.28% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 95.55%     | 82.84% | 95.28% |
-| utils/       | 97.43%     | 85.93% | 97.85% |
+| services/    | 95.53%     | 83.5%  | 95.44% |
+| utils/       | 96.36%     | 85.92% | 96.62% |
 
 ### By Component 各組件覆蓋率
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 77.52%     | 81.1%  | 68    |
+| App.vue                      | 78.3%      | 81.84% | 68    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
 | ProgressBar.vue              | 100%       | 100%   | 8     |
 | Topbar.vue                   | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
-| Sidebar.vue                  | 100%       | 100%   | 33    |
-| OverflowMenu.vue             | 90.09%     | 91.83% | 24    |
-| Category.vue                 | 89.5%      | 91.09% | 31    |
-| Checklist.vue                | 87.44%     | 91.58% | 42    |
-| Item.vue                     | 88.2%      | 92.09% | 31    |
+| Sidebar.vue                  | 88.57%     | 90.56% | 36    |
+| OverflowMenu.vue             | 89.9%      | 92.38% | 24    |
+| Category.vue                 | 81.35%     | 85.3%  | 31    |
+| Checklist.vue                | 72.14%     | 76.66% | 42    |
+| Item.vue                     | 86.34%     | 90.81% | 31    |
 | NewChecklistDialog.vue       | 95%        | 95.94% | 12    |
 | PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
 | SaveTemplateDialog.vue       | 92.72%     | 93.87% | 10    |
-| TemplateEditor.vue           | 95.23%     | 97.1%  | 14    |
+| TemplateEditor.vue           | 95.55%     | 97.33% | 14    |
 
 ### Coverage Metrics Explained 覆蓋率指標說明
 
@@ -258,6 +266,8 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 `rwd-phone.spec.js` 明確設定 touch context，驗證 phone／tablet 操作、真實命中區、名稱幾何、一次一件展開、reload 與長按排序，並包含桌面滑鼠回歸。`rwd-overlays.spec.js` 涵蓋抽屜焦點、巢狀 dialog、短畫面、原生日期與模擬鍵盤幾何／錯誤恢復。`webkit-rwd` 只執行 `rwd-webkit.spec.js`，Chromium 忽略此檔，CI 安裝兩個引擎。Emulation 及合成 viewport／IME 事件不證明原生鍵盤或實機舒適度；實機結果另行記錄。
 
+`drag-settlement.spec.js` 涵蓋各版面側欄待儲存順序、儲存失敗、七種接收／排序路徑在佔位移動後的 `touchcancel`，以及正常觸控放手。取消手勢使用 Chromium CDP 模擬，不證明實體 iOS／Safari 的中斷行為。`typedDraggable.test.js` 驗證真實 vuedraggable 的 model／change 邊界。`drag-membership-conflict.spec.js` 以兩個真實頁面驗證過期成員拒絕與重載；service／composable cases 涵蓋完整成員、隱藏列與相容欄位編輯。
+
 #### Responsive Manual Acceptance 響應式人工驗收
 
 - 使用隔離的測試清單，記錄 build 或 commit、日期、裝置、系統、瀏覽器、方向、輸入方式、步驟、預期與實際結果，以及 pass／fail／not run。需要時保留截圖或錄影；未測的裝置維持 not run。
@@ -278,7 +288,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ## 8. Complete Test Inventory 完整測試案例清單
 
-### 8.1 Unit Tests（309）
+### 8.1 Unit Tests（317）
 
 #### 8.1.1 Models（40）
 
@@ -342,92 +352,99 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | trims its name and round-trips snapshot content  | 序列化     |
 | 3   | rejects a non-string or too-long name            | 名稱驗證   |
 
-#### 8.1.2 Services（126）
+#### 8.1.2 Services（133）
 
-##### 8.1.2.1 localStorageService.test.js（80）
+##### 8.1.2.1 localStorageService.test.js（87）
 
-| #   | Test                                                                          | 測試重點                   |
-| --- | ----------------------------------------------------------------------------- | -------------------------- |
-| 1   | should initialize with empty data when localStorage is empty                  | 空狀態初始化               |
-| 2   | should not overwrite data on repeated initialization                          | 冪等初始化                 |
-| 3   | should not overwrite when app data key already exists                         | initializeStorage 提前返回 |
-| 4   | should preserve corrupted localStorage data and report an error               | 損壞資料保留               |
-| 5   | should reject invalid collection types without replacing stored data          | 無效資料保留               |
-| 6   | should create a new checklist                                                 | 建立 + 存儲                |
-| 7   | should create general recommended list data for a new checklist by default    | 一般推薦清單後備           |
-| 8   | should persist supplied seed data when creating a checklist                   | 通用來源資料建立           |
-| 9   | should get checklist by ID                                                    | 單一查詢                   |
-| 10  | should return null for non-existent checklist                                 | 不存在回傳 null            |
-| 11  | should update an existing checklist                                           | 更新 + 存儲                |
-| 12  | should throw error when updating non-existent checklist                       | 更新不存在拋錯             |
-| 13  | should delete a checklist and its associated data                             | 級聯刪除                   |
-| 14  | should create a new category                                                  | 建立分類                   |
-| 15  | should get categories for a checklist                                         | 篩選查詢                   |
-| 16  | should update a category                                                      | 更新分類                   |
-| 17  | should delete a category and its items                                        | 級聯刪除                   |
-| 18  | should get a category by ID                                                   | 依 ID 查詢分類             |
-| 19  | should return null for non-existent category by ID                            | 不存在回傳 null            |
-| 20  | should create a new item                                                      | 建立物品                   |
-| 21  | should update an item                                                         | 更新物品                   |
-| 22  | should throw error when updating non-existent item in checklist               | 更新不存在拋錯             |
-| 23  | should delete an item                                                         | 刪除物品                   |
-| 24  | should get item by ID within a checklist                                      | 依 ID 查詢物品             |
-| 25  | should return null when item is not found within a checklist                  | 不存在回傳 null            |
-| 26  | should toggle item packed status                                              | 切換打包狀態               |
-| 27  | should use cache on subsequent getData calls                                  | 快取命中                   |
-| 28  | should update cache after save operation                                      | 快取失效                   |
-| 29  | should duplicate a checklist with all categories and items                    | 深層複製                   |
-| 30  | should reorder other checklists when duplicating in the middle                | 中間插入 + 後續順序遞增    |
-| 31  | should throw error when duplicating non-existent checklist                    | 複製不存在拋錯             |
-| 32  | should duplicate a category with all its items                                | 分類層級複製               |
-| 33  | should throw error when duplicating non-existent category                     | 複製不存在拋錯             |
-| 34  | should duplicate an item within the same category                             | 單項複製                   |
-| 35  | should throw error when duplicating non-existent item                         | 複製不存在拋錯             |
-| 36  | should update multiple checklists at once                                     | 批量更新                   |
-| 37  | should return English copy suffix by default                                  | 英文後綴                   |
-| 38  | should return Chinese copy suffix for zh-TW locale                            | 中文後綴                   |
-| 39  | should return fallback copy suffix for unknown locale                         | 未知語系後備               |
-| 40  | should dispose resources and clear cache                                      | 資源清理                   |
-| 41  | should handle deleting non-existent category gracefully                       | 刪除不存在無錯             |
-| 42  | should handle deleting non-existent item gracefully                           | 刪除不存在無錯             |
-| 43  | should propagate errors when storage save fails                               | 錯誤傳播                   |
-| 44  | should truncate duplicate name when original name is at max length            | 邊界：名稱截斷             |
-| 45  | should invalidate cache when storage event fires with matching key            | 跨分頁快取失效             |
-| 46  | should reset \_initialized when storage key is removed in another tab         | 跨分頁移除處理             |
-| 47  | should ignore storage events for unrelated keys                               | 事件 key 過濾              |
-| 48  | should throw Storage operation failed when setItem throws                     | QuotaExceeded 錯誤路徑     |
-| 49  | should throw when updating non-existent category                              | 更新不存在分類拋錯         |
-| 50  | should truncate duplicate category name when at max length                    | 分類名稱截斷               |
-| 51  | should truncate duplicate item name when at max length                        | 物品名稱截斷               |
-| 52  | should read user-locale from localStorage when no locale provided             | 從 storage 讀取語系        |
-| 53  | should default to English suffix when no locale in storage                    | 語系後備                   |
-| 54  | should handle multiple dispose calls gracefully                               | dispose 冪等               |
-| 55  | should store and retrieve emoji in checklist name                             | Unicode emoji 支援         |
-| 56  | should store and retrieve CJK characters in category name                     | CJK 字元支援               |
-| 57  | should store HTML-like strings as plain text                                  | XSS 安全存儲               |
-| 58  | should handle special characters in item names                                | 特殊字元編碼               |
-| 59  | should handle gracefully when getItem throws on getData                       | localStorage 停用          |
-| 60  | should normalize missing arrays from storage payload                          | 稀疏 payload 後備          |
-| 61  | should handle missing checklists array in cache                               | 快取形狀後備               |
-| 62  | should handle missing categories array in cache                               | 快取形狀後備               |
-| 63  | should handle missing items array in cache                                    | 快取形狀後備               |
-| 64  | should allow create operations with sparse cache shape                        | 稀疏快取建立路徑           |
-| 65  | should reject the whole batch when a checklist does not exist                 | 原子批次失敗               |
-| 66  | should return all categories across all checklists                            | 不帶 filter 的分類查詢     |
-| 67  | should use original categoryId for items whose category was not found         | orphan item 後備           |
-| 68  | should duplicate checklist when stored categories and items are absent        | 舊版預設值                 |
-| 69  | should duplicate category when stored items are absent                        | 舊版預設值                 |
-| 70  | should duplicate item when stored data has no reorder targets                 | 複製後備路徑               |
-| 71  | should reject stale concurrent checklist updates                              | 同欄位衝突                 |
-| 72  | should invalidate cache after storage event from another tab                  | 跨分頁快取失效             |
-| 73  | should handle high data volume (50+) without losing correctness               | 高資料量正確性             |
-| 74  | should cascade delete categories and items when deleting checklist            | 級聯完整性                 |
-| 75  | should cascade delete all items in a deleted category                         | 級聯完整性                 |
-| 76  | should preserve relative order semantics after duplicate and delete           | 順序一致性                 |
-| 77  | should keep general recommended list shape stable across en and zh-TW locales | 語系資料形狀穩定           |
-| 78  | should reject a stale item update without overwriting newer fields            | 同欄位衝突                 |
-| 79  | should update multiple items atomically with one storage write                | 原子性批次持久化           |
-| 80  | should not persist a partial batch when an item does not exist                | 批次失敗完整性             |
+| #   | Test                                                                                    | 測試重點                       |
+| --- | --------------------------------------------------------------------------------------- | ------------------------------ |
+| 1   | should initialize with empty data when localStorage is empty                            | 空狀態初始化                   |
+| 2   | should not overwrite data on repeated initialization                                    | 冪等初始化                     |
+| 3   | should not overwrite when app data key already exists                                   | initializeStorage 提前返回     |
+| 4   | should preserve corrupted localStorage data and report an error                         | 損壞資料保留                   |
+| 5   | should reject invalid collection types without replacing stored data                    | 無效資料保留                   |
+| 6   | should create a new checklist                                                           | 建立 + 存儲                    |
+| 7   | should create general recommended list data for a new checklist by default              | 一般推薦清單後備               |
+| 8   | should persist supplied seed data when creating a checklist                             | 通用來源資料建立               |
+| 9   | should get checklist by ID                                                              | 單一查詢                       |
+| 10  | should return null for non-existent checklist                                           | 不存在回傳 null                |
+| 11  | should update an existing checklist                                                     | 更新 + 存儲                    |
+| 12  | should throw error when updating non-existent checklist                                 | 更新不存在拋錯                 |
+| 13  | should delete a checklist and its associated data                                       | 級聯刪除                       |
+| 14  | should create a new category                                                            | 建立分類                       |
+| 15  | should get categories for a checklist                                                   | 篩選查詢                       |
+| 16  | should update a category                                                                | 更新分類                       |
+| 17  | should delete a category and its items                                                  | 級聯刪除                       |
+| 18  | should get a category by ID                                                             | 依 ID 查詢分類                 |
+| 19  | should return null for non-existent category by ID                                      | 不存在回傳 null                |
+| 20  | should create a new item                                                                | 建立物品                       |
+| 21  | should update an item                                                                   | 更新物品                       |
+| 22  | should throw error when updating non-existent item in checklist                         | 更新不存在拋錯                 |
+| 23  | should delete an item                                                                   | 刪除物品                       |
+| 24  | should get item by ID within a checklist                                                | 依 ID 查詢物品                 |
+| 25  | should return null when item is not found within a checklist                            | 不存在回傳 null                |
+| 26  | should toggle item packed status                                                        | 切換打包狀態                   |
+| 27  | should use cache on subsequent getData calls                                            | 快取命中                       |
+| 28  | should update cache after save operation                                                | 快取失效                       |
+| 29  | should duplicate a checklist with all categories and items                              | 深層複製                       |
+| 30  | should reorder other checklists when duplicating in the middle                          | 中間插入 + 後續順序遞增        |
+| 31  | should throw error when duplicating non-existent checklist                              | 複製不存在拋錯                 |
+| 32  | should duplicate a category with all its items                                          | 分類層級複製                   |
+| 33  | should throw error when duplicating non-existent category                               | 複製不存在拋錯                 |
+| 34  | should duplicate an item within the same category                                       | 單項複製                       |
+| 35  | should throw error when duplicating non-existent item                                   | 複製不存在拋錯                 |
+| 36  | should update multiple checklists at once                                               | 批量更新                       |
+| 37  | should return English copy suffix by default                                            | 英文後綴                       |
+| 38  | should return Chinese copy suffix for zh-TW locale                                      | 中文後綴                       |
+| 39  | should return fallback copy suffix for unknown locale                                   | 未知語系後備                   |
+| 40  | should dispose resources and clear cache                                                | 資源清理                       |
+| 41  | should handle deleting non-existent category gracefully                                 | 刪除不存在無錯                 |
+| 42  | should handle deleting non-existent item gracefully                                     | 刪除不存在無錯                 |
+| 43  | should propagate errors when storage save fails                                         | 錯誤傳播                       |
+| 44  | should truncate duplicate name when original name is at max length                      | 邊界：名稱截斷                 |
+| 45  | should invalidate cache when storage event fires with matching key                      | 跨分頁快取失效                 |
+| 46  | should reset \_initialized when storage key is removed in another tab                   | 跨分頁移除處理                 |
+| 47  | should ignore storage events for unrelated keys                                         | 事件 key 過濾                  |
+| 48  | should throw Storage operation failed when setItem throws                               | QuotaExceeded 錯誤路徑         |
+| 49  | should throw when updating non-existent category                                        | 更新不存在分類拋錯             |
+| 50  | should truncate duplicate category name when at max length                              | 分類名稱截斷                   |
+| 51  | should truncate duplicate item name when at max length                                  | 物品名稱截斷                   |
+| 52  | should read user-locale from localStorage when no locale provided                       | 從 storage 讀取語系            |
+| 53  | should default to English suffix when no locale in storage                              | 語系後備                       |
+| 54  | should handle multiple dispose calls gracefully                                         | dispose 冪等                   |
+| 55  | should store and retrieve emoji in checklist name                                       | Unicode emoji 支援             |
+| 56  | should store and retrieve CJK characters in category name                               | CJK 字元支援                   |
+| 57  | should store HTML-like strings as plain text                                            | XSS 安全存儲                   |
+| 58  | should handle special characters in item names                                          | 特殊字元編碼                   |
+| 59  | should handle gracefully when getItem throws on getData                                 | localStorage 停用              |
+| 60  | should normalize missing arrays from storage payload                                    | 稀疏 payload 後備              |
+| 61  | should handle missing checklists array in cache                                         | 快取形狀後備                   |
+| 62  | should handle missing categories array in cache                                         | 快取形狀後備                   |
+| 63  | should handle missing items array in cache                                              | 快取形狀後備                   |
+| 64  | should allow create operations with sparse cache shape                                  | 稀疏快取建立路徑               |
+| 65  | should reject the whole batch when a checklist does not exist                           | 原子批次失敗                   |
+| 66  | should return all categories across all checklists                                      | 不帶 filter 的分類查詢         |
+| 67  | should use original categoryId for items whose category was not found                   | orphan item 後備               |
+| 68  | should duplicate checklist when stored categories and items are absent                  | 舊版預設值                     |
+| 69  | should duplicate category when stored items are absent                                  | 舊版預設值                     |
+| 70  | should duplicate item when stored data has no reorder targets                           | 複製後備路徑                   |
+| 71  | should reject stale concurrent checklist updates                                        | 同欄位衝突                     |
+| 72  | should invalidate cache after storage event from another tab                            | 跨分頁快取失效                 |
+| 73  | should handle high data volume (50+) without losing correctness                         | 高資料量正確性                 |
+| 74  | should cascade delete categories and items when deleting checklist                      | 級聯完整性                     |
+| 75  | should cascade delete all items in a deleted category                                   | 級聯完整性                     |
+| 76  | should preserve relative order semantics after duplicate and delete                     | 順序一致性                     |
+| 77  | should keep general recommended list shape stable across en and zh-TW locales           | 語系資料形狀穩定               |
+| 78  | should reject a stale item update without overwriting newer fields                      | 同欄位衝突                     |
+| 79  | rejects a stale move after an addition in source without writing duplicate orders       | 來源新增成員時拒絕整次拖曳     |
+| 80  | rejects a stale move after an addition in target without writing duplicate orders       | 目標新增成員時拒絕整次拖曳     |
+| 81  | rejects a stale move after an addition in empty target without writing duplicate orders | 空目標成員檢查                 |
+| 82  | preserves unrelated concurrent fields and hidden slots when membership is unchanged     | 相容欄位與隱藏槽位保留         |
+| 83  | allows ordinary packing batches after an unrelated membership change                    | 打包批次不套用拖曳成員前提     |
+| 84  | requires both source and empty target membership baselines for moves                    | 拒絕不完整的受影響分類baseline |
+| 85  | rejects a same-category reorder after an untouched hidden row is removed                | 隱藏成員移除時原子拒絕排序     |
+| 86  | should update multiple items atomically with one storage write                          | 原子性批次持久化               |
+| 87  | should not persist a partial batch when an item does not exist                          | 批次失敗完整性                 |
 
 ##### 8.1.2.2 templateService.test.js（15）
 
@@ -490,63 +507,64 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 26  | 保留範本巢狀欄位並隔離新建立的 runtime 狀態                                   | Snapshot 保留與全新狀態      |
 | 27  | 複製原始資料時不偷偷修復缺漏的舊名稱                                          | 既有失敗行為與原文保留       |
 
-#### 8.1.3 Composables（69）
+#### 8.1.3 Composables（70）
 
-##### 8.1.3.1 usePackingLists.test.js（51）
+##### 8.1.3.1 usePackingLists.test.js（52）
 
-| #   | Test                                                                               | 測試重點                |
-| --- | ---------------------------------------------------------------------------------- | ----------------------- |
-| 1   | should return initial empty state                                                  | 預設空狀態              |
-| 2   | should have computed properties                                                    | computed refs 存在      |
-| 3   | should load data from storage on initialize                                        | 初始化讀取 service      |
-| 4   | should manage loading state during initialization                                  | isLoading 切換          |
-| 5   | should normalize missing checklist order in memory and restore the saved checklist | 舊版預設值與已儲存選取  |
-| 6   | should fallback selected checklist and reload scoped categories/items              | 側欄頂端回退            |
-| 7   | should set error and clear state when initialize fails unexpectedly                | 初始化失敗復原          |
-| 8   | should create a new checklist                                                      | 建立 + 刷新             |
-| 9   | should select the first checklist after creation                                   | 自動選取                |
-| 10  | should update an existing checklist                                                | 更新 + 刷新             |
-| 11  | should delete a checklist                                                          | 刪除 + 刷新             |
-| 12  | should return null when createChecklist service call fails                         | Service 失敗路徑        |
-| 13  | should return null when updateChecklist service call fails                         | Service 失敗路徑        |
-| 14  | should create a category in the selected checklist                                 | 建立分類                |
-| 15  | should return null if no checklist is selected                                     | 空選取檢查              |
-| 16  | should create an item in the selected checklist                                    | 建立物品                |
-| 17  | should toggle item packed status                                                   | 切換 + 刷新；不建立復原 |
-| 18  | should calculate progress correctly                                                | 進度計算                |
-| 19  | should return 0 progress for empty checklist                                       | 零物品邊界              |
-| 20  | should handle storage errors gracefully during initialization                      | 錯誤容錯                |
-| 21  | should duplicate a checklist and refresh state                                     | 複製清單                |
-| 22  | should duplicate a category and refresh state                                      | 複製分類                |
-| 23  | should duplicate an item and refresh state                                         | 複製物品                |
-| 24  | should delete a category and refresh both categories and items                     | 分類級聯刪除            |
-| 25  | should delete an item and refresh items                                            | 物品刪除                |
-| 26  | should update multiple checklists and refresh state                                | 批量更新                |
-| 27  | should return null when creating item without selected checklist                   | 空選取檢查              |
-| 28  | should return null when duplicating item without selected checklist                | 空選取檢查              |
-| 29  | should return null when updating item without selected checklist                   | 空選取檢查              |
-| 30  | should return empty array when getting categories without selected checklist       | 空選取檢查              |
-| 31  | should return empty array when getting items without selected checklist            | 空選取檢查              |
-| 32  | should return early when deleting item without selected checklist                  | 空選取檢查              |
-| 33  | should return null when createItem service call fails (with checklist)             | Service 失敗路徑        |
-| 34  | should return null when duplicateCategory service call fails (with checklist)      | Service 失敗路徑        |
-| 35  | should return null when updateItem service call fails (with checklist)             | Service 失敗路徑        |
-| 36  | should return null when duplicateItem service call fails (with checklist)          | Service 失敗路徑        |
-| 37  | should return null when createCategory service call fails (with checklist)         | Service 失敗路徑        |
-| 38  | should return null when duplicateChecklist service call fails (no checklist)       | Service 失敗路徑        |
-| 39  | should return null when updateCategory service call fails (no checklist)           | Service 失敗路徑        |
-| 40  | should return null when updateCategory service returns undefined                   | falsy 結果防禦          |
-| 41  | should return null when updateMultipleChecklists service returns undefined         | falsy 結果防禦          |
-| 42  | should return null when updateCategory throws (real service)                       | throw → null 後備       |
-| 43  | should refresh categories and return updated category on success                   | 成功路徑 + refresh      |
-| 44  | should preserve valid selection and recover deleted selection on app data refresh  | 跨分頁選取復原          |
-| 45  | 刪除失敗後保留歷史與資料                                                           | 刪除失敗                |
-| 46  | 重新讀取失敗後保留畫面上的分類與物品                                               | 讀取失敗                |
-| 47  | 區分寫入成功與後續更新失敗                                                         | 寫入確認                |
-| 48  | 新清單無法讀取時清除先前清單資料                                                   | 選取歸屬                |
-| 49  | should treat a category pack-all as one undoable action and restore mixed state    | 群組歷史與重做安全      |
-| 50  | should clear packing history when switching checklists                             | 歷史範圍隔離            |
-| 51  | preserves remote item edits when committing a stale drag payload                   | 明確拖曳意圖            |
+| #   | Test                                                                               | 測試重點                         |
+| --- | ---------------------------------------------------------------------------------- | -------------------------------- |
+| 1   | should return initial empty state                                                  | 預設空狀態                       |
+| 2   | should have computed properties                                                    | computed refs 存在               |
+| 3   | should load data from storage on initialize                                        | 初始化讀取 service               |
+| 4   | should manage loading state during initialization                                  | isLoading 切換                   |
+| 5   | should normalize missing checklist order in memory and restore the saved checklist | 舊版預設值與已儲存選取           |
+| 6   | should fallback selected checklist and reload scoped categories/items              | 側欄頂端回退                     |
+| 7   | should set error and clear state when initialize fails unexpectedly                | 初始化失敗復原                   |
+| 8   | should create a new checklist                                                      | 建立 + 刷新                      |
+| 9   | should select the first checklist after creation                                   | 自動選取                         |
+| 10  | should update an existing checklist                                                | 更新 + 刷新                      |
+| 11  | should delete a checklist                                                          | 刪除 + 刷新                      |
+| 12  | should return null when createChecklist service call fails                         | Service 失敗路徑                 |
+| 13  | should return null when updateChecklist service call fails                         | Service 失敗路徑                 |
+| 14  | should create a category in the selected checklist                                 | 建立分類                         |
+| 15  | should return null if no checklist is selected                                     | 空選取檢查                       |
+| 16  | should create an item in the selected checklist                                    | 建立物品                         |
+| 17  | should toggle item packed status                                                   | 切換 + 刷新；不建立復原          |
+| 18  | should calculate progress correctly                                                | 進度計算                         |
+| 19  | should return 0 progress for empty checklist                                       | 零物品邊界                       |
+| 20  | should handle storage errors gracefully during initialization                      | 錯誤容錯                         |
+| 21  | should duplicate a checklist and refresh state                                     | 複製清單                         |
+| 22  | should duplicate a category and refresh state                                      | 複製分類                         |
+| 23  | should duplicate an item and refresh state                                         | 複製物品                         |
+| 24  | should delete a category and refresh both categories and items                     | 分類級聯刪除                     |
+| 25  | should delete an item and refresh items                                            | 物品刪除                         |
+| 26  | should update multiple checklists and refresh state                                | 批量更新                         |
+| 27  | should return null when creating item without selected checklist                   | 空選取檢查                       |
+| 28  | should return null when duplicating item without selected checklist                | 空選取檢查                       |
+| 29  | should return null when updating item without selected checklist                   | 空選取檢查                       |
+| 30  | should return empty array when getting categories without selected checklist       | 空選取檢查                       |
+| 31  | should return empty array when getting items without selected checklist            | 空選取檢查                       |
+| 32  | should return early when deleting item without selected checklist                  | 空選取檢查                       |
+| 33  | should return null when createItem service call fails (with checklist)             | Service 失敗路徑                 |
+| 34  | should return null when duplicateCategory service call fails (with checklist)      | Service 失敗路徑                 |
+| 35  | should return null when updateItem service call fails (with checklist)             | Service 失敗路徑                 |
+| 36  | should return null when duplicateItem service call fails (with checklist)          | Service 失敗路徑                 |
+| 37  | should return null when createCategory service call fails (with checklist)         | Service 失敗路徑                 |
+| 38  | should return null when duplicateChecklist service call fails (no checklist)       | Service 失敗路徑                 |
+| 39  | should return null when updateCategory service call fails (no checklist)           | Service 失敗路徑                 |
+| 40  | should return null when updateCategory service returns undefined                   | falsy 結果防禦                   |
+| 41  | should return null when updateMultipleChecklists service returns undefined         | falsy 結果防禦                   |
+| 42  | should return null when updateCategory throws (real service)                       | throw → null 後備                |
+| 43  | should refresh categories and return updated category on success                   | 成功路徑 + refresh               |
+| 44  | should preserve valid selection and recover deleted selection on app data refresh  | 跨分頁選取復原                   |
+| 45  | 刪除失敗後保留歷史與資料                                                           | 刪除失敗                         |
+| 46  | 重新讀取失敗後保留畫面上的分類與物品                                               | 讀取失敗                         |
+| 47  | 區分寫入成功與後續更新失敗                                                         | 寫入確認                         |
+| 48  | 新清單無法讀取時清除先前清單資料                                                   | 選取歸屬                         |
+| 49  | should treat a category pack-all as one undoable action and restore mixed state    | 群組歷史與重做安全               |
+| 50  | should clear packing history when switching checklists                             | 歷史範圍隔離                     |
+| 51  | preserves remote item edits when committing a stale drag payload                   | 明確拖曳意圖                     |
+| 52  | rejects stale drag membership without overwriting a remotely added item            | 原始拖曳baseline不被後續讀取覆蓋 |
 
 ##### 8.1.3.2 useTemplates.test.js（16）
 
@@ -677,12 +695,12 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ##### 8.1.6.1 recommendedLists.test.js（4）
 
-| #   | Test                                                                         | 測試重點         |
-| --- | ---------------------------------------------------------------------------- | ---------------- |
-| 1   | resolves complete localized recommended lists with valid category references | 在地化資料完整性 |
-| 2   | includes core clothing in every recommended list                             | 基本衣物涵蓋     |
-| 3   | falls back to English for unsupported locales                                | 語系後備         |
-| 4   | returns isolated resolved data                                               | 解析結果隔離     |
+| #   | Test                                                                         | 測試重點                     |
+| --- | ---------------------------------------------------------------------------- | ---------------------------- |
+| 1   | resolves complete localized recommended lists with valid category references | 在地化資料與炎熱防曬物品歸屬 |
+| 2   | includes core clothing in every recommended list                             | 基本衣物涵蓋                 |
+| 3   | falls back to English for unsupported locales                                | 語系後備                     |
+| 4   | returns isolated resolved data                                               | 解析結果隔離                 |
 
 #### 8.1.7 Scripts（17）
 
@@ -723,7 +741,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | rejects explicit any in a TypeScript application component              | 防止 TS 應用 scripts 使用 explicit any |
 | 2   | parses typed Vue props without applying JavaScript undefined-name rules | 允許 TS 型別且不誤報 JS 診斷           |
 
-### 8.2 Component Tests（304）
+### 8.2 Component Tests（314）
 
 #### 8.2.1 App.test.js（68）
 
@@ -996,43 +1014,46 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 41  | uses the same rename flow and restores the trigger only for Escape             | 改名與焦點責任       |
 | 42  | clears invalid actions on collapse, removal and checklist switch               | 失效展開清理         |
 
-#### 8.2.11 Sidebar.test.js（33）
+#### 8.2.11 Sidebar.test.js（36）
 
-| #   | Test                                                        | 測試重點      |
-| --- | ----------------------------------------------------------- | ------------- |
-| 1   | should display checklist names when expanded                | 名稱渲染      |
-| 2   | should show the new checklist button                        | 按鈕存在      |
-| 3   | should display the sidebar title                            | 標題渲染      |
-| 4   | should render checklist item buttons                        | 按鈕渲染      |
-| 5   | should emit toggle-sidebar on hamburger click               | 切換事件      |
-| 6   | should emit create-checklist on new button click            | 新增事件      |
-| 7   | should emit select-checklist with ID on item click          | 選取事件      |
-| 8   | should emit copy-checklist from OverflowMenu                | 複製事件      |
-| 9   | should emit delete-checklist from OverflowMenu              | 刪除事件      |
-| 10  | should emit edit-checklist from OverflowMenu                | 編輯事件      |
-| 11  | should highlight the selected checklist                     | 選中樣式      |
-| 12  | should not highlight non-selected checklists                | 未選樣式      |
-| 13  | should show first character when collapsed                  | 收合顯示      |
-| 14  | should show language dropdown on button click               | 語言選單開啟  |
-| 15  | should change locale and close menu                         | 語言切換      |
-| 16  | should close language menu when focus leaves                | 焦點離開關閉  |
-| 17  | should close language menu on scroll                        | 捲動關閉      |
-| 18  | should close language menu on outside click                 | 外部點擊關閉  |
-| 19  | should set dragging state on drag start                     | 拖曳開始      |
-| 20  | should clear dragging state on drag end                     | 拖曳結束      |
-| 21  | should display checklists sorted by order                   | 排序顯示      |
-| 22  | should emit "move:checklists" when checklists are reordered | 重排事件      |
-| 23  | should display untitled placeholder                         | 未命名顯示    |
-| 24  | should apply positioning styles when language menu opens    | 下拉選單定位  |
-| 25  | should clean up document and window listeners on unmount    | 生命週期清理  |
-| 26  | should use matching language and template dropdown layouts  | 選單版面一致  |
-| 27  | should close the template menu after an outside click       | 外部點擊關閉  |
-| 28  | should emit edit-template when a template is selected       | Template 選擇 |
-| 29  | should hide template overflow menus on narrow screens       | 窄版排版      |
-| 30  | should sort templates and highlight the active template     | 排序與選取    |
-| 31  | should display an empty template state                      | 空狀態        |
-| 32  | should close the template menu with Escape                  | 鍵盤關閉      |
-| 33  | should forward save-as-template from checklist overflow     | 事件轉送      |
+| #   | Test                                                                                 | 測試重點                          |
+| --- | ------------------------------------------------------------------------------------ | --------------------------------- |
+| 1   | should display checklist names when expanded                                         | 名稱渲染                          |
+| 2   | should show the new checklist button                                                 | 按鈕存在                          |
+| 3   | should display the sidebar title                                                     | 標題渲染                          |
+| 4   | should render checklist item buttons                                                 | 按鈕渲染                          |
+| 5   | should emit toggle-sidebar on hamburger click                                        | 切換事件                          |
+| 6   | should emit create-checklist on new button click                                     | 新增事件                          |
+| 7   | should emit select-checklist with ID on item click                                   | 選取事件                          |
+| 8   | should emit copy-checklist from OverflowMenu                                         | 複製事件                          |
+| 9   | should emit delete-checklist from OverflowMenu                                       | 刪除事件                          |
+| 10  | should emit edit-checklist from OverflowMenu                                         | 編輯事件                          |
+| 11  | should highlight the selected checklist                                              | 選中樣式                          |
+| 12  | should not highlight non-selected checklists                                         | 未選樣式                          |
+| 13  | should show first character when collapsed on desktop                                | 字首與可見範圍                    |
+| 14  | should show language dropdown on button click                                        | 語言選單開啟                      |
+| 15  | should change locale and close menu                                                  | 語言切換                          |
+| 16  | should close language menu when focus leaves                                         | 焦點離開關閉                      |
+| 17  | should close language menu on scroll                                                 | 捲動關閉                          |
+| 18  | should close language menu on outside click                                          | 外部點擊關閉                      |
+| 19  | should set dragging state on drag start                                              | 拖曳開始                          |
+| 20  | should clear dragging state on drag end                                              | 拖曳結束                          |
+| 21  | should display checklists sorted by order                                            | 排序顯示                          |
+| 22  | should emit "move:checklists" when checklists are reordered                          | 重排事件                          |
+| 23  | should display untitled placeholder                                                  | 未命名顯示                        |
+| 24  | should apply positioning styles when language menu opens                             | 下拉選單定位                      |
+| 25  | should clean up document and window listeners on unmount                             | 生命週期清理                      |
+| 26  | should use matching language and template dropdown layouts                           | 選單版面一致                      |
+| 27  | should close the template menu after an outside click                                | 外部點擊關閉                      |
+| 28  | should emit edit-template when a template is selected                                | Template 選擇                     |
+| 29  | should hide template overflow menus on narrow screens                                | 窄版排版                          |
+| 30  | should sort templates and highlight the active template                              | 排序與選取                        |
+| 31  | should display an empty template state                                               | 空狀態                            |
+| 32  | should close the template menu with Escape                                           | 鍵盤關閉                          |
+| 33  | should forward save-as-template from checklist overflow                              | 事件轉送                          |
+| 34  | keeps the dropped order while preserving refreshed checklist fields                  | 僅排序projection與已儲存props接續 |
+| 35  | keeps the latest drop until all saves settle and restores persisted order on failure | 連續放置與儲存失敗復原            |
+| 36  | retains committed order when refresh fails and releases it on a later read           | 刷新失敗時保留已儲存預覽          |
 
 #### 8.2.12 NewChecklistDialog.test.js（12）
 
@@ -1109,7 +1130,19 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 9   | renders localized Traditional Chinese sticker copy                     | 語系文字與緊湊日期範圍 |
 | 10  | exposes one synchronized timeline to JavaScript and CSS                | 共用時間軸契約         |
 
-### 8.3 E2E Tests（104）
+#### 8.2.17 typedDraggable.test.js（7）
+
+| #   | Test                                                                          | 驗證內容                              |
+| --- | ----------------------------------------------------------------------------- | ------------------------------------- |
+| 1   | restores a reordered placeholder before vuedraggable can emit model or change | 同清單取消：DOM／model還原與end清理   |
+| 2   | restores cross-list cancellation into a receiver containing []                | 空接收區取消且不發送model／change     |
+| 3   | restores cross-list cancellation into a receiver containing [ 'c' ]           | 有成員接收區取消且不發送model／change |
+| 4   | still commits a subsequent completed touchend drop                            | 取消後正常觸控放手                    |
+| 5   | still commits a subsequent completed drop drop                                | 取消後正常滑鼠放置                    |
+| 6   | preserves vuedraggable add/remove semantics for touchend                      | 觸控跨清單正常新增／移除              |
+| 7   | preserves vuedraggable add/remove semantics for drop                          | 滑鼠跨清單正常新增／移除              |
+
+### 8.3 E2E Tests（162）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1255,17 +1288,18 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 27  | 拒絕打包後排隊的待處理               | 跨分頁物品衝突       |
 | 28  | 拒絕待處理後排隊的分類打包           | 跨分頁原子批次       |
 
-#### 8.3.12 rwd-phone.spec.js (7 tests)
+#### 8.3.12 rwd-phone.spec.js (8 tests)
 
-| #   | Test                                                                  | 驗證內容                                 |
-| --- | --------------------------------------------------------------------- | ---------------------------------------- |
-| 1   | touch actions remain open and persist quantity and pending state      | 手機命中區、選單、待買字級與持久化操作   |
-| 2   | keeps name geometry stable and makes checkbox edges actionable        | 名稱幾何與真實命中                       |
-| 3   | switches one open item and shares the direct rename flow              | 一次一件展開與改名                       |
-| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、側欄溢出、觸控選單與密度       |
-| 5   | retains hover quick controls and the desktop command menu             | 桌面整列回饋、選單關閉、focus 與文字對齊 |
-| 6   | preserves touch sorting while excluding action buttons                | 觸控長按與持久化排序                     |
-| 7   | persists category sorting across tablet columns                       | 跨欄觸控拖曳與排序保存                   |
+| #   | Test                                                                  | 驗證內容                                                    |
+| --- | --------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 1   | touch actions remain open and persist quantity and pending state      | 手機命中區、選單、待買字級與持久化操作                      |
+| 2   | keeps name geometry stable and makes checkbox edges actionable        | 名稱幾何與真實命中                                          |
+| 3   | switches one open item and shares the direct rename flow              | 一次一件展開與改名                                          |
+| 4   | fits tablet categories to available width while keeping touch actions | 平板欄數、收合側欄裁切、觸控選單與密度                      |
+| 5   | retains hover quick controls and the desktop command menu             | 桌面整列回饋、選單關閉、focus 與文字對齊                    |
+| 6   | preserves touch sorting while excluding action buttons                | 手機／平板長按微動、DPR、原生捲動完成、抓取位置、清理與排序 |
+| 7   | persists category sorting across tablet columns                       | 長按微動、跨欄抓取位置與排序保存                            |
+| 8   | moves an unpacked item into an all-hidden category by touch           | 觸控拖放至已篩選分類與重載                                  |
 
 #### 8.3.13 rwd-overlays.spec.js（5）
 
@@ -1279,8 +1313,95 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 #### 8.3.14 rwd-webkit.spec.js（3）
 
-| #   | Test                                                         | 測試重點                                  |
-| --- | ------------------------------------------------------------ | ----------------------------------------- |
-| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit 觸控狀態、抽屜動畫與回焦           |
-| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit 短 viewport 與日期幾何             |
-| 3   | WebKit tablet columns retain visible touch actions           | WebKit 平板欄數、觸控選單、待買字級與密度 |
+| #   | Test                                                         | 測試重點                                      |
+| --- | ------------------------------------------------------------ | --------------------------------------------- |
+| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit 觸控狀態、抽屜動畫與回焦               |
+| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit 短 viewport 與日期幾何                 |
+| 3   | WebKit tablet columns retain visible touch actions           | WebKit 平板欄數、收合禁止捲動、觸控選單與密度 |
+
+#### 8.3.15 sidebar-presentation.spec.js（6）
+
+| #   | Test                                                    | 測試重點                                              |
+| --- | ------------------------------------------------------- | ----------------------------------------------------- |
+| 1   | phone: sidebar presentation stays consistent in en      | 入口標籤、長按微動／三點排除、選單、清單捲動與 Escape |
+| 2   | phone: sidebar presentation stays consistent in zh-TW   | 在地化入口標籤、選單幾何與手機清單捲動                |
+| 3   | tablet: sidebar presentation stays consistent in en     | 長按微動／三點排除、收合捲動鎖、字首與選單幾何        |
+| 4   | tablet: sidebar presentation stays consistent in zh-TW  | 收合禁止捲動、中文字首與選單幾何                      |
+| 5   | desktop: sidebar presentation stays consistent in en    | 收合禁止捲動、完整字首、縮放與焦點恢復                |
+| 6   | desktop: sidebar presentation stays consistent in zh-TW | 收合禁止捲動、中文字首與 ResizeObserver 後備          |
+
+#### 8.3.16 desktop-drag-presentation.spec.js（19）
+
+| #   | Test                                                                   | 測試重點                                   |
+| --- | ---------------------------------------------------------------------- | ------------------------------------------ |
+| 1   | keeps same-category drop order during delayed storage                  | 同分類逐幀排序及指標移動後 hover 控制項    |
+| 2   | keeps cross-category drop order during delayed storage                 | 跨分類逐幀排序及指標移動後 hover 控制項    |
+| 3   | places the drag placeholder before Add Item in empty categories        | 空分類佔位、取消與 footer 順序下的穩定落點 |
+| 4   | places the drag placeholder before Add Item in filtered categories     | 篩選空分類佔位、取消與穩定落點             |
+| 5   | restores the original order when a drop cannot be saved                | 寫入失敗後復原                             |
+| 6   | does not replay the sidebar label reveal after sorting                 | 側欄排序不重播展開動畫                     |
+| 7   | preserves consecutive cross-category drops while storage is delayed    | 延遲儲存時連續跨分類拖曳                   |
+| 8   | keeps category drop order during delayed storage                       | 分類延遲儲存逐幀排序                       |
+| 9   | does not highlight Add Item after moving the last item from a category | 最後物品移走後按鈕 hover                   |
+| 10  | keeps the saved drop visible when the follow-up read fails             | 成功儲存但讀取失敗時保留畫面               |
+| 11  | keeps a new drag intact when the previous write completes              | 前次儲存完成時後次拖曳保持                 |
+| 12  | packs the displayed destination after its pending move saves           | 分類打包等待移動成功                       |
+| 13  | cancels pending category packing when the move fails                   | 移動失敗時取消打包                         |
+| 14  | keeps unequal category cards at the cross-column drop position         | 不同高度跨欄分類幾何                       |
+| 15  | does not apply queued packing after leaving the checklist              | 切換清單時取消排隊打包                     |
+| 16  | cancels queued packing when the saved move cannot be refreshed         | 重新讀取失敗時取消打包                     |
+| 17  | shows projected progress when moving into a fully packed category      | 已打包分類的預覽進度                       |
+| 18  | packs only remaining source items after the pending move saves         | 來源分類打包不含移走物品                   |
+| 19  | keeps the pending drop correct while the packed filter changes         | 儲存期間切換過濾保留預覽                   |
+
+#### 8.3.17 category-motion.spec.js（8）
+
+| #   | Test                                                             | 驗證內容                       |
+| --- | ---------------------------------------------------------------- | ------------------------------ |
+| 1   | desktop: animates category reflow when a tall category collapses | 桌面換欄重排                   |
+| 2   | desktop: animates category siblings before releasing a drag      | 桌面放手前讓位與排序保存       |
+| 3   | tablet: animates category reflow when a tall category collapses  | 平板換欄重排                   |
+| 4   | tablet: animates category siblings before releasing a drag       | 觸控啟動、放手前位移與排序保存 |
+| 5   | phone: animates category reflow when a tall category collapses   | 單欄重排與展開時避免重疊       |
+| 6   | phone: animates category siblings before releasing a drag        | 觸控啟動、放手前位移與排序保存 |
+| 7   | settles rapid collapse reversals and viewport changes            | 反向操作、清理與無水平溢位     |
+| 8   | honors reduced motion and cancels active reflow                  | 即時動態偏好與直接完成版面     |
+
+#### 8.3.18 interaction-feedback.spec.js（8）
+
+| #   | Test                                                                                | 驗證內容                               |
+| --- | ----------------------------------------------------------------------------------- | -------------------------------------- |
+| 1   | desktop: keeps normal and completed feedback consistent and animates inline actions | 一般／完成回饋、物品虛線與對齊         |
+| 2   | desktop: accepts items into a collapsed category and retains counts and order       | 物品虛線對齊、收回、拖離與數量保存     |
+| 3   | tablet: keeps normal and completed feedback consistent and animates inline actions  | 觸控操作列動效、物品虛線與對齊         |
+| 4   | tablet: accepts items into a collapsed category and retains counts and order        | 觸控物品虛線對齊、收回／取消與排序保存 |
+| 5   | phone: keeps normal and completed feedback consistent and animates inline actions   | 觸控操作列動效、物品虛線與對齊         |
+| 6   | phone: accepts items into a collapsed category and retains counts and order         | 觸控物品虛線對齊、收回／取消與排序保存 |
+| 7   | ends an old name edit when dragging a different item                                | 未改名／已改名的編輯收尾與保存         |
+| 8   | honors reduced motion for inline action expansion                                   | 直接展開、可用控制項與 Escape          |
+
+#### 8.3.19 drag-settlement.spec.js（15）
+
+| #   | Test                                                                         | 驗證內容                                |
+| --- | ---------------------------------------------------------------------------- | --------------------------------------- |
+| 1   | keeps sidebar mouse drop visible through delayed storage on desktop          | 待儲存順序、保存及重載                  |
+| 2   | keeps sidebar mouse drop visible through delayed storage on phone            | 待儲存順序、保存及重載                  |
+| 3   | keeps sidebar mouse drop visible through delayed storage on tablet           | 待儲存順序、保存及重載                  |
+| 4   | restores sidebar order when a pending mouse drop fails to save               | 儲存失敗還原持久順序                    |
+| 5   | touch drag completion leaves the next action tap usable across drag surfaces | 觸控取消及正常放手後第一次點擊仍可操作  |
+| 6   | touchcancel restores same drag after its placeholder moves                   | 取消同分類拖曳還原畫面／storage／重載   |
+| 7   | touchcancel restores cross drag after its placeholder moves                  | 取消跨分類拖曳還原畫面／storage／重載   |
+| 8   | touchcancel restores empty drag after its placeholder moves                  | 取消空目標拖曳還原畫面／storage／重載   |
+| 9   | touchcancel restores collapsed drag after its placeholder moves              | 取消收合目標拖曳還原畫面／storage／重載 |
+| 10  | touchcancel restores filtered drag after its placeholder moves               | 取消篩選目標拖曳還原畫面／storage／重載 |
+| 11  | touchcancel restores category drag after its placeholder moves               | 取消分類拖曳還原畫面／storage／重載     |
+| 12  | touchcancel restores sidebar drag after its placeholder moves                | 取消側邊欄拖曳還原畫面／storage／重載   |
+| 13  | normal touchend saves item order                                             | 正常觸控放手保存物品順序且可重載        |
+| 14  | normal touchend saves category order                                         | 正常觸控放手保存分類順序且可重載        |
+| 15  | normal touchend saves sidebar order                                          | 正常觸控放手保存側邊欄順序且可重載      |
+
+#### 8.3.20 drag-membership-conflict.spec.js（1）
+
+| #   | Test                                                                 | 驗證內容                              |
+| --- | -------------------------------------------------------------------- | ------------------------------------- |
+| 1   | refreshes a stale drag instead of persisting duplicate target orders | 真實雙分頁拖曳衝突、原子storage與重載 |

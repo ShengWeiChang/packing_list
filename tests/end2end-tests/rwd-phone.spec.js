@@ -7,9 +7,10 @@ Created: 2026-10-30
 ================================================================================
 */
 
-import { expect, test } from '@playwright/test';
+import { devices, expect, test } from '@playwright/test';
 
 import { selectGeneralRecommendedList } from './checklistHelpers.js';
+import { checkTouchHold, checkTouchScroll } from './touchDragHelpers.js';
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
@@ -402,15 +403,22 @@ test.describe('touch tablet', () => {
         sidebarScrollport.evaluate((element) => element.scrollHeight > element.clientHeight)
       )
       .toBe(true);
+    await expect(sidebarScrollport).toHaveCSS('overflow-y', 'clip');
+    await sidebarScrollport.evaluate((element) => {
+      element.scrollTop = 300;
+    });
+    expect(await sidebarScrollport.evaluate((element) => element.scrollTop)).toBe(0);
+    await page.getByTestId('sidebar-toggle').tap();
+    await expect(sidebarScrollport).toHaveCSS('overflow-y', 'auto');
     await sidebarScrollport.evaluate((element) => {
       element.scrollTop = 300;
     });
     await expect
       .poll(() => sidebarScrollport.evaluate((element) => element.scrollTop))
       .toBeGreaterThan(0);
-    await sidebarScrollport.evaluate((element) => {
-      element.scrollTop = 0;
-    });
+    await page.getByTestId('sidebar-toggle').tap();
+    await expect(sidebarScrollport).toHaveCSS('overflow-y', 'clip');
+    expect(await sidebarScrollport.evaluate((element) => element.scrollTop)).toBe(0);
     const sidebarOverflowDuringToggle = () =>
       page.evaluate(async () => {
         const samples = [];
@@ -718,7 +726,28 @@ test.describe('mouse desktop', () => {
     await expect(pendingToggle).toHaveCSS('color', 'rgb(124, 45, 18)');
     const pendingRow = page.getByTestId('pending-item-row').first();
     await expect(pendingRow.locator('div > span').first()).toHaveCSS('font-size', '16px');
-    expect((await pendingRow.getByTestId('pending-item-complete').boundingBox()).width).toBe(20);
+    const pendingButton = pendingRow.getByTestId('pending-item-complete');
+    expect((await pendingButton.boundingBox()).width).toBe(24);
+    expect((await pendingButton.locator('span').boundingBox()).width).toBe(20);
+    const pendingCard = page.getByTestId('pending-items-category');
+    const [pendingCardBox, categoryCardBox, pendingIconBox, itemCheckboxBox] = await Promise.all([
+      pendingCard.boundingBox(),
+      category.boundingBox(),
+      pendingButton.locator('span').boundingBox(),
+      row.getByTestId('item-checkbox').boundingBox(),
+    ]);
+    expect(
+      Math.abs(
+        pendingIconBox.x +
+          pendingIconBox.width / 2 -
+          pendingCardBox.x -
+          (itemCheckboxBox.x + itemCheckboxBox.width / 2 - categoryCardBox.x)
+      )
+    ).toBeLessThan(1);
+    const pendingTextInset =
+      (await textStart(pendingRow.locator('div > span').first())) - pendingCardBox.x;
+    const itemTextInset = (await textStart(row.getByTestId('item-name'))) - categoryCardBox.x;
+    expect(Math.abs(pendingTextInset - itemTextInset)).toBeLessThan(1);
     await page.emulateMedia({ forcedColors: 'active' });
     await expect(pendingToggle.locator('svg')).toHaveClass(/lucide-clipboard-check/);
     await page.emulateMedia({ forcedColors: 'none' });
@@ -766,42 +795,217 @@ test.describe('mouse desktop', () => {
   });
 });
 
-// Test Case 6: Holding a real touch on a control does not drag; the existing name-area long press can still reorder.
-test('preserves touch sorting while excluding action buttons', async ({ page, context }) => {
+/**
+ * Check that the rendered preview preserves the grabbed point and original width.
+ * @param {import('@playwright/test').Page} page - Browser page.
+ * @param {{ x: number, y: number, width: number, height: number }} source - Initial source box.
+ * @param {{ x: number, y: number }} start - Initial finger point.
+ * @param {{ x: number, y: number }} finger - Current finger point.
+ */
+async function expectPreviewAtFinger(page, source, start, finger) {
+  const preview = page.locator('.sortable-fallback');
+  await expect(preview).toHaveCount(1);
+  await expect
+    .poll(async () => {
+      const box = await preview.boundingBox();
+      return Math.max(
+        Math.abs(box.x + (box.width * (start.x - source.x)) / source.width - finger.x),
+        Math.abs(box.y + (box.height * (start.y - source.y)) / source.height - finger.y)
+      );
+    })
+    .toBeLessThan(4);
+  expect(Math.abs((await preview.boundingBox()).width - source.width)).toBeLessThan(1);
+  await expect(preview).toHaveCSS('pointer-events', 'none');
+  await expect(preview).toHaveAttribute('inert', '');
+  await expect(preview).toHaveAttribute('aria-hidden', 'true');
+}
+
+// Test Case 6: Action buttons remain excluded; phone/tablet previews follow touch during sorting, scrolling and cancellation.
+test('preserves touch sorting while excluding action buttons', async ({
+  page,
+  context,
+  browser,
+}) => {
   await createList(page);
-  const rows = page.getByTestId('category-card').first().getByTestId('item-row');
-  const firstId = await rows.nth(0).getAttribute('data-item-id');
   const client = await context.newCDPSession(page);
-  await (await triggerFor(rows.nth(0))).tap();
-  const plus = await rows.nth(0).getByTestId('item-quantity-increment').boundingBox();
-  await client.send('Input.dispatchTouchEvent', {
-    type: 'touchStart',
-    touchPoints: [{ x: plus.x + plus.width / 2, y: plus.y + plus.height / 2 }],
-  });
-  await page.waitForTimeout(280);
-  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await expect(rows.nth(0).getByTestId('item-quantity-value')).toHaveText('×2');
-  expect(await rows.nth(0).getAttribute('data-item-id')).toBe(firstId);
-  await (await triggerFor(rows.nth(0))).tap();
-  const start = await rows.nth(0).getByTestId('item-name').boundingBox();
-  const target = await rows.nth(1).getByTestId('item-name').boundingBox();
-  const x = start.x + start.width / 2;
-  const y = start.y + start.height / 2;
-  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
-  await page.waitForTimeout(280);
-  for (let step = 1; step <= 8; step++) {
+  for (const width of [390, 1024]) {
+    await page.setViewportSize({ width, height: 844 });
+    const rows = page.getByTestId('category-card').first().getByTestId('item-row');
+    const firstId = await rows.nth(0).getAttribute('data-item-id');
+    await checkTouchHold(page, client, rows.nth(0).getByTestId('item-name'));
+    await checkTouchHold(page, client, rows.nth(0).getByTestId('item-name'), {
+      jitter: 8,
+      shouldDrag: false,
+    });
+    await checkTouchScroll(page, client, rows.nth(0).getByTestId('item-name'));
+    await (await triggerFor(rows.nth(0))).tap();
+    const quantity = Number(
+      (await rows.nth(0).getByTestId('item-quantity-value').textContent()).replace(/\D/g, '')
+    );
+    const plus = await rows.nth(0).getByTestId('item-quantity-increment').boundingBox();
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: plus.x + plus.width / 2, y: plus.y + plus.height / 2 }],
+    });
+    await page.waitForTimeout(280);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect(rows.nth(0).getByTestId('item-quantity-value')).toHaveText(`×${quantity + 1}`);
+    expect(await rows.nth(0).getAttribute('data-item-id')).toBe(firstId);
+    await expect(page.locator('.sortable-fallback')).toHaveCount(0);
+    await (await triggerFor(rows.nth(0))).tap();
+    // Closing now animates; capture the final row bounds before synthesizing a hold.
+    await expect(rows.nth(0).getByTestId('item-inline-actions')).toHaveCount(0);
+    await rows.nth(0).scrollIntoViewIfNeeded();
+    const source = await rows.nth(0).locator('..').boundingBox();
+    const name = await rows.nth(0).getByTestId('item-name').boundingBox();
+    const target = await rows.nth(1).getByTestId('item-name').boundingBox();
+    const start = { x: name.x + name.width / 2, y: name.y + name.height / 2 };
+    const end = { x: start.x, y: target.y + target.height };
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
+    await page.waitForTimeout(60);
     await client.send('Input.dispatchTouchEvent', {
       type: 'touchMove',
-      touchPoints: [{ x, y: y + ((target.y + target.height - y) * step) / 8 }],
+      touchPoints: [{ x: start.x + 2, y: start.y + 2 }],
     });
-    await page.waitForTimeout(30);
+    await page.waitForTimeout(220);
+    for (let step = 1; step <= 8; step++) {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: end.x, y: start.y + ((end.y - start.y) * step) / 8 }],
+      });
+      await page.waitForTimeout(30);
+    }
+    await expectPreviewAtFinger(page, source, start, end);
+    await page.screenshot({ path: test.info().outputPath(`touch-preview-${width}.png`) });
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect(page.locator('.sortable-fallback')).toHaveCount(0);
+    await expect(rows.nth(1)).toHaveAttribute('data-item-id', firstId);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          (id) =>
+            JSON.parse(localStorage.getItem('packingListApp')).items.find((item) => item.id === id)
+              .order,
+          firstId
+        )
+      )
+      .toBe(1);
+    await page.reload();
+    await expect(rows.nth(1)).toHaveAttribute('data-item-id', firstId);
+
+    // A fresh gesture keeps its grab offset when the page scrolls and cleans up on touchcancel.
+    await rows.nth(0).scrollIntoViewIfNeeded();
+    const cancelSource = await rows.nth(0).locator('..').boundingBox();
+    const cancelName = await rows.nth(0).getByTestId('item-name').boundingBox();
+    const cancelStart = {
+      x: cancelName.x + cancelName.width / 3,
+      y: cancelName.y + cancelName.height / 2,
+    };
+    const cancelEnd = { x: cancelStart.x + 13, y: cancelStart.y + 13 };
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [cancelStart],
+    });
+    await page.waitForTimeout(280);
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: cancelStart.x + 12, y: cancelStart.y + 12 }],
+    });
+    await expect(page.locator('.sortable-fallback')).toHaveCount(1);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [cancelEnd] });
+    await expectPreviewAtFinger(page, cancelSource, cancelStart, cancelEnd);
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    await page.evaluate(() => window.scrollBy(0, 80));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(scrollBefore);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [cancelEnd] });
+    await expectPreviewAtFinger(page, cancelSource, cancelStart, cancelEnd);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+    await expect(page.locator('.sortable-fallback')).toHaveCount(0);
+    await expect(page.locator('.ghost-item')).toHaveCount(0);
+
+    if (width === 1024) {
+      // Remote removal destroys the owning view while its touch preview is active.
+      await rows.nth(0).scrollIntoViewIfNeeded();
+      // Cancellation restores the DOM before Sortable's return animation ends.
+      // Do not capture a new raw hold while its target is still marked animated.
+      await page.evaluate(async () => {
+        for (let frame = 0; frame < 3; frame++) {
+          await new Promise(requestAnimationFrame);
+        }
+        await Promise.all(
+          document.getAnimations().map((animation) => animation.finished.catch(() => {}))
+        );
+      });
+      const nameBox = await rows.nth(0).getByTestId('item-name').boundingBox();
+      const point = { x: nameBox.x + nameBox.width / 2, y: nameBox.y + nameBox.height / 2 };
+      await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+      await page.waitForTimeout(280);
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: point.x + 10, y: point.y + 10 }],
+      });
+      await expect(page.locator('.sortable-fallback')).toHaveCount(1);
+      await page.evaluate(() => {
+        const newValue = JSON.stringify({ checklists: [], categories: [], items: [] });
+        localStorage.setItem('packingListApp', newValue);
+        window.dispatchEvent(
+          new StorageEvent('storage', {
+            key: 'packingListApp',
+            newValue,
+            storageArea: localStorage,
+          })
+        );
+      });
+      await expect(page.getByTestId('category-card')).toHaveCount(0);
+      await expect(page.locator('.sortable-fallback')).toHaveCount(0);
+      await client.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+    }
   }
-  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await expect(rows.nth(1)).toHaveAttribute('data-item-id', firstId);
-  await page.reload();
-  await expect(
-    page.getByTestId('category-card').first().getByTestId('item-row').nth(1)
-  ).toHaveAttribute('data-item-id', firstId);
+  // Exercise both native-capable hybrid and Android fallback setup at high pixel density.
+  for (const device of [
+    { viewport: { width: 1024, height: 844 }, hasTouch: true, isMobile: true },
+    devices['Pixel 7'],
+  ]) {
+    const denseContext = await browser.newContext({
+      ...device,
+      deviceScaleFactor: 3,
+      baseURL: new URL(page.url()).origin,
+    });
+    try {
+      const densePage = await denseContext.newPage();
+      const denseClient = await denseContext.newCDPSession(densePage);
+      await createList(densePage);
+      const card = densePage.getByTestId('category-card').first();
+      await checkTouchHold(densePage, denseClient, card.getByTestId('item-name').first());
+      await checkTouchHold(densePage, denseClient, card.getByTestId('item-name').first(), {
+        jitter: 8,
+        shouldDrag: false,
+      });
+      await checkTouchHold(densePage, denseClient, card.getByTestId('category-name'));
+      await checkTouchHold(densePage, denseClient, card.getByTestId('category-checkbox'), {
+        shouldDrag: false,
+      });
+      await card.getByTestId('item-name').first().tap();
+      await expect(card.getByTestId('item-edit-input')).toBeVisible();
+      await card.getByTestId('item-edit-input').press('Escape');
+      if (densePage.viewportSize().width < 600) {
+        await densePage.getByTestId('topbar-toggle').tap();
+        await expect
+          .poll(
+            async () =>
+              (await densePage.getByRole('complementary', { name: 'Sidebar' }).boundingBox()).x
+          )
+          .toBe(0);
+      }
+      await checkTouchHold(
+        densePage,
+        denseClient,
+        densePage.getByTestId('sidebar-checklist-item').first()
+      );
+    } finally {
+      await denseContext.close();
+    }
+  }
 });
 
 // Test Case 7: Categories can be touch-dragged between columns and retain their order.
@@ -811,18 +1015,32 @@ test('persists category sorting across tablet columns', async ({ page, context }
   for (const button of await page.getByTestId('category-collapse-toggle').all()) {
     if ((await button.getAttribute('aria-expanded')) === 'true') await button.tap();
   }
+  // Raw touch coordinates must be captured after the collapse reflow has settled.
+  await page.evaluate(async () => {
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    await Promise.all(
+      document.getAnimations().map((animation) => animation.finished.catch(() => {}))
+    );
+  });
   const cards = page.getByTestId('category-card');
   const boxes = await Promise.all((await cards.all()).map((card) => card.boundingBox()));
-  const targetIndex = boxes.findIndex((box) => box.x > boxes[0].x + 20);
+  const targetIndex = boxes.findLastIndex((box) => box.x > boxes[0].x + 20);
   expect(targetIndex).toBeGreaterThan(0);
   const firstId = await cards.first().getAttribute('data-category-id');
   const source = boxes[0];
   const target = boxes[targetIndex];
-  const start = { x: source.x + 5, y: source.y + 5 };
+  const title = await cards.first().getByTestId('category-name').boundingBox();
+  const start = { x: title.x + title.width / 2, y: title.y + title.height / 2 };
   const end = { x: target.x + target.width / 2, y: target.y + target.height / 2 };
   const client = await context.newCDPSession(page);
   await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(60);
+  await client.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [{ x: start.x + 2, y: start.y + 2 }],
+  });
+  await page.waitForTimeout(240);
+  await expect(page.locator('.chosen-category')).toHaveCount(1);
   for (let step = 1; step <= 20; step++) {
     await client.send('Input.dispatchTouchEvent', {
       type: 'touchMove',
@@ -835,7 +1053,9 @@ test('persists category sorting across tablet columns', async ({ page, context }
     });
     await page.waitForTimeout(30);
   }
+  await expectPreviewAtFinger(page, source, start, end);
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(page.locator('.sortable-fallback')).toHaveCount(0);
   await expect.poll(async () => cards.first().getAttribute('data-category-id')).not.toBe(firstId);
   const order = await cards.evaluateAll((elements) =>
     elements.map((element) => element.getAttribute('data-category-id'))
@@ -848,4 +1068,54 @@ test('persists category sorting across tablet columns', async ({ page, context }
       )
     )
     .toEqual(order);
+});
+
+// Test Case 8: Touch-drag into a fully filtered category and retain the result after reload.
+test('moves an unpacked item into an all-hidden category by touch', async ({ page, context }) => {
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await createList(page);
+  const cards = page.getByTestId('category-card');
+  const source = cards.nth(0);
+  const target = cards.nth(1);
+  const sourceName = source.getByTestId('item-name').first();
+  const movedName = (await sourceName.textContent()).trim();
+  const oldNames = await target.getByTestId('item-name').allTextContents();
+  await target.getByTestId('category-checkbox').tap();
+  await page.getByTestId('unpacked-items-filter-toggle').tap();
+  await expect(target.getByTestId('item-row')).toHaveCount(0);
+  const add = target.getByTestId('add-item-button');
+  await expect(add).toBeVisible();
+  await sourceName.scrollIntoViewIfNeeded();
+  const sourceBox = await source.getByTestId('item-row').first().locator('..').boundingBox();
+  const start = await sourceName.boundingBox();
+  const end = await add.boundingBox();
+  expect(start.y).toBeGreaterThanOrEqual(0);
+  expect(end.y + end.height).toBeLessThanOrEqual(1180);
+  const from = { x: start.x + start.width / 2, y: start.y + start.height / 2 };
+  const to = { x: end.x + end.width / 2, y: end.y + end.height / 2 };
+  const client = await context.newCDPSession(page);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
+  await page.waitForTimeout(300);
+  for (let step = 1; step <= 20; step++) {
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [
+        { x: from.x + ((to.x - from.x) * step) / 20, y: from.y + ((to.y - from.y) * step) / 20 },
+      ],
+    });
+    await page.waitForTimeout(30);
+  }
+  await expectPreviewAtFinger(page, sourceBox, from, to);
+  const ghostBox = await target.locator('.ghost-item').boundingBox();
+  expect(ghostBox.y + ghostBox.height).toBeLessThanOrEqual((await add.boundingBox()).y + 1);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(page.locator('.sortable-fallback')).toHaveCount(0);
+  await expect(target.getByTestId('item-name')).toHaveText([movedName]);
+  await page.getByTestId('unpacked-items-filter-toggle').tap();
+  await expect(target.getByTestId('item-name')).toHaveText([...oldNames, movedName]);
+  await page.reload();
+  await expect(page.getByTestId('category-card').nth(1).getByTestId('item-name')).toHaveText([
+    ...oldNames,
+    movedName,
+  ]);
 });

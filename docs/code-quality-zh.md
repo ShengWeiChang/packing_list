@@ -336,17 +336,23 @@ Validation 驗證
 - Composable 集合輸出為深唯讀，選取 ID 仍可寫入 `string | null`，computed 選取實體可能為 `undefined`。泛型 loader 保留 `T | null`，寫入成功與刷新失敗分別回報；packing-only history 只保存不可變的狀態快照。
 - `componentContracts.ts` 定義共用 action／event／draft 契約；runtime props 的 constructor、required、default 與 validator 保留，事件 tuple 保留可選第二個 baseline。儲存 callback 為 Promise，失敗可能回傳 null；App 的泛型 action runner 保留完整參數及回傳型別。
 - `typedDraggable.ts` 只描述實際使用的 vuedraggable 4.1.0 API，以同一 runtime 元件提供依 list entity 型別化的 model、item slot 與 change payload；此具依據的第三方 assertion 不新增 wrapper，也不容許 any 擴散。`vueAttributes.d.ts` 僅補充 data attributes，沒有通用元件 shim。
+- Facade 的 `useDraggableControls` 管理 vuedraggable 4.1.0 `_sortable` 邊界，在建構後及手勢前透過 Sortable `option()` API 重設長按移動門檻。它統一 native／fallback 的 DPR 差異，並在卸載時移除 listeners；升級相依套件時須重查此版本相關邊界與觸控微動測試。它也套用目前減少動態偏好的排序設定。
 - Legacy 日期在元件 props／draft 中仍為 unknown；狹窄 DOM、RegExp 與 Date／比較操作的 assertion 保留原生轉換行為，不代表資料已驗證。唯讀範本的 baseline 複製 snapshot records 與 arrays 後傳入既有 DTO service 契約，保留相同欄位與比較內容。
 - 已接受的依賴限制：沿用 Vue base config 的 `skipLibCheck: true`，因 vue-i18n 11.4.16 匯入 Vue 3.5.44 未提供的 `GenericComponentInstance`（TS2724）。此設定略過 `.d.ts` 內部檢查，包含本地 declarations；應用／模板程式與 API 使用仍受檢查。Vue／i18n 升級時重新評估，宣告不相容修復後移除此例外。
 
 ### 3.12 Responsive Interaction Ownership 響應式互動責任
 
-- `useTouchLayout` 管理 Checklist 輸入能力訂閱與清理，Sidebar 寬度門檻獨立；Checklist 擁有一次展開的物品 ID，Category 轉送，Item 保留編輯／草稿狀態。不得持久化展開或複製 mutation handlers。
+- `useDraggableControls` 在 `touchcancel` 時，於 vuedraggable 修改 model 前攔截 Sortable `onAdd`／`onRemove`／`onUpdate`，將 DOM 還原到原 parent／index，並讓 end 清理繼續執行。所有拖曳表面包含空的收合接收區都使用此 guard；正常 `touchend` 與滑鼠放置保留原 callback。清理時還原 callback 與 listener，升級套件時重查 callback 順序與 DOM 還原。
+- `patches/sortablejs+1.14.0.patch` 在兩個套件入口的 `touchcancel`，以及 `touchend` 的下一個 task，清除 Sortable 遺留的點擊抑制旗標；安裝時先確認精確版本與套件解析位置，再由 `patch-package --error-on-fail` 套用。上游提供受支援修復時重新評估並移除，檢查正常放手的防誤點和所有拖曳表面後的首次點擊。上游討論：https://github.com/SortableJS/Sortable/pull/2365。
+- Sidebar 擁有僅排序的待儲存清單 projection 與未完成儲存計數；App 在儲存或失敗復原後確認收尾。保留 props 的最新欄位與成員，刷新無法完成時保留已儲存預覽，待後續讀取後釋放。先前收尾不得清除後續待處理移動或進行中的手勢。
+- 物品拖曳批次從完整來源／目標 baseline 推導 `expectedCategoryMembership`，包含隱藏物品與空接收區。`LocalStorageService.updateMultipleItems` 在 write lock 內、寫入前驗證受影響分類範圍與完整物品 ID 集合；不符時以 `conflict` 原子拒絕批次。一般名稱／打包批次不傳這個拖曳專用 option，保留欄位意圖合併。
+- `useMasonryMotion` 僅觀測分類尺寸與直接子節點變動，將重排交給同一 Sortable 動畫 state manager；分類拖曳時交由原生 drag-over 動畫處理。分類內容與物品操作列以 `data-height-motion` 標示高度過渡的 owner；過渡時同欄卡片直接跟隨排版變化，換欄仍以動畫移動。不可在 wrapper 另加互搶的 transform transition。Resize、減少動態與卸載會清理所管理的 timer／transform；浮動預覽獨立處理。
+- `useTouchLayout` 管理 Checklist 輸入能力訂閱與清理，Sidebar 寬度門檻獨立；Checklist 擁有一次展開的物品 ID，Category 轉送，Item 保留編輯／草稿狀態。不得持久化展開或複製 mutation handlers。物品拖曳透過既有儲存／失敗流程讓舊名稱編輯器失焦；放手後指標首次移動時，Item 僅在支援 hover 的裝置上為指標所在列恢復控制項。Category 擁有收合時使用的獨立空接收區，將新增轉交既有移動 handler，且隱藏或沒有物品拖曳時須停用該 Sortable。 接收區的 MutationObserver 將原生佔位轉為進度條下方的暫時視覺快照；原生 ghost 隱藏，observer 在卸載時清理，快照保留到收回動畫結束，且不參與儲存資料。
 - 保留可用版面空間與輸入能力的產品區分：寬的觸控檢視可以多欄，混合裝置仍必須能以觸控開啟物品操作。不要只用裝置名稱或 viewport 寬度推斷 hover 能力。
 - 兩個改名入口共用編輯器。編輯中接著執行其他操作時，維持先儲存再操作的順序與失敗草稿；僅展開操作區不得聚焦輸入框或讓物品名稱重新排版。點外關閉不可吞掉目標點擊；單純捲動不可觸發點外操作。
 - `source/index.css` 的 `touch-target` 在窄／coarse／no-hover 檢視放大真實控制；scoped `inline-action` 屬於 Item。待買完成鈕內含較小視覺圖示；觸控 overflow 命令維持至少44px高。已批准的 scoped class 名稱列入 ESLint whitelist。
-- `OverflowMenu` 的觸控物品／分類入口沒有個別底色，桌面 hover 時則依分類狀態顯示底色；Category 提供觸控可見性，Item 管理未完成與完成分類的整列 hover／展開回饋。維持 44px 觸控命中區與鍵盤焦點可見。
-- `Category` 管理較寬觸控版的物品間距；`Item` 與 `AddItemButton` 保持顯示／編輯字體和文字對齊一致，不移動加號或縮小觸控目標。
+- `OverflowMenu` 的觸控物品／分類入口沒有個別底色，桌面 hover 時則依分類狀態顯示底色；Category 提供觸控可見性，Item 管理未完成與完成分類的整列 hover／展開回饋。支援滑鼠時，名稱 hover 使用相同的狀態對應控制項色彩。維持 44px 觸控命中區與鍵盤焦點可見。
+- `Category` 管理較寬觸控版的物品間距；`Item` 與 `AddItemButton` 保持顯示／編輯字體和文字對齊一致，不移動加號或縮小觸控目標。 物品容器使用 flex gap 而非依 DOM 兄弟順序計算的 margin，讓空清單的原生佔位即使被 append 在 footer 後方，仍與放手後有相同的視覺間距。
 - 觸控多欄容器使用 `contain: layout`，處理 Chromium 寬度變動時的重繪問題。調整此 containment 時，應一併檢查欄數隨寬度動態變化與 popup 定位。
 - 列內操作區是非 modal button group，觸發器提供名稱與 expanded／controls 關係。依原因關閉：Escape 回焦、點外保留目的焦點、改名聚焦輸入框。
 - `focusEditingInput` 管理編輯器 scrollport 幾何、暫態底部空間與清理；每個 scrollport 由一個啟用編輯器擁有。`useVisualViewport` 管理 modal viewport 訂閱。App 管理 modal 背景隔離與 body 捲動還原，上層 dialog 優先於抽屜。手機抽屜視覺離場時設為 inert 並對輔助科技隱藏，焦點回到適當的啟用表面。Popup 透過 `positionDropdownWithinViewport` 共用定位；優先 portal 至最近的 modal 祖先，否則使用 `body`，以維持焦點與 inert 歸屬。

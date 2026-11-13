@@ -42,5 +42,22 @@ test.describe('Recommended Lists', () => {
     await page.reload();
     await expect(page.getByTestId('checklist-name')).toHaveText('New Checklist (General Travel)');
     await expect(page.getByTestId('category-name').first()).toBeVisible();
+
+    await page.getByTestId('sidebar-new-checklist').click();
+    await page.getByTestId('new-checklist-option-recommended').click();
+    const dialog = page.getByTestId('new-checklist-dialog');
+    expect(await dialog.evaluate((element) => element.scrollHeight - element.clientHeight)).toBe(0);
+    await page.getByTestId('new-checklist-recommended-warm').click();
+    await page.getByTestId('checklist-name-input').press('Enter');
+    await expect(page.getByTestId('checklist-name')).toHaveText(
+      'New Checklist (Hot-Weather Travel)'
+    );
+    const personalCare = page.getByTestId('category-card').filter({ hasText: 'Personal Care' });
+    await expect(
+      personalCare.getByTestId('item-name').filter({ hasText: 'Sunscreen' })
+    ).toBeVisible();
+    await expect(
+      page.getByTestId('category-name').filter({ hasText: 'Sun Protection' })
+    ).toHaveCount(0);
   });
 });
