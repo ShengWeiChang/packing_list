@@ -49,7 +49,7 @@
 - Build Tool: Vite 8.3.5
 - CSS Framework: Tailwind CSS 3.4.17
 - 國際化：Vue I18n 11.4.16
-- Drag and Drop: vuedraggable 4.1.0
+- 拖曳：vuedraggable 4.1.0，搭配本地 SortableJS 1.14.0 觸控結束修補
 - 圖示系統：透過本地 `AppIcon` adapter 使用 `@lucide/vue`；語意名稱、尺寸 slot 與無障礙模式仍由專案管理
 - Additional Tools: PostCSS, Autoprefixer
 
@@ -448,7 +448,10 @@ packing-list/
 ├── tsconfig.type-tests.json          # Compile-only 契約範圍
 ├── scripts/                          # 驗證與 repository 工具
 │   ├── checkTypeScriptScope.js        # Source roots 與僅限 TS 的 guard
-│   └── checkTypeScriptContracts.js    # 預期的 TS 與模板錯誤診斷 probes
+│   ├── checkTypeScriptContracts.js    # 預期的 TS 與模板錯誤診斷 probes
+│   └── check-sortable-patch.js        # 驗證套用修補的 Sortable 依賴
+├── patches/                          # 指定版本的依賴修補
+│   └── sortablejs+1.14.0.patch       # 觸控結束點擊保護修復
 ├── public/                           # 靜態資源
 │   └── favicon.svg                   # 網站圖示（主題綠底白勾）
 ├── docs/                             # 專案文件目錄

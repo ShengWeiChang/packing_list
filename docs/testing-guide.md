@@ -14,10 +14,10 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 792    |
+| Total tests        | 793    |
 | Unit tests         | 317    |
 | Component tests    | 314    |
-| E2E tests          | 161    |
+| E2E tests          | 162    |
 | Line coverage      | 89.86% |
 | Statement coverage | 87.68% |
 | Branch coverage    | 78.26% |
@@ -31,7 +31,7 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
 | Unit      | Vitest                   | 317   | Pure logic in models, services, composables, utils |
 | Component | Vitest + @vue/test-utils | 314   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 161   | Full user flows in a real browser                  |
+| E2E       | Playwright               | 162   | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -124,7 +124,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 161 tests
+└── end2end-tests/                       # 162 tests
     ├── touchDragHelpers.js              # Hold-motion and native-scroll gestures
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
@@ -138,7 +138,7 @@ tests/
     ├── category-crud.spec.js            #  3  tests
     ├── drag-and-drop.spec.js            #  7  tests
     ├── desktop-drag-presentation.spec.js # 19  tests
-    ├── drag-settlement.spec.js           # 14  tests
+    ├── drag-settlement.spec.js           # 15  tests
     ├── drag-membership-conflict.spec.js  #  1  test
     ├── category-motion.spec.js          #  8  tests
     ├── interaction-feedback.spec.js      #  8  tests
@@ -1142,7 +1142,7 @@ This project uses three layers to balance speed and reliability.
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | Completed touch cross-list add/remove                         |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | Completed mouse cross-list add/remove                         |
 
-### 8.3 E2E Tests (161 tests)
+### 8.3 E2E Tests (162 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -1380,24 +1380,25 @@ This project uses three layers to balance speed and reliability.
 | 7   | ends an old name edit when dragging a different item                                | Unchanged/changed edit teardown and saved name                      |
 | 8   | honors reduced motion for inline action expansion                                   | Immediate expansion, usable controls and Escape                     |
 
-#### 8.3.19 drag-settlement.spec.js (14 tests)
+#### 8.3.19 drag-settlement.spec.js (15 tests)
 
-| #   | Test                                                                | What it verifies                                           |
-| --- | ------------------------------------------------------------------- | ---------------------------------------------------------- |
-| 1   | keeps sidebar mouse drop visible through delayed storage on desktop | Pending order, committed storage and reload                |
-| 2   | keeps sidebar mouse drop visible through delayed storage on phone   | Pending order, committed storage and reload                |
-| 3   | keeps sidebar mouse drop visible through delayed storage on tablet  | Pending order, committed storage and reload                |
-| 4   | restores sidebar order when a pending mouse drop fails to save      | Failed save restores storage order                         |
-| 5   | touchcancel restores same drag after its placeholder moves          | Cancelled same-category drag restores UI/storage/reload    |
-| 6   | touchcancel restores cross drag after its placeholder moves         | Cancelled cross-category drag restores UI/storage/reload   |
-| 7   | touchcancel restores empty drag after its placeholder moves         | Cancelled empty target drag restores UI/storage/reload     |
-| 8   | touchcancel restores collapsed drag after its placeholder moves     | Cancelled collapsed target drag restores UI/storage/reload |
-| 9   | touchcancel restores filtered drag after its placeholder moves      | Cancelled filtered target drag restores UI/storage/reload  |
-| 10  | touchcancel restores category drag after its placeholder moves      | Cancelled category drag restores UI/storage/reload         |
-| 11  | touchcancel restores sidebar drag after its placeholder moves       | Cancelled sidebar drag restores UI/storage/reload          |
-| 12  | normal touchend saves item order                                    | Normal touch release persists across reload                |
-| 13  | normal touchend saves category order                                | Normal touch release persists across reload                |
-| 14  | normal touchend saves sidebar order                                 | Normal touch release persists across reload                |
+| #   | Test                                                                         | What it verifies                                                  |
+| --- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 1   | keeps sidebar mouse drop visible through delayed storage on desktop          | Pending order, committed storage and reload                       |
+| 2   | keeps sidebar mouse drop visible through delayed storage on phone            | Pending order, committed storage and reload                       |
+| 3   | keeps sidebar mouse drop visible through delayed storage on tablet           | Pending order, committed storage and reload                       |
+| 4   | restores sidebar order when a pending mouse drop fails to save               | Failed save restores storage order                                |
+| 5   | touch drag completion leaves the next action tap usable across drag surfaces | Cancelled and completed touch drags preserve the first action tap |
+| 6   | touchcancel restores same drag after its placeholder moves                   | Cancelled same-category drag restores UI/storage/reload           |
+| 7   | touchcancel restores cross drag after its placeholder moves                  | Cancelled cross-category drag restores UI/storage/reload          |
+| 8   | touchcancel restores empty drag after its placeholder moves                  | Cancelled empty target drag restores UI/storage/reload            |
+| 9   | touchcancel restores collapsed drag after its placeholder moves              | Cancelled collapsed target drag restores UI/storage/reload        |
+| 10  | touchcancel restores filtered drag after its placeholder moves               | Cancelled filtered target drag restores UI/storage/reload         |
+| 11  | touchcancel restores category drag after its placeholder moves               | Cancelled category drag restores UI/storage/reload                |
+| 12  | touchcancel restores sidebar drag after its placeholder moves                | Cancelled sidebar drag restores UI/storage/reload                 |
+| 13  | normal touchend saves item order                                             | Normal touch release persists across reload                       |
+| 14  | normal touchend saves category order                                         | Normal touch release persists across reload                       |
+| 15  | normal touchend saves sidebar order                                          | Normal touch release persists across reload                       |
 
 #### 8.3.20 drag-membership-conflict.spec.js (1 tests)
 

@@ -49,7 +49,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Build Tool: Vite 8.3.5
 - CSS Framework: Tailwind CSS 3.4.17
 - Internationalization: Vue I18n 11.4.16
-- Drag and Drop: vuedraggable 4.1.0
+- Drag and Drop: vuedraggable 4.1.0 with a local SortableJS 1.14.0 touch-completion patch
 - Icon System: `@lucide/vue` through the local `AppIcon` adapter; semantic names, size slots, and accessibility modes remain project-owned
 - Additional Tools: PostCSS, Autoprefixer
 
@@ -448,7 +448,10 @@ packing-list/
 ├── tsconfig.type-tests.json          # Compile-only contract scope
 ├── scripts/                          # Verification and repository utilities
 │   ├── checkTypeScriptScope.js        # Source roots and TypeScript-only guard
-│   └── checkTypeScriptContracts.js    # Expected TS and template diagnostic probes
+│   ├── checkTypeScriptContracts.js    # Expected TS and template diagnostic probes
+│   └── check-sortable-patch.js        # Verify the patched Sortable dependency
+├── patches/                          # Version-specific dependency patches
+│   └── sortablejs+1.14.0.patch       # Touch completion click-guard repair
 ├── public/                           # Static assets
 │   └── favicon.svg                   # Site favicon (primary green with white checkmark)
 ├── docs/                             # Project documentation

@@ -23,6 +23,7 @@
     "typecheck:source": "npm run typecheck:scope && vue-tsc --noEmit -p tsconfig.app.json",
     "typecheck:contracts": "vue-tsc --noEmit -p tsconfig.type-tests.json && node scripts/checkTypeScriptContracts.js",
     "typecheck": "npm run typecheck:source && npm run typecheck:contracts",
+    "postinstall": "node scripts/check-sortable-patch.js && patch-package --error-on-fail",
     "prepare": "husky",
     "test": "vitest",
     "test:run": "vitest run",
@@ -36,6 +37,7 @@
   },
   "dependencies": {
     "@lucide/vue": "^1.61.0",
+    "patch-package": "8.0.1",
     "vue": "^3.5.44",
     "vue-i18n": "^11.4.16",
     "vuedraggable": "^4.1.0"

@@ -55,6 +55,15 @@ test('WebKit touch actions persist and drawer dismisses accessibly', async ({ pa
   });
   await page.getByTestId('sidebar-language-button').tap();
   await expect(page.getByTestId('sidebar-language-dropdown')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('sidebar-language-dropdown')).toHaveCount(0);
+  await expect(page.getByTestId('sidebar-language-button')).toBeFocused();
+
+  // Exercise the body-focused fallback without depending on native tap focus behavior.
+  await page.getByTestId('sidebar-language-button').evaluate((element) => element.blur());
+  expect(await page.evaluate(() => document.activeElement?.tagName)).toBe('BODY');
+  await page.getByTestId('sidebar-language-button').dispatchEvent('click');
+  await expect(page.getByTestId('sidebar-language-dropdown')).toBeVisible();
   expect(await page.evaluate(() => document.activeElement?.tagName)).toBe('BODY');
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('sidebar-language-dropdown')).toHaveCount(0);
@@ -206,6 +215,15 @@ test('WebKit tablet columns retain visible touch actions', async ({ page }) => {
   const drawer = page.getByTestId('overlay-sidebar');
   await drawer.focus();
   await page.getByTestId('sidebar-language-button').tap();
+  await expect(page.getByTestId('sidebar-language-dropdown')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(drawer).toBeVisible();
+  await expect(page.getByTestId('sidebar-language-dropdown')).toHaveCount(0);
+  await expect(page.getByTestId('sidebar-language-button')).toBeFocused();
+
+  // Exercise the drawer-focused fallback independently of native tap focus behavior.
+  await drawer.focus();
+  await page.getByTestId('sidebar-language-button').dispatchEvent('click');
   await expect(drawer).toBeFocused();
   await expect(page.getByTestId('sidebar-language-dropdown')).toBeVisible();
   await page.keyboard.press('Escape');

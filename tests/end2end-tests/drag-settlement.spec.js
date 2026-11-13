@@ -66,6 +66,30 @@ async function settle(page) {
 }
 
 /**
+ * Queue a synthetic compatibility click before the release guard's timer runs.
+ * @param {import('@playwright/test').Locator} row - Dragged item row.
+ */
+async function nameForReleaseProbe(row) {
+  await row
+    .getByTestId('item-name')
+    .first()
+    .evaluate((name) => {
+      document.addEventListener(
+        'touchend',
+        () => {
+          queueMicrotask(() => {
+            window.releaseClickProbe = true;
+            window.releaseClickAllowed = name.dispatchEvent(
+              new MouseEvent('click', { bubbles: true, cancelable: true })
+            );
+          });
+        },
+        { once: true }
+      );
+    });
+}
+
+/**
  * Open the responsive sidebar and wait for its reveal animation.
  * @param {import('@playwright/test').Page} page - Isolated page.
  * @param {number} width - Viewport width.
@@ -258,7 +282,65 @@ test('restores sidebar order when a pending mouse drop fails to save', async ({ 
   expect(await visibleOrder(page, 'sidebar')).toEqual(original);
 });
 
-// Test Cases 5-11: Cancellation after a real moved placeholder cannot persist any reorder or move.
+// Test Case 5: A finished touch drag must not swallow the next real tap.
+test('touch drag completion leaves the next action tap usable across drag surfaces', async ({
+  browser,
+}) => {
+  for (const scenario of ['phone-item', 'tablet-item', 'category', 'sidebar', 'normal-item']) {
+    const width = scenario === 'tablet-item' ? 1024 : 390;
+    const context = await browser.newContext({
+      viewport: { width, height: 844 },
+      hasTouch: true,
+      isMobile: true,
+    });
+    const page = await context.newPage();
+    await openFixture(page, { width });
+    const client = await context.newCDPSession(page);
+    const row = page.locator('[data-testid="item-row"][data-item-id="a0"]');
+    let source = row.getByTestId('item-name');
+    if (scenario === 'category') source = page.getByTestId('category-name').first();
+    if (scenario === 'sidebar') {
+      await openSidebar(page, width);
+      source = page.getByTestId('sidebar-checklist-item').first();
+    }
+    await source.scrollIntoViewIfNeeded();
+    await settle(page);
+    const box = await source.boundingBox();
+    const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+    await page.waitForTimeout(280);
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: point.x + 3, y: point.y + 3 }],
+    });
+    await expect(page.locator('.sortable-fallback')).toHaveCount(1);
+    if (scenario === 'normal-item') {
+      // Emulate a release compatibility click in the same task, before the guard expires.
+      await nameForReleaseProbe(row);
+    }
+    await client.send('Input.dispatchTouchEvent', {
+      type: scenario === 'normal-item' ? 'touchEnd' : 'touchCancel',
+      touchPoints: [],
+    });
+    await expectClean(page);
+    if (scenario === 'normal-item') {
+      expect(await page.evaluate(() => window.releaseClickProbe)).toBe(true);
+      expect(await page.evaluate(() => window.releaseClickAllowed)).toBe(false);
+    }
+    await expect(row.getByTestId('item-edit-input')).toHaveCount(0);
+    if (scenario === 'sidebar') {
+      await page.getByTestId('sidebar-language-button').tap();
+      await expect(page.getByTestId('sidebar-language-dropdown')).toBeVisible();
+    } else {
+      await row.locator('[data-testid^="overflow-trigger-item-"]').tap();
+      await expect(row.getByTestId('item-inline-actions')).toBeVisible();
+    }
+    await client.detach();
+    await context.close();
+  }
+});
+
+// Test Cases 6-12: Cancellation after a real moved placeholder cannot persist any reorder or move.
 for (const scenario of ['same', 'cross', 'empty', 'collapsed', 'filtered', 'category', 'sidebar']) {
   test(`touchcancel restores ${scenario} drag after its placeholder moves`, async ({ browser }) => {
     const context = await browser.newContext({
@@ -313,7 +395,7 @@ for (const scenario of ['same', 'cross', 'empty', 'collapsed', 'filtered', 'cate
   });
 }
 
-// Test Cases 12-14: Normal touchend continues to persist item, category, and sidebar reorders.
+// Test Cases 13-15: Normal touchend continues to persist item, category, and sidebar reorders.
 for (const kind of ['item', 'category', 'sidebar']) {
   test(`normal touchend saves ${kind} order`, async ({ browser }) => {
     const context = await browser.newContext({

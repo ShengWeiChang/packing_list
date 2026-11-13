@@ -14,10 +14,10 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 792    |
+| Total tests 總測試數          | 793    |
 | Unit tests 單元測試           | 317    |
 | Component tests 組件測試      | 314    |
-| E2E tests E2E 測試            | 161    |
+| E2E tests E2E 測試            | 162    |
 | Line coverage 行覆蓋率        | 89.86% |
 | Statement coverage 語句覆蓋率 | 87.68% |
 | Branch coverage 分支覆蓋率    | 78.26% |
@@ -31,7 +31,7 @@
 | --------- | ------------------------ | ----- | ------------------------------------------- |
 | Unit      | Vitest                   | 317   | models、services、composables、utils 純邏輯 |
 | Component | Vitest + @vue/test-utils | 314   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 161   | 真實瀏覽器中的完整使用者流程                |
+| E2E       | Playwright               | 162   | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
@@ -124,7 +124,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 14  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 161 tests
+└── end2end-tests/                       # 162 tests
     ├── touchDragHelpers.js              # 長按微動與原生捲動手勢
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
@@ -138,7 +138,7 @@ tests/
     ├── category-crud.spec.js            #  3  tests
     ├── drag-and-drop.spec.js            #  7  tests
     ├── desktop-drag-presentation.spec.js # 19  tests
-    ├── drag-settlement.spec.js           # 14  tests
+    ├── drag-settlement.spec.js           # 15  tests
     ├── drag-membership-conflict.spec.js  #  1  test
     ├── category-motion.spec.js          #  8  tests
     ├── interaction-feedback.spec.js      #  8  tests
@@ -1142,7 +1142,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | 觸控跨清單正常新增／移除              |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | 滑鼠跨清單正常新增／移除              |
 
-### 8.3 E2E Tests（161）
+### 8.3 E2E Tests（162）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1380,24 +1380,25 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 7   | ends an old name edit when dragging a different item                                | 未改名／已改名的編輯收尾與保存         |
 | 8   | honors reduced motion for inline action expansion                                   | 直接展開、可用控制項與 Escape          |
 
-#### 8.3.19 drag-settlement.spec.js（14）
+#### 8.3.19 drag-settlement.spec.js（15）
 
-| #   | Test                                                                | 驗證內容                                |
-| --- | ------------------------------------------------------------------- | --------------------------------------- |
-| 1   | keeps sidebar mouse drop visible through delayed storage on desktop | 待儲存順序、保存及重載                  |
-| 2   | keeps sidebar mouse drop visible through delayed storage on phone   | 待儲存順序、保存及重載                  |
-| 3   | keeps sidebar mouse drop visible through delayed storage on tablet  | 待儲存順序、保存及重載                  |
-| 4   | restores sidebar order when a pending mouse drop fails to save      | 儲存失敗還原持久順序                    |
-| 5   | touchcancel restores same drag after its placeholder moves          | 取消同分類拖曳還原畫面／storage／重載   |
-| 6   | touchcancel restores cross drag after its placeholder moves         | 取消跨分類拖曳還原畫面／storage／重載   |
-| 7   | touchcancel restores empty drag after its placeholder moves         | 取消空目標拖曳還原畫面／storage／重載   |
-| 8   | touchcancel restores collapsed drag after its placeholder moves     | 取消收合目標拖曳還原畫面／storage／重載 |
-| 9   | touchcancel restores filtered drag after its placeholder moves      | 取消篩選目標拖曳還原畫面／storage／重載 |
-| 10  | touchcancel restores category drag after its placeholder moves      | 取消分類拖曳還原畫面／storage／重載     |
-| 11  | touchcancel restores sidebar drag after its placeholder moves       | 取消側邊欄拖曳還原畫面／storage／重載   |
-| 12  | normal touchend saves item order                                    | 正常觸控放手保存物品順序且可重載        |
-| 13  | normal touchend saves category order                                | 正常觸控放手保存分類順序且可重載        |
-| 14  | normal touchend saves sidebar order                                 | 正常觸控放手保存側邊欄順序且可重載      |
+| #   | Test                                                                         | 驗證內容                                |
+| --- | ---------------------------------------------------------------------------- | --------------------------------------- |
+| 1   | keeps sidebar mouse drop visible through delayed storage on desktop          | 待儲存順序、保存及重載                  |
+| 2   | keeps sidebar mouse drop visible through delayed storage on phone            | 待儲存順序、保存及重載                  |
+| 3   | keeps sidebar mouse drop visible through delayed storage on tablet           | 待儲存順序、保存及重載                  |
+| 4   | restores sidebar order when a pending mouse drop fails to save               | 儲存失敗還原持久順序                    |
+| 5   | touch drag completion leaves the next action tap usable across drag surfaces | 觸控取消及正常放手後第一次點擊仍可操作  |
+| 6   | touchcancel restores same drag after its placeholder moves                   | 取消同分類拖曳還原畫面／storage／重載   |
+| 7   | touchcancel restores cross drag after its placeholder moves                  | 取消跨分類拖曳還原畫面／storage／重載   |
+| 8   | touchcancel restores empty drag after its placeholder moves                  | 取消空目標拖曳還原畫面／storage／重載   |
+| 9   | touchcancel restores collapsed drag after its placeholder moves              | 取消收合目標拖曳還原畫面／storage／重載 |
+| 10  | touchcancel restores filtered drag after its placeholder moves               | 取消篩選目標拖曳還原畫面／storage／重載 |
+| 11  | touchcancel restores category drag after its placeholder moves               | 取消分類拖曳還原畫面／storage／重載     |
+| 12  | touchcancel restores sidebar drag after its placeholder moves                | 取消側邊欄拖曳還原畫面／storage／重載   |
+| 13  | normal touchend saves item order                                             | 正常觸控放手保存物品順序且可重載        |
+| 14  | normal touchend saves category order                                         | 正常觸控放手保存分類順序且可重載        |
+| 15  | normal touchend saves sidebar order                                          | 正常觸控放手保存側邊欄順序且可重載      |
 
 #### 8.3.20 drag-membership-conflict.spec.js（1）
 

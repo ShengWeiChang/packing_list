@@ -343,6 +343,7 @@ Validation 驗證
 ### 3.12 Responsive Interaction Ownership 響應式互動責任
 
 - `useDraggableControls` 在 `touchcancel` 時，於 vuedraggable 修改 model 前攔截 Sortable `onAdd`／`onRemove`／`onUpdate`，將 DOM 還原到原 parent／index，並讓 end 清理繼續執行。所有拖曳表面包含空的收合接收區都使用此 guard；正常 `touchend` 與滑鼠放置保留原 callback。清理時還原 callback 與 listener，升級套件時重查 callback 順序與 DOM 還原。
+- `patches/sortablejs+1.14.0.patch` 在兩個套件入口的 `touchcancel`，以及 `touchend` 的下一個 task，清除 Sortable 遺留的點擊抑制旗標；安裝時先確認精確版本與套件解析位置，再由 `patch-package --error-on-fail` 套用。上游提供受支援修復時重新評估並移除，檢查正常放手的防誤點和所有拖曳表面後的首次點擊。上游討論：https://github.com/SortableJS/Sortable/pull/2365。
 - Sidebar 擁有僅排序的待儲存清單 projection 與未完成儲存計數；App 在儲存或失敗復原後確認收尾。保留 props 的最新欄位與成員，刷新無法完成時保留已儲存預覽，待後續讀取後釋放。先前收尾不得清除後續待處理移動或進行中的手勢。
 - 物品拖曳批次從完整來源／目標 baseline 推導 `expectedCategoryMembership`，包含隱藏物品與空接收區。`LocalStorageService.updateMultipleItems` 在 write lock 內、寫入前驗證受影響分類範圍與完整物品 ID 集合；不符時以 `conflict` 原子拒絕批次。一般名稱／打包批次不傳這個拖曳專用 option，保留欄位意圖合併。
 - `useMasonryMotion` 僅觀測分類尺寸與直接子節點變動，將重排交給同一 Sortable 動畫 state manager；分類拖曳時交由原生 drag-over 動畫處理。分類內容與物品操作列以 `data-height-motion` 標示高度過渡的 owner；過渡時同欄卡片直接跟隨排版變化，換欄仍以動畫移動。不可在 wrapper 另加互搶的 transform transition。Resize、減少動態與卸載會清理所管理的 timer／transform；浮動預覽獨立處理。
