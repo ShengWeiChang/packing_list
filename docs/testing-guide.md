@@ -1334,8 +1334,8 @@ This project uses three layers to balance speed and reliability.
 
 | #   | Test                                                                   | What it verifies                                                  |
 | --- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| 1   | keeps same-category drop order during delayed storage                  | Same-category frames during delayed save                          |
-| 2   | keeps cross-category drop order during delayed storage                 | Cross-category frames during delayed save                         |
+| 1   | keeps same-category drop order during delayed storage                  | Same-category frames and hover controls after pointer movement    |
+| 2   | keeps cross-category drop order during delayed storage                 | Cross-category frames and hover controls after pointer movement   |
 | 3   | places the drag placeholder before Add Item in empty categories        | Empty target, cancellation and stable drop with footer reordering |
 | 4   | places the drag placeholder before Add Item in filtered categories     | Filtered-empty target, cancellation and stable drop               |
 | 5   | restores the original order when a drop cannot be saved                | Restore order after a failed write                                |

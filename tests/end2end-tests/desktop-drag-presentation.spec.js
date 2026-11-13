@@ -159,6 +159,7 @@ for (const crossCategory of [false, true]) {
     const target = page.locator(
       `[data-testid="item-row"][data-item-id="${crossCategory ? 'b1' : 'a1'}"]`
     );
+    const targetRect = await target.boundingBox();
     await startDrag(page, source, target);
     await page.evaluate(
       () =>
@@ -197,6 +198,30 @@ for (const crossCategory of [false, true]) {
     await expect(oldNeighbor).toHaveCSS('background-color', 'rgb(255, 255, 255)');
     await page.evaluate(() => window.releaseDragStorage());
     await expect(oldNeighbor).toHaveAttribute('data-drag-hover-suppressed', 'true');
+    const pointer = {
+      x: targetRect.x + targetRect.width / 2,
+      y: targetRect.y + targetRect.height / 2,
+    };
+    const hoveredId = await page.evaluate(
+      ({ x, y }) => document.elementFromPoint(x, y)?.closest('[data-item-id]')?.dataset.itemId,
+      pointer
+    );
+    expect(hoveredId).toBeTruthy();
+    const hoveredRow = page.locator(`[data-testid="item-row"][data-item-id="${hoveredId}"]`);
+    await page.mouse.move(pointer.x + 1, pointer.y);
+    expect(
+      await page.evaluate(
+        ({ x, y }) => document.elementFromPoint(x, y)?.closest('[data-item-id]')?.dataset.itemId,
+        { x: pointer.x + 1, y: pointer.y }
+      )
+    ).toBe(hoveredId);
+    await expect(hoveredRow).not.toHaveAttribute('data-drag-hover-suppressed', 'true');
+    await expect(hoveredRow.getByTestId('item-quantity-controls')).toHaveCSS('opacity', '1');
+    await expect(hoveredRow.getByTestId('item-pending-toggle')).toHaveCSS('opacity', '1');
+    await expect(hoveredRow.locator('[data-testid^="overflow-trigger-item-"]')).toHaveCSS(
+      'opacity',
+      '1'
+    );
     const box = await oldNeighbor.boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await expect(oldNeighbor).not.toHaveAttribute('data-drag-hover-suppressed', 'true');

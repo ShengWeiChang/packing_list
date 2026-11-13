@@ -479,6 +479,12 @@ watch(
   () => props.suppressDragHover,
   (suppressed) => {
     if (suppressed && !itemRoot.value?.querySelector(':focus-visible')) isHovered.value = false;
+    if (
+      !suppressed &&
+      window.matchMedia('(hover: hover)').matches &&
+      itemRoot.value?.matches(':hover')
+    )
+      isHovered.value = true;
   }
 );
 const isQuantityHovered = ref(false);

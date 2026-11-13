@@ -1334,8 +1334,8 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 | #   | Test                                                                   | 測試重點                                   |
 | --- | ---------------------------------------------------------------------- | ------------------------------------------ |
-| 1   | keeps same-category drop order during delayed storage                  | 同分類延遲儲存逐幀排序                     |
-| 2   | keeps cross-category drop order during delayed storage                 | 跨分類延遲儲存逐幀排序                     |
+| 1   | keeps same-category drop order during delayed storage                  | 同分類逐幀排序及指標移動後 hover 控制項    |
+| 2   | keeps cross-category drop order during delayed storage                 | 跨分類逐幀排序及指標移動後 hover 控制項    |
 | 3   | places the drag placeholder before Add Item in empty categories        | 空分類佔位、取消與 footer 順序下的穩定落點 |
 | 4   | places the drag placeholder before Add Item in filtered categories     | 篩選空分類佔位、取消與穩定落點             |
 | 5   | restores the original order when a drop cannot be saved                | 寫入失敗後復原                             |

@@ -425,6 +425,37 @@ describe('Item', () => {
       // OverflowMenu should get forceVisible=true
       const menu = w.findComponent({ name: 'OverflowMenu' });
       expect(menu.props('forceVisible')).toBe(true);
+
+      const matches = vi.spyOn(mainDiv.element, 'matches').mockReturnValue(true);
+      for (const categoryCompleted of [false, true]) {
+        await w.setProps({ categoryCompleted, suppressDragHover: true });
+        expect(menu.props('forceVisible')).toBe(false);
+        await w.setProps({ suppressDragHover: false });
+        expect(menu.props('forceVisible')).toBe(true);
+      }
+      await w.setProps({ suppressDragHover: true });
+      matches.mockReturnValue(false);
+      await w.setProps({ suppressDragHover: false });
+      expect(menu.props('forceVisible')).toBe(false);
+      matches.mockReturnValue(true);
+      window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+      await w.setProps({ suppressDragHover: true });
+      await w.setProps({ suppressDragHover: false });
+      expect(menu.props('forceVisible')).toBe(false);
+      window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+      await mainDiv.trigger('mouseenter');
+      const query = vi
+        .spyOn(mainDiv.element, 'querySelector')
+        .mockImplementation((selector) =>
+          selector === ':focus-visible' ? document.createElement('button') : null
+        );
+      await w.setProps({ suppressDragHover: true });
+      expect(menu.props('forceVisible')).toBe(true);
+      matches.mockReturnValue(false);
+      await w.setProps({ suppressDragHover: false });
+      expect(menu.props('forceVisible')).toBe(true);
+      query.mockRestore();
+      matches.mockRestore();
     });
 
     // Test Case 22: Should hide controls on mouseleave
