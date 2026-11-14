@@ -599,6 +599,7 @@ test('shows a later checklist error after cancelling a failed template save', as
   await page.getByTestId('template-editor-save').click();
   await expect(page.getByRole('alert').filter({ hasText: 'storage is full' })).toBeVisible();
   await page.getByRole('button', { name: 'Cancel' }).click();
+  await page.getByTestId('template-unsaved-discard').click();
   await page.getByRole('main').getByTestId('overflow-trigger-checklist-cl').click();
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByTestId('overflow-action-delete-checklist-cl').click();
@@ -679,19 +680,17 @@ test('keeps a failed template draft when switching is declined', async ({ page }
   await page.getByTestId('template-editor-save').click();
   await expect(page.getByRole('alert').filter({ hasText: 'storage is full' })).toBeVisible();
   await page.getByTestId('sidebar-new-checklist').click();
-  await page.getByTestId('new-checklist-option-empty').click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.getByTestId('sidebar-templates-button').click();
-  await page.getByTestId('sidebar-template-use-a').click();
+  await expect(page.getByTestId('unsaved-template-dialog')).toBeVisible();
+  await page.getByTestId('template-unsaved-stay').click();
   await expect(page.getByTestId('checklist-name')).toHaveText('My unsaved draft');
   await page.getByTestId('sidebar-templates-button').click();
-  page.once('dialog', (dialog) => dialog.dismiss());
   await page.getByTestId('sidebar-template-use-b').click();
+  await page.getByTestId('template-unsaved-stay').click();
   await expect(page.getByTestId('checklist-name')).toHaveText('My unsaved draft');
   await expect(page.getByText('Editing template: Template A')).toBeVisible();
   await page.getByTestId('sidebar-templates-button').click();
-  page.once('dialog', (dialog) => dialog.accept());
   await page.getByTestId('sidebar-template-use-b').click();
+  await page.getByTestId('template-unsaved-discard').click();
   await expect(page.getByText('Editing template: Template B')).toBeVisible();
 });
 

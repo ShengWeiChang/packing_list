@@ -48,6 +48,50 @@ function createWrapper() {
 }
 
 describe('TemplateEditor', () => {
+  it('detects structural draft changes and returns clean after they are undone', async () => {
+    const wrapper = createWrapper();
+    const checklist = wrapper.findComponent({ name: 'Checklist' });
+    expect(wrapper.vm.hasChanges()).toBe(false);
+    await checklist.vm.$emit('create:category');
+    const created = checklist.props('categories').find((category) => category.id !== 'category-1');
+    expect(wrapper.vm.hasChanges()).toBe(true);
+    await checklist.vm.$emit('delete:category', created.id);
+    expect(wrapper.vm.hasChanges()).toBe(false);
+    await checklist.vm.$emit('create:item', 'category-1');
+    expect(wrapper.vm.hasChanges()).toBe(true);
+    const added = checklist.props('items').find((item) => item.name === 'New Item');
+    await checklist.vm.$emit('delete:item', added.id);
+    expect(wrapper.vm.hasChanges()).toBe(false);
+    const original = checklist.props('items')[0];
+    await checklist.vm.$emit('update:item', { ...original, quantity: 9 });
+    expect(wrapper.vm.hasChanges()).toBe(true);
+  });
+
+  it('detects reordered categories and item moves in the snapshot', async () => {
+    const wrapper = shallowMount(TemplateEditor, {
+      props: {
+        template: {
+          ...template,
+          categories: [...template.categories, { id: 'category-2', name: 'Other', order: 1 }],
+        },
+      },
+      global: { plugins: [i18n] },
+    });
+    const checklist = wrapper.findComponent({ name: 'Checklist' });
+    const categories = checklist.props('categories');
+    await checklist.vm.$emit('reorder:categories', [
+      { ...categories[0], order: 1 },
+      { ...categories[1], order: 0 },
+    ]);
+    expect(wrapper.vm.hasChanges()).toBe(true);
+    expect(wrapper.vm.getSnapshot().categories.map(({ order }) => order)).toEqual([1, 0]);
+    const item = checklist.props('items')[0];
+    await checklist.vm.$emit('move:item', {
+      type: 'move',
+      items: [{ ...item, categoryId: 'category-2' }],
+    });
+    expect(wrapper.vm.getSnapshot().items[0].categoryId).toBe('category-2');
+  });
   // ---------------------------------------------------------------------------
   // Test Group 1: Editor Rendering
   // ---------------------------------------------------------------------------

@@ -63,11 +63,11 @@ Created: 2025-09-19
             :is-narrow="isSmallDesktop"
             :checklists="checklists"
             :templates="templates"
-            :selected-checklist-id="selectedChecklistId"
+            :selected-checklist-id="templateEditing ? null : selectedChecklistId"
             :selected-template-id="templateEditing?.id || null"
             @toggle-sidebar="toggleSidebar"
             @create-checklist="handleChecklistCreate"
-            @select-checklist="selectedChecklistId = $event"
+            @select-checklist="handleChecklistSelect"
             @edit-checklist="handleChecklistEdit"
             @copy-checklist="handleChecklistCopy"
             @delete-checklist="handleChecklistDelete"
@@ -91,11 +91,11 @@ Created: 2025-09-19
         :is-narrow="isSmallDesktop"
         :checklists="checklists"
         :templates="templates"
-        :selected-checklist-id="selectedChecklistId"
+        :selected-checklist-id="templateEditing ? null : selectedChecklistId"
         :selected-template-id="templateEditing?.id || null"
         @toggle-sidebar="toggleSidebar"
         @create-checklist="handleChecklistCreate"
-        @select-checklist="selectedChecklistId = $event"
+        @select-checklist="handleChecklistSelect"
         @edit-checklist="handleChecklistEdit"
         @copy-checklist="handleChecklistCopy"
         @delete-checklist="handleChecklistDelete"
@@ -109,7 +109,8 @@ Created: 2025-09-19
     <!-- Main Content -->
     <main
       :class="[
-        'min-w-0 flex-1 overflow-y-auto bg-bg-secondary p-4 duration-200 md:p-6',
+        'min-w-0 flex-1 bg-bg-secondary p-4 duration-200 md:p-6',
+        !templateEditing && 'overflow-y-auto',
         {
           'pointer-events-none blur-sm': isSidebarOpen && (isMobileViewport || isSmallDesktop),
         },
@@ -170,6 +171,14 @@ Created: 2025-09-19
         {{ $t(`storage.${visibleOperationError}`) }}
       </p>
       <p
+        v-if="templateNavigationMissing"
+        class="mb-4 rounded-lg bg-white p-4 text-sm text-danger-text"
+        role="alert"
+        data-testid="template-navigation-missing"
+      >
+        {{ $t('template.destinationMissing') }}
+      </p>
+      <p
         v-if="checklistRefreshAfterSaveFailed || templateRefreshAfterSaveFailed"
         class="mb-4 rounded-lg bg-white p-4 text-sm text-primary"
         role="status"
@@ -200,6 +209,7 @@ Created: 2025-09-19
       </section>
       <TemplateEditor
         v-if="templateEditing"
+        ref="templateEditorRef"
         :template="templateEditing"
         :saving="isSavingTemplateEdit"
         :save-error="templateEditSaveFailed"
@@ -207,6 +217,7 @@ Created: 2025-09-19
         @cancel="handleTemplateEditCancel"
         @delete="handleTemplateEditDelete"
         @save="handleTemplateEditSave"
+        @composition-end="resumeTemplateNavigation"
       />
       <div v-else-if="selectedChecklist">
         <ChecklistComponent
@@ -272,6 +283,12 @@ Created: 2025-09-19
         @close="showSaveTemplateDialog = false"
         @save="handleTemplateSave"
       />
+      <UnsavedTemplateDialog
+        v-if="showUnsavedTemplateDialog"
+        @stay="stayInTemplate"
+        @discard="discardTemplateAndContinue"
+        @save="saveTemplateAndContinue"
+      />
     </Teleport>
 
     <Teleport to="body">
@@ -325,6 +342,7 @@ import SaveTemplateDialog from './components/SaveTemplateDialog.vue';
 import Sidebar from './components/Sidebar.vue';
 import TemplateEditor from './components/TemplateEditor.vue';
 import Topbar from './components/Topbar.vue';
+import UnsavedTemplateDialog from './components/UnsavedTemplateDialog.vue';
 import { usePackingLists } from './composables/usePackingLists';
 import { useTemplates } from './composables/useTemplates';
 import type { CategoryDTO, ChecklistDTO, ItemDTO, TemplateDTO } from './models/contracts';
@@ -433,6 +451,13 @@ let nextDisplacedDraftId = 0;
 const exportFailure = ref<string | null>(null);
 const mainHeading = ref<HTMLElement | null>(null);
 const templateEditing = ref<TemplateView | null>(null);
+const templateEditorRef = ref<InstanceType<typeof TemplateEditor> | null>(null);
+const showUnsavedTemplateDialog = ref(false);
+type TemplateNavigation = { run: () => void; isAvailable: () => boolean };
+let pendingTemplateNavigation: TemplateNavigation | null = null;
+let composingTemplateNavigation: TemplateNavigation | null = null;
+const templateNavigationMissing = ref(false);
+let resolvingTemplateNavigation = false;
 const isSavingTemplateEdit = ref(false);
 const templateEditSaveFailed = ref(false);
 const templateDraftAtRisk = ref(false);
@@ -463,7 +488,8 @@ const isOverlayVisible = computed(
     (isMobileViewport.value || (isSmallDesktop.value && isSidebarOpen.value)) && isSidebarOpen.value
 );
 const isDialogVisible = computed(
-  () => showNewChecklistDialog.value || showSaveTemplateDialog.value
+  () =>
+    showNewChecklistDialog.value || showSaveTemplateDialog.value || showUnsavedTemplateDialog.value
 );
 const recommendedLists = computed(() => recommendedListService.getRecommendedLists(locale.value));
 const storageProblems = computed(() =>
@@ -1032,8 +1058,10 @@ function buildSourceAwareChecklistName(source: ChecklistSelection['source'], sou
  * Open the new checklist dialog to let user choose source
  */
 function handleChecklistCreate() {
-  checklistCreateFailed.value = false;
-  showNewChecklistDialog.value = true;
+  void requestTemplateNavigation(() => {
+    checklistCreateFailed.value = false;
+    showNewChecklistDialog.value = true;
+  });
 }
 
 /**
@@ -1146,18 +1174,44 @@ async function handleChecklistUpdate(checklist: ChecklistDTO, expected?: Checkli
  * @param {string} checklistId - The ID of the checklist to edit
  */
 function handleChecklistEdit(checklistId: string) {
-  if (isOverlayVisible.value) isSidebarOpen.value = false;
-  // Select the checklist first
-  selectedChecklistId.value = checklistId;
-  // Mark it for editing
-  newlyCreatedChecklistId.value = checklistId;
+  void requestTemplateNavigation(
+    () => {
+      if (!checklists.value.some((checklist) => checklist.id === checklistId)) return;
+      if (isOverlayVisible.value) isSidebarOpen.value = false;
+      selectedChecklistId.value = checklistId;
+      newlyCreatedChecklistId.value = checklistId;
+    },
+    () => checklists.value.some((checklist) => checklist.id === checklistId)
+  );
+}
+
+/** Navigate to a checklist only after the template draft is resolved. */
+function handleChecklistSelect(checklistId: string) {
+  void requestTemplateNavigation(
+    () => {
+      if (!checklists.value.some((checklist) => checklist.id === checklistId)) return;
+      selectedChecklistId.value = checklistId;
+      if (isOverlayVisible.value) isSidebarOpen.value = false;
+    },
+    () => checklists.value.some((checklist) => checklist.id === checklistId)
+  );
 }
 
 /**
  * Handle checklist copy from sidebar
  * @param {string} checklistId - The ID of the checklist to copy
  */
-async function handleChecklistCopy(checklistId: string) {
+function handleChecklistCopy(checklistId: string) {
+  void requestTemplateNavigation(
+    () => {
+      void copyChecklistAfterNavigation(checklistId);
+    },
+    () => checklists.value.some((checklist) => checklist.id === checklistId)
+  );
+}
+
+/** Copy after any template draft has been resolved. */
+async function copyChecklistAfterNavigation(checklistId: string) {
   const result = await handleAsyncAction(duplicateChecklist, checklistId);
   if (result && !checklistRefreshAfterSaveFailed?.value) {
     // Select the new checklist
@@ -1246,18 +1300,96 @@ async function handleTemplateSave(templateName: string) {
  */
 function handleTemplateEdit(templateId: string) {
   if (isSavingTemplateEdit.value || templateEditing.value?.id === templateId) return;
-  if (
-    templateDraftAtRisk.value &&
-    templateEditing.value?.id !== templateId &&
-    !confirm(t('template.discardFailedDraftConfirm'))
-  )
+  void requestTemplateNavigation(
+    () => {
+      const template = templates.value.find((item) => item.id === templateId);
+      if (!template) return;
+      if (isOverlayVisible.value) isSidebarOpen.value = false;
+      templateEditSaveFailed.value = false;
+      templateDraftAtRisk.value = false;
+      templateEditing.value = template;
+    },
+    () => templates.value.some((item) => item.id === templateId)
+  );
+}
+
+/** Delay navigation until the isolated draft has been explicitly resolved. */
+async function requestTemplateNavigation(
+  action: () => void,
+  isAvailable: () => boolean = () => true
+) {
+  if (isSavingTemplateEdit.value || showUnsavedTemplateDialog.value || resolvingTemplateNavigation)
     return;
-  const template = templates.value.find((item) => item.id === templateId);
-  if (!template) return;
+  templateNavigationMissing.value = false;
+  const navigation: TemplateNavigation = { run: action, isAvailable };
+  if (!templateEditing.value) {
+    if (isAvailable()) action();
+    else reportMissingTemplateDestination();
+    return;
+  }
+  if (templateEditorRef.value?.isComposing()) {
+    composingTemplateNavigation ??= navigation;
+    return;
+  }
+  resolvingTemplateNavigation = true;
+  try {
+    await nextTick();
+    if (templateEditorRef.value?.hasChanges() || templateDraftAtRisk.value) {
+      pendingTemplateNavigation = navigation;
+      showUnsavedTemplateDialog.value = true;
+      return;
+    }
+    if (!isAvailable()) {
+      reportMissingTemplateDestination();
+      return;
+    }
+    templateEditing.value = null;
+    action();
+  } finally {
+    resolvingTemplateNavigation = false;
+  }
+}
+
+/** Retry the original navigation after the inline IME composition settles. */
+function resumeTemplateNavigation() {
+  const navigation = composingTemplateNavigation;
+  composingTemplateNavigation = null;
+  if (navigation) void requestTemplateNavigation(navigation.run, navigation.isAvailable);
+}
+
+/** Explain why a requested destination is no longer available. */
+function reportMissingTemplateDestination() {
+  templateNavigationMissing.value = true;
   if (isOverlayVisible.value) isSidebarOpen.value = false;
+}
+
+/** Keep editing the unchanged in-memory draft. */
+function stayInTemplate() {
+  pendingTemplateNavigation = null;
+  showUnsavedTemplateDialog.value = false;
+}
+
+/** Discard the draft and continue to the originally requested destination. */
+function discardTemplateAndContinue() {
+  const navigation = pendingTemplateNavigation;
+  pendingTemplateNavigation = null;
+  showUnsavedTemplateDialog.value = false;
+  if (navigation && !navigation.isAvailable()) {
+    reportMissingTemplateDestination();
+    return;
+  }
   templateEditSaveFailed.value = false;
   templateDraftAtRisk.value = false;
-  templateEditing.value = template;
+  templateEditing.value = null;
+  navigation?.run();
+}
+
+/** Save the draft before continuing to the originally requested destination. */
+function saveTemplateAndContinue() {
+  const snapshot = templateEditorRef.value?.getSnapshot();
+  if (!snapshot) return;
+  showUnsavedTemplateDialog.value = false;
+  void handleTemplateEditSave(snapshot);
 }
 
 /** Copy readonly snapshots into the service's mutable DTO input contract. */
@@ -1283,9 +1415,15 @@ async function handleTemplateEditSave(template: TemplateDTO) {
     if (updated) {
       templateDraftAtRisk.value = false;
       templateEditing.value = null;
+      const navigation = pendingTemplateNavigation;
+      pendingTemplateNavigation = null;
+      if (navigation && !navigation.isAvailable()) reportMissingTemplateDestination();
+      else navigation?.run();
     } else {
       templateEditSaveFailed.value = true;
       templateDraftAtRisk.value = true;
+      pendingTemplateNavigation = null;
+      if (isOverlayVisible.value) isSidebarOpen.value = false;
     }
   } finally {
     isSavingTemplateEdit.value = false;
@@ -1294,10 +1432,10 @@ async function handleTemplateEditSave(template: TemplateDTO) {
 
 /** Discard the in-memory template draft. */
 function handleTemplateEditCancel() {
-  if (isSavingTemplateEdit.value) return;
-  templateEditSaveFailed.value = false;
-  templateDraftAtRisk.value = false;
-  templateEditing.value = null;
+  void requestTemplateNavigation(() => {
+    templateEditSaveFailed.value = false;
+    templateDraftAtRisk.value = false;
+  });
 }
 
 /**
