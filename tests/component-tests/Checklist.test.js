@@ -225,6 +225,30 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('name editing', () => {
+    it('confirms once after composition and keeps a failed checklist draft for retry', async () => {
+      const saveChecklistEdit = vi
+        .fn()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'cl-1' });
+      const wrapper = createWrapper({ saveChecklistEdit });
+      await wrapper.get('[data-testid="checklist-name"]').trigger('click');
+      const input = wrapper.get('[data-testid="checklist-name-input"]');
+      await input.setValue('Draft trip');
+      await input.trigger('compositionstart');
+      const menu = wrapper.findComponent({ name: 'OverflowMenu' });
+      expect(menu.props('isEditing')).toBe(true);
+      await menu.vm.$emit('confirm-edit');
+      expect(saveChecklistEdit).not.toHaveBeenCalled();
+      await input.trigger('compositionend');
+      await menu.vm.$emit('confirm-edit');
+      await flushPromises();
+      expect(saveChecklistEdit).toHaveBeenCalledTimes(1);
+      expect(wrapper.get('[data-testid="checklist-name-input"]').element.value).toBe('Draft trip');
+      await menu.vm.$emit('confirm-edit');
+      await flushPromises();
+      expect(saveChecklistEdit).toHaveBeenCalledTimes(2);
+      expect(wrapper.find('[data-testid="checklist-name-input"]').exists()).toBe(false);
+    });
     // Test Case 9: Retain the name and dates until save succeeds.
     it('retains checklist name and dates after a failed save until retry succeeds', async () => {
       const saveChecklistEdit = vi
@@ -543,6 +567,7 @@ describe('Checklist', () => {
         }),
       });
       expect(singleDateWrapper.text()).toContain('Mar 10, 2026');
+      expect(singleDateWrapper.text()).not.toContain('checklist.endDate');
 
       const crossYearWrapper = createWrapper({
         checklist: createMockChecklist({
@@ -563,6 +588,18 @@ describe('Checklist', () => {
       });
       // formatDateRange returns '' for empty dates
       expect(wrapper.get('[data-testid="checklist-name"]').text()).toBe('Japan Trip');
+    });
+
+    it('associates visible start and end labels with their date inputs', async () => {
+      const wrapper = createWrapper();
+      expect(wrapper.text()).not.toContain('checklist.startDate');
+      expect(wrapper.text()).not.toContain('checklist.endDate');
+
+      await wrapper.get('[data-testid="checklist-name"]').trigger('click');
+      expect(wrapper.get('label[for="checklist-cl-1-start-date"]').text()).toBe(
+        'checklist.dateFrom'
+      );
+      expect(wrapper.get('label[for="checklist-cl-1-end-date"]').text()).toBe('checklist.dateTo');
     });
   });
 

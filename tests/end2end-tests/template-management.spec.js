@@ -104,6 +104,33 @@ test.describe('Template Management', () => {
     expect(persisted.templates[0].name).toBe('Beach Weekend');
   });
 
+  test('confirms inline template edits without saving the template until explicitly requested', async ({
+    page,
+  }) => {
+    await page.getByTestId('sidebar-templates-button').click();
+    await page.getByTestId('sidebar-template-use-template-1').click();
+    const original = await page.evaluate(() => localStorage.getItem('packingListTemplates'));
+    await page.getByTestId('checklist-name').click();
+    await page.getByTestId('checklist-name-input').fill('Draft template');
+    await page.getByTestId('checklist-edit-confirm').click();
+    await expect(page.getByTestId('checklist-name')).toHaveText('Draft template');
+    await page.getByTestId('category-name').click();
+    await page.getByTestId('category-name-input').fill('Draft category');
+    await page.getByTestId('overflow-trigger-category-category-1').click();
+    await expect(page.getByTestId('category-name')).toHaveText('Draft category');
+    expect(await page.evaluate(() => localStorage.getItem('packingListTemplates'))).toBe(original);
+    await page.getByTestId('category-name').click();
+    await page.getByTestId('category-name-input').fill('Final category');
+    await page.getByTestId('overflow-trigger-category-category-1').focus();
+    await page.getByTestId('template-editor-save').click();
+    await expect(page.getByTestId('template-editor-save')).toHaveCount(0);
+    const saved = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('packingListTemplates'))
+    );
+    expect(saved[0].name).toBe('Draft template');
+    expect(saved[0].categories[0].name).toBe('Final category');
+  });
+
   // Test Case 4: Should delete the active template from the editor
   test('should delete the active template from the editor', async ({ page }) => {
     await page.getByTestId('sidebar-templates-button').click();

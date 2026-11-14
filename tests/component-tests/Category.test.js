@@ -108,6 +108,32 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('rendering', () => {
+    it('confirms once after composition and keeps a failed category draft for retry', async () => {
+      const saveCategoryEdit = vi
+        .fn()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'cat-1' });
+      const wrapper = createWrapper({ saveCategoryEdit });
+      await wrapper.get('[data-testid="category-name"]').trigger('click');
+      const input = wrapper.get('[data-testid="category-name-input"]');
+      await input.setValue('Draft category');
+      await input.trigger('compositionstart');
+      const menu = wrapper.findComponent({ name: 'OverflowMenu' });
+      expect(menu.props('isEditing')).toBe(true);
+      await menu.vm.$emit('confirm-edit');
+      expect(saveCategoryEdit).not.toHaveBeenCalled();
+      await input.trigger('compositionend');
+      await menu.vm.$emit('confirm-edit');
+      await flushPromises();
+      expect(saveCategoryEdit).toHaveBeenCalledTimes(1);
+      expect(wrapper.get('[data-testid="category-name-input"]').element.value).toBe(
+        'Draft category'
+      );
+      await menu.vm.$emit('confirm-edit');
+      await flushPromises();
+      expect(saveCategoryEdit).toHaveBeenCalledTimes(2);
+      expect(wrapper.find('[data-testid="category-name-input"]').exists()).toBe(false);
+    });
     // Test Case 1: Retain the category draft until save succeeds.
     it('keeps a category name draft on failed save and retries it', async () => {
       const saveCategoryEdit = vi

@@ -56,6 +56,8 @@
     "pleaseCreate": "請先建立一個新清單",
     "startDate": "開始日期",
     "endDate": "結束日期",
+    "dateFrom": "開始",
+    "dateTo": "結束",
     "showUnpackedOnly": "只顯示未攜帶物品"
   },
   "category": {
