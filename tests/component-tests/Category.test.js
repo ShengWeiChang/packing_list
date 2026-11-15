@@ -108,6 +108,7 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('rendering', () => {
+    // Test Case 1: confirms once after composition.
     it('confirms once after composition and keeps a failed category draft for retry', async () => {
       const saveCategoryEdit = vi
         .fn()
@@ -134,7 +135,7 @@ describe('Category', () => {
       expect(saveCategoryEdit).toHaveBeenCalledTimes(2);
       expect(wrapper.find('[data-testid="category-name-input"]').exists()).toBe(false);
     });
-    // Test Case 1: Retain the category draft until save succeeds.
+    // Test Case 2: Retain the category draft until save succeeds.
     it('keeps a category name draft on failed save and retries it', async () => {
       const saveCategoryEdit = vi
         .fn()
@@ -153,13 +154,13 @@ describe('Category', () => {
       await flushPromises();
       expect(wrapper.find('[data-testid="category-name-input"]').exists()).toBe(false);
     });
-    // Test Case 2: Should display the category name
+    // Test Case 3: Should display the category name
     it('should display the category name', () => {
       const wrapper = createWrapper();
       expect(wrapper.text()).toContain('Clothing');
     });
 
-    // Test Case 3: Should pass filtered item counts to ProgressBar
+    // Test Case 4: Should pass filtered item counts to ProgressBar
     it('should pass correct item counts to ProgressBar', () => {
       const wrapper = createWrapper();
       const progressBar = wrapper.findComponent(ProgressBar);
@@ -168,7 +169,7 @@ describe('Category', () => {
       expect(progressBar.props('completed')).toBe(1);
     });
 
-    // Test Case 4: Should only count items belonging to this category
+    // Test Case 5: Should only count items belonging to this category
     it('should filter items by categoryId', () => {
       const wrapper = createWrapper();
       const progressBar = wrapper.findComponent(ProgressBar);
@@ -182,7 +183,7 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('completion state', () => {
-    // Test Case 5: Should not apply completed styling when partially packed
+    // Test Case 6: Should not apply completed styling when partially packed
     it('should not apply completed styling when some items are unpacked', () => {
       const wrapper = createWrapper();
       // Default: 1 packed + 1 unpacked → not completed
@@ -190,7 +191,7 @@ describe('Category', () => {
       expect(card.attributes('data-completed')).toBe('false');
     });
 
-    // Test Case 6: Should apply completed styling when all items are packed
+    // Test Case 7: Should apply completed styling when all items are packed
     it('should apply completed styling when all items are packed', () => {
       const items = createMockItems().map((item) => ({
         ...item,
@@ -207,14 +208,14 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('collapse toggle', () => {
-    // Test Case 7: Should start with items visible (not collapsed)
+    // Test Case 8: Should start with items visible (not collapsed)
     it('should start with items visible (not collapsed)', () => {
       const wrapper = createWrapper();
       const itemsContainer = wrapper.get('[data-testid="category-items-container"]');
       expect(itemsContainer.classes()).toContain('grid-rows-[1fr]');
     });
 
-    // Test Case 8: Should collapse items when toggle button is clicked
+    // Test Case 9: Should collapse items when toggle button is clicked
     it('should collapse items when toggle button is clicked', async () => {
       const wrapper = createWrapper();
       const collapseButton = wrapper.get('[data-testid="category-collapse-toggle"]');
@@ -230,7 +231,7 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('name editing', () => {
-    // Test Case 9: Should enter edit mode when category name is clicked
+    // Test Case 10: Should enter edit mode when category name is clicked
     it('should show input when category name is clicked', async () => {
       const wrapper = createWrapper();
       const nameHeading = wrapper.get('[data-testid="category-name"]');
@@ -239,7 +240,7 @@ describe('Category', () => {
       expect(wrapper.get('[data-testid="category-name-input"]').element.value).toBe('Clothing');
     });
 
-    // Test Case 10: Should emit update:category with new name on Enter
+    // Test Case 11: Should emit update:category with new name on Enter
     it('should emit "update:category" with new name on Enter', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid="category-name"]').trigger('click');
@@ -253,7 +254,7 @@ describe('Category', () => {
       expect(emitted[0][0].name).toBe('Updated Clothing');
     });
 
-    // Test Case 11: Should cancel edit mode on Escape key
+    // Test Case 12: Should cancel edit mode on Escape key
     it('should cancel edit mode on Escape key', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid="category-name"]').trigger('click');
@@ -272,7 +273,7 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('event emissions', () => {
-    // Test Case 12: Should emit create:item with category ID
+    // Test Case 13: Should emit create:item with category ID
     it('should emit "create:item" when AddItemButton triggers click', async () => {
       const wrapper = createWrapper();
       const addButton = wrapper.findComponent({ name: 'AddItemButton' });
@@ -282,7 +283,7 @@ describe('Category', () => {
       expect(wrapper.emitted('create:item')[0][0]).toBe('cat-1');
     });
 
-    // Test Case 13: Should emit delete:category when OverflowMenu triggers delete
+    // Test Case 14: Should emit delete:category when OverflowMenu triggers delete
     it('should emit "delete:category" when delete is triggered', async () => {
       const wrapper = createWrapper();
       const menu = wrapper.findComponent({ name: 'OverflowMenu' });
@@ -292,7 +293,7 @@ describe('Category', () => {
       expect(wrapper.emitted('delete:category')[0][0]).toBe('cat-1');
     });
 
-    // Test Case 14: Should emit copy:category when OverflowMenu triggers copy
+    // Test Case 15: Should emit copy:category when OverflowMenu triggers copy
     it('should emit "copy:category" when copy is triggered', async () => {
       const wrapper = createWrapper();
       const menu = wrapper.findComponent({ name: 'OverflowMenu' });
@@ -308,7 +309,7 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('blur save', () => {
-    // Test Case 15: Should save on blur when name is changed
+    // Test Case 16: Should save on blur when name is changed
     it('should emit "update:category" on blur with changed name', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid="category-name"]').trigger('click');
@@ -322,7 +323,7 @@ describe('Category', () => {
       expect(emitted[0][0].name).toBe('Updated Clothing');
     });
 
-    // Test Case 16: Should not emit on blur when name is unchanged
+    // Test Case 17: Should not emit on blur when name is unchanged
     it('should not emit "update:category" on blur when name is unchanged', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid="category-name"]').trigger('click');
@@ -340,7 +341,7 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('empty name handling', () => {
-    // Test Case 17: Should not save empty name
+    // Test Case 18: Should not save empty name
     it('should not emit "update:category" when name is empty', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid="category-name"]').trigger('click');
@@ -352,7 +353,7 @@ describe('Category', () => {
       expect(wrapper.emitted('update:category')).toBeUndefined();
     });
 
-    // Test Case 18: Should not save whitespace-only name
+    // Test Case 19: Should not save whitespace-only name
     it('should not emit "update:category" when name is whitespace only', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid="category-name"]').trigger('click');
@@ -391,7 +392,7 @@ describe('Category', () => {
       });
     };
 
-    // Test Case 19: Should set dragging item ID on drag start
+    // Test Case 20: Should set dragging item ID on drag start
     it('should set dragging item ID on drag start', async () => {
       const wrapper = createDragWrapper();
       const draggableComp = wrapper.findComponent({ name: 'draggable' });
@@ -412,7 +413,7 @@ describe('Category', () => {
       }
     });
 
-    // Test Case 20: Should clear dragging item ID on drag end
+    // Test Case 21: Should clear dragging item ID on drag end
     it('should clear dragging item ID on drag end', async () => {
       const wrapper = createDragWrapper();
       const draggableComp = wrapper.findComponent({ name: 'draggable' });
@@ -436,7 +437,7 @@ describe('Category', () => {
       });
     });
 
-    // Test Case 21: Should emit move:item with type 'move' on cross-category add
+    // Test Case 22: Should emit move:item with type 'move' on cross-category add
     it('should emit "move:item" with type "move" when item is added from another category', async () => {
       const wrapper = createDragWrapper();
       const draggableComp = wrapper.findComponent({ name: 'draggable' });
@@ -463,7 +464,7 @@ describe('Category', () => {
       expect(emitted[0][0].items[0].categoryId).toBe('cat-1');
     });
 
-    // Test Case 22: Should emit move:item with type 'reorder' on same-category move
+    // Test Case 23: Should emit move:item with type 'reorder' on same-category move
     it('should emit "move:item" with type "reorder" when item is moved within same category', async () => {
       const wrapper = createDragWrapper();
       const draggableComp = wrapper.findComponent({ name: 'draggable' });
@@ -479,7 +480,7 @@ describe('Category', () => {
       expect(emitted[0][0].items).toHaveLength(2); // Only cat-1 items
     });
 
-    // Test Case 23: Should reorder visible slots without moving packed items
+    // Test Case 24: Should reorder visible slots without moving packed items
     it('should preserve packed slots when reordering filtered items', () => {
       const items = [
         createSortableItem('1', 'cat-1', true, 0),
@@ -499,7 +500,7 @@ describe('Category', () => {
       expect(emittedItems.map((item) => item.id)).toEqual(['1', '4', '3', '2', '5']);
     });
 
-    // Test Case 24: Should map a cross-category visible index into complete order
+    // Test Case 25: Should map a cross-category visible index into complete order
     it('should insert before the next visible target item while filtered', () => {
       const movedItem = createSortableItem('1', 'cat-2', false, 0);
       const items = [
@@ -524,7 +525,7 @@ describe('Category', () => {
       expect(payload.expectedItems.find((item) => item.id === '1')).toEqual(movedItem);
     });
 
-    // Test Case 25: Should hide packed items without changing full progress data
+    // Test Case 26: Should hide packed items without changing full progress data
     it('should display only unpacked items while retaining full category progress', () => {
       const wrapper = createDragWrapper({ showUnpackedOnly: true });
       const itemComponents = wrapper.findAllComponents({ name: 'Item' });
@@ -536,7 +537,7 @@ describe('Category', () => {
       expect(wrapper.findComponent({ name: 'AddItemButton' }).exists()).toBe(true);
     });
 
-    // Test Case 26: Should forward Item events (update/copy/delete)
+    // Test Case 27: Should forward Item events (update/copy/delete)
     it('should forward Item events from child Item component', async () => {
       const wrapper = createDragWrapper();
       const itemComponents = wrapper.findAllComponents({ name: 'Item' });
@@ -561,7 +562,7 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('newly created category watcher', () => {
-    // Test Case 27: Should auto-start edit for newly created category
+    // Test Case 28: Should auto-start edit for newly created category
     it('should enter edit mode when newlyCreatedCategoryId matches', async () => {
       const wrapper = createWrapper({ newlyCreatedCategoryId: null });
 
@@ -579,7 +580,7 @@ describe('Category', () => {
       );
     });
 
-    // Test Case 28: Should not start edit for non-matching category ID
+    // Test Case 29: Should not start edit for non-matching category ID
     it('should not enter edit mode when newlyCreatedCategoryId does not match', async () => {
       const wrapper = createWrapper({ newlyCreatedCategoryId: null });
       await wrapper.setProps({ newlyCreatedCategoryId: 'cat-other' });
@@ -594,7 +595,7 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('IME composition', () => {
-    // Test Case 29: Should not save on Enter during IME composition
+    // Test Case 30: Should not save on Enter during IME composition
     it('should not save during IME composition', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid="category-name"]').trigger('click');
@@ -623,7 +624,7 @@ describe('Category', () => {
   // ---------------------------------------------------------------------------
 
   describe('category packing checkbox', () => {
-    // Test Case 30: Should expose mixed state and request packing all items
+    // Test Case 31: Should expose mixed state and request packing all items
     it('should expose a mixed category checkbox and request packing all items', async () => {
       const wrapper = createWrapper();
       const checkbox = wrapper.get('[data-testid="category-checkbox"]');
@@ -644,7 +645,7 @@ describe('Category', () => {
       ]);
     });
 
-    // Test Case 31: Should expose checked, unchecked, and disabled states
+    // Test Case 32: Should expose checked, unchecked, and disabled states
     it('should expose checked, unchecked, and disabled category checkbox states', async () => {
       const wrapper = createWrapper({ items: [] });
       const checkbox = wrapper.get('[data-testid="category-checkbox"]');

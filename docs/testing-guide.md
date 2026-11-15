@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 793    |
-| Unit tests         | 317    |
-| Component tests    | 314    |
-| E2E tests          | 162    |
-| Line coverage      | 89.86% |
-| Statement coverage | 87.68% |
-| Branch coverage    | 78.26% |
+| Total tests        | 847    |
+| Unit tests         | 323    |
+| Component tests    | 319    |
+| E2E tests          | 205    |
+| Line coverage      | 88.01% |
+| Statement coverage | 85.96% |
+| Branch coverage    | 76.99% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -29,9 +29,9 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 317   | Pure logic in models, services, composables, utils |
-| Component | Vitest + @vue/test-utils | 314   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 162   | Full user flows in a real browser                  |
+| Unit      | Vitest                   | 323   | Pure logic in models, services, composables, utils |
+| Component | Vitest + @vue/test-utils | 319   | Vue component rendering, events, state             |
+| E2E       | Playwright               | 205   | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -72,7 +72,7 @@ tests/
 │   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
 │   └── fixtures/                        # Typed probe and deliberately invalid inputs
 │
-├── unit-tests/                          # 317 tests
+├── unit-tests/                          # 323 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -99,21 +99,22 @@ tests/
 │       ├── order.test.js                #  8  tests
 │       ├── dragDrop.test.js             #  2  tests
 │       └── focusEditingInput.test.js     #  3  tests
-│   └── scripts/                         # 17 tests
+│   └── scripts/                         # 23 tests
 │       ├── candidateFingerprint.test.js #  2  tests
 │       ├── checkTypeScriptScope.test.js #  8  tests
 │       ├── eslintTypeScript.test.js     #  2  tests
-│       └── verifyFeature.test.js        #  5  tests
+│       ├── cssVars.test.js              #  5  tests
+│       └── verifyFeature.test.js        #  6  tests
 │
-├── component-tests/                     # 314 tests
+├── component-tests/                     # 319 tests
 │   ├── App.test.js                      # 68  tests
 │   ├── PackingCompletionOverlay.test.js # 10  tests
 │   ├── AppIcon.test.js                  #  4  tests
-│   ├── Checklist.test.js                # 42  tests
+│   ├── Checklist.test.js                # 44  tests
 │   ├── Item.test.js                     # 31  tests
 │   ├── Sidebar.test.js                  # 36  tests
 │   ├── typedDraggable.test.js           #  7  tests
-│   ├── Category.test.js                 # 31  tests
+│   ├── Category.test.js                 # 32  tests
 │   ├── OverflowMenu.test.js             # 24  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
@@ -121,16 +122,16 @@ tests/
 │   ├── PendingItemsCategory.test.js     #  5  tests
 │   ├── AddCategoryButton.test.js        #  2  tests
 │   ├── NewChecklistDialog.test.js       # 12  tests
-│   ├── TemplateEditor.test.js           # 14  tests
+│   ├── TemplateEditor.test.js           # 16  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 162 tests
+└── end2end-tests/                       # 205 tests
     ├── touchDragHelpers.js              # Hold-motion and native-scroll gestures
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
     ├── rwd-overlays.spec.js             #  5  tests
-    ├── rwd-webkit.spec.js               #  3  tests
-    ├── sidebar-presentation.spec.js     #  6  tests
+    ├── rwd-webkit.spec.js               #  4  tests
+    ├── sidebar-presentation.spec.js     #  8  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
@@ -143,7 +144,9 @@ tests/
     ├── category-motion.spec.js          #  8  tests
     ├── interaction-feedback.spec.js      #  8  tests
     ├── multi-tab-sync.spec.js           #  6  tests
-    ├── template-management.spec.js      #  7  tests
+    ├── checklist-dates.spec.js          # 16  tests
+    ├── template-navigation.spec.js      # 23  tests
+    ├── template-management.spec.js      #  8  tests
     ├── recommended-lists.spec.js        #  1  test
     └── storage-recovery.spec.js         # 28  tests
 ```
@@ -168,34 +171,34 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 79.03%     | 63.2%  | 77.63% |
-| source/      | 78.3%      | 67.46% | 81.84% |
-| components/  | 84.16%     | 77.42% | 87.36% |
+| scripts/     | 84.04%     | 74.43% | 83.4%  |
+| source/      | 74.72%     | 65.86% | 78.12% |
+| components/  | 81.48%     | 74.4%  | 84.35% |
 | composables/ | 95.04%     | 85.26% | 97.28% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.53%     | 83.5%  | 95.44% |
-| utils/       | 96.36%     | 85.92% | 96.62% |
+| utils/       | 96.36%     | 90.37% | 96.62% |
 
 ### By Component
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 78.3%      | 81.84% | 68    |
+| App.vue                      | 74.72%     | 78.12% | 68    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
 | ProgressBar.vue              | 100%       | 100%   | 8     |
 | Topbar.vue                   | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
-| Sidebar.vue                  | 88.57%     | 90.56% | 36    |
-| OverflowMenu.vue             | 89.9%      | 92.38% | 24    |
-| Category.vue                 | 81.35%     | 85.3%  | 31    |
-| Checklist.vue                | 72.14%     | 76.66% | 42    |
-| Item.vue                     | 86.34%     | 90.81% | 31    |
+| Sidebar.vue                  | 88.13%     | 90.06% | 36    |
+| OverflowMenu.vue             | 87.5%      | 89.81% | 24    |
+| Category.vue                 | 79.2%      | 82.95% | 32    |
+| Checklist.vue                | 70.98%     | 75.07% | 44    |
+| Item.vue                     | 87.43%     | 91.44% | 31    |
 | NewChecklistDialog.vue       | 95%        | 95.94% | 12    |
 | PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
 | SaveTemplateDialog.vue       | 92.72%     | 93.87% | 10    |
-| TemplateEditor.vue           | 95.55%     | 97.33% | 14    |
+| TemplateEditor.vue           | 93.68%     | 95%    | 16    |
 
 ### Coverage Metrics Explained
 
@@ -247,6 +250,7 @@ npm run test:coverage # Vitest code coverage only: outputs terminal summary + co
 ```bash
 npm run test:inventory      # Execute Vitest + Playwright and verify comments plus available guides
 npm run test:inventory:sync # After passing, synchronize generated guide counts
+npm run check:css-vars      # Check generated theme colors without modifying CSS
 npm run typecheck           # Source scope, application types, compile-only contracts, diagnostic probes
 npm run verify:feature      # Full feature verification: validate, typecheck, coverage, E2E, inventory, build
 npm run verify:feature -- --docs # Documentation-only validation; reports skipped test and build layers
@@ -288,7 +292,7 @@ This project uses three layers to balance speed and reliability.
 
 ## 8. Complete Test Inventory
 
-### 8.1 Unit Tests (317 tests)
+### 8.1 Unit Tests (323 tests)
 
 #### 8.1.1 Models (40 tests)
 
@@ -702,7 +706,7 @@ This project uses three layers to balance speed and reliability.
 | 3   | falls back to English for unsupported locales                                | Locale fallback                                    |
 | 4   | returns isolated resolved data                                               | Resolver output isolation                          |
 
-#### 8.1.7 Scripts (17 tests)
+#### 8.1.7 Scripts (23 tests)
 
 ##### 8.1.7.1 candidateFingerprint.test.js (2 tests)
 
@@ -711,7 +715,7 @@ This project uses three layers to balance speed and reliability.
 | 1   | allows a staged binary diff larger than the completion asset collection       | Binary candidate fingerprint budget      |
 | 2   | fingerprints a staged binary candidate larger than the default process buffer | End-to-end large binary Git diff support |
 
-##### 8.1.7.2 verifyFeature.test.js (5 tests)
+##### 8.1.7.2 verifyFeature.test.js (6 tests)
 
 | #   | Test                                                                    | What it verifies                           |
 | --- | ----------------------------------------------------------------------- | ------------------------------------------ |
@@ -720,6 +724,7 @@ This project uses three layers to balance speed and reliability.
 | 3   | should summarize top-level Playwright runner failures                   | Pre-test runner diagnostic                 |
 | 4   | checks types before tests and includes the layer in its success summary | Type-check ordering and reporting          |
 | 5   | stops before runtime tests when type checking fails                     | Fail-fast CI boundary                      |
+| 6   | stops before type checking when theme colors differ                     | Fail-fast theme consistency                |
 
 ##### 8.1.7.3 checkTypeScriptScope.test.js (8 tests)
 
@@ -741,7 +746,17 @@ This project uses three layers to balance speed and reliability.
 | 1   | rejects explicit any in a TypeScript application component              | Prevent explicit any in typed application scripts |
 | 2   | parses typed Vue props without applying JavaScript undefined-name rules | Allow TS types without false JS diagnostics       |
 
-### 8.2 Component Tests (314 tests)
+##### 8.1.7.5 cssVars.test.js (5 tests)
+
+| #   | Test                                                                                       | What it verifies                            |
+| --- | ------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| 1   | normalizes opaque and translucent values independently of the generator                    | Color normalization and invalid values      |
+| 2   | validates current declarations and catches missing, extra, duplicate and drifted variables | Missing, extra, duplicate and changed CSS   |
+| 3   | rejects unsupported, duplicate, missing, and ungrouped source entries                      | Unsupported and inconsistent source entries |
+| 4   | protects manual CSS outside the marked region and fails for missing markers                | CSS region preservation and markers         |
+| 5   | CLI check is read-only and returns a useful failure for a drifted fixture                  | Read-only check and CLI regeneration        |
+
+### 8.2 Component Tests (319 tests)
 
 #### 8.2.1 App.test.js (68 tests)
 
@@ -931,43 +946,44 @@ This project uses three layers to balance speed and reliability.
 | 23  | should clamp dropdown position within viewport bounds               | Viewport clamping               |
 | 24  | should fall back to createEvent when CustomEvent constructor throws | Legacy browser fallback         |
 
-#### 8.2.9 Category.test.js (31 tests)
+#### 8.2.9 Category.test.js (32 tests)
 
-| #   | Test                                                                                | What it verifies       |
-| --- | ----------------------------------------------------------------------------------- | ---------------------- |
-| 1   | should display the category name                                                    | Name rendering         |
-| 2   | should pass correct item counts to ProgressBar                                      | Progress data binding  |
-| 3   | should filter items by categoryId                                                   | Item filtering         |
-| 4   | should not apply completed styling when some items are unpacked                     | Incomplete style       |
-| 5   | should apply completed styling when all items are packed                            | Completed style        |
-| 6   | should start with items visible (not collapsed)                                     | Default expanded state |
-| 7   | should collapse items when toggle button is clicked                                 | Collapse toggle        |
-| 8   | should show input when category name is clicked                                     | Click-to-edit          |
-| 9   | should emit "update:category" with new name on Enter                                | Enter confirms edit    |
-| 10  | should cancel edit mode on Escape key                                               | Escape cancels edit    |
-| 11  | should emit "create:item" when AddItemButton triggers click                         | Item creation event    |
-| 12  | should emit "delete:category" when delete is triggered                              | Delete event           |
-| 13  | should emit "copy:category" when copy is triggered                                  | Copy event             |
-| 14  | should emit "update:category" on blur with changed name                             | Blur-save              |
-| 15  | should not emit "update:category" on blur when name is unchanged                    | No-op blur             |
-| 16  | should not emit "update:category" when name is empty                                | Empty name guard       |
-| 17  | should not emit "update:category" when name is whitespace only                      | Whitespace guard       |
-| 18  | should set dragging item ID on drag start                                           | Drag start state       |
-| 19  | should clear dragging item ID on drag end                                           | Drag end cleanup       |
-| 20  | should emit "move:item" with type "move" when item is added from another category   | Cross-category move    |
-| 21  | should emit "move:item" with type "reorder" when item is moved within same category | Same-category reorder  |
-| 22  | should preserve packed slots when reordering filtered items                         | Filtered slot reorder  |
-| 23  | should insert before the next visible target item while filtered                    | Filtered cross-move    |
-| 24  | should display only unpacked items while retaining full category progress           | Filtered rendering     |
-| 25  | should forward Item events from child Item component                                | Child event forwarding |
-| 26  | should enter edit mode when newlyCreatedCategoryId matches                          | Auto-edit on create    |
-| 27  | should not enter edit mode when newlyCreatedCategoryId does not match               | No false trigger       |
-| 28  | should not save during IME composition                                              | IME guard              |
-| 29  | should expose a mixed category checkbox and request packing all items               | Tri-state batch intent |
-| 30  | should expose checked, unchecked, and disabled category checkbox states             | State rendering        |
-| 31  | retains a category draft after save failure until retry                             | Inline acknowledgement |
+| #   | Test                                                                                | What it verifies                               |
+| --- | ----------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 1   | confirms once after composition and keeps a failed category draft for retry         | IME composition and failed-save retry          |
+| 2   | keeps a category name draft on failed save and retries it                           | Retain the category draft until retry succeeds |
+| 3   | should display the category name                                                    | Name rendering                                 |
+| 4   | should pass correct item counts to ProgressBar                                      | Progress data binding                          |
+| 5   | should filter items by categoryId                                                   | Item filtering                                 |
+| 6   | should not apply completed styling when some items are unpacked                     | Incomplete style                               |
+| 7   | should apply completed styling when all items are packed                            | Completed style                                |
+| 8   | should start with items visible (not collapsed)                                     | Default expanded state                         |
+| 9   | should collapse items when toggle button is clicked                                 | Collapse toggle                                |
+| 10  | should show input when category name is clicked                                     | Click-to-edit                                  |
+| 11  | should emit "update:category" with new name on Enter                                | Enter confirms edit                            |
+| 12  | should cancel edit mode on Escape key                                               | Escape cancels edit                            |
+| 13  | should emit "create:item" when AddItemButton triggers click                         | Item creation event                            |
+| 14  | should emit "delete:category" when delete is triggered                              | Delete event                                   |
+| 15  | should emit "copy:category" when copy is triggered                                  | Copy event                                     |
+| 16  | should emit "update:category" on blur with changed name                             | Blur-save                                      |
+| 17  | should not emit "update:category" on blur when name is unchanged                    | No-op blur                                     |
+| 18  | should not emit "update:category" when name is empty                                | Empty name guard                               |
+| 19  | should not emit "update:category" when name is whitespace only                      | Whitespace guard                               |
+| 20  | should set dragging item ID on drag start                                           | Drag start state                               |
+| 21  | should clear dragging item ID on drag end                                           | Drag end cleanup                               |
+| 22  | should emit "move:item" with type "move" when item is added from another category   | Cross-category move                            |
+| 23  | should emit "move:item" with type "reorder" when item is moved within same category | Same-category reorder                          |
+| 24  | should preserve packed slots when reordering filtered items                         | Filtered slot reorder                          |
+| 25  | should insert before the next visible target item while filtered                    | Filtered cross-move                            |
+| 26  | should display only unpacked items while retaining full category progress           | Filtered rendering                             |
+| 27  | should forward Item events from child Item component                                | Child event forwarding                         |
+| 28  | should enter edit mode when newlyCreatedCategoryId matches                          | Auto-edit on create                            |
+| 29  | should not enter edit mode when newlyCreatedCategoryId does not match               | No false trigger                               |
+| 30  | should not save during IME composition                                              | IME guard                                      |
+| 31  | should expose a mixed category checkbox and request packing all items               | Tri-state batch intent                         |
+| 32  | should expose checked, unchecked, and disabled category checkbox states             | State rendering                                |
 
-#### 8.2.10 Checklist.test.js (42 tests)
+#### 8.2.10 Checklist.test.js (44 tests)
 
 | #   | Test                                                                           | What it verifies                        |
 | --- | ------------------------------------------------------------------------------ | --------------------------------------- |
@@ -977,42 +993,44 @@ This project uses three layers to balance speed and reliability.
 | 4   | should render Category components for each category                            | Category rendering                      |
 | 5   | should show PendingItemsCategory when pending items exist                      | Conditional display                     |
 | 6   | should hide PendingItemsCategory when no pending items                         | Conditional hide                        |
-| 7   | should hide dates and checklist overflow for template editing                  | Template editor display                 |
+| 7   | should hide dates and checklist overflow when configured for template editing  | Template editor display                 |
 | 8   | should toggle unpacked-only display without hiding categories                  | Filter state and categories             |
-| 9   | should show input when checklist name is clicked                               | Click-to-edit                           |
-| 10  | should emit "update:checklist" with new name on Enter                          | Enter confirms edit                     |
-| 11  | should cancel edit mode on Escape key                                          | Escape cancels                          |
-| 12  | should emit "copy:checklist" from OverflowMenu                                 | Copy event forward                      |
-| 13  | should emit "delete:checklist" from OverflowMenu                               | Delete event forward                    |
-| 14  | should emit "create:category" from AddCategoryButton                           | Category creation event                 |
-| 15  | should forward "update:item" from Category component                           | Item update forward                     |
-| 16  | should forward "copy:category" from Category                                   | Category copy forward                   |
-| 17  | should forward "delete:category" from Category                                 | Category delete forward                 |
-| 18  | should display untitled placeholder for empty name                             | Untitled fallback                       |
-| 19  | should adjust end date when start date moves past it                           | Date constraint: start > end            |
-| 20  | should not change end date when start date is still before it                  | Date constraint: no-op                  |
-| 21  | should auto-correct end date set earlier than start date                       | Date constraint: end < start            |
-| 22  | should not save on Enter during IME composition                                | IME guard                               |
-| 23  | should not emit update when name has not changed                               | No-op save                              |
-| 24  | should use untitled placeholder when saving empty name                         | Empty name fallback                     |
-| 25  | should enter edit mode when OverflowMenu triggers edit                         | Edit-mode trigger                       |
-| 26  | should enter edit mode when newlyCreatedChecklistId matches                    | Auto-edit on create                     |
-| 27  | should forward "copy:item" from Category component                             | Item copy forward                       |
-| 28  | should forward "delete:item" from Category component                           | Item delete forward                     |
-| 29  | should forward "create:item" from Category component                           | Item creation forward                   |
-| 30  | should forward "update:category" from Category component                       | Category update forward                 |
-| 31  | should forward "move:item" from Category component                             | Item move forward                       |
-| 32  | should format single-date and cross-year ranges                                | Single/cross-year display               |
-| 33  | should handle empty dates gracefully                                           | No-date display                         |
-| 34  | should forward "update:item" from PendingItemsCategory                         | Pending item update forward             |
-| 35  | should set isDraggingCategory on drag start                                    | Drag state                              |
-| 36  | should clear drag state on category drag end                                   | Drag cleanup                            |
-| 37  | should emit "reorder:categories" with renumbered order                         | Category reorder event                  |
-| 38  | should save when focus leaves all editing inputs                               | Global blur-save                        |
-| 39  | retains checklist name and dates after save failure until retry                | Inline acknowledgement                  |
-| 40  | switches across categories with one click and does not swallow outside actions | Shared expansion and outside activation |
-| 41  | uses the same rename flow and restores the trigger only for Escape             | Rename and focus ownership              |
-| 42  | clears invalid actions on collapse, removal and checklist switch               | Invalid expansion cleanup               |
+| 9   | confirms once after composition and keeps a failed checklist draft for retry   | IME composition and failed-save retry   |
+| 10  | retains checklist name and dates after a failed save until retry succeeds      | Retain draft and retry                  |
+| 11  | should show input when checklist name is clicked                               | Click-to-edit                           |
+| 12  | should emit "update:checklist" with new name on Enter                          | Enter confirms edit                     |
+| 13  | should cancel edit mode on Escape key                                          | Escape cancels                          |
+| 14  | should emit "copy:checklist" from OverflowMenu                                 | Copy event forward                      |
+| 15  | should emit "delete:checklist" from OverflowMenu                               | Delete event forward                    |
+| 16  | should emit "create:category" from AddCategoryButton                           | Category creation event                 |
+| 17  | should forward "update:item" from Category component                           | Item update forward                     |
+| 18  | should forward "copy:category" from Category component                         | Forward category copy event             |
+| 19  | should forward "delete:category" from Category component                       | Forward category delete event           |
+| 20  | should display untitled placeholder for empty name                             | Untitled fallback                       |
+| 21  | should adjust end date when start date moves past it                           | Date constraint: start > end            |
+| 22  | should not change end date when start date is still before it                  | Date constraint: no-op                  |
+| 23  | should auto-correct end date set earlier than start date                       | Date constraint: end < start            |
+| 24  | should not save on Enter during IME composition                                | IME guard                               |
+| 25  | should not emit update when name has not changed                               | No-op save                              |
+| 26  | should use untitled placeholder when saving empty name                         | Empty name fallback                     |
+| 27  | should enter edit mode when OverflowMenu triggers edit                         | Edit-mode trigger                       |
+| 28  | should enter edit mode when newlyCreatedChecklistId matches                    | Auto-edit on create                     |
+| 29  | should forward "copy:item" from Category component                             | Item copy forward                       |
+| 30  | should forward "delete:item" from Category component                           | Item delete forward                     |
+| 31  | should forward "create:item" from Category component                           | Item creation forward                   |
+| 32  | should forward "update:category" from Category component                       | Category update forward                 |
+| 33  | should forward "move:item" from Category component                             | Item move forward                       |
+| 34  | should format single-date and cross-year ranges                                | Single/cross-year display               |
+| 35  | should handle empty dates gracefully                                           | No-date display                         |
+| 36  | associates visible start and end labels with their date inputs                 | Date labels and input associations      |
+| 37  | should forward "update:item" from PendingItemsCategory                         | Pending item update forward             |
+| 38  | should set isDraggingCategory on drag start                                    | Drag state                              |
+| 39  | should clear drag state on category drag end                                   | Drag cleanup                            |
+| 40  | should emit "reorder:categories" with renumbered order when v-model changes    | Category reorder event                  |
+| 41  | should save when focus leaves all editing inputs                               | Global blur-save                        |
+| 42  | switches across categories with one click and does not swallow outside actions | Shared expansion and outside activation |
+| 43  | uses the same rename flow and restores the trigger only for Escape             | Rename and focus ownership              |
+| 44  | clears invalid actions on collapse, removal and checklist switch               | Invalid expansion cleanup               |
 
 #### 8.2.11 Sidebar.test.js (36 tests)
 
@@ -1072,24 +1090,26 @@ This project uses three layers to balance speed and reliability.
 | 11  | resets the nested source step whenever the dialog reopens                      | Dialog state reset            |
 | 12  | ignores keyboard dismissal while hidden and unrelated keys while visible       | Keyboard guard                |
 
-#### 8.2.13 TemplateEditor.test.js (14 tests)
+#### 8.2.13 TemplateEditor.test.js (16 tests)
 
-| #   | Test                                                            | What it verifies                     |
-| --- | --------------------------------------------------------------- | ------------------------------------ |
-| 1   | configures Checklist without dates or overflow menu             | Editor rendering                     |
-| 2   | emits a storage-safe edited template snapshot                   | Persistence payload                  |
-| 3   | emits delete without saving the draft                           | Delete action                        |
-| 4   | discards the draft when cancel is selected                      | Cancel action                        |
-| 5   | creates draft items and categories without persisting them      | Draft-only creation                  |
-| 6   | copies and deletes categories with their draft items            | Category draft lifecycle             |
-| 7   | updates, copies, moves and deletes draft items in memory        | Item draft lifecycle                 |
-| 8   | resets the in-memory draft when the selected template changes   | Template switch reset                |
-| 9   | finishes auto-edit state after updating new entries             | Auto-edit cleanup                    |
-| 10  | applies same-category item reorder payloads                     | Item reorder                         |
-| 11  | ignores copy requests for missing draft entries                 | Missing-entry guards                 |
-| 12  | moves an item without optional reordered items                  | Optional move payload                |
-| 13  | assigns zero order to the first category and item               | Empty draft ordering                 |
-| 14  | keeps touch changes isolated until saving the template snapshot | Isolated draft actions and last name |
+| #   | Test                                                                     | What it verifies                                |
+| --- | ------------------------------------------------------------------------ | ----------------------------------------------- |
+| 1   | detects structural draft changes and returns clean after they are undone | Draft change detection and undo                 |
+| 2   | detects reordered categories and item moves in the snapshot              | Draft ordering and item moves                   |
+| 3   | configures Checklist without dates or checklist overflow menu            | Editor rendering                                |
+| 4   | emits an edited template snapshot without runtime checklist fields       | Edited template snapshot without runtime fields |
+| 5   | emits delete without saving the draft                                    | Delete action                                   |
+| 6   | discards the draft when cancel is selected                               | Cancel action                                   |
+| 7   | creates draft items and categories without persisting them               | Draft-only creation                             |
+| 8   | copies and deletes categories with their draft items                     | Category draft lifecycle                        |
+| 9   | updates, copies, moves and deletes draft items in memory                 | Item draft lifecycle                            |
+| 10  | resets the in-memory draft when the selected template changes            | Template switch reset                           |
+| 11  | finishes auto-edit state after updating newly created entries            | Auto-edit cleanup                               |
+| 12  | applies same-category item reorder payloads                              | Item reorder                                    |
+| 13  | ignores copy requests for missing draft entries                          | Missing-entry guards                            |
+| 14  | applies a cross-category batch payload                                   | Apply cross-category item batch payload         |
+| 15  | assigns zero order when creating the first category and item             | Empty draft ordering                            |
+| 16  | keeps touch changes isolated until saving the template snapshot          | Isolated draft actions and last name            |
 
 #### 8.2.14 SaveTemplateDialog.test.js (10 tests)
 
@@ -1142,7 +1162,7 @@ This project uses three layers to balance speed and reliability.
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | Completed touch cross-list add/remove                         |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | Completed mouse cross-list add/remove                         |
 
-### 8.3 E2E Tests (162 tests)
+### 8.3 E2E Tests (205 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -1237,17 +1257,18 @@ This project uses three layers to balance speed and reliability.
 | 5   | should keep remote completion synchronization silent                     | No celebration from storage sync   |
 | 6   | keeps both templates when two tabs save behind the same lock barrier     | Concurrent template writes         |
 
-#### 8.3.9 template-management.spec.js (7 tests)
+#### 8.3.9 template-management.spec.js (8 tests)
 
-| #   | Test                                                                  | What it verifies         |
-| --- | --------------------------------------------------------------------- | ------------------------ |
-| 1   | closes the templates menu after an outside click                      | Outside-click dismissal  |
-| 2   | distinguishes Back from canceling checklist creation                  | Dialog-step semantics    |
-| 3   | edits a template without creating a checklist                         | Isolated editing         |
-| 4   | deletes the active template from the editor                           | Template deletion        |
-| 5   | keeps narrow template rows free of overflow menus                     | Narrow responsive layout |
-| 6   | saves a checklist as a named template without changing checklist data | Snapshot isolation       |
-| 7   | creates an isolated checklist from a selected template                | Fresh IDs and storage    |
+| #   | Test                                                                                  | What it verifies                         |
+| --- | ------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 1   | closes the templates menu after an outside click                                      | Outside-click dismissal                  |
+| 2   | distinguishes Back from canceling checklist creation                                  | Dialog-step semantics                    |
+| 3   | edits a template without creating a checklist                                         | Isolated editing                         |
+| 4   | confirms inline template edits without saving the template until explicitly requested | Inline editing stays in draft until save |
+| 5   | deletes the active template from the editor                                           | Template deletion                        |
+| 6   | keeps narrow template rows free of overflow menus                                     | Narrow responsive layout                 |
+| 7   | saves a checklist as a named template without changing checklist data                 | Snapshot isolation                       |
+| 8   | creates an isolated checklist from a selected template                                | Fresh IDs and storage                    |
 
 #### 8.3.10 recommended-lists.spec.js (1 tests)
 
@@ -1311,15 +1332,16 @@ This project uses three layers to balance speed and reliability.
 | 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport buffer, error and cleanup                         |
 | 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup bounds, initial focus and Escape                       |
 
-#### 8.3.14 rwd-webkit.spec.js (3 tests)
+#### 8.3.14 rwd-webkit.spec.js (4 tests)
 
 | #   | Test                                                         | What it verifies                                                      |
 | --- | ------------------------------------------------------------ | --------------------------------------------------------------------- |
 | 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit touch state, drawer motion and focus return                    |
 | 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit short viewport and date geometry                               |
 | 3   | WebKit tablet columns retain visible touch actions           | WebKit tablet columns, collapsed scroll lock, touch menus and density |
+| 4   | WebKit short mobile sidebar keeps navigation reachable       | Short drawer checklist and language controls                          |
 
-#### 8.3.15 sidebar-presentation.spec.js (6 tests)
+#### 8.3.15 sidebar-presentation.spec.js (8 tests)
 
 | #   | Test                                                    | What it verifies                                                      |
 | --- | ------------------------------------------------------- | --------------------------------------------------------------------- |
@@ -1329,6 +1351,8 @@ This project uses three layers to balance speed and reliability.
 | 4   | tablet: sidebar presentation stays consistent in zh-TW  | Collapsed scroll lock, Chinese initials and menu geometry             |
 | 5   | desktop: sidebar presentation stays consistent in en    | Collapsed scroll lock, visible initials, resize and focus recovery    |
 | 6   | desktop: sidebar presentation stays consistent in zh-TW | Collapsed scroll lock, Chinese initials and ResizeObserver fallback   |
+| 7   | short mobile sidebar remains operable in en             | Short drawer touch, keyboard and template navigation                  |
+| 8   | short mobile sidebar remains operable in zh-TW          | Localized short drawer navigation                                     |
 
 #### 8.3.16 desktop-drag-presentation.spec.js (19 tests)
 
@@ -1405,3 +1429,52 @@ This project uses three layers to balance speed and reliability.
 | #   | Test                                                                 | What it verifies                                      |
 | --- | -------------------------------------------------------------------- | ----------------------------------------------------- |
 | 1   | refreshes a stale drag instead of persisting duplicate target orders | Real two-tab drag conflict, atomic storage and reload |
+
+#### 8.3.21 checklist-dates.spec.js (16 tests)
+
+| #   | Test                                                                        | What it verifies                                 |
+| --- | --------------------------------------------------------------------------- | ------------------------------------------------ |
+| 1   | edits labeled dates and confirms changes at 320px in en                     | Date editing and confirmation                    |
+| 2   | edits labeled dates and confirms changes at 390px in en                     | Date editing and confirmation                    |
+| 3   | edits labeled dates and confirms changes at 820px in en                     | Date editing and confirmation                    |
+| 4   | edits labeled dates and confirms changes at 1280px in en                    | Date editing and confirmation                    |
+| 5   | edits labeled dates and confirms changes at 320px in zh-TW                  | Date editing and confirmation                    |
+| 6   | edits labeled dates and confirms changes at 390px in zh-TW                  | Date editing and confirmation                    |
+| 7   | edits labeled dates and confirms changes at 820px in zh-TW                  | Date editing and confirmation                    |
+| 8   | edits labeled dates and confirms changes at 1280px in zh-TW                 | Date editing and confirmation                    |
+| 9   | touch editing › saves checklist and category through their confirm controls | Touch confirmation for checklist and category    |
+| 10  | keeps 10-character name within the main viewport at 320px                   | Checklist name layout across viewport widths     |
+| 11  | keeps 100-character name within the main viewport at 320px                  | Checklist name layout across viewport widths     |
+| 12  | keeps 10-character name within the main viewport at 820px                   | Checklist name layout across viewport widths     |
+| 13  | keeps 100-character name within the main viewport at 820px                  | Checklist name layout across viewport widths     |
+| 14  | keeps 10-character name within the main viewport at 1280px                  | Checklist name layout across viewport widths     |
+| 15  | keeps 100-character name within the main viewport at 1280px                 | Checklist name layout across viewport widths     |
+| 16  | saves another category when its focus moves to a failed draft confirmation  | Failed draft and cross-category focus transition |
+
+#### 8.3.22 template-navigation.spec.js (23 tests)
+
+| #   | Test                                                                           | What it verifies                         |
+| --- | ------------------------------------------------------------------------------ | ---------------------------------------- |
+| 1   | switches a clean template to the selected checklist including the current one  | Template navigation and draft protection |
+| 2   | keeps or discards the draft when switching checklists                          | Template navigation and draft protection |
+| 3   | saves the last inline edit before navigating, and retains it on failure        | Template navigation and draft protection |
+| 4   | warns before replacing a dirty template with another                           | Template navigation and draft protection |
+| 5   | keeps template toolbar visible when scrolling at 390px                         | Template navigation and draft protection |
+| 6   | keeps template toolbar visible when scrolling at 820px                         | Template navigation and draft protection |
+| 7   | keeps template toolbar visible when scrolling at 1280px                        | Template navigation and draft protection |
+| 8   | a reverted name navigates without a discard prompt                             | Template navigation and draft protection |
+| 9   | retains the draft on cross-tab conflict when saving before navigation          | Template navigation and draft protection |
+| 10  | Escape keeps the draft and restores the navigation focus                       | Template navigation and draft protection |
+| 11  | mobile drawer prompts before switching and closes after discard                | Template navigation and draft protection |
+| 12  | keeps the requested destination while template save waits for the lock         | Template navigation and draft protection |
+| 13  | keeps the toolbar usable in a short narrow viewport                            | Template navigation and draft protection |
+| 14  | saves an active category draft before switching                                | Template navigation and draft protection |
+| 15  | saves an active item draft before switching                                    | Template navigation and draft protection |
+| 16  | resumes the same navigation after an inline IME composition finishes           | Template navigation and draft protection |
+| 17  | keeps a dirty draft and explains when the destination disappears               | Template navigation and draft protection |
+| 18  | keeps the short-screen confirmation scrollable and traps focus                 | Template navigation and draft protection |
+| 19  | navigates after a committed save even if the template refresh fails            | Template navigation and draft protection |
+| 20  | saves the template once before creating a checklist                            | Template navigation and draft protection |
+| 21  | discards the template once before copying a checklist                          | Template navigation and draft protection |
+| 22  | keeps long template toolbar and focused content usable after rotation in en    | Template navigation and draft protection |
+| 23  | keeps long template toolbar and focused content usable after rotation in zh-TW | Template navigation and draft protection |

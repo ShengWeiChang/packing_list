@@ -89,7 +89,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
     - Source-aware name: Default to `New Checklist (Empty)` for an empty source or `New Checklist ({name})` for a template or recommended list; truncate the source name to keep the complete name within 100 characters.
   - Edit checklist: Edit `name`.
   - Date Editing:
-    - Uses native HTML5 date input for reliability.
+    - Uses native HTML5 date input for reliability; editing labels identify the start and end dates.
     - Bidirectional protection: Changing start date updates end date if end < start. Changing end date updates it to start date if end < start.
     - Date display includes the year once for a same-year range and on both endpoints for a cross-year range (for example, `Nov 26, 2025 - Jan 5, 2026`).
   - Copy checklist: Duplicate an existing checklist with all its categories and items.
@@ -120,7 +120,8 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Create checklist: The personal-template source remains visible and disabled with an empty-state message when no templates exist.
   - Manage templates: The Sidebar template menu opens the selected template in the editor, where users rename or delete it.
   - Edit template: Opens an isolated in-memory editor for the template's name, categories, items, quantities, and order.
-  - Save changes: Only the explicit `Save changes to template` action updates template storage; cancel leaves the stored template unchanged.
+  - Save changes: The `Save changes to template` action or the save-and-switch choice updates template storage; cancel leaves the stored template unchanged.
+  - Navigation: An unchanged draft switches directly; a changed draft offers save and switch, discard and switch, or continue editing. The editing toolbar stays visible while scrolling.
   - Copy-on-use: Creating a checklist from a template generates new checklist, category, and item IDs and resets runtime packed/pending state.
 - Persistence:
   - Templates use the independent localStorage key `packingListTemplates`.
@@ -288,6 +289,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Key features:
   - Breakpoints & behavior:
     - Mobile (<600px): Show `Topbar` (`md:hidden`), `Sidebar` as an overlay drawer (teleport to `body` with dimmed backdrop; click backdrop to close); main content blurs and pointer events are disabled.
+    - Short narrow windows: Scroll the whole sidebar so checklist and settings controls remain reachable; settings menus expand within the scrollable content.
     - Narrow desktop (<1000px): `Sidebar` also uses overlay drawer mode.
     - Desktop (≥1000px): `Sidebar` is sticky (fixed within layout) and can expand (`w-52`) or collapse (`w-16`); manual collapse state is remembered in `localStorage('sidebar-manually-collapsed')`.
   - Mobile Optimization:
@@ -562,7 +564,7 @@ The application uses a centralized color management system with semantic naming:
 **Implementation:**
 
 - Single Source of Truth: All colors defined in `source/utils/constants.ts` (`THEME_COLORS` object)
-- Build Pipeline: `npm run build:css-vars` generates CSS variables in `source/index.css`
+- Build Pipeline: `npm run build:css-vars` generates CSS variables in `source/index.css`; `npm run check:css-vars` checks consistency without writing.
 - Usage:
   - CSS: `var(--text-primary)`, `var(--bg-primary)`, `var(--theme-primary)`
   - Tailwind: `text-primary`, `bg-bg-primary`, `bg-theme-primary`

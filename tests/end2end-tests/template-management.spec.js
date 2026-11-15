@@ -104,6 +104,7 @@ test.describe('Template Management', () => {
     expect(persisted.templates[0].name).toBe('Beach Weekend');
   });
 
+  // Test Case 4: confirms inline template edits.
   test('confirms inline template edits without saving the template until explicitly requested', async ({
     page,
   }) => {
@@ -131,7 +132,7 @@ test.describe('Template Management', () => {
     expect(saved[0].categories[0].name).toBe('Final category');
   });
 
-  // Test Case 4: Should delete the active template from the editor
+  // Test Case 5: Should delete the active template from the editor
   test('should delete the active template from the editor', async ({ page }) => {
     await page.getByTestId('sidebar-templates-button').click();
     await page.getByTestId('sidebar-template-use-template-1').click();
@@ -146,7 +147,7 @@ test.describe('Template Management', () => {
     expect(persistedTemplates).toEqual([]);
   });
 
-  // Test Case 5: Should keep narrow template rows free of overflow menus
+  // Test Case 6: Should keep narrow template rows free of overflow menus
   test('should keep narrow template rows free of overflow menus', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 720 });
     await page.getByTestId('topbar-toggle').click();
@@ -156,7 +157,7 @@ test.describe('Template Management', () => {
     await expect(page.locator('[data-testid^="overflow-menu-template-"]')).toHaveCount(0);
   });
 
-  // Test Case 6: Should save a checklist as a named template without changing checklist data
+  // Test Case 7: Should save a checklist as a named template without changing checklist data
   test('should save a checklist as a named template without changing checklist data', async ({
     page,
   }) => {
@@ -186,7 +187,7 @@ test.describe('Template Management', () => {
     );
   });
 
-  // Test Case 7: Should create an isolated checklist from a selected template
+  // Test Case 8: Should create an isolated checklist from a selected template
   test('should create an isolated checklist from a selected template', async ({ page }) => {
     const templateSnapshot = await page.evaluate(() =>
       localStorage.getItem('packingListTemplates')

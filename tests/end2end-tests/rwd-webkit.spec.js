@@ -373,3 +373,38 @@ test('WebKit tablet columns retain visible touch actions', async ({ page }) => {
     .toBeLessThan(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+// Test Case 4: Short mobile drawer supports checklist and language navigation in WebKit.
+test('WebKit short mobile sidebar keeps navigation reachable', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 200 });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'packingListApp',
+      JSON.stringify({
+        checklists: Array.from({ length: 5 }, (_, index) => ({
+          id: `short-${index}`,
+          name: `Trip ${index}`,
+          order: 5 - index,
+        })),
+        categories: [],
+        items: [],
+        selectedChecklistId: 'short-0',
+      })
+    );
+  });
+  await page.goto('/');
+  await page.getByTestId('topbar-toggle').tap();
+  const drawer = page.getByTestId('overlay-sidebar');
+  const item = drawer.getByTestId('sidebar-checklist-item').filter({ hasText: 'Trip 3' });
+  await item.scrollIntoViewIfNeeded();
+  await item.tap();
+  await expect(drawer).toHaveCount(0);
+  await page.getByTestId('topbar-toggle').tap();
+  const language = drawer.getByTestId('sidebar-language-button');
+  await language.scrollIntoViewIfNeeded();
+  await language.tap();
+  const option = drawer.getByTestId('sidebar-language-option-zh-TW');
+  await option.scrollIntoViewIfNeeded();
+  await option.tap();
+  await expect(language).toHaveAttribute('aria-expanded', 'false');
+});

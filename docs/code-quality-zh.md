@@ -84,6 +84,7 @@ Validation 驗證
 - Spacing 刻度：使用 4px 倍數；非標準值在 `tailwind.config.js` 中擴展
 - Class 組織：依功能分組（layout → spacing → colors → states）；Prettier 自動排序
 - CSS Modules：用於複雜佈局（masonry、動畫）；kebab-case 命名；優先使用 CSS 變數
+- 主題色彩：使用 `npm run check:css-vars` 確認 `THEME_COLORS` 與生成 CSS 一致；使用 `npm run build:css-vars` 更新標記區域，且勿在 `source/index.css` 其他位置重複宣告其變數。
 
 Validation 驗證
 

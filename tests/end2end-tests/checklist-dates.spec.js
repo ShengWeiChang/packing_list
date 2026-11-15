@@ -1,3 +1,4 @@
+// Test Cases 1–16: Date labels, confirmation, responsive layout and focus interactions.
 import { expect, test } from '@playwright/test';
 
 const checklists = [

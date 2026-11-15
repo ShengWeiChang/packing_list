@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 793    |
-| Unit tests 單元測試           | 317    |
-| Component tests 組件測試      | 314    |
-| E2E tests E2E 測試            | 162    |
-| Line coverage 行覆蓋率        | 89.86% |
-| Statement coverage 語句覆蓋率 | 87.68% |
-| Branch coverage 分支覆蓋率    | 78.26% |
+| Total tests 總測試數          | 847    |
+| Unit tests 單元測試           | 323    |
+| Component tests 組件測試      | 319    |
+| E2E tests E2E 測試            | 205    |
+| Line coverage 行覆蓋率        | 88.01% |
+| Statement coverage 語句覆蓋率 | 85.96% |
+| Branch coverage 分支覆蓋率    | 76.99% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,9 +29,9 @@
 
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 317   | models、services、composables、utils 純邏輯 |
-| Component | Vitest + @vue/test-utils | 314   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 162   | 真實瀏覽器中的完整使用者流程                |
+| Unit      | Vitest                   | 323   | models、services、composables、utils 純邏輯 |
+| Component | Vitest + @vue/test-utils | 319   | Vue 組件渲染、事件、狀態                    |
+| E2E       | Playwright               | 205   | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
@@ -72,7 +72,7 @@ tests/
 │   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
 │   └── fixtures/                        # Typed probe and deliberately invalid inputs
 │
-├── unit-tests/                          # 317 tests
+├── unit-tests/                          # 323 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -99,21 +99,22 @@ tests/
 │       ├── order.test.js                #  8  tests
 │       ├── dragDrop.test.js             #  2  tests
 │       └── focusEditingInput.test.js     #  3  tests
-│   └── scripts/                         # 17 tests
+│   └── scripts/                         # 23 tests
 │       ├── candidateFingerprint.test.js #  2  tests
 │       ├── checkTypeScriptScope.test.js #  8  tests
 │       ├── eslintTypeScript.test.js     #  2  tests
-│       └── verifyFeature.test.js        #  5  tests
+│       ├── cssVars.test.js              #  5  tests
+│       └── verifyFeature.test.js        #  6  tests
 │
-├── component-tests/                     # 314 tests
+├── component-tests/                     # 319 tests
 │   ├── App.test.js                      # 68  tests
 │   ├── PackingCompletionOverlay.test.js # 10  tests
 │   ├── AppIcon.test.js                  #  4  tests
-│   ├── Checklist.test.js                # 42  tests
+│   ├── Checklist.test.js                # 44  tests
 │   ├── Item.test.js                     # 31  tests
 │   ├── Sidebar.test.js                  # 36  tests
 │   ├── typedDraggable.test.js           #  7  tests
-│   ├── Category.test.js                 # 31  tests
+│   ├── Category.test.js                 # 32  tests
 │   ├── OverflowMenu.test.js             # 24  tests
 │   ├── ProgressBar.test.js              #  8  tests
 │   ├── AddItemButton.test.js            #  8  tests
@@ -121,16 +122,16 @@ tests/
 │   ├── PendingItemsCategory.test.js     #  5  tests
 │   ├── AddCategoryButton.test.js        #  2  tests
 │   ├── NewChecklistDialog.test.js       # 12  tests
-│   ├── TemplateEditor.test.js           # 14  tests
+│   ├── TemplateEditor.test.js           # 16  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 162 tests
+└── end2end-tests/                       # 205 tests
     ├── touchDragHelpers.js              # 長按微動與原生捲動手勢
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
     ├── rwd-overlays.spec.js             #  5  tests
-    ├── rwd-webkit.spec.js               #  3  tests
-    ├── sidebar-presentation.spec.js     #  6  tests
+    ├── rwd-webkit.spec.js               #  4  tests
+    ├── sidebar-presentation.spec.js     #  8  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
@@ -143,7 +144,9 @@ tests/
     ├── category-motion.spec.js          #  8  tests
     ├── interaction-feedback.spec.js      #  8  tests
     ├── multi-tab-sync.spec.js           #  6  tests
-    ├── template-management.spec.js      #  7  tests
+    ├── checklist-dates.spec.js          # 16  tests
+    ├── template-navigation.spec.js      # 23  tests
+    ├── template-management.spec.js      #  8  tests
     ├── recommended-lists.spec.js        #  1  test
     └── storage-recovery.spec.js         # 28  tests
 ```
@@ -168,34 +171,34 @@ tests/
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 79.03%     | 63.2%  | 77.63% |
-| source/      | 78.3%      | 67.46% | 81.84% |
-| components/  | 84.16%     | 77.42% | 87.36% |
+| scripts/     | 84.04%     | 74.43% | 83.4%  |
+| source/      | 74.72%     | 65.86% | 78.12% |
+| components/  | 81.48%     | 74.4%  | 84.35% |
 | composables/ | 95.04%     | 85.26% | 97.28% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.53%     | 83.5%  | 95.44% |
-| utils/       | 96.36%     | 85.92% | 96.62% |
+| utils/       | 96.36%     | 90.37% | 96.62% |
 
 ### By Component 各組件覆蓋率
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 78.3%      | 81.84% | 68    |
+| App.vue                      | 74.72%     | 78.12% | 68    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
 | ProgressBar.vue              | 100%       | 100%   | 8     |
 | Topbar.vue                   | 100%       | 100%   | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
-| Sidebar.vue                  | 88.57%     | 90.56% | 36    |
-| OverflowMenu.vue             | 89.9%      | 92.38% | 24    |
-| Category.vue                 | 81.35%     | 85.3%  | 31    |
-| Checklist.vue                | 72.14%     | 76.66% | 42    |
-| Item.vue                     | 86.34%     | 90.81% | 31    |
+| Sidebar.vue                  | 88.13%     | 90.06% | 36    |
+| OverflowMenu.vue             | 87.5%      | 89.81% | 24    |
+| Category.vue                 | 79.2%      | 82.95% | 32    |
+| Checklist.vue                | 70.98%     | 75.07% | 44    |
+| Item.vue                     | 87.43%     | 91.44% | 31    |
 | NewChecklistDialog.vue       | 95%        | 95.94% | 12    |
 | PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
 | SaveTemplateDialog.vue       | 92.72%     | 93.87% | 10    |
-| TemplateEditor.vue           | 95.55%     | 97.33% | 14    |
+| TemplateEditor.vue           | 93.68%     | 95%    | 16    |
 
 ### Coverage Metrics Explained 覆蓋率指標說明
 
@@ -247,6 +250,7 @@ npm run test:coverage # Vitest code coverage only: terminal summary + coverage/i
 ```bash
 npm run test:inventory      # 執行 Vitest + Playwright 並驗證 comments 與可用的 guides
 npm run test:inventory:sync # 通過後同步生成的 guide counts
+npm run check:css-vars      # 不修改 CSS，檢查生成的主題色彩
 npm run typecheck           # Source 範圍、應用型別、compile-only contracts、診斷 probes
 npm run verify:feature      # 完整功能驗證：validate、typecheck、coverage、E2E、inventory、build
 npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與 build layers
@@ -288,7 +292,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ## 8. Complete Test Inventory 完整測試案例清單
 
-### 8.1 Unit Tests（317）
+### 8.1 Unit Tests（323）
 
 #### 8.1.1 Models（40）
 
@@ -702,7 +706,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 3   | falls back to English for unsupported locales                                | 語系後備                     |
 | 4   | returns isolated resolved data                                               | 解析結果隔離                 |
 
-#### 8.1.7 Scripts（17）
+#### 8.1.7 Scripts（23）
 
 ##### 8.1.7.1 candidateFingerprint.test.js（2）
 
@@ -711,7 +715,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | allows a staged binary diff larger than the completion asset collection       | Binary candidate fingerprint 預算 |
 | 2   | fingerprints a staged binary candidate larger than the default process buffer | 大型 binary Git diff 端到端支援   |
 
-##### 8.1.7.2 verifyFeature.test.js（5）
+##### 8.1.7.2 verifyFeature.test.js（6）
 
 | #   | Test                                                                    | 測試重點                 |
 | --- | ----------------------------------------------------------------------- | ------------------------ |
@@ -720,6 +724,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 3   | should summarize top-level Playwright runner failures                   | 測試前 runner 診斷       |
 | 4   | checks types before tests and includes the layer in its success summary | 型別檢查順序及結果列示   |
 | 5   | stops before runtime tests when type checking fails                     | CI 失敗即停止邊界        |
+| 6   | stops before type checking when theme colors differ                     | 主題色不一致即停止       |
 
 ##### 8.1.7.3 checkTypeScriptScope.test.js（8）
 
@@ -741,7 +746,17 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 1   | rejects explicit any in a TypeScript application component              | 防止 TS 應用 scripts 使用 explicit any |
 | 2   | parses typed Vue props without applying JavaScript undefined-name rules | 允許 TS 型別且不誤報 JS 診斷           |
 
-### 8.2 Component Tests（314）
+##### 8.1.7.5 cssVars.test.js (5 tests)
+
+| #   | Test                                                                                       | 測試重點                       |
+| --- | ------------------------------------------------------------------------------------------ | ------------------------------ |
+| 1   | normalizes opaque and translucent values independently of the generator                    | 色值正規化與無效數值           |
+| 2   | validates current declarations and catches missing, extra, duplicate and drifted variables | CSS 變數缺漏、多出、重複與變更 |
+| 3   | rejects unsupported, duplicate, missing, and ungrouped source entries                      | 不支援或不一致的來源項目       |
+| 4   | protects manual CSS outside the marked region and fails for missing markers                | 保留 CSS 區域與標記            |
+| 5   | CLI check is read-only and returns a useful failure for a drifted fixture                  | 唯讀檢查與命令列重新生成       |
+
+### 8.2 Component Tests（319）
 
 #### 8.2.1 App.test.js（68）
 
@@ -931,88 +946,91 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 23  | should clamp position within viewport                             | 視窗邊界限制              |
 | 24  | should fall back to createEvent                                   | 舊瀏覽器相容              |
 
-#### 8.2.9 Category.test.js（31）
+#### 8.2.9 Category.test.js（32）
 
-| #   | Test                                                                                | 測試重點       |
-| --- | ----------------------------------------------------------------------------------- | -------------- |
-| 1   | should display the category name                                                    | 名稱渲染       |
-| 2   | should pass correct item counts to ProgressBar                                      | 進度資料綁定   |
-| 3   | should filter items by categoryId                                                   | 物品篩選       |
-| 4   | should not apply completed styling when some items are unpacked                     | 未完成樣式     |
-| 5   | should apply completed styling when all items are packed                            | 完成樣式       |
-| 6   | should start with items visible (not collapsed)                                     | 預設展開       |
-| 7   | should collapse items when toggle button is clicked                                 | 收合切換       |
-| 8   | should show input when category name is clicked                                     | 點擊編輯       |
-| 9   | should emit "update:category" with new name on Enter                                | Enter 確認     |
-| 10  | should cancel edit mode on Escape key                                               | Escape 取消    |
-| 11  | should emit "create:item" when AddItemButton triggers click                         | 新增物品事件   |
-| 12  | should emit "delete:category" when delete is triggered                              | 刪除事件       |
-| 13  | should emit "copy:category" when copy is triggered                                  | 複製事件       |
-| 14  | should emit "update:category" on blur with changed name                             | blur 儲存      |
-| 15  | should not emit "update:category" on blur when name is unchanged                    | 無變更不發送   |
-| 16  | should not emit "update:category" when name is empty                                | 空名稱檢查     |
-| 17  | should not emit "update:category" when name is whitespace only                      | 空白檢查       |
-| 18  | should set dragging item ID on drag start                                           | 拖曳開始       |
-| 19  | should clear dragging item ID on drag end                                           | 拖曳結束       |
-| 20  | should emit "move:item" with type "move" when item is added from another category   | 跨分類移動     |
-| 21  | should emit "move:item" with type "reorder" when item is moved within same category | 同分類排序     |
-| 22  | should preserve packed slots when reordering filtered items                         | 篩選槽位重排   |
-| 23  | should insert before the next visible target item while filtered                    | 篩選跨分類移動 |
-| 24  | should display only unpacked items while retaining full category progress           | 篩選顯示       |
-| 25  | should forward Item events from child Item component                                | 子元件事件轉送 |
-| 26  | should enter edit mode when newlyCreatedCategoryId matches                          | 新建自動編輯   |
-| 27  | should not enter edit mode when newlyCreatedCategoryId does not match               | 無誤觸發       |
-| 28  | should not save during IME composition                                              | IME 檢查       |
-| 29  | should expose a mixed category checkbox and request packing all items               | 三態批次意圖   |
-| 30  | should expose checked, unchecked, and disabled category checkbox states             | 狀態渲染       |
-| 31  | 儲存失敗後保留分類草稿直到重試                                                      | 行內寫入確認   |
+| #   | Test                                                                                | 測試重點                     |
+| --- | ----------------------------------------------------------------------------------- | ---------------------------- |
+| 1   | confirms once after composition and keeps a failed category draft for retry         | 組字完成與儲存失敗後重試     |
+| 2   | keeps a category name draft on failed save and retries it                           | 儲存失敗時保留分類草稿並重試 |
+| 3   | should display the category name                                                    | 名稱渲染                     |
+| 4   | should pass correct item counts to ProgressBar                                      | 進度資料綁定                 |
+| 5   | should filter items by categoryId                                                   | 物品篩選                     |
+| 6   | should not apply completed styling when some items are unpacked                     | 未完成樣式                   |
+| 7   | should apply completed styling when all items are packed                            | 完成樣式                     |
+| 8   | should start with items visible (not collapsed)                                     | 預設展開                     |
+| 9   | should collapse items when toggle button is clicked                                 | 收合切換                     |
+| 10  | should show input when category name is clicked                                     | 點擊編輯                     |
+| 11  | should emit "update:category" with new name on Enter                                | Enter 確認                   |
+| 12  | should cancel edit mode on Escape key                                               | Escape 取消                  |
+| 13  | should emit "create:item" when AddItemButton triggers click                         | 新增物品事件                 |
+| 14  | should emit "delete:category" when delete is triggered                              | 刪除事件                     |
+| 15  | should emit "copy:category" when copy is triggered                                  | 複製事件                     |
+| 16  | should emit "update:category" on blur with changed name                             | blur 儲存                    |
+| 17  | should not emit "update:category" on blur when name is unchanged                    | 無變更不發送                 |
+| 18  | should not emit "update:category" when name is empty                                | 空名稱檢查                   |
+| 19  | should not emit "update:category" when name is whitespace only                      | 空白檢查                     |
+| 20  | should set dragging item ID on drag start                                           | 拖曳開始                     |
+| 21  | should clear dragging item ID on drag end                                           | 拖曳結束                     |
+| 22  | should emit "move:item" with type "move" when item is added from another category   | 跨分類移動                   |
+| 23  | should emit "move:item" with type "reorder" when item is moved within same category | 同分類排序                   |
+| 24  | should preserve packed slots when reordering filtered items                         | 篩選槽位重排                 |
+| 25  | should insert before the next visible target item while filtered                    | 篩選跨分類移動               |
+| 26  | should display only unpacked items while retaining full category progress           | 篩選顯示                     |
+| 27  | should forward Item events from child Item component                                | 子元件事件轉送               |
+| 28  | should enter edit mode when newlyCreatedCategoryId matches                          | 新建自動編輯                 |
+| 29  | should not enter edit mode when newlyCreatedCategoryId does not match               | 無誤觸發                     |
+| 30  | should not save during IME composition                                              | IME 檢查                     |
+| 31  | should expose a mixed category checkbox and request packing all items               | 三態批次意圖                 |
+| 32  | should expose checked, unchecked, and disabled category checkbox states             | 狀態渲染                     |
 
-#### 8.2.10 Checklist.test.js（42）
+#### 8.2.10 Checklist.test.js（44）
 
-| #   | Test                                                                           | 測試重點             |
-| --- | ------------------------------------------------------------------------------ | -------------------- |
-| 1   | should display the checklist name                                              | 名稱渲染             |
-| 2   | should display the formatted date range                                        | 同年度日期格式       |
-| 3   | should pass correct item counts to ProgressBar                                 | 進度綁定             |
-| 4   | should render Category components                                              | 分類渲染             |
-| 5   | should show PendingItemsCategory when pending items exist                      | 條件顯示             |
-| 6   | should hide PendingItemsCategory when no pending items                         | 條件隱藏             |
-| 7   | should hide dates and checklist overflow for template editing                  | Template editor 顯示 |
-| 8   | should toggle unpacked-only display without hiding categories                  | 篩選狀態與分類保留   |
-| 9   | should show input on name click                                                | 點擊編輯             |
-| 10  | should emit update on Enter                                                    | Enter 確認           |
-| 11  | should cancel on Escape                                                        | Escape 取消          |
-| 12  | should emit copy:checklist from OverflowMenu                                   | 複製轉發             |
-| 13  | should emit delete:checklist from OverflowMenu                                 | 刪除轉發             |
-| 14  | should emit create:category from AddCategoryButton                             | 新增分類事件         |
-| 15  | should forward update:item from Category                                       | 物品更新轉發         |
-| 16  | should forward copy:category from Category                                     | 分類複製轉發         |
-| 17  | should forward delete:category from Category                                   | 分類刪除轉發         |
-| 18  | should display untitled placeholder for empty name                             | 未命名顯示           |
-| 19  | should adjust end date when start date moves past it                           | 日期約束             |
-| 20  | should not change end date when start before it                                | 日期無變更           |
-| 21  | should auto-correct end date earlier than start                                | 日期自動修正         |
-| 22  | should not save on Enter during IME                                            | IME 檢查             |
-| 23  | should not emit when name unchanged                                            | 無變更檢查           |
-| 24  | should use untitled placeholder when saving empty name                         | 空名稱後備           |
-| 25  | should enter edit mode from OverflowMenu                                       | 編輯模式觸發         |
-| 26  | should enter edit mode when newlyCreatedChecklistId matches                    | 新建自動編輯         |
-| 27  | should forward copy:item from Category component                               | 物品複製轉發         |
-| 28  | should forward delete:item from Category component                             | 物品刪除轉發         |
-| 29  | should forward create:item from Category component                             | 物品新增轉發         |
-| 30  | should forward update:category from Category component                         | 分類更新轉發         |
-| 31  | should forward move:item from Category component                               | 物品移動轉發         |
-| 32  | should format single-date and cross-year ranges                                | 單日／跨年顯示       |
-| 33  | should handle empty dates gracefully                                           | 無日期顯示           |
-| 34  | should forward update:item from PendingItemsCategory                           | pending 更新轉發     |
-| 35  | should set isDraggingCategory on drag start                                    | 拖曳狀態             |
-| 36  | should clear drag state on drag end                                            | 拖曳清理             |
-| 37  | should emit "reorder:categories" with renumbered order when v-model changes    | 分類重排事件         |
-| 38  | should save when focus leaves all editing inputs                               | 全域 blur 儲存       |
-| 39  | 儲存失敗後保留清單名稱與日期直到重試                                           | 行內寫入確認         |
-| 40  | switches across categories with one click and does not swallow outside actions | 共用展開與外部操作   |
-| 41  | uses the same rename flow and restores the trigger only for Escape             | 改名與焦點責任       |
-| 42  | clears invalid actions on collapse, removal and checklist switch               | 失效展開清理         |
+| #   | Test                                                                           | 測試重點                 |
+| --- | ------------------------------------------------------------------------------ | ------------------------ |
+| 1   | should display the checklist name                                              | 名稱渲染                 |
+| 2   | should display the formatted date range                                        | 同年度日期格式           |
+| 3   | should pass correct item counts to ProgressBar                                 | 進度綁定                 |
+| 4   | should render Category components for each category                            | 分類渲染                 |
+| 5   | should show PendingItemsCategory when pending items exist                      | 條件顯示                 |
+| 6   | should hide PendingItemsCategory when no pending items                         | 條件隱藏                 |
+| 7   | should hide dates and checklist overflow when configured for template editing  | Template editor 顯示     |
+| 8   | should toggle unpacked-only display without hiding categories                  | 篩選狀態與分類保留       |
+| 9   | confirms once after composition and keeps a failed checklist draft for retry   | 組字完成與儲存失敗後重試 |
+| 10  | retains checklist name and dates after a failed save until retry succeeds      | 草稿保留與重試           |
+| 11  | should show input when checklist name is clicked                               | 點擊編輯                 |
+| 12  | should emit "update:checklist" with new name on Enter                          | Enter 確認               |
+| 13  | should cancel edit mode on Escape key                                          | Escape 取消              |
+| 14  | should emit "copy:checklist" from OverflowMenu                                 | 複製轉發                 |
+| 15  | should emit "delete:checklist" from OverflowMenu                               | 刪除轉發                 |
+| 16  | should emit "create:category" from AddCategoryButton                           | 新增分類事件             |
+| 17  | should forward "update:item" from Category component                           | 物品更新轉發             |
+| 18  | should forward "copy:category" from Category component                         | 分類複製事件轉發         |
+| 19  | should forward "delete:category" from Category component                       | 分類刪除事件轉發         |
+| 20  | should display untitled placeholder for empty name                             | 未命名顯示               |
+| 21  | should adjust end date when start date moves past it                           | 日期約束                 |
+| 22  | should not change end date when start date is still before it                  | 日期無變更               |
+| 23  | should auto-correct end date set earlier than start date                       | 日期自動修正             |
+| 24  | should not save on Enter during IME composition                                | IME 檢查                 |
+| 25  | should not emit update when name has not changed                               | 無變更檢查               |
+| 26  | should use untitled placeholder when saving empty name                         | 空名稱後備               |
+| 27  | should enter edit mode when OverflowMenu triggers edit                         | 編輯模式觸發             |
+| 28  | should enter edit mode when newlyCreatedChecklistId matches                    | 新建自動編輯             |
+| 29  | should forward "copy:item" from Category component                             | 物品複製轉發             |
+| 30  | should forward "delete:item" from Category component                           | 物品刪除轉發             |
+| 31  | should forward "create:item" from Category component                           | 物品新增轉發             |
+| 32  | should forward "update:category" from Category component                       | 分類更新轉發             |
+| 33  | should forward "move:item" from Category component                             | 物品移動轉發             |
+| 34  | should format single-date and cross-year ranges                                | 單日／跨年顯示           |
+| 35  | should handle empty dates gracefully                                           | 無日期顯示               |
+| 36  | associates visible start and end labels with their date inputs                 | 日期標籤與輸入欄位關聯   |
+| 37  | should forward "update:item" from PendingItemsCategory                         | pending 更新轉發         |
+| 38  | should set isDraggingCategory on drag start                                    | 拖曳狀態                 |
+| 39  | should clear drag state on category drag end                                   | 拖曳清理                 |
+| 40  | should emit "reorder:categories" with renumbered order when v-model changes    | 分類重排事件             |
+| 41  | should save when focus leaves all editing inputs                               | 全域 blur 儲存           |
+| 42  | switches across categories with one click and does not swallow outside actions | 共用展開與外部操作       |
+| 43  | uses the same rename flow and restores the trigger only for Escape             | 改名與焦點責任           |
+| 44  | clears invalid actions on collapse, removal and checklist switch               | 失效展開清理             |
 
 #### 8.2.11 Sidebar.test.js（36）
 
@@ -1072,24 +1090,26 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 11  | resets the nested source step whenever the dialog reopens                      | Dialog 狀態重設    |
 | 12  | ignores keyboard dismissal while hidden and unrelated keys while visible       | 鍵盤防護           |
 
-#### 8.2.13 TemplateEditor.test.js（14）
+#### 8.2.13 TemplateEditor.test.js（16）
 
-| #   | Test                                                            | 測試重點               |
-| --- | --------------------------------------------------------------- | ---------------------- |
-| 1   | configures Checklist without dates or overflow menu             | editor 渲染            |
-| 2   | emits a storage-safe edited template snapshot                   | 儲存 payload           |
-| 3   | emits delete without saving the draft                           | 刪除操作               |
-| 4   | discards the draft when cancel is selected                      | 取消操作               |
-| 5   | creates draft items and categories without persisting them      | 僅草稿建立             |
-| 6   | copies and deletes categories with their draft items            | 分類草稿生命週期       |
-| 7   | updates, copies, moves and deletes draft items in memory        | 物品草稿生命週期       |
-| 8   | resets the in-memory draft when the selected template changes   | 切換 template 重設     |
-| 9   | finishes auto-edit state after updating new entries             | 自動編輯清理           |
-| 10  | applies same-category item reorder payloads                     | 物品重排               |
-| 11  | ignores copy requests for missing draft entries                 | 缺少項目 guard         |
-| 12  | moves an item without optional reordered items                  | 選用移動 payload       |
-| 13  | assigns zero order to the first category and item               | 空草稿排序             |
-| 14  | keeps touch changes isolated until saving the template snapshot | 獨立草稿操作與最後名稱 |
+| #   | Test                                                                     | 測試重點                     |
+| --- | ------------------------------------------------------------------------ | ---------------------------- |
+| 1   | detects structural draft changes and returns clean after they are undone | 偵測草稿變更與還原           |
+| 2   | detects reordered categories and item moves in the snapshot              | 草稿分類排序與物品移動       |
+| 3   | configures Checklist without dates or checklist overflow menu            | editor 渲染                  |
+| 4   | emits an edited template snapshot without runtime checklist fields       | 編輯後範本快照不含執行期欄位 |
+| 5   | emits delete without saving the draft                                    | 刪除操作                     |
+| 6   | discards the draft when cancel is selected                               | 取消操作                     |
+| 7   | creates draft items and categories without persisting them               | 僅草稿建立                   |
+| 8   | copies and deletes categories with their draft items                     | 分類草稿生命週期             |
+| 9   | updates, copies, moves and deletes draft items in memory                 | 物品草稿生命週期             |
+| 10  | resets the in-memory draft when the selected template changes            | 切換 template 重設           |
+| 11  | finishes auto-edit state after updating newly created entries            | 自動編輯清理                 |
+| 12  | applies same-category item reorder payloads                              | 物品重排                     |
+| 13  | ignores copy requests for missing draft entries                          | 缺少項目 guard               |
+| 14  | applies a cross-category batch payload                                   | 套用跨分類物品批次資料       |
+| 15  | assigns zero order when creating the first category and item             | 空草稿排序                   |
+| 16  | keeps touch changes isolated until saving the template snapshot          | 獨立草稿操作與最後名稱       |
 
 #### 8.2.14 SaveTemplateDialog.test.js（10）
 
@@ -1142,7 +1162,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | 觸控跨清單正常新增／移除              |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | 滑鼠跨清單正常新增／移除              |
 
-### 8.3 E2E Tests（162）
+### 8.3 E2E Tests（205）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1237,17 +1257,18 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 5   | should keep remote completion synchronization silent                     | storage sync 不觸發慶祝      |
 | 6   | keeps both templates when two tabs save behind the same lock barrier     | 併發模板寫入                 |
 
-#### 8.3.9 template-management.spec.js（7）
+#### 8.3.9 template-management.spec.js（8）
 
-| #   | Test                                                                  | 測試重點              |
-| --- | --------------------------------------------------------------------- | --------------------- |
-| 1   | closes the templates menu after an outside click                      | 點擊外部後關閉        |
-| 2   | distinguishes Back from canceling checklist creation                  | Dialog 步驟語意       |
-| 3   | edits a template without creating a checklist                         | 獨立 template 編輯    |
-| 4   | deletes the active template from the editor                           | template 刪除         |
-| 5   | keeps narrow template rows free of overflow menus                     | 窄版響應式排版        |
-| 6   | saves a checklist as a named template without changing checklist data | 快照隔離              |
-| 7   | creates an isolated checklist from a selected template                | 新 ID 與 storage 隔離 |
+| #   | Test                                                                                  | 測試重點                   |
+| --- | ------------------------------------------------------------------------------------- | -------------------------- |
+| 1   | closes the templates menu after an outside click                                      | 點擊外部後關閉             |
+| 2   | distinguishes Back from canceling checklist creation                                  | Dialog 步驟語意            |
+| 3   | edits a template without creating a checklist                                         | 獨立 template 編輯         |
+| 4   | confirms inline template edits without saving the template until explicitly requested | 行內編輯保留於草稿直到儲存 |
+| 5   | deletes the active template from the editor                                           | template 刪除              |
+| 6   | keeps narrow template rows free of overflow menus                                     | 窄版響應式排版             |
+| 7   | saves a checklist as a named template without changing checklist data                 | 快照隔離                   |
+| 8   | creates an isolated checklist from a selected template                                | 新 ID 與 storage 隔離      |
 
 #### 8.3.10 recommended-lists.spec.js（1）
 
@@ -1311,15 +1332,16 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport 留白、錯誤與清理              |
 | 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup 範圍、初始焦點與 Escape            |
 
-#### 8.3.14 rwd-webkit.spec.js（3）
+#### 8.3.14 rwd-webkit.spec.js（4）
 
 | #   | Test                                                         | 測試重點                                      |
 | --- | ------------------------------------------------------------ | --------------------------------------------- |
 | 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit 觸控狀態、抽屜動畫與回焦               |
 | 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit 短 viewport 與日期幾何                 |
 | 3   | WebKit tablet columns retain visible touch actions           | WebKit 平板欄數、收合禁止捲動、觸控選單與密度 |
+| 4   | WebKit short mobile sidebar keeps navigation reachable       | 極短側欄清單與語言控制                        |
 
-#### 8.3.15 sidebar-presentation.spec.js（6）
+#### 8.3.15 sidebar-presentation.spec.js（8）
 
 | #   | Test                                                    | 測試重點                                              |
 | --- | ------------------------------------------------------- | ----------------------------------------------------- |
@@ -1329,6 +1351,8 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 4   | tablet: sidebar presentation stays consistent in zh-TW  | 收合禁止捲動、中文字首與選單幾何                      |
 | 5   | desktop: sidebar presentation stays consistent in en    | 收合禁止捲動、完整字首、縮放與焦點恢復                |
 | 6   | desktop: sidebar presentation stays consistent in zh-TW | 收合禁止捲動、中文字首與 ResizeObserver 後備          |
+| 7   | short mobile sidebar remains operable in en             | 極短側欄觸控、鍵盤及範本導覽                          |
+| 8   | short mobile sidebar remains operable in zh-TW          | 中文極短側欄導覽                                      |
 
 #### 8.3.16 desktop-drag-presentation.spec.js（19）
 
@@ -1405,3 +1429,52 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | #   | Test                                                                 | 驗證內容                              |
 | --- | -------------------------------------------------------------------- | ------------------------------------- |
 | 1   | refreshes a stale drag instead of persisting duplicate target orders | 真實雙分頁拖曳衝突、原子storage與重載 |
+
+#### 8.3.21 checklist-dates.spec.js (16 tests)
+
+| #   | Test                                                                        | 測試重點                     |
+| --- | --------------------------------------------------------------------------- | ---------------------------- |
+| 1   | edits labeled dates and confirms changes at 320px in en                     | 日期編輯與確認               |
+| 2   | edits labeled dates and confirms changes at 390px in en                     | 日期編輯與確認               |
+| 3   | edits labeled dates and confirms changes at 820px in en                     | 日期編輯與確認               |
+| 4   | edits labeled dates and confirms changes at 1280px in en                    | 日期編輯與確認               |
+| 5   | edits labeled dates and confirms changes at 320px in zh-TW                  | 日期編輯與確認               |
+| 6   | edits labeled dates and confirms changes at 390px in zh-TW                  | 日期編輯與確認               |
+| 7   | edits labeled dates and confirms changes at 820px in zh-TW                  | 日期編輯與確認               |
+| 8   | edits labeled dates and confirms changes at 1280px in zh-TW                 | 日期編輯與確認               |
+| 9   | touch editing › saves checklist and category through their confirm controls | 觸控確認清單與分類           |
+| 10  | keeps 10-character name within the main viewport at 320px                   | 不同寬度的清單名稱版面       |
+| 11  | keeps 100-character name within the main viewport at 320px                  | 不同寬度的清單名稱版面       |
+| 12  | keeps 10-character name within the main viewport at 820px                   | 不同寬度的清單名稱版面       |
+| 13  | keeps 100-character name within the main viewport at 820px                  | 不同寬度的清單名稱版面       |
+| 14  | keeps 10-character name within the main viewport at 1280px                  | 不同寬度的清單名稱版面       |
+| 15  | keeps 100-character name within the main viewport at 1280px                 | 不同寬度的清單名稱版面       |
+| 16  | saves another category when its focus moves to a failed draft confirmation  | 儲存失敗草稿與跨分類焦點切換 |
+
+#### 8.3.22 template-navigation.spec.js (23 tests)
+
+| #   | Test                                                                           | 測試重點           |
+| --- | ------------------------------------------------------------------------------ | ------------------ |
+| 1   | switches a clean template to the selected checklist including the current one  | 範本導覽與草稿保護 |
+| 2   | keeps or discards the draft when switching checklists                          | 範本導覽與草稿保護 |
+| 3   | saves the last inline edit before navigating, and retains it on failure        | 範本導覽與草稿保護 |
+| 4   | warns before replacing a dirty template with another                           | 範本導覽與草稿保護 |
+| 5   | keeps template toolbar visible when scrolling at 390px                         | 範本導覽與草稿保護 |
+| 6   | keeps template toolbar visible when scrolling at 820px                         | 範本導覽與草稿保護 |
+| 7   | keeps template toolbar visible when scrolling at 1280px                        | 範本導覽與草稿保護 |
+| 8   | a reverted name navigates without a discard prompt                             | 範本導覽與草稿保護 |
+| 9   | retains the draft on cross-tab conflict when saving before navigation          | 範本導覽與草稿保護 |
+| 10  | Escape keeps the draft and restores the navigation focus                       | 範本導覽與草稿保護 |
+| 11  | mobile drawer prompts before switching and closes after discard                | 範本導覽與草稿保護 |
+| 12  | keeps the requested destination while template save waits for the lock         | 範本導覽與草稿保護 |
+| 13  | keeps the toolbar usable in a short narrow viewport                            | 範本導覽與草稿保護 |
+| 14  | saves an active category draft before switching                                | 範本導覽與草稿保護 |
+| 15  | saves an active item draft before switching                                    | 範本導覽與草稿保護 |
+| 16  | resumes the same navigation after an inline IME composition finishes           | 範本導覽與草稿保護 |
+| 17  | keeps a dirty draft and explains when the destination disappears               | 範本導覽與草稿保護 |
+| 18  | keeps the short-screen confirmation scrollable and traps focus                 | 範本導覽與草稿保護 |
+| 19  | navigates after a committed save even if the template refresh fails            | 範本導覽與草稿保護 |
+| 20  | saves the template once before creating a checklist                            | 範本導覽與草稿保護 |
+| 21  | discards the template once before copying a checklist                          | 範本導覽與草稿保護 |
+| 22  | keeps long template toolbar and focused content usable after rotation in en    | 範本導覽與草稿保護 |
+| 23  | keeps long template toolbar and focused content usable after rotation in zh-TW | 範本導覽與草稿保護 |

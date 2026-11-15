@@ -84,6 +84,7 @@ Validation
 - Spacing scale: Use 4px increments; extend `tailwind.config.js` for non-standard values
 - Class organization: Group related classes (layout → spacing → colors → states); Prettier auto-sorts
 - CSS Modules: Use for complex layouts (masonry, animations); kebab-case naming; prefer CSS variables
+- Theme colors: Keep `THEME_COLORS` and generated CSS in sync with `npm run check:css-vars`; regenerate the marked region using `npm run build:css-vars` and do not redeclare its variables elsewhere in `source/index.css`.
 
 Validation
 

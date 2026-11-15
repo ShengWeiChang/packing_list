@@ -1,3 +1,4 @@
+// Test Cases 1–23: Template draft navigation, persistence, focus and responsive toolbar.
 import { expect, test } from '@playwright/test';
 
 const data = {

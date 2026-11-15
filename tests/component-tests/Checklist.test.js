@@ -225,6 +225,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('name editing', () => {
+    // Test Case 9: confirms once after composition.
     it('confirms once after composition and keeps a failed checklist draft for retry', async () => {
       const saveChecklistEdit = vi
         .fn()
@@ -249,7 +250,7 @@ describe('Checklist', () => {
       expect(saveChecklistEdit).toHaveBeenCalledTimes(2);
       expect(wrapper.find('[data-testid="checklist-name-input"]').exists()).toBe(false);
     });
-    // Test Case 9: Retain the name and dates until save succeeds.
+    // Test Case 10: Retain the name and dates until save succeeds.
     it('retains checklist name and dates after a failed save until retry succeeds', async () => {
       const saveChecklistEdit = vi
         .fn()
@@ -268,7 +269,7 @@ describe('Checklist', () => {
       await flushPromises();
       expect(wrapper.find('[data-testid="checklist-name-input"]').exists()).toBe(false);
     });
-    // Test Case 10: Should enter edit mode when checklist name is clicked
+    // Test Case 11: Should enter edit mode when checklist name is clicked
     it('should show input when checklist name is clicked', async () => {
       const wrapper = createWrapper();
       const nameHeading = wrapper.get('[data-testid="checklist-name"]');
@@ -277,7 +278,7 @@ describe('Checklist', () => {
       expect(wrapper.get('[data-testid="checklist-name-input"]').element.value).toBe('Japan Trip');
     });
 
-    // Test Case 11: Should emit update:checklist with new name on Enter
+    // Test Case 12: Should emit update:checklist with new name on Enter
     it('should emit "update:checklist" with new name on Enter', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid="checklist-name"]').trigger('click');
@@ -291,7 +292,7 @@ describe('Checklist', () => {
       expect(emitted[0][0].name).toBe('Updated Trip');
     });
 
-    // Test Case 12: Should cancel edit mode on Escape key
+    // Test Case 13: Should cancel edit mode on Escape key
     it('should cancel edit mode on Escape key', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid="checklist-name"]').trigger('click');
@@ -310,7 +311,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('event emissions', () => {
-    // Test Case 13: Should emit copy:checklist when OverflowMenu triggers copy
+    // Test Case 14: Should emit copy:checklist when OverflowMenu triggers copy
     it('should emit "copy:checklist" from OverflowMenu', async () => {
       const wrapper = createWrapper();
       const menu = wrapper.findComponent({ name: 'OverflowMenu' });
@@ -320,7 +321,7 @@ describe('Checklist', () => {
       expect(wrapper.emitted('copy:checklist')[0][0]).toBe('cl-1');
     });
 
-    // Test Case 14: Should emit delete:checklist when OverflowMenu triggers delete
+    // Test Case 15: Should emit delete:checklist when OverflowMenu triggers delete
     it('should emit "delete:checklist" from OverflowMenu', async () => {
       const wrapper = createWrapper();
       const menu = wrapper.findComponent({ name: 'OverflowMenu' });
@@ -330,7 +331,7 @@ describe('Checklist', () => {
       expect(wrapper.emitted('delete:checklist')[0][0]).toBe('cl-1');
     });
 
-    // Test Case 15: Should emit create:category when AddCategoryButton is clicked
+    // Test Case 16: Should emit create:category when AddCategoryButton is clicked
     it('should emit "create:category" from AddCategoryButton', async () => {
       const wrapper = createWrapper();
       const addBtn = wrapper.findComponent({ name: 'AddCategoryButton' });
@@ -339,7 +340,7 @@ describe('Checklist', () => {
       expect(wrapper.emitted('create:category')).toHaveLength(1);
     });
 
-    // Test Cases 16–18: Should forward events from Category component
+    // Test Cases 17–19: Should forward events from Category component
     it.each([
       ['update:item', { id: 'item-1', name: 'Updated', isPacked: true }],
       ['copy:category', 'cat-1'],
@@ -359,7 +360,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('untitled checklist', () => {
-    // Test Case 19: Should show untitled text for empty name
+    // Test Case 20: Should show untitled text for empty name
     it('should display untitled placeholder for empty name', () => {
       const wrapper = createWrapper({
         checklist: createMockChecklist({ name: '' }),
@@ -373,7 +374,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('date constraint watchers', () => {
-    // Test Case 20: End date should auto-adjust when start date is moved later
+    // Test Case 21: End date should auto-adjust when start date is moved later
     it('should adjust end date when start date moves past it', async () => {
       const wrapper = createWrapper();
 
@@ -394,7 +395,7 @@ describe('Checklist', () => {
       expect(endInput.element.value).toBe('2026-03-20');
     });
 
-    // Test Case 21: End date should not change when start date is before it
+    // Test Case 22: End date should not change when start date is before it
     it('should not change end date when start date is still before it', async () => {
       const wrapper = createWrapper();
 
@@ -412,7 +413,7 @@ describe('Checklist', () => {
       expect(endInput.element.value).toBe('2026-03-15');
     });
 
-    // Test Case 22: End date earlier than start should auto-correct
+    // Test Case 23: End date earlier than start should auto-correct
     it('should auto-correct end date set earlier than start date', async () => {
       const wrapper = createWrapper();
 
@@ -441,7 +442,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('edit blur and IME composition', () => {
-    // Test Case 23: Should not save during IME composition
+    // Test Case 24: Should not save during IME composition
     it('should not save on Enter during IME composition', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid="checklist-name"]').trigger('click');
@@ -462,7 +463,7 @@ describe('Checklist', () => {
       expect(wrapper.emitted('update:checklist')).toHaveLength(1);
     });
 
-    // Test Case 24: Should not emit when name is unchanged
+    // Test Case 25: Should not emit when name is unchanged
     it('should not emit update when name has not changed', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid="checklist-name"]').trigger('click');
@@ -474,7 +475,7 @@ describe('Checklist', () => {
       expect(wrapper.emitted('update:checklist')).toBeUndefined();
     });
 
-    // Test Case 25: Should use untitled when saving empty name
+    // Test Case 26: Should use untitled when saving empty name
     it('should use untitled placeholder when saving empty name', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid="checklist-name"]').trigger('click');
@@ -495,7 +496,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('overflow menu edit action', () => {
-    // Test Case 26: Should enter edit mode from OverflowMenu edit event
+    // Test Case 27: Should enter edit mode from OverflowMenu edit event
     it('should enter edit mode when OverflowMenu triggers edit', async () => {
       const wrapper = createWrapper();
       const menu = wrapper.findComponent({ name: 'OverflowMenu' });
@@ -514,7 +515,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('newly created checklist watcher', () => {
-    // Test Case 27: Should auto-start edit when newlyCreatedChecklistId matches
+    // Test Case 28: Should auto-start edit when newlyCreatedChecklistId matches
     it('should enter edit mode when newlyCreatedChecklistId matches', async () => {
       const wrapper = createWrapper({ newlyCreatedChecklistId: null });
 
@@ -536,7 +537,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('additional event forwarding', () => {
-    // Test Cases 28–32: Should forward various events from Category component
+    // Test Cases 29–33: Should forward various events from Category component
     it.each([
       ['copy:item', 'item-1'],
       ['delete:item', 'item-1'],
@@ -558,7 +559,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('date formatting', () => {
-    // Test Case 33: Should format single-date and cross-year ranges
+    // Test Case 34: Should format single-date and cross-year ranges
     it('should format single-date and cross-year ranges', () => {
       const singleDateWrapper = createWrapper({
         checklist: createMockChecklist({
@@ -578,7 +579,7 @@ describe('Checklist', () => {
       expect(crossYearWrapper.text()).toContain('Nov 26, 2025 - Jan 5, 2026');
     });
 
-    // Test Case 34: Should handle empty dates gracefully
+    // Test Case 35: Should handle empty dates gracefully
     it('should handle empty dates gracefully', () => {
       const wrapper = createWrapper({
         checklist: createMockChecklist({
@@ -590,6 +591,7 @@ describe('Checklist', () => {
       expect(wrapper.get('[data-testid="checklist-name"]').text()).toBe('Japan Trip');
     });
 
+    // Test Case 36: associates visible start.
     it('associates visible start and end labels with their date inputs', async () => {
       const wrapper = createWrapper();
       expect(wrapper.text()).not.toContain('checklist.startDate');
@@ -608,7 +610,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('PendingItemsCategory forwarding', () => {
-    // Test Case 35: Should forward update:item from PendingItemsCategory
+    // Test Case 37: Should forward update:item from PendingItemsCategory
     it('should forward "update:item" from PendingItemsCategory', async () => {
       const wrapper = createWrapper();
       const pending = wrapper.getComponent({ name: 'PendingItemsCategory' });
@@ -626,7 +628,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('category drag handlers', () => {
-    // Test Case 36: Should handle category drag start
+    // Test Case 38: Should handle category drag start
     it('should set isDraggingCategory on drag start', async () => {
       const wrapper = createWrapper();
       const draggableComp = wrapper.findComponent({ name: 'draggable' });
@@ -643,7 +645,7 @@ describe('Checklist', () => {
       expect(draggableComp.classes()).toContain('dragging');
     });
 
-    // Test Case 37: Should handle category drag end
+    // Test Case 39: Should handle category drag end
     it('should clear drag state on category drag end', async () => {
       const wrapper = createWrapper();
       const draggableComp = wrapper.findComponent({ name: 'draggable' });
@@ -667,7 +669,7 @@ describe('Checklist', () => {
       expect(draggableComp.classes()).not.toContain('dragging');
     });
 
-    // Test Case 38: Should emit reorder:categories when draggable updates the array
+    // Test Case 40: Should emit reorder:categories when draggable updates the array
     it('should emit "reorder:categories" with renumbered order when v-model changes', async () => {
       const wrapper = createWrapper();
       const draggableComp = wrapper.findComponent({ name: 'draggable' });
@@ -703,7 +705,7 @@ describe('Checklist', () => {
   // ---------------------------------------------------------------------------
 
   describe('edit blur handler', () => {
-    // Test Case 39: Should save on blur when focus leaves editing area
+    // Test Case 41: Should save on blur when focus leaves editing area
     it('should save when focus leaves all editing inputs', async () => {
       vi.useFakeTimers();
       const wrapper = createWrapper();
@@ -764,7 +766,7 @@ describe('Checklist inline item actions', () => {
       .trigger('click', { pointerType: 'touch' });
     await flushPromises();
   }
-  // Test Case 40: Once-one ownership spans categories; inside actions and outside clicks keep their intended effects.
+  // Test Case 42: Once-one ownership spans categories; inside actions and outside clicks keep their intended effects.
   it('switches across categories with one click and does not swallow outside actions', async () => {
     const w = mountList();
     const outside = document.createElement('button');
@@ -797,7 +799,7 @@ describe('Checklist inline item actions', () => {
       outside.remove();
     }
   });
-  // Test Case 41: Direct and explicit rename preserve the same editor and Escape returns focus from actions.
+  // Test Case 43: Direct and explicit rename preserve the same editor and Escape returns focus from actions.
   it('uses the same rename flow and restores the trigger only for Escape', async () => {
     const w = mountList();
     try {
@@ -817,7 +819,7 @@ describe('Checklist inline item actions', () => {
       w.unmount();
     }
   });
-  // Test Case 42: Collapse, removal and checklist switching invalidate only the affected open item.
+  // Test Case 44: Collapse, removal and checklist switching invalidate only the affected open item.
   it('clears invalid actions on collapse, removal and checklist switch', async () => {
     const w = mountList();
     try {
