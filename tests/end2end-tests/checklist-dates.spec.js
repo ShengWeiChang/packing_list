@@ -47,6 +47,19 @@ for (const locale of ['en', 'zh-TW']) {
         );
       });
       const before = await page.getByTestId('checklist-name').boundingBox();
+      const nameMetrics = await page.getByTestId('checklist-name').evaluate((element) => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const style = getComputedStyle(element);
+        return {
+          lines: range.getClientRects().length,
+          bounds: element.getBoundingClientRect().toJSON(),
+          availableWidth: element.parentElement.getBoundingClientRect().width,
+          font: style.font,
+          viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
+        };
+      });
+      expect(nameMetrics.lines, JSON.stringify(nameMetrics)).toBe(1);
       const dateBefore = await page
         .getByRole('button', { name: 'Nov 26, 2025 - Jan 5, 2026' })
         .boundingBox();
@@ -68,7 +81,10 @@ for (const locale of ['en', 'zh-TW']) {
       const contentAfter = await page.getByTestId('category-card').boundingBox();
       const endBox = await end.boundingBox();
       const dateRows = endBox.y > dateAfter.y ? 2 : 1;
-      expect(Math.abs(dateAfter.y - dateBefore.y)).toBeLessThanOrEqual(8);
+      expect(
+        Math.abs(dateAfter.y - dateBefore.y),
+        JSON.stringify({ nameMetrics, nameBefore: before, nameAfter: after, dateBefore, dateAfter })
+      ).toBeLessThanOrEqual(8);
       expect(Math.abs(contentAfter.y - contentBefore.y)).toBeLessThanOrEqual(
         dateRows === 2 ? dateAfter.height + 10 : 10
       );
@@ -229,10 +245,25 @@ for (const width of [320, 820, 1280]) {
       const readName = page.getByTestId('checklist-name');
       const content = page.getByTestId('category-card');
       const before = await content.boundingBox();
+      const nameBefore = await readName.boundingBox();
+      const dateBefore = await page.getByRole('button', { name: 'Jan 1, 2026' }).boundingBox();
+      const nameLines = await readName.evaluate((element) => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        return range.getClientRects().length;
+      });
       await expect.poll(async () => main.evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
       await readName.click();
       await expect(page.getByTestId('checklist-name-input')).toBeVisible();
       const after = await content.boundingBox();
+      if (width === 320 && name.length === 100) {
+        const nameAfter = await page.getByTestId('checklist-name-input').boundingBox();
+        const dateAfter = await page.getByLabel('Start Date').boundingBox();
+        expect(nameLines).toBeGreaterThan(1);
+        expect(
+          Math.abs(dateAfter.y - dateBefore.y - (nameAfter.height - nameBefore.height))
+        ).toBeLessThanOrEqual(8);
+      }
       if (name.length < 100 && width >= 820) {
         expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(10);
       }
