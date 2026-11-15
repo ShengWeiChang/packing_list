@@ -10,6 +10,20 @@ Created: 2026-11-04
 import { expect, test } from '@playwright/test';
 
 import { selectGeneralRecommendedList } from './checklistHelpers.js';
+import { attachShortMenuDiagnostics } from './layoutDiagnostics.js';
+
+test.afterEach(async ({ page }, testInfo) => {
+  if (
+    testInfo.title !== 'short dialogs and narrow date editing fit without horizontal overflow' ||
+    testInfo.status === 'passed'
+  )
+    return;
+  try {
+    await attachShortMenuDiagnostics(page, testInfo);
+  } catch (error) {
+    console.error('Unable to attach short-menu diagnostics:', error);
+  }
+});
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

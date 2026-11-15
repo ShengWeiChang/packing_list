@@ -1,6 +1,21 @@
 /* Hover feedback, drag/edit handoff, collapsed drops and inline action motion. */
 import { expect, test } from '@playwright/test';
 
+import { attachDragDiagnostics, markDragGesture, startDragDiagnostics } from './dragDiagnostics.js';
+
+test.afterEach(async ({ page }, testInfo) => {
+  if (
+    testInfo.title !== 'ends an old name edit when dragging a different item' ||
+    testInfo.status === 'passed'
+  )
+    return;
+  try {
+    await attachDragDiagnostics(page, testInfo);
+  } catch (error) {
+    console.error('Unable to attach drag diagnostics:', error);
+  }
+});
+
 /** @param {import('@playwright/test').Page} page - Browser page. */
 async function openFixture(page) {
   await page.addInitScript(() => {
@@ -381,6 +396,7 @@ for (const scenario of scenarios) {
 test('ends an old name edit when dragging a different item', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await openFixture(page);
+  await startDragDiagnostics(page);
   const edited = page.locator('[data-testid="item-row"][data-item-id="a0"]');
   for (const name of [null, 'Renamed before drag']) {
     await edited.getByTestId('item-name').click();
@@ -392,6 +408,7 @@ test('ends an old name edit when dragging a different item', async ({ page }) =>
       .getByTestId('item-name')
       .boundingBox();
     const from = { x: source.x + source.width / 3, y: source.y + source.height / 2 };
+    await markDragGesture(page, name ? 'renamed' : 'unchanged');
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();
     await page.mouse.move(from.x + 12, from.y + 12, { steps: 4 });

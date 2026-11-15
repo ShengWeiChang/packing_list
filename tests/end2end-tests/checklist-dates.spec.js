@@ -1,6 +1,21 @@
 // Test Cases 1–16: Date labels, confirmation, responsive layout and focus interactions.
 import { expect, test } from '@playwright/test';
 
+import { attachDateLayoutDiagnostics, rememberDateLayout } from './layoutDiagnostics.js';
+
+test.afterEach(async ({ page }, testInfo) => {
+  if (
+    !testInfo.title.startsWith('edits labeled dates and confirms changes at 320px') ||
+    testInfo.status === 'passed'
+  )
+    return;
+  try {
+    await attachDateLayoutDiagnostics(page, testInfo);
+  } catch (error) {
+    console.error('Unable to attach date-layout diagnostics:', error);
+  }
+});
+
 const checklists = [
   {
     id: 'date-checklist',
@@ -46,6 +61,7 @@ for (const locale of ['en', 'zh-TW']) {
           document.getAnimations().map((animation) => animation.finished.catch(() => {}))
         );
       });
+      if (width === 320) await rememberDateLayout(page);
       const before = await page.getByTestId('checklist-name').boundingBox();
       const nameMetrics = await page.getByTestId('checklist-name').evaluate((element) => {
         const range = document.createRange();
