@@ -573,6 +573,12 @@ function handleSettingsFocusOut(event: FocusEvent) {
  */
 function closeSettingsMenusOnScroll(event: Event) {
   if (event.target instanceof Node && settingsRoot.value?.contains(event.target)) return;
+  if (
+    event.target instanceof HTMLElement &&
+    event.target.matches('aside[aria-label="Sidebar"]') &&
+    window.matchMedia('(max-width: 767px) and (max-height: 32rem)').matches
+  )
+    return;
   showLanguageMenu.value = false;
   showTemplatesMenu.value = false;
 }
@@ -760,6 +766,26 @@ aside[data-expanded='true'] [data-sidebar-initial] {
 [data-testid='sidebar-language-dropdown'] {
   max-height: min(24rem, calc(100dvh - 8rem));
   overflow-y: auto;
+}
+
+/* Keep every control reachable when the fixed sections exceed viewport height. */
+@media (max-width: 767px) and (max-height: 32rem) {
+  aside[aria-label='Sidebar'] {
+    overflow-y: auto;
+  }
+  aside[aria-label='Sidebar'] > * {
+    flex-shrink: 0;
+  }
+  aside[aria-label='Sidebar'] [data-testid='sidebar-checklists-scrollport'] {
+    flex: none;
+    overflow: visible;
+  }
+  aside[aria-label='Sidebar'] [data-testid='sidebar-templates-dropdown'],
+  aside[aria-label='Sidebar'] [data-testid='sidebar-language-dropdown'] {
+    position: static;
+    max-height: 40dvh;
+    margin-bottom: 0;
+  }
 }
 
 @keyframes sidebar-overflow-reveal {

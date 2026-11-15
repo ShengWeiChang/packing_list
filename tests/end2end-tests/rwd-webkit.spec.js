@@ -135,26 +135,38 @@ test('WebKit tablet columns retain visible touch actions', async ({ page }) => {
     localStorage.setItem('packingListApp', JSON.stringify(data));
   });
   await page.reload();
+  const animationControl = await page.addStyleTag({
+    content: '[data-sidebar-delayed-menu] { animation-play-state: paused !important; }',
+  });
   const sidebarSamples = await page.evaluate(async () => {
     const samples = [];
     const textOffsets = [];
     const menuFrames = [];
     for (let i = 0; i < 2; i++) {
       document.querySelector('aside [data-testid="sidebar-toggle"]').click();
+      await Promise.resolve();
+      if (i === 0) {
+        const menu = document.querySelector('[data-sidebar-delayed-menu]');
+        menu.getBoundingClientRect();
+        const animation = menu
+          .getAnimations()
+          .find((entry) => entry.animationName?.startsWith('sidebar-overflow-reveal'));
+        if (!animation)
+          throw new Error(
+            `Sidebar reveal animation was not created: ${JSON.stringify({ css: getComputedStyle(menu).animationName, animations: menu.getAnimations().map((entry) => ({ name: entry.animationName, timing: entry.effect?.getTiming() })) })}`
+          );
+        await animation.ready;
+        for (const time of [0, 200, 450]) {
+          animation.currentTime = time;
+          const style = getComputedStyle(menu);
+          menuFrames.push({ time, opacity: Number(style.opacity), visibility: style.visibility });
+        }
+      }
       const start = performance.now();
       await new Promise((resolve) => {
         const sample = () => {
           const list = document.querySelector('aside [data-testid="sidebar-checklists-draggable"]');
           const scrollport = list?.closest('.overflow-y-auto');
-          const menu = document.querySelector('[data-sidebar-delayed-menu]');
-          if (menu && i === 0) {
-            const style = getComputedStyle(menu);
-            menuFrames.push({
-              elapsed: performance.now() - start,
-              opacity: Number(style.opacity),
-              visibility: style.visibility,
-            });
-          }
           if (scrollport) {
             samples.push(scrollport.scrollWidth - scrollport.clientWidth);
             const label = list.querySelector('[data-sidebar-checklist-label]');
@@ -171,14 +183,17 @@ test('WebKit tablet columns retain visible touch actions', async ({ page }) => {
     }
     return { samples, textOffsets, menuFrames };
   });
-  const earlyFrames = sidebarSamples.menuFrames.filter((frame) => frame.elapsed < 200);
-  expect(earlyFrames.length).toBeGreaterThan(0);
+  const earlyFrames = sidebarSamples.menuFrames.filter((frame) => frame.time < 300);
+  expect(earlyFrames).toHaveLength(2);
   expect(earlyFrames.every((frame) => frame.opacity === 0 && frame.visibility === 'hidden')).toBe(
     true
   );
-  expect(sidebarSamples.menuFrames.some((frame) => frame.elapsed > 330 && frame.opacity > 0)).toBe(
-    true
-  );
+  expect(
+    sidebarSamples.menuFrames.some(
+      (frame) => frame.time === 450 && frame.opacity === 1 && frame.visibility === 'visible'
+    )
+  ).toBe(true);
+  await animationControl.evaluate((element) => element.remove());
   expect(sidebarSamples.samples.length).toBeGreaterThan(0);
   expect(Math.max(...sidebarSamples.samples)).toBeLessThanOrEqual(0);
   expect(
@@ -372,4 +387,39 @@ test('WebKit tablet columns retain visible touch actions', async ({ page }) => {
     })
     .toBeLessThan(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+// Test Case 4: Short mobile drawer supports checklist and language navigation in WebKit.
+test('WebKit short mobile sidebar keeps navigation reachable', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 200 });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'packingListApp',
+      JSON.stringify({
+        checklists: Array.from({ length: 5 }, (_, index) => ({
+          id: `short-${index}`,
+          name: `Trip ${index}`,
+          order: 5 - index,
+        })),
+        categories: [],
+        items: [],
+        selectedChecklistId: 'short-0',
+      })
+    );
+  });
+  await page.goto('/');
+  await page.getByTestId('topbar-toggle').tap();
+  const drawer = page.getByTestId('overlay-sidebar');
+  const item = drawer.getByTestId('sidebar-checklist-item').filter({ hasText: 'Trip 3' });
+  await item.scrollIntoViewIfNeeded();
+  await item.tap();
+  await expect(drawer).toHaveCount(0);
+  await page.getByTestId('topbar-toggle').tap();
+  const language = drawer.getByTestId('sidebar-language-button');
+  await language.scrollIntoViewIfNeeded();
+  await language.tap();
+  const option = drawer.getByTestId('sidebar-language-option-zh-TW');
+  await option.scrollIntoViewIfNeeded();
+  await option.tap();
+  await expect(language).toHaveAttribute('aria-expanded', 'false');
 });

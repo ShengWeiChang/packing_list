@@ -48,11 +48,57 @@ function createWrapper() {
 }
 
 describe('TemplateEditor', () => {
+  // Test Case 1: detects structural draft.
+  it('detects structural draft changes and returns clean after they are undone', async () => {
+    const wrapper = createWrapper();
+    const checklist = wrapper.findComponent({ name: 'Checklist' });
+    expect(wrapper.vm.hasChanges()).toBe(false);
+    await checklist.vm.$emit('create:category');
+    const created = checklist.props('categories').find((category) => category.id !== 'category-1');
+    expect(wrapper.vm.hasChanges()).toBe(true);
+    await checklist.vm.$emit('delete:category', created.id);
+    expect(wrapper.vm.hasChanges()).toBe(false);
+    await checklist.vm.$emit('create:item', 'category-1');
+    expect(wrapper.vm.hasChanges()).toBe(true);
+    const added = checklist.props('items').find((item) => item.name === 'New Item');
+    await checklist.vm.$emit('delete:item', added.id);
+    expect(wrapper.vm.hasChanges()).toBe(false);
+    const original = checklist.props('items')[0];
+    await checklist.vm.$emit('update:item', { ...original, quantity: 9 });
+    expect(wrapper.vm.hasChanges()).toBe(true);
+  });
+
+  // Test Case 2: detects reordered categories.
+  it('detects reordered categories and item moves in the snapshot', async () => {
+    const wrapper = shallowMount(TemplateEditor, {
+      props: {
+        template: {
+          ...template,
+          categories: [...template.categories, { id: 'category-2', name: 'Other', order: 1 }],
+        },
+      },
+      global: { plugins: [i18n] },
+    });
+    const checklist = wrapper.findComponent({ name: 'Checklist' });
+    const categories = checklist.props('categories');
+    await checklist.vm.$emit('reorder:categories', [
+      { ...categories[0], order: 1 },
+      { ...categories[1], order: 0 },
+    ]);
+    expect(wrapper.vm.hasChanges()).toBe(true);
+    expect(wrapper.vm.getSnapshot().categories.map(({ order }) => order)).toEqual([1, 0]);
+    const item = checklist.props('items')[0];
+    await checklist.vm.$emit('move:item', {
+      type: 'move',
+      items: [{ ...item, categoryId: 'category-2' }],
+    });
+    expect(wrapper.vm.getSnapshot().items[0].categoryId).toBe('category-2');
+  });
   // ---------------------------------------------------------------------------
   // Test Group 1: Editor Rendering
   // ---------------------------------------------------------------------------
 
-  // Test Case 1: Should configure Checklist without dates or an overflow menu
+  // Test Case 3: Should configure Checklist without dates or an overflow menu
   it('configures Checklist without dates or checklist overflow menu', () => {
     const checklist = createWrapper().findComponent({ name: 'Checklist' });
 
@@ -65,7 +111,7 @@ describe('TemplateEditor', () => {
   // Test Group 2: Template Persistence
   // ---------------------------------------------------------------------------
 
-  // Test Case 2: Should emit a storage-safe edited template snapshot
+  // Test Case 4: Should emit a storage-safe edited template snapshot
   it('emits an edited template snapshot without runtime checklist fields', async () => {
     const wrapper = createWrapper();
     const checklist = wrapper.findComponent({ name: 'Checklist' });
@@ -93,7 +139,7 @@ describe('TemplateEditor', () => {
   // Test Group 3: Editor Actions
   // ---------------------------------------------------------------------------
 
-  // Test Case 3: Should emit delete without saving the draft
+  // Test Case 5: Should emit delete without saving the draft
   it('emits delete without saving the draft', async () => {
     const wrapper = createWrapper();
     await wrapper.get('[data-testid="template-editor-delete"]').trigger('click');
@@ -102,7 +148,7 @@ describe('TemplateEditor', () => {
     expect(wrapper.emitted('save')).toBeUndefined();
   });
 
-  // Test Case 4: Should discard the draft when cancel is selected
+  // Test Case 6: Should discard the draft when cancel is selected
   it('discards the draft when cancel is selected', async () => {
     const wrapper = createWrapper();
     const buttons = wrapper.findAll('button');
@@ -112,7 +158,7 @@ describe('TemplateEditor', () => {
     expect(wrapper.emitted('save')).toBeUndefined();
   });
 
-  // Test Case 5: Should create draft items and categories without persisting them
+  // Test Case 7: Should create draft items and categories without persisting them
   it('creates draft items and categories without persisting them', async () => {
     const wrapper = createWrapper();
     const checklist = wrapper.findComponent({ name: 'Checklist' });
@@ -128,7 +174,7 @@ describe('TemplateEditor', () => {
     expect(saved.categories[1]).toMatchObject({ name: 'New Category', order: 1 });
   });
 
-  // Test Case 6: Should copy and delete categories with their draft items
+  // Test Case 8: Should copy and delete categories with their draft items
   it('copies and deletes categories with their draft items', async () => {
     const wrapper = createWrapper();
     const checklist = wrapper.findComponent({ name: 'Checklist' });
@@ -155,7 +201,7 @@ describe('TemplateEditor', () => {
     ]);
   });
 
-  // Test Case 7: Should update, copy, move and delete draft items in memory
+  // Test Case 9: Should update, copy, move and delete draft items in memory
   it('updates, copies, moves and deletes draft items in memory', async () => {
     const wrapper = createWrapper();
     const checklist = wrapper.findComponent({ name: 'Checklist' });
@@ -187,7 +233,7 @@ describe('TemplateEditor', () => {
     });
   });
 
-  // Test Case 8: Should reset the in-memory draft when the selected template changes
+  // Test Case 10: Should reset the in-memory draft when the selected template changes
   it('resets the in-memory draft when the selected template changes', async () => {
     const wrapper = createWrapper();
     const checklist = wrapper.findComponent({ name: 'Checklist' });
@@ -206,7 +252,7 @@ describe('TemplateEditor', () => {
     });
   });
 
-  // Test Case 9: Should finish auto-edit state after updating newly created entries
+  // Test Case 11: Should finish auto-edit state after updating newly created entries
   it('finishes auto-edit state after updating newly created entries', async () => {
     const wrapper = createWrapper();
     const checklist = wrapper.findComponent({ name: 'Checklist' });
@@ -224,7 +270,7 @@ describe('TemplateEditor', () => {
     expect(checklist.props('newlyCreatedCategoryId')).toBeNull();
   });
 
-  // Test Case 10: Should apply same-category item reorder payloads
+  // Test Case 12: Should apply same-category item reorder payloads
   it('applies same-category item reorder payloads', async () => {
     const wrapper = createWrapper();
     const checklist = wrapper.findComponent({ name: 'Checklist' });
@@ -236,7 +282,7 @@ describe('TemplateEditor', () => {
     expect(wrapper.emitted('save')[0][0].items[0].order).toBe(4);
   });
 
-  // Test Case 11: Should ignore copy requests for missing draft entries
+  // Test Case 13: Should ignore copy requests for missing draft entries
   it('ignores copy requests for missing draft entries', async () => {
     const wrapper = createWrapper();
     const checklist = wrapper.findComponent({ name: 'Checklist' });
@@ -251,7 +297,7 @@ describe('TemplateEditor', () => {
     });
   });
 
-  // Test Case 12: Should apply a cross-category batch payload
+  // Test Case 14: Should apply a cross-category batch payload
   it('applies a cross-category batch payload', async () => {
     const wrapper = createWrapper();
     const checklist = wrapper.findComponent({ name: 'Checklist' });
@@ -265,7 +311,7 @@ describe('TemplateEditor', () => {
     expect(wrapper.emitted('save')[0][0].items[0].categoryId).toBe('category-2');
   });
 
-  // Test Case 13: Should assign zero order when creating the first category and item
+  // Test Case 15: Should assign zero order when creating the first category and item
   it('assigns zero order when creating the first category and item', async () => {
     const wrapper = shallowMount(TemplateEditor, {
       props: {
@@ -288,7 +334,7 @@ describe('TemplateEditor', () => {
 });
 
 describe('TemplateEditor touch integration', () => {
-  // Test Case 14: Real inline actions edit an isolated draft and save the last blurred name.
+  // Test Case 16: Real inline actions edit an isolated draft and save the last blurred name.
   it('keeps touch changes isolated until saving the template snapshot', async () => {
     const original = JSON.parse(JSON.stringify(template));
     const w = mount(TemplateEditor, {

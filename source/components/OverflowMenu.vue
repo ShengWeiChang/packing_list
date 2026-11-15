@@ -22,13 +22,17 @@ Created: 2025-09-19
     <button
       ref="buttonRef"
       type="button"
+      :disabled="disabled"
       :class="buttonClass"
       :aria-label="props.isEditing && !inlineActions ? $t('common.save') : $t('common.moreOptions')"
-      :aria-haspopup="inlineActions ? undefined : 'true'"
+      :aria-haspopup="inlineActions || isEditing ? undefined : 'true'"
       :aria-controls="inlineActions ? inlineControls : undefined"
-      :aria-expanded="inlineActions ? inlineExpanded : showMenu"
+      :aria-expanded="inlineActions ? inlineExpanded : isEditing ? undefined : showMenu"
+      :data-inline-edit-confirm="isEditing && !inlineActions ? `${menuType}:${itemId}` : undefined"
       :data-testid="`overflow-trigger-${props.menuType}-${props.itemId}`"
+      @pointerdown="preserveEditingFocus"
       @click.stop="handleTriggerClick"
+      @focusout="$emit('focusout', $event)"
     >
       <!-- Checkmark icon when editing -->
       <AppIcon
@@ -133,6 +137,7 @@ import AppIcon from './AppIcon.vue';
 
 // Props
 const props = defineProps({
+  disabled: { type: Boolean, default: false },
   inlineActions: { type: Boolean, default: false },
   inlineExpanded: { type: Boolean, default: false },
   inlineControls: { type: String, default: undefined },
@@ -190,6 +195,7 @@ const emit = defineEmits<{
   'save-as-template': [];
   delete: [];
   'confirm-edit': [];
+  focusout: [event: FocusEvent];
 }>();
 
 // ------------------------------------------------------------------------------
@@ -265,6 +271,13 @@ const dropdownClass = computed(
 // ------------------------------------------------------------------------------
 // Functions
 // ------------------------------------------------------------------------------
+
+/** Keep the target in place until its confirmation click has been delivered. */
+function preserveEditingFocus(event: PointerEvent) {
+  if (event.button === 0 && props.isEditing && !props.inlineActions && props.menuType !== 'item') {
+    event.preventDefault();
+  }
+}
 
 /** A touch tap can use inline actions even on a hybrid device with a mouse. */
 function handleTriggerClick(event: PointerEvent) {

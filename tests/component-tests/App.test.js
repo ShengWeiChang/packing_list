@@ -310,6 +310,7 @@ describe('App', () => {
             template: '<section class="template-editor-stub" />',
             props: ['template'],
             emits: ['cancel', 'delete', 'save'],
+            methods: { isComposing: () => false, hasChanges: () => false },
           },
           PackingCompletionOverlay: {
             name: 'PackingCompletionOverlay',
@@ -1470,6 +1471,7 @@ describe('App', () => {
       await wrapper.vm.$nextTick();
 
       await wrapper.findComponent({ name: 'TemplateEditor' }).vm.$emit('cancel');
+      await flushPromises();
 
       expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(false);
       expect(mockUpdateTemplate).not.toHaveBeenCalled();

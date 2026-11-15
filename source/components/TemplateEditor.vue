@@ -11,14 +11,18 @@ Created: 2026-10-13
 <template>
   <div>
     <div
-      class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-theme-secondary bg-bg-primary p-3"
+      class="sticky top-0 z-30 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-theme-secondary bg-bg-primary p-3"
+      data-testid="template-editor-toolbar"
     >
-      <p class="text-sm text-primary">
+      <p
+        class="min-w-0 truncate text-sm text-primary"
+        :title="$t('template.editingTemplate', { name: template.name })"
+      >
         {{ $t('template.editingTemplate', { name: template.name }) }}
       </p>
       <div class="flex flex-wrap gap-2">
         <button
-          class="rounded-lg px-3 py-2 text-sm text-secondary hover:bg-interactive-hover"
+          class="touch-target rounded-lg px-3 py-2 text-sm text-secondary hover:bg-interactive-hover"
           type="button"
           :disabled="saving"
           @click="$emit('cancel')"
@@ -26,7 +30,7 @@ Created: 2026-10-13
           {{ $t('common.cancel') }}
         </button>
         <button
-          class="rounded-lg bg-danger-text px-3 py-2 text-sm text-white hover:opacity-90"
+          class="touch-target rounded-lg bg-danger-text px-3 py-2 text-sm text-white hover:opacity-90"
           type="button"
           data-testid="template-editor-delete"
           :disabled="saving"
@@ -35,7 +39,7 @@ Created: 2026-10-13
           {{ $t('template.deleteTemplate') }}
         </button>
         <button
-          class="rounded-lg bg-theme-primary px-3 py-2 text-sm text-white hover:opacity-90"
+          class="touch-target rounded-lg bg-theme-primary px-3 py-2 text-sm text-white hover:opacity-90"
           type="button"
           data-testid="template-editor-save"
           :disabled="saving"
@@ -44,26 +48,25 @@ Created: 2026-10-13
           {{ $t('template.saveChanges') }}
         </button>
       </div>
+      <p
+        v-if="saveError"
+        class="basis-full text-sm text-danger-text"
+        role="alert"
+      >
+        {{
+          $t(
+            errorCode === 'conflict' || errorCode === 'quota' || errorCode === 'lock-unavailable'
+              ? `storage.${errorCode}`
+              : 'common.saveFailed'
+          )
+        }}
+      </p>
     </div>
-
-    <p
-      v-if="saveError"
-      class="mb-4 text-sm text-danger-text"
-      role="alert"
-    >
-      {{
-        $t(
-          errorCode === 'conflict' || errorCode === 'quota' || errorCode === 'lock-unavailable'
-            ? `storage.${errorCode}`
-            : 'common.saveFailed'
-        )
-      }}
-    </p>
 
     <div
       :inert="saving || undefined"
       @compositionstart="isComposing = true"
-      @compositionend="isComposing = false"
+      @compositionend="finishComposition"
     >
       <Checklist
         :checklist="draftChecklist"
@@ -127,7 +130,12 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits<{ cancel: []; delete: [id: string]; save: [template: TemplateDTO] }>();
+const emit = defineEmits<{
+  cancel: [];
+  delete: [id: string];
+  save: [template: TemplateDTO];
+  'composition-end': [];
+}>();
 
 // ------------------------------------------------------------------------------
 // State
@@ -139,6 +147,13 @@ const draftItems = ref<ItemDTO[]>([]);
 const newlyCreatedItemId = ref<string | null>(null);
 const newlyCreatedCategoryId = ref<string | null>(null);
 const isComposing = ref(false);
+let baselineSnapshot = '';
+
+/** Let the application resume navigation after the inline editor settles. */
+function finishComposition() {
+  isComposing.value = false;
+  emit('composition-end');
+}
 
 // ------------------------------------------------------------------------------
 // Functions
@@ -180,6 +195,7 @@ function loadDraft(template: TemplateView) {
   );
   newlyCreatedItemId.value = null;
   newlyCreatedCategoryId.value = null;
+  baselineSnapshot = JSON.stringify(getSnapshot());
 }
 
 /**
@@ -313,10 +329,9 @@ function reorderCategories(
   }
 }
 
-/** Emit a storage-safe template snapshot. */
-function saveTemplate() {
-  if (props.saving || isComposing.value) return;
-  emit('save', {
+/** Return the fields written to template storage, without editor-only IDs. */
+function getSnapshot(): TemplateDTO {
+  return {
     ...props.template,
     name: draftChecklist.value.name,
     categories: draftCategories.value.map(({ id, name, order }) => ({ id, name, order })),
@@ -326,8 +341,20 @@ function saveTemplate() {
       categoryId,
       order,
     })),
-  });
+  };
 }
+
+/** Emit a storage-safe template snapshot. */
+function saveTemplate() {
+  if (props.saving || isComposing.value) return;
+  emit('save', getSnapshot());
+}
+
+defineExpose({
+  getSnapshot,
+  hasChanges: () => JSON.stringify(getSnapshot()) !== baselineSnapshot,
+  isComposing: () => isComposing.value,
+});
 
 watch(
   () => props.template.id,

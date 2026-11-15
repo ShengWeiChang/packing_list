@@ -295,6 +295,10 @@ for (const scenario of scenarios) {
           );
           await lastTile.click();
           await expect(lastTile).toHaveAttribute('aria-current', 'page');
+          if (scenario.name === 'tablet') {
+            await page.getByTestId('sidebar-toggle').click();
+            await expect(sidebar).toHaveAttribute('data-expanded', 'true');
+          }
           await reopenedScrollport.evaluate((element) => {
             element.scrollTop = 0;
           });
@@ -325,5 +329,141 @@ for (const scenario of scenarios) {
         await page.screenshot({ path: test.info().outputPath('sidebar-expanded.png') });
       });
     }
+  });
+}
+
+// Test Cases 7-8: Short mobile drawers keep navigation and settings operable.
+for (const locale of ['en', 'zh-TW']) {
+  test(`short mobile sidebar remains operable in ${locale}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 320, height: 200 },
+      hasTouch: true,
+      isMobile: true,
+    });
+    const page = await context.newPage();
+    await page.addInitScript((language) => {
+      localStorage.setItem('user-locale', language);
+      localStorage.setItem(
+        'packingListApp',
+        JSON.stringify({
+          checklists: Array.from({ length: 5 }, (_, index) => ({
+            id: `trip-${index}`,
+            name: `Trip ${index}`,
+            order: 5 - index,
+          })),
+          categories: [],
+          items: [],
+          selectedChecklistId: 'trip-0',
+        })
+      );
+      localStorage.setItem(
+        'packingListTemplates',
+        JSON.stringify(
+          Array.from({ length: 8 }, (_, index) => ({
+            id: `template-${index}`,
+            name: `Test template ${index}`,
+            order: index,
+            categories: [],
+            items: [],
+          }))
+        )
+      );
+    }, locale);
+    await page.goto('/');
+    await page.getByTestId('topbar-toggle').tap();
+    const sidebar = page.getByTestId('overlay-sidebar');
+    const scrollContainer = sidebar.locator('aside');
+    await expect(scrollContainer).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+    await expect(sidebar).not.toHaveClass(/mobile-drawer-enter-active/);
+    const client = await context.newCDPSession(page);
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: 4, y: 160 }],
+    });
+    for (const y of [140, 110, 80, 50]) {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: 4, y }],
+      });
+      await page.waitForTimeout(40);
+    }
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect
+      .poll(() => scrollContainer.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(0);
+    const swipeRow = sidebar.getByTestId('sidebar-checklist-item').filter({ hasText: 'Trip 1' });
+    await swipeRow.scrollIntoViewIfNeeded();
+    const rowBounds = await swipeRow.boundingBox();
+    const beforeSwipe = await scrollContainer.evaluate((element) => element.scrollTop);
+    const x = rowBounds.x + rowBounds.width / 3;
+    const startY = Math.min(rowBounds.y + rowBounds.height / 2, 175);
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x, y: startY }],
+    });
+    for (const offset of [15, 35, 60, 85]) {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x, y: startY - offset }],
+      });
+      await page.waitForTimeout(40);
+    }
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect
+      .poll(() => scrollContainer.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(beforeSwipe);
+    const target = sidebar.getByTestId('sidebar-checklist-item').filter({ hasText: 'Trip 3' });
+    await target.scrollIntoViewIfNeeded();
+    await target.tap();
+    await expect(page.getByTestId('overlay-sidebar')).toHaveCount(0);
+    await expect(page.getByTestId('checklist-name')).toHaveText('Trip 3');
+    await page.getByTestId('topbar-toggle').tap();
+    const keyboardTarget = sidebar
+      .getByTestId('sidebar-checklist-item')
+      .filter({ hasText: 'Trip 2' });
+    await sidebar.getByTestId('sidebar-toggle').focus();
+    for (
+      let attempt = 0;
+      attempt < 20 && !(await keyboardTarget.evaluate((el) => el === document.activeElement));
+      attempt++
+    ) {
+      await page.keyboard.press('Tab');
+    }
+    await expect(keyboardTarget).toBeFocused();
+    const bounds = await keyboardTarget.boundingBox();
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(200);
+    await page.keyboard.press('Enter');
+    await expect(sidebar).toHaveCount(0);
+    await expect(page.getByTestId('checklist-name')).toHaveText('Trip 2');
+    await page.getByTestId('topbar-toggle').tap();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(sidebar.getByTestId('sidebar-checklists-scrollport')).toHaveCSS(
+      'overflow-y',
+      'auto'
+    );
+    await page.setViewportSize({ width: 320, height: 200 });
+    const language = sidebar.getByTestId('sidebar-language-button');
+    await language.scrollIntoViewIfNeeded();
+    await language.tap();
+    const option = sidebar.getByTestId(
+      `sidebar-language-option-${locale === 'en' ? 'zh-TW' : 'en'}`
+    );
+    await option.scrollIntoViewIfNeeded();
+    await option.tap();
+    const templates = sidebar.getByTestId('sidebar-templates-button');
+    await templates.scrollIntoViewIfNeeded();
+    await templates.focus();
+    await page.keyboard.press('Enter');
+    await expect(sidebar.getByTestId('sidebar-templates-dropdown')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(templates).toBeFocused();
+    await page.keyboard.press('Enter');
+    const template = sidebar.getByTestId('sidebar-template-use-template-7');
+    await template.scrollIntoViewIfNeeded();
+    await template.tap();
+    await expect(sidebar).toHaveCount(0);
+    await expect(page.getByTestId('template-editor-toolbar')).toContainText('Test template 7');
+    await context.close();
   });
 }

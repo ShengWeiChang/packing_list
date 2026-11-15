@@ -89,7 +89,7 @@
     - 來源識別名稱：空白來源預設為 `新清單(空白)`；範本或推薦清單預設為 `新清單({name})`。來源名稱會截短，確保完整名稱不超過 100 個字元。
   - 編輯清單：編輯 `name`。
   - 日期編輯：
-    - 使用原生 HTML5 日期輸入元件以確保可靠性。
+    - 使用原生 HTML5 日期輸入元件以確保可靠性；編輯時標示開始與結束日期。
     - 雙向保護機制：更改開始日期時，若結束日期早於開始日期，則自動更新結束日期。更改結束日期時，若早於開始日期，則自動修正為開始日期。
     - 同年度日期區間只顯示一次年份；跨年度則在兩端都顯示年份（例如 `Nov 26, 2025 - Jan 5, 2026`）。
   - 複製清單：複製現有清單及其所有分類與物品。
@@ -120,7 +120,8 @@
   - 建立清單：個人範本來源一律顯示；沒有範本時停用並顯示空狀態訊息。
   - 管理範本：Sidebar 範本選單開啟所選範本的 editor；重新命名與刪除在 editor 內進行。
   - 編輯範本：在獨立的記憶體內 editor 編輯範本名稱、分類、物品、數量與順序。
-  - 儲存變更：只有明確按下 `儲存範本變更` 才會更新範本 storage；取消不會修改已儲存範本。
+  - 儲存變更：按下 `儲存範本變更` 或選擇儲存並切換會更新範本 storage；取消不會修改已儲存範本。
+  - 導覽：未修改的草稿直接切換；已修改時提供儲存並切換、捨棄並切換或繼續編輯。編輯工具列在捲動時保持可見。
   - 使用時複製：從範本建立清單時產生新的清單、分類與物品 ID，並重設打包／待處理狀態。
 - 資料持久化：
   - 範本使用獨立的 localStorage key `packingListTemplates`。
@@ -288,6 +289,7 @@
 - 主要功能：
   - 斷點與行為：
     - 手機（<600px）：顯示 `Topbar`（`md:hidden`），`Sidebar` 以抽屜覆蓋（teleport 至 `body`，有半透明遮罩，點擊遮罩關閉），主內容加上模糊與互動鎖定。
+    - 狹窄且高度不足的視窗：整個側欄可捲動，讓清單與設定控制項保持可操作；設定選單在捲動內容內展開。
     - 窄桌面（<1000px）：`Sidebar` 同樣以覆蓋抽屜呈現。
     - 桌面（≥1000px）：`Sidebar` 採固定佈局（`sticky top-0`），可展開 `w-52`/收合 `w-16`，桌面手動收合狀態記錄於 `localStorage('sidebar-manually-collapsed')`。
   - 手機版優化 (Mobile Optimization)：
@@ -562,7 +564,7 @@ packing-list/
 **實作方式：**
 
 - 單一資料來源：所有顏色定義於 `source/utils/constants.ts`（`THEME_COLORS` 物件）
-- 建置流程：執行 `npm run build:css-vars` 會在 `source/index.css` 生成 CSS 變數
+- 建置流程：執行 `npm run build:css-vars` 會在 `source/index.css` 生成 CSS 變數；`npm run check:css-vars` 不寫檔即可檢查一致性。
 - 使用方式：
   - CSS: `var(--text-primary)`、`var(--bg-primary)`、`var(--theme-primary)`
   - Tailwind: `text-primary`、`bg-bg-primary`、`bg-theme-primary`

@@ -56,6 +56,8 @@
     "pleaseCreate": "請先建立一個新清單",
     "startDate": "開始日期",
     "endDate": "結束日期",
+    "dateFrom": "開始",
+    "dateTo": "結束",
     "showUnpackedOnly": "只顯示未攜帶物品"
   },
   "category": {
@@ -102,6 +104,12 @@
     "categoryCount": "{count} 個分類",
     "nameRequired": "請輸入範本名稱。",
     "editingTemplate": "正在編輯範本：{name}",
+    "unsavedTitle": "範本有未儲存的變更",
+    "unsavedDescription": "離開範本前，請選擇儲存或捨棄變更。",
+    "destinationMissing": "目的清單或範本已不存在，請重新選擇。",
+    "continueEditing": "繼續編輯",
+    "discardAndLeave": "捨棄並離開",
+    "saveAndLeave": "儲存並離開",
     "saveChanges": "儲存範本",
     "deleteTemplate": "刪除範本",
     "saveTemplateConfirm": "儲存為範本",

@@ -127,9 +127,12 @@ describe('verify-feature report diagnostics', () => {
     const output = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     runFeatureVerification();
     const argumentsList = vi.mocked(execFileSync).mock.calls.map(([, args]) => args);
-    expect(argumentsList[2]).toEqual(['run', 'typecheck']);
-    expect(argumentsList[3][1]).toBe('run');
-    expect(argumentsList[3]).toContain('--coverage');
+    const colorIndex = argumentsList.findIndex((args) => args.includes('check:css-vars'));
+    const typeIndex = argumentsList.findIndex((args) => args.includes('typecheck'));
+    const coverageIndex = argumentsList.findIndex((args) => args.includes('--coverage'));
+    expect(colorIndex).toBeGreaterThanOrEqual(0);
+    expect(typeIndex).toBeGreaterThan(colorIndex);
+    expect(coverageIndex).toBeGreaterThan(typeIndex);
     expect(output.mock.calls.map(([message]) => message).join('')).toContain('npm run typecheck');
   });
 
@@ -143,6 +146,23 @@ describe('verify-feature report diagnostics', () => {
     expect(() => runFeatureVerification()).toThrow(
       'Check application types and compiler contracts failed'
     );
-    expect(execFileSync).toHaveBeenCalledTimes(3);
+    expect(vi.mocked(execFileSync).mock.calls.some(([, args]) => args.includes('--coverage'))).toBe(
+      false
+    );
+  });
+
+  // Test Case 6: Stop the gate when generated theme colors drift
+  it('stops before type checking when theme colors differ', () => {
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    vi.mocked(execFileSync).mockImplementation((_command, args) => {
+      if (args.includes('check:css-vars')) throw new Error('Theme drift');
+      return '';
+    });
+    expect(() => runFeatureVerification()).toThrow('Check generated theme colors failed');
+    const calls = vi.mocked(execFileSync).mock.calls.map(([, args]) => args);
+    expect(calls.some((args) => args.includes('check:css-vars'))).toBe(true);
+    expect(calls.some((args) => args.includes('typecheck') || args.includes('--coverage'))).toBe(
+      false
+    );
   });
 });

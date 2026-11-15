@@ -140,11 +140,15 @@ Created: 2025-09-19
           menu-type="category"
           alignment="left"
           :force-visible="touchControls"
+          :is-editing="isEditing"
+          :disabled="isSavingEdit"
           :touch-minimal="touchControls"
           :success-surface="isCompleted"
           class="ml-2"
           :class="{ 'md:mr-1': !touchControls }"
           @edit="startEdit"
+          @confirm-edit="confirmEdit"
+          @focusout="handleConfirmFocusOut"
           @copy="$emit('copy:category', category.id)"
           @delete="handleDelete"
         />
@@ -639,10 +643,40 @@ function handleEnterKey(event: KeyboardEvent) {
  * Although modern browsers fire compositionend before blur,
  * this check provides defensive programming against edge cases
  */
-function handleBlur() {
+function handleBlur(event: FocusEvent) {
+  if (
+    event.relatedTarget instanceof Element &&
+    event.relatedTarget
+      .closest('[data-inline-edit-confirm]')
+      ?.getAttribute('data-inline-edit-confirm') === `category:${props.category.id}`
+  )
+    return;
   if (!isComposing.value && !editSaveFailed.value) {
     saveEdit();
   }
+}
+
+/** Save through the confirmation control after composition has completed. */
+function confirmEdit() {
+  if (isComposing.value || isSavingEdit.value) return;
+  const focused = document.activeElement;
+  void saveEdit();
+  if (
+    focused instanceof HTMLElement &&
+    focused !== editInput.value &&
+    focused.matches('input, textarea')
+  ) {
+    focused.blur();
+  }
+}
+
+/** Commit when focus leaves the confirmation control and the edit field. */
+function handleConfirmFocusOut(event: FocusEvent) {
+  if (!(event.target instanceof Element) || !event.target.matches('[data-inline-edit-confirm]'))
+    return;
+  if (event.relatedTarget === editInput.value) return;
+  if (isEditing.value && !isComposing.value && !isSavingEdit.value && !editSaveFailed.value)
+    void saveEdit();
 }
 
 /**

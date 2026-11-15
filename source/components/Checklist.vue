@@ -17,7 +17,7 @@ Created: 2025-09-19
     <!-- Checklist Header -->
     <div class="mb-2 px-2 pb-4 pt-2">
       <!-- Header content -->
-      <div class="mb-3 flex items-start justify-between gap-4 md:items-center">
+      <div class="mb-3 flex items-start justify-between gap-1 md:items-center md:gap-4">
         <div class="flex min-w-0 grow flex-col gap-2 md:flex-row md:items-center md:gap-4">
           <!-- Editable checklist name -->
           <div
@@ -44,7 +44,7 @@ Created: 2025-09-19
             />
             <h2
               v-else
-              class="cursor-pointer break-words rounded p-1 text-3xl font-bold text-primary hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-2"
+              class="min-w-0 cursor-pointer break-words rounded p-1 text-3xl font-bold text-primary hover:bg-interactive-hover-light focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus focus-visible:ring-offset-2"
               role="button"
               tabindex="0"
               data-testid="checklist-name"
@@ -59,40 +59,52 @@ Created: 2025-09-19
           <!-- Editable dates -->
           <div
             v-if="showDates"
-            class="flex min-h-12 shrink-0 items-center gap-2"
+            class="flex min-h-12 min-w-0 items-center gap-2 md:mr-0 md:shrink-0"
+            :class="isEditing ? '-mr-16' : '-mr-24'"
             @blur="handleEditBlur"
             @focusout="handleEditBlur"
           >
             <div
               v-if="isEditing"
-              class="flex flex-wrap items-center gap-1 md:flex-nowrap md:gap-2"
+              class="flex flex-wrap items-center gap-1 md:gap-2"
             >
-              <input
-                :id="`checklist-${checklist.id}-start-date`"
-                ref="startDateInput"
-                v-model="editedStartDate"
-                :disabled="isSavingEdit"
-                :name="`checklist-${checklist.id}-start-date`"
-                type="date"
-                :aria-label="$t('checklist.startDate')"
-                class="w-28 rounded border border-border-color-medium bg-transparent p-1 text-base text-secondary focus:border-interactive-focus focus:outline-none sm:w-auto sm:px-2"
-                @keydown.enter="handleEnterKey"
-                @keyup.escape="cancelEdit"
-              />
-              <span class="hidden text-secondary md:inline">-</span>
-              <input
-                :id="`checklist-${checklist.id}-end-date`"
-                ref="endDateInput"
-                v-model="editedEndDate"
-                :disabled="isSavingEdit"
-                :name="`checklist-${checklist.id}-end-date`"
-                type="date"
-                :min="editedStartDate as string"
-                :aria-label="$t('checklist.endDate')"
-                class="w-28 rounded border border-border-color-medium bg-transparent p-1 text-base text-secondary focus:border-interactive-focus focus:outline-none sm:w-auto sm:px-2"
-                @keydown.enter="handleEnterKey"
-                @keyup.escape="cancelEdit"
-              />
+              <label
+                class="flex items-center gap-1"
+                :for="`checklist-${checklist.id}-start-date`"
+              >
+                {{ $t('checklist.dateFrom') }}
+                <input
+                  :id="`checklist-${checklist.id}-start-date`"
+                  ref="startDateInput"
+                  v-model="editedStartDate"
+                  :disabled="isSavingEdit"
+                  :name="`checklist-${checklist.id}-start-date`"
+                  type="date"
+                  :aria-label="$t('checklist.startDate')"
+                  class="w-36 rounded border border-border-color-medium bg-transparent p-1 text-base text-secondary focus:border-interactive-focus focus:outline-none sm:w-auto sm:px-2"
+                  @keydown.enter="handleEnterKey"
+                  @keyup.escape="cancelEdit"
+                />
+              </label>
+              <label
+                class="flex items-center gap-1"
+                :for="`checklist-${checklist.id}-end-date`"
+              >
+                {{ $t('checklist.dateTo') }}
+                <input
+                  :id="`checklist-${checklist.id}-end-date`"
+                  ref="endDateInput"
+                  v-model="editedEndDate"
+                  :disabled="isSavingEdit"
+                  :name="`checklist-${checklist.id}-end-date`"
+                  type="date"
+                  :min="editedStartDate as string"
+                  :aria-label="$t('checklist.endDate')"
+                  class="w-36 rounded border border-border-color-medium bg-transparent p-1 text-base text-secondary focus:border-interactive-focus focus:outline-none sm:w-auto sm:px-2"
+                  @keydown.enter="handleEnterKey"
+                  @keyup.escape="cancelEdit"
+                />
+              </label>
             </div>
             <span
               v-else
@@ -110,7 +122,7 @@ Created: 2025-09-19
 
         <!-- Checklist actions -->
         <div
-          v-if="showItemFilter || showOverflowMenu"
+          v-if="showItemFilter || showOverflowMenu || isEditing"
           class="flex shrink-0 items-center gap-1 md:gap-2"
         >
           <button
@@ -146,17 +158,38 @@ Created: 2025-09-19
               :item-id="checklist.id"
               :force-visible="true"
               :use-group-hover="false"
+              :is-editing="isEditing"
+              :disabled="isSavingEdit"
               menu-type="checklist"
               alignment="left"
               trigger-icon-size="navigation"
               trigger-frame-size="spacious"
               transparent-trigger
               @edit="startEdit"
+              @confirm-edit="confirmEdit"
+              @focusout="handleConfirmFocusOut"
               @copy="$emit('copy:checklist', checklist.id)"
               @delete="handleDelete"
               @save-as-template="$emit('save-as-template', checklist.id)"
             />
           </div>
+          <button
+            v-else-if="isEditing"
+            type="button"
+            :disabled="isSavingEdit"
+            :aria-label="$t('common.save')"
+            :data-inline-edit-confirm="`checklist:${checklist.id}`"
+            data-testid="checklist-edit-confirm"
+            class="touch-target inline-flex size-9 items-center justify-center rounded-lg text-success-state-text focus:outline-none focus-visible:ring-2 focus-visible:ring-interactive-focus md:size-8"
+            @pointerdown.prevent
+            @click="confirmEdit"
+            @focusout="handleConfirmFocusOut"
+          >
+            <AppIcon
+              name="confirm"
+              size="navigation"
+            />
+          </button>
         </div>
       </div>
 
@@ -721,6 +754,13 @@ function handleEnterKey(event: KeyboardEvent) {
  * @param {FocusEvent} event - Focus change from the edit area.
  */
 function handleEditBlur(event: FocusEvent) {
+  if (
+    event.relatedTarget instanceof Element &&
+    event.relatedTarget
+      .closest('[data-inline-edit-confirm]')
+      ?.getAttribute('data-inline-edit-confirm') === `checklist:${props.checklist.id}`
+  )
+    return;
   if (props.commitEditOnBlur) {
     if (
       ![nameInput.value, startDateInput.value, endDateInput.value].some(
@@ -749,6 +789,36 @@ function handleEditBlur(event: FocusEvent) {
       saveEdit();
     }
   }, 50); // 50ms: balance between focus transfer reliability and user responsiveness
+}
+
+/** Save through the confirmation control after composition has completed. */
+function confirmEdit() {
+  if (isComposing.value || isSavingEdit.value) return;
+  const focused = document.activeElement;
+  void saveEdit();
+  if (
+    focused instanceof HTMLElement &&
+    ![nameInput.value, startDateInput.value, endDateInput.value].includes(
+      focused as HTMLInputElement
+    ) &&
+    focused.matches('input, textarea')
+  ) {
+    focused.blur();
+  }
+}
+
+/** Commit when focus leaves the confirmation control and the edit fields. */
+function handleConfirmFocusOut(event: FocusEvent) {
+  if (!(event.target instanceof Element) || !event.target.matches('[data-inline-edit-confirm]'))
+    return;
+  if (
+    [nameInput.value, startDateInput.value, endDateInput.value].includes(
+      event.relatedTarget as HTMLInputElement
+    )
+  )
+    return;
+  if (isEditing.value && !isComposing.value && !isSavingEdit.value && !editSaveFailed.value)
+    void saveEdit();
 }
 
 /**

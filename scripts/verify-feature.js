@@ -220,6 +220,7 @@ export function runFeatureVerification() {
   const executed = [
     'npm run validate',
     'npm run docs:check-pairs',
+    'npm run check:css-vars',
     'npm run typecheck',
     'Vitest coverage with JSON report',
     'Playwright E2E with JSON report',
@@ -230,6 +231,8 @@ export function runFeatureVerification() {
   mkdirSync(REPORT_DIRECTORY, { recursive: true });
   runCommand('Validate formatting and lint rules', npmCommand, ['run', 'validate']);
   runCommand('Check paired documentation structure', npmCommand, ['run', 'docs:check-pairs']);
+
+  runCommand('Check generated theme colors', npmCommand, ['run', 'check:css-vars']);
 
   runCommand('Check application types and compiler contracts', npmCommand, ['run', 'typecheck']);
 
