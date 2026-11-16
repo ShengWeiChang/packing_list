@@ -28,7 +28,14 @@ import tseslint from 'typescript-eslint';
 export default [
   // Ignore patterns
   {
-    ignores: ['dist/', 'node_modules/', '*.config.js', '!eslint.config.js', 'build-*.js'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      '.container-test-artifacts/',
+      '*.config.js',
+      '!eslint.config.js',
+      'build-*.js',
+    ],
   },
 
   // Base JS rules

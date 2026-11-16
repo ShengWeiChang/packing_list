@@ -19,6 +19,8 @@ import { tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
+import { validatePlaywrightReport, validateVitestReport } from './reportValidation.js';
+
 // -----------------------------------------------------------------------------
 // Constants
 // -----------------------------------------------------------------------------
@@ -65,7 +67,32 @@ function runVitest(reportDirectory) {
   const reportPath = join(reportDirectory, 'vitest.json');
   const vitestPath = join(PROJECT_ROOT, 'node_modules', 'vitest', 'vitest.mjs');
 
-  runCommand(process.execPath, [vitestPath, 'run', '--reporter=json', '--outputFile', reportPath]);
+  try {
+    runCommand(process.execPath, [
+      vitestPath,
+      'run',
+      '--reporter=json',
+      '--outputFile',
+      reportPath,
+    ]);
+  } catch (error) {
+    let details = '';
+    try {
+      const failedReport = JSON.parse(readFileSync(reportPath, 'utf8'));
+      const failures = (failedReport.testResults ?? []).flatMap((file) => [
+        ...(file.message ? [`${file.name}: ${file.message}`] : []),
+        ...(file.assertionResults ?? [])
+          .filter((assertion) => assertion.status === 'failed')
+          .map(
+            (assertion) => `${assertion.fullName}: ${(assertion.failureMessages ?? []).join('\n')}`
+          ),
+      ]);
+      if (failures.length) details = `\nVitest failure details:\n${failures.join('\n')}`;
+    } catch {
+      // Keep the original runner error when it did not write a usable report.
+    }
+    throw new Error(`${error.message}${details}`);
+  }
 
   if (!existsSync(reportPath)) {
     throw new Error('Vitest completed without writing its JSON report.');
@@ -456,6 +483,14 @@ function main() {
     const playwrightReport = READ_REPORTS_MODE
       ? readTestReport(PLAYWRIGHT_REPORT_PATH, 'Playwright')
       : runPlaywright();
+    const vitestPath = join(PROJECT_ROOT, 'node_modules', 'vitest', 'vitest.mjs');
+    const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+    const expectedVitest = JSON.parse(runCommand(process.execPath, [vitestPath, 'list', '--json']));
+    const expectedPlaywright = JSON.parse(
+      runCommand(npxCommand, ['playwright', 'test', '--list', '--reporter=json'])
+    );
+    validateVitestReport(vitestReport, expectedVitest, PROJECT_ROOT);
+    validatePlaywrightReport(playwrightReport, expectedPlaywright);
     const records = [
       ...collectVitestRecords(vitestReport),
       ...collectPlaywrightRecords(playwrightReport),

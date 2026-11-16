@@ -161,12 +161,25 @@ test.describe('Item Packing Workflow', () => {
       expect(scrollMetricsBeforeEdit.top).toBeGreaterThan(0);
       expect(scrollMetricsBeforeEdit.top).toBeLessThan(scrollMetricsBeforeEdit.max);
       await expect(scrollTarget).toBeInViewport();
-      await scrollTarget.click();
-      await expect(page.getByTestId('item-edit-input').first()).toBeFocused();
-      await page.waitForTimeout(400);
-      await expect
-        .poll(() => page.evaluate(() => window.scrollY))
-        .toBe(scrollMetricsBeforeEdit.top);
+      await page.evaluate(() => {
+        window.editScrollPositions = [window.scrollY];
+        window.recordEditScroll = () => window.editScrollPositions.push(window.scrollY);
+        window.addEventListener('scroll', window.recordEditScroll);
+      });
+      try {
+        await scrollTarget.click();
+        await expect(page.getByTestId('item-edit-input').first()).toBeFocused();
+        await page.waitForTimeout(400);
+        const positions = await page.evaluate(() => [
+          ...window.editScrollPositions,
+          window.scrollY,
+        ]);
+        expect(positions.every((top) => Math.abs(top - scrollMetricsBeforeEdit.top) <= 1)).toBe(
+          true
+        );
+      } finally {
+        await page.evaluate(() => window.removeEventListener('scroll', window.recordEditScroll));
+      }
     });
 
     // Test Case 4: Should toggle item packed status via checkbox
@@ -290,39 +303,52 @@ test.describe('Item Packing Workflow', () => {
     // Test Case 9: Should keep localized sticker copy inside the narrow reduced-motion scene
     test('should fit localized sticker copy in a narrow reduced-motion scene', async ({ page }) => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
+      let releaseAssets;
+      let requestedAssets = 0;
+      const assetsReady = new Promise((resolve) => {
+        releaseAssets = resolve;
+      });
       await page.route('**/*.png', async (route) => {
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        requestedAssets += 1;
+        await assetsReady;
         await route.continue();
       });
-      await page.evaluate(() => localStorage.setItem('user-locale', 'zh-TW'));
-      await page.setViewportSize({ width: 375, height: 667 });
-      await page.reload();
-      await completeChecklistByCategory(page);
+      try {
+        await page.evaluate(() => localStorage.setItem('user-locale', 'zh-TW'));
+        await page.setViewportSize({ width: 375, height: 667 });
+        await page.reload();
+        await completeChecklistByCategory(page);
 
-      const completionOverlay = page.getByTestId('packing-completion-overlay');
-      await expect(completionOverlay).toBeVisible();
-      await expect(completionOverlay).toHaveAttribute('data-assets-ready', 'false');
-      await expect(completionOverlay).toHaveAttribute('data-assets-ready', 'true');
-      await expect(completionOverlay).toContainText('準備出發！');
-      await expect(completionOverlay).toHaveCSS('animation-name', 'none');
-      await expect(completionOverlay.locator('.packing-completion-overlay__suitcase')).toHaveCSS(
-        'animation-name',
-        'none'
-      );
-      await expect
-        .poll(() =>
-          completionOverlay
-            .locator('.packing-completion-overlay__sticker-copy')
-            .evaluate((element) => element.scrollWidth <= element.clientWidth)
-        )
-        .toBe(true);
+        const completionOverlay = page.getByTestId('packing-completion-overlay');
+        await expect(completionOverlay).toBeVisible();
+        await expect.poll(() => requestedAssets).toBeGreaterThan(0);
+        await expect(completionOverlay).toHaveAttribute('data-assets-ready', 'false');
+        releaseAssets();
+        await expect(completionOverlay).toHaveAttribute('data-assets-ready', 'true');
+        await expect(completionOverlay).toContainText('準備出發！');
+        await expect(completionOverlay).toHaveCSS('animation-name', 'none');
+        await expect(completionOverlay.locator('.packing-completion-overlay__suitcase')).toHaveCSS(
+          'animation-name',
+          'none'
+        );
+        await expect
+          .poll(() =>
+            completionOverlay
+              .locator('.packing-completion-overlay__sticker-copy')
+              .evaluate((element) => element.scrollWidth <= element.clientWidth)
+          )
+          .toBe(true);
 
-      const overlayBox = await completionOverlay.boundingBox();
-      expect(overlayBox).toMatchObject({ width: 375, height: 667 });
-      const sceneBox = await completionOverlay
-        .locator('.packing-completion-overlay__scene')
-        .boundingBox();
-      expect(sceneBox).toMatchObject({ width: 375, height: 667 });
+        const overlayBox = await completionOverlay.boundingBox();
+        expect(overlayBox).toMatchObject({ width: 375, height: 667 });
+        const sceneBox = await completionOverlay
+          .locator('.packing-completion-overlay__scene')
+          .boundingBox();
+        expect(sceneBox).toMatchObject({ width: 375, height: 667 });
+      } finally {
+        releaseAssets();
+        await page.unroute('**/*.png');
+      }
     });
   });
 

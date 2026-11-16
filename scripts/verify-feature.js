@@ -10,7 +10,7 @@ Created: 2026-10-21
 */
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -229,6 +229,9 @@ export function runFeatureVerification() {
   ];
 
   mkdirSync(REPORT_DIRECTORY, { recursive: true });
+  for (const name of ['vitest.json', 'playwright.json']) {
+    rmSync(resolve(REPORT_DIRECTORY, name), { force: true });
+  }
   runCommand('Validate formatting and lint rules', npmCommand, ['run', 'validate']);
   runCommand('Check paired documentation structure', npmCommand, ['run', 'docs:check-pairs']);
 

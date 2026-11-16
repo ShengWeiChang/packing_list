@@ -1,6 +1,8 @@
 /* Desktop drag release, hover, and empty-target presentation. */
 import { expect, test } from '@playwright/test';
 
+import { waitForLayoutMotion } from './layoutMotionHelpers.js';
+
 /**
  * Seed desktop categories without overwriting changes on reload.
  * @param {import('@playwright/test').Page} page - Browser page.
@@ -478,6 +480,7 @@ test('keeps category drop order during delayed storage', async ({ page }) => {
   for (const button of await collapseButtons.all()) {
     if ((await button.getAttribute('aria-expanded')) === 'true') await button.click();
   }
+  await waitForLayoutMotion(page);
   await holdStorage(page);
   const cards = page.getByTestId('category-card');
   const first = await cards.nth(0).boundingBox();

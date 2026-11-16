@@ -497,6 +497,76 @@ let inlineActionInProgress = false;
 let pendingEditSave: Promise<void> | null = null;
 let pendingCompositionAction: (() => void) | null = null;
 
+// Keep the blurred editor in place while another item's pointer gesture starts.
+// Otherwise a wrapped saved name can move the pressed item before native dragstart.
+let gestureFinished: Promise<void> | null = null;
+let finishGesture: (() => void) | null = null;
+/** Track an eligible pointer gesture until it ends or is cancelled. */
+function watchOtherItemGesture(event: PointerEvent) {
+  if (!event.isPrimary || event.button !== 0 || !(event.target instanceof Element)) return;
+  const target = event.target;
+  const row = target.closest('[data-testid="item-row"]');
+  if (
+    !row ||
+    row === itemRoot.value ||
+    !row.closest('[data-testid="category-items-draggable"]') ||
+    target.closest('button, input, label, a, [contenteditable], [data-testid=item-inline-actions]')
+  )
+    return;
+
+  finishGesture?.();
+  let resolveGesture: () => void = () => {};
+  const finished = new Promise<void>((resolve) => {
+    resolveGesture = resolve;
+  });
+  gestureFinished = finished;
+  let dragging = false;
+  const onDragStart = (dragEvent: DragEvent) => {
+    if (
+      dragEvent.target instanceof Node &&
+      (row.contains(dragEvent.target) || dragEvent.target.contains(row))
+    )
+      dragging = true;
+  };
+  const onDragEnd = () => finish();
+  const onPointerEnd = (pointerEvent: PointerEvent) => {
+    if (pointerEvent.pointerId !== event.pointerId) return;
+    // Native drag can issue pointercancel just before dragstart.
+    if (pointerEvent.type === 'pointercancel')
+      setTimeout(() => {
+        if (!dragging) finish();
+      }, 0);
+    else if (!dragging) finish();
+  };
+  const finish = () => {
+    document.removeEventListener('dragstart', onDragStart, true);
+    document.removeEventListener('dragend', onDragEnd, true);
+    document.removeEventListener('pointerup', onPointerEnd, true);
+    document.removeEventListener('pointercancel', onPointerEnd, true);
+    window.removeEventListener('blur', finish);
+    if (gestureFinished === finished) gestureFinished = null;
+    if (finishGesture === finish) finishGesture = null;
+    resolveGesture();
+  };
+  finishGesture = finish;
+  document.addEventListener('dragstart', onDragStart, true);
+  document.addEventListener('dragend', onDragEnd, true);
+  document.addEventListener('pointerup', onPointerEnd, true);
+  document.addEventListener('pointercancel', onPointerEnd, true);
+  window.addEventListener('blur', finish);
+}
+watch(
+  isEditing,
+  (editing) => {
+    if (editing) document.addEventListener('pointerdown', watchOtherItemGesture, true);
+    else {
+      document.removeEventListener('pointerdown', watchOtherItemGesture, true);
+      finishGesture?.();
+    }
+  },
+  { flush: 'sync' }
+);
+
 // ------------------------------------------------------------------------------
 // Computed
 // ------------------------------------------------------------------------------
@@ -733,12 +803,13 @@ async function performSaveEdit() {
   if (isSavingEdit.value) return;
   cleanupEditingFocus();
   if (!editBaseline) return;
-  const hasNameChanged = editedName.value.trim() && editedName.value !== editBaseline.name;
+  const savedDraft = editedName.value;
+  const hasNameChanged = savedDraft.trim() && savedDraft !== editBaseline.name;
 
   if (hasNameChanged) {
     const updatedItem = new Item({
       ...editBaseline,
-      name: editedName.value.trim() || editBaseline.name,
+      name: savedDraft.trim() || editBaseline.name,
     });
     if (props.saveItemEdit) {
       const restoreFocus = document.activeElement === editInput.value;
@@ -759,11 +830,14 @@ async function performSaveEdit() {
     } else {
       emit('update:item', updatedItem, editBaseline);
     }
+    editBaseline = { ...updatedItem };
   }
   if (editSaveFailed.value) {
     editSaveFailed.value = false;
     props.editCancelled?.('item', props.item.id);
   }
+  if (gestureFinished) await gestureFinished;
+  if (editedName.value !== savedDraft) return;
   isEditing.value = false;
 }
 
@@ -852,6 +926,8 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', watchOtherItemGesture, true);
+  finishGesture?.();
   if (isEditing.value && editBaseline && editedName.value !== editBaseline.name) {
     props.retainDraft?.({ name: editedName.value });
   }

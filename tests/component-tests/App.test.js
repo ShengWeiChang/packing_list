@@ -193,8 +193,38 @@ describe('App', () => {
     mockCanRedoPackingChange.value = false;
     mockTemplates.value = [];
 
-    // Reset all mocks
+    // Clear call history and isolate the composable mock implementations.
     vi.clearAllMocks();
+    for (const mock of [
+      mockInitialize,
+      mockCreateChecklist,
+      mockUpdateChecklist,
+      mockUpdateMultipleChecklists,
+      mockDeleteChecklist,
+      mockDuplicateChecklist,
+      mockCreateCategory,
+      mockGetCategories,
+      mockUpdateCategory,
+      mockUpdateMultipleCategories,
+      mockDeleteCategory,
+      mockDuplicateCategory,
+      mockCreateItem,
+      mockGetItems,
+      mockUpdateItem,
+      mockUpdateMultipleItems,
+      mockDeleteItem,
+      mockDuplicateItem,
+      mockSetCategoryPacked,
+      mockUndoPackingChange,
+      mockRedoPackingChange,
+      mockLoadTemplates,
+      mockSaveAsTemplate,
+      mockApplyTemplate,
+      mockDeleteTemplate,
+      mockUpdateTemplate,
+      mockApplyRecommendedList,
+    ])
+      mock.mockReset();
     mockInitialize.mockResolvedValue(undefined);
 
     // Reset localStorage mock (global setup replaces globalThis.localStorage)

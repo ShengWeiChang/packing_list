@@ -53,7 +53,7 @@ async function recordMotion(page, duringGesture = false) {
   await page.evaluate((gesture) => {
     window.motionFrames = [];
     window.stopMotionRecording = false;
-    const sample = () => {
+    const capture = () => {
       window.motionFrames.push(
         [...document.querySelectorAll('.categories-masonry > .category-item')].map((element) => {
           const box = element.getBoundingClientRect();
@@ -65,10 +65,25 @@ async function recordMotion(page, duringGesture = false) {
           };
         })
       );
+    };
+    const sample = () => {
+      capture();
       if (!window.stopMotionRecording && window.motionFrames.length < (gesture ? 600 : 70))
         requestAnimationFrame(sample);
     };
-    sample();
+    if (gesture) {
+      sample();
+    } else {
+      capture();
+      document.addEventListener(
+        'click',
+        (event) => {
+          if (event.target.closest('[data-testid="category-collapse-toggle"]'))
+            requestAnimationFrame(sample);
+        },
+        { capture: true, once: true }
+      );
+    }
   }, duringGesture);
 }
 

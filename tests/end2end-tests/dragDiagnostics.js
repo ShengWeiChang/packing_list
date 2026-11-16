@@ -36,6 +36,8 @@ export async function startDragDiagnostics(page) {
         const name = data.items.find((item) => item.id === 'a0')?.name;
         if (name === 'Item a0') return 'original';
         if (name === 'Renamed before drag') return 'renamed';
+        if (name === 'A longer name that wraps across multiple lines when editing an item')
+          return 'long-renamed';
         return 'other-or-missing';
       } catch {
         return 'unavailable';

@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 847    |
+| Total tests        | 851    |
 | Unit tests         | 323    |
-| Component tests    | 319    |
-| E2E tests          | 205    |
-| Line coverage      | 88.01% |
-| Statement coverage | 85.96% |
-| Branch coverage    | 76.99% |
+| Component tests    | 322    |
+| E2E tests          | 206    |
+| Line coverage      | 88.1%  |
+| Statement coverage | 86.03% |
+| Branch coverage    | 76.86% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -30,8 +30,8 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 | Layer     | Tool                     | Tests | Purpose                                            |
 | --------- | ------------------------ | ----- | -------------------------------------------------- |
 | Unit      | Vitest                   | 323   | Pure logic in models, services, composables, utils |
-| Component | Vitest + @vue/test-utils | 319   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 205   | Full user flows in a real browser                  |
+| Component | Vitest + @vue/test-utils | 322   | Vue component rendering, events, state             |
+| E2E       | Playwright               | 206   | Full user flows in a real browser                  |
 
 ### Toolchain
 
@@ -106,7 +106,7 @@ tests/
 │       ├── cssVars.test.js              #  5  tests
 │       └── verifyFeature.test.js        #  6  tests
 │
-├── component-tests/                     # 319 tests
+├── component-tests/                     # 322 tests
 │   ├── App.test.js                      # 68  tests
 │   ├── PackingCompletionOverlay.test.js # 10  tests
 │   ├── AppIcon.test.js                  #  4  tests
@@ -125,7 +125,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 16  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 205 tests
+└── end2end-tests/                       # 206 tests
     ├── touchDragHelpers.js              # Hold-motion and native-scroll gestures
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
@@ -163,7 +163,7 @@ tests/
 
 Every test file groups related assertions with `Test Group N` dividers and prefixes every `it()` or `test()` case with a sequential `Test Case N` comment. Numbering begins at 1 in each file and must match the executable case count (including expanded parameterized cases). The comment is a concise `Should ...` description of the behavior under test.
 
-Validation: Local `npm run test:inventory` executes Vitest and Playwright, then verifies this convention against their reported test counts and rejects inventory sections that are out of Unit → Component → E2E order. `npm run verify:feature` runs each test runner once, writes their JSON reports to `test-inventory-reports/`, then uses `npm run test:inventory:ci` to audit those reports without rerunning either suite; GitHub Actions calls this same command. Both modes always audit the tracked English and Chinese guides. Use `npm run test:inventory:sync` to update generated guide totals and file-heading counts after the tests pass; it never rewrites test comments.
+Validation: Local `npm run test:inventory` executes Vitest and Playwright, then verifies this convention against their reported test counts and rejects inventory sections that are out of Unit → Component → E2E order. `npm run verify:feature` runs each test runner once, writes their JSON reports to `test-inventory-reports/`, then uses `npm run test:inventory:ci` to audit those reports without rerunning either suite; GitHub Actions calls this same command. Both modes compare executed case identities with fresh runner lists and reject skipped, todo, flaky, missing, duplicate, or incomplete reports. Both modes always audit the tracked English and Chinese guides. Use `npm run test:inventory:sync` to update generated guide totals and file-heading counts after the tests pass; it never rewrites test comments.
 
 ## 4. Coverage Breakdown
 
@@ -171,9 +171,9 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 84.04%     | 74.43% | 83.4%  |
+| scripts/     | 84.21%     | 74.43% | 83.53% |
 | source/      | 74.72%     | 65.86% | 78.12% |
-| components/  | 81.48%     | 74.4%  | 84.35% |
+| components/  | 81.77%     | 74.08% | 84.66% |
 | composables/ | 95.04%     | 85.26% | 97.28% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.53%     | 83.5%  | 95.44% |
@@ -194,7 +194,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | OverflowMenu.vue             | 87.5%      | 89.81% | 24    |
 | Category.vue                 | 79.2%      | 82.95% | 32    |
 | Checklist.vue                | 70.98%     | 75.07% | 44    |
-| Item.vue                     | 87.43%     | 91.44% | 31    |
+| Item.vue                     | 87.92%     | 91.91% | 34    |
 | NewChecklistDialog.vue       | 95%        | 95.94% | 12    |
 | PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
 | SaveTemplateDialog.vue       | 92.72%     | 93.87% | 10    |
@@ -208,7 +208,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | Branch     | Percentage of conditional branches taken     |
 | Lines      | Percentage of source lines executed          |
 
-Coverage note: Branch is the strictest metric. Remaining uncovered branches are mostly defensive guards and secondary conditional paths.
+Coverage note: Branch is the strictest metric. Remaining uncovered branches are mostly defensive guards and secondary conditional paths. The container and report contract tests run separately with Node and are not included in these Vitest coverage figures.
 
 ## 5. Running Tests
 
@@ -238,6 +238,10 @@ npm run test:e2e:ui   # Interactive UI mode
 ```bash
 npx playwright test tests/end2end-tests/app-loading.spec.js --headed
 ```
+
+### Linux Container Tests
+
+With Docker running, `sh scripts/ci-container.sh focused` runs the selected high-risk cases, and `sh scripts/ci-container.sh full` runs the complete feature gate. Use `sh scripts/ci-container.sh case <Playwright arguments>` for an individual case. Each run installs Linux dependencies in a separate temporary volume and writes reports to a new `.container-test-artifacts/` directory; the Mac `node_modules` is not shared. The first image download and each dependency installation take time and disk space. A local ARM64 container and the CI amd64 runner use the same image definition but are not identical machines. See `docker/Dockerfile` for pinned browser dependencies; upgrade the image and project Playwright version together.
 
 ### Coverage Report (run last)
 
@@ -756,7 +760,7 @@ This project uses three layers to balance speed and reliability.
 | 4   | protects manual CSS outside the marked region and fails for missing markers                | CSS region preservation and markers         |
 | 5   | CLI check is read-only and returns a useful failure for a drifted fixture                  | Read-only check and CLI regeneration        |
 
-### 8.2 Component Tests (319 tests)
+### 8.2 Component Tests (322 tests)
 
 #### 8.2.1 App.test.js (68 tests)
 
@@ -881,41 +885,44 @@ This project uses three layers to balance speed and reliability.
 | 4   | should show quantity badge when quantity is greater than 1                    | Quantity display             |
 | 5   | should emit "update:item" with isPending=false when completion button clicked | Clear pending                |
 
-#### 8.2.7 Item.test.js (31 tests)
+#### 8.2.7 Item.test.js (34 tests)
 
-| #   | Test                                                                             | What it verifies                       |
-| --- | -------------------------------------------------------------------------------- | -------------------------------------- |
-| 1   | keeps an item name draft on failed save and closes only after a successful retry | Inline acknowledgement                 |
-| 2   | should display the item name                                                     | Name rendering                         |
-| 3   | should render a checkbox input                                                   | Checkbox exists                        |
-| 4   | should check the checkbox when item is packed                                    | Checked state binding                  |
-| 5   | should apply line-through styling when item is packed                            | Packed visual style                    |
-| 6   | should display quantity value                                                    | Quantity label                         |
-| 7   | should emit "update:item" with toggled isPacked when checkbox is clicked         | Checkbox toggle event                  |
-| 8   | should clear isPending when item becomes packed                                  | Packed clears pending                  |
-| 9   | should enter edit mode when item name is clicked                                 | Focus + select on edit                 |
-| 10  | should save edited name on Enter key                                             | Enter confirms edit                    |
-| 11  | should cancel edit mode on Escape key                                            | Escape cancels edit                    |
-| 12  | should emit "update:item" with incremented quantity                              | Quantity increment                     |
-| 13  | should emit "update:item" with decremented quantity                              | Quantity decrement                     |
-| 14  | should emit "delete:item" when quantity is 1 and delete button is clicked        | Delete at quantity 1                   |
-| 15  | should emit "update:item" with toggled isPending                                 | Toggle pending                         |
-| 16  | should clear isPacked when item is marked as pending                             | Pending clears packed                  |
-| 17  | should emit "copy:item" when OverflowMenu triggers copy                          | Copy event forward                     |
-| 18  | should emit "update:item" on blur with changed name                              | Blur-save                              |
-| 19  | should not emit "update:item" on blur with empty name                            | Empty name guard                       |
-| 20  | should emit "delete:item" when OverflowMenu triggers delete                      | Delete event forward                   |
-| 21  | should show action buttons on mouseenter                                         | Hover-in shows controls                |
-| 22  | should hide action buttons on mouseleave                                         | Hover-out hides controls               |
-| 23  | should not save during IME composition                                           | IME guard                              |
-| 24  | should enter edit mode when newlyCreatedItemId matches                           | Auto-focus + select                    |
-| 25  | should not enter edit mode when newlyCreatedItemId does not match                | No false trigger                       |
-| 26  | should not decrement quantity below 1                                            | Minimum quantity guard                 |
-| 27  | should apply cursor-grabbing when isDragging is true                             | Drag visual state                      |
-| 28  | defers an inline action until composition ends and the name is saved             | Final IME text before action           |
-| 29  | waits for the name save before an inline action and retains a failed draft       | Save acknowledgement and failure guard |
-| 30  | preserves a failed name draft when another edit entry is activated               | Failed draft and baseline retention    |
-| 31  | keeps the quantity-one delete action in the expanded touch region                | Quantity-one trash action              |
+| #   | Test                                                                             | What it verifies                            |
+| --- | -------------------------------------------------------------------------------- | ------------------------------------------- |
+| 1   | keeps an item name draft on failed save and closes only after a successful retry | Inline acknowledgement                      |
+| 2   | preserves a failed draft during another item pointer gesture                     | Failed save retains the draft and error     |
+| 3   | releases a held edit after pointerup                                             | Matching pointer release ends the edit      |
+| 4   | releases a held edit after pointercancel                                         | Matching pointer cancellation ends the edit |
+| 5   | should display the item name                                                     | Name rendering                              |
+| 6   | should render a checkbox input                                                   | Checkbox exists                             |
+| 7   | should check the checkbox when item is packed                                    | Checked state binding                       |
+| 8   | should apply line-through styling when item is packed                            | Packed visual style                         |
+| 9   | should display quantity value                                                    | Quantity label                              |
+| 10  | should emit "update:item" with toggled isPacked when checkbox is clicked         | Checkbox toggle event                       |
+| 11  | should clear isPending when item becomes packed                                  | Packed clears pending                       |
+| 12  | should enter edit mode when item name is clicked                                 | Focus + select on edit                      |
+| 13  | should save edited name on Enter key                                             | Enter confirms edit                         |
+| 14  | should cancel edit mode on Escape key                                            | Escape cancels edit                         |
+| 15  | should emit "update:item" with incremented quantity                              | Quantity increment                          |
+| 16  | should emit "update:item" with decremented quantity                              | Quantity decrement                          |
+| 17  | should emit "delete:item" when quantity is 1 and delete button is clicked        | Delete at quantity 1                        |
+| 18  | should emit "update:item" with toggled isPending                                 | Toggle pending                              |
+| 19  | should clear isPacked when item is marked as pending                             | Pending clears packed                       |
+| 20  | should emit "copy:item" when OverflowMenu triggers copy                          | Copy event forward                          |
+| 21  | should emit "update:item" on blur with changed name                              | Blur-save                                   |
+| 22  | should not emit "update:item" on blur with empty name                            | Empty name guard                            |
+| 23  | should emit "delete:item" when OverflowMenu triggers delete                      | Delete event forward                        |
+| 24  | should show action buttons on mouseenter                                         | Hover-in shows controls                     |
+| 25  | should hide action buttons on mouseleave                                         | Hover-out hides controls                    |
+| 26  | should not save during IME composition                                           | IME guard                                   |
+| 27  | should enter edit mode when newlyCreatedItemId matches                           | Auto-focus + select                         |
+| 28  | should not enter edit mode when newlyCreatedItemId does not match                | No false trigger                            |
+| 29  | should not decrement quantity below 1                                            | Minimum quantity guard                      |
+| 30  | should apply cursor-grabbing when isDragging is true                             | Drag visual state                           |
+| 31  | defers an inline action until composition ends and the name is saved             | Final IME text before action                |
+| 32  | waits for the name save before an inline action and retains a failed draft       | Save acknowledgement and failure guard      |
+| 33  | preserves a failed name draft when another edit entry is activated               | Failed draft and baseline retention         |
+| 34  | keeps the quantity-one delete action in the expanded touch region                | Quantity-one trash action                   |
 
 #### 8.2.8 OverflowMenu.test.js (24 tests)
 
@@ -1162,7 +1169,7 @@ This project uses three layers to balance speed and reliability.
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | Completed touch cross-list add/remove                         |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | Completed mouse cross-list add/remove                         |
 
-### 8.3 E2E Tests (205 tests)
+### 8.3 E2E Tests (206 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -1391,7 +1398,7 @@ This project uses three layers to balance speed and reliability.
 | 7   | settles rapid collapse reversals and viewport changes            | Interruption, cleanup and no horizontal overflow      |
 | 8   | honors reduced motion and cancels active reflow                  | Live motion preference and immediate layout           |
 
-#### 8.3.18 interaction-feedback.spec.js (8 tests)
+#### 8.3.18 interaction-feedback.spec.js (9 tests)
 
 | #   | Test                                                                                | What it verifies                                                    |
 | --- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
@@ -1402,7 +1409,8 @@ This project uses three layers to balance speed and reliability.
 | 5   | phone: keeps normal and completed feedback consistent and animates inline actions   | Touch action motion, item outline and row alignment                 |
 | 6   | phone: accepts items into a collapsed category and retains counts and order         | Aligned touch item outline, retraction/cancellation and saved order |
 | 7   | ends an old name edit when dragging a different item                                | Unchanged/changed edit teardown and saved name                      |
-| 8   | honors reduced motion for inline action expansion                                   | Immediate expansion, usable controls and Escape                     |
+| 8   | saves a name when clicking another item without dragging                            | Save the name and focus the other item                              |
+| 9   | honors reduced motion for inline action expansion                                   | Immediate expansion, usable controls and Escape                     |
 
 #### 8.3.19 drag-settlement.spec.js (15 tests)
 

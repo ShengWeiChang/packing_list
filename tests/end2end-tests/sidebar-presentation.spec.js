@@ -81,35 +81,35 @@ for (const scenario of scenarios) {
         await page.goto('/');
         if (scenario.name === 'phone') await page.getByTestId('topbar-toggle').click();
         if (scenario.name === 'tablet') {
-          const frames = await page.evaluate(async () => {
-            document.querySelector('[data-testid="sidebar-toggle"]').click();
-            const started = performance.now();
-            const samples = [];
-            await new Promise((resolve) => {
-              const sample = () => {
-                const menu = document.querySelector('[data-sidebar-delayed-menu]');
-                if (menu) {
-                  const style = getComputedStyle(menu);
-                  samples.push({
-                    elapsed: performance.now() - started,
-                    opacity: Number(style.opacity),
-                    visibility: style.visibility,
-                  });
-                }
-                if (performance.now() - started < 550) requestAnimationFrame(sample);
-                else resolve();
-              };
-              requestAnimationFrame(sample);
-            });
-            return samples;
+          const animationControl = await page.addStyleTag({
+            content: '[data-sidebar-delayed-menu] { animation-play-state: paused !important; }',
           });
-          const earlyFrames = frames.filter((frame) => frame.elapsed < 200);
-          expect(earlyFrames.length).toBeGreaterThan(0);
-          expect(
-            earlyFrames.every((frame) => frame.opacity === 0 && frame.visibility === 'hidden')
-          ).toBe(true);
-          expect(frames.at(-1).opacity).toBe(1);
-          expect(frames.at(-1).visibility).toBe('visible');
+          try {
+            const frames = await page.evaluate(async () => {
+              document.querySelector('[data-testid="sidebar-toggle"]').click();
+              await Promise.resolve();
+              const menu = document.querySelector('[data-sidebar-delayed-menu]');
+              if (!menu) throw new Error('Sidebar delayed menu was not created');
+              menu.getBoundingClientRect();
+              const animation = menu
+                .getAnimations()
+                .find((entry) => entry.animationName?.startsWith('sidebar-overflow-reveal'));
+              if (!animation) throw new Error('Sidebar reveal animation was not created');
+              await animation.ready;
+              return [0, 200, 450].map((time) => {
+                animation.currentTime = time;
+                const style = getComputedStyle(menu);
+                return { time, opacity: Number(style.opacity), visibility: style.visibility };
+              });
+            });
+            expect(frames.slice(0, 2)).toEqual([
+              { time: 0, opacity: 0, visibility: 'hidden' },
+              { time: 200, opacity: 0, visibility: 'hidden' },
+            ]);
+            expect(frames[2]).toEqual({ time: 450, opacity: 1, visibility: 'visible' });
+          } finally {
+            await animationControl.evaluate((element) => element.remove());
+          }
         }
         const sidebar = page.locator('aside');
         await expect(sidebar).toHaveAttribute('data-expanded', 'true');

@@ -17,6 +17,7 @@ Created: 2026-02-12
 import { expect, test } from '@playwright/test';
 
 import { selectGeneralRecommendedList } from './checklistHelpers.js';
+import { waitForLayoutMotion } from './layoutMotionHelpers.js';
 
 /**
  * Yield until the next browser paint.
@@ -107,19 +108,6 @@ async function slowDragTo(
   await page.mouse.up();
 }
 
-/**
- * Wait for rendered layout motion before aiming synthetic pointer coordinates.
- * @param {import('@playwright/test').Page} page - Active browser page.
- */
-async function waitForLayoutMotion(page) {
-  await page.evaluate(async () => {
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    await Promise.all(
-      document.getAnimations().map((animation) => animation.finished.catch(() => {}))
-    );
-  });
-}
-
 // -----------------------------------------------------------------------------
 // Tests
 // -----------------------------------------------------------------------------
@@ -177,6 +165,7 @@ test.describe('Drag & Drop', () => {
           await btn.click();
         }
       }
+      await waitForLayoutMotion(page);
 
       // Read the first two category names
       const categoryNames = page.getByTestId('category-name');

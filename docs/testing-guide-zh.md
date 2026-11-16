@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 847    |
+| Total tests 總測試數          | 851    |
 | Unit tests 單元測試           | 323    |
-| Component tests 組件測試      | 319    |
-| E2E tests E2E 測試            | 205    |
-| Line coverage 行覆蓋率        | 88.01% |
-| Statement coverage 語句覆蓋率 | 85.96% |
-| Branch coverage 分支覆蓋率    | 76.99% |
+| Component tests 組件測試      | 322    |
+| E2E tests E2E 測試            | 206    |
+| Line coverage 行覆蓋率        | 88.1%  |
+| Statement coverage 語句覆蓋率 | 86.03% |
+| Branch coverage 分支覆蓋率    | 76.86% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -30,8 +30,8 @@
 | Layer     | Tool                     | Tests | Purpose                                     |
 | --------- | ------------------------ | ----- | ------------------------------------------- |
 | Unit      | Vitest                   | 323   | models、services、composables、utils 純邏輯 |
-| Component | Vitest + @vue/test-utils | 319   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 205   | 真實瀏覽器中的完整使用者流程                |
+| Component | Vitest + @vue/test-utils | 322   | Vue 組件渲染、事件、狀態                    |
+| E2E       | Playwright               | 206   | 真實瀏覽器中的完整使用者流程                |
 
 ### Toolchain 測試工具鏈
 
@@ -106,7 +106,7 @@ tests/
 │       ├── cssVars.test.js              #  5  tests
 │       └── verifyFeature.test.js        #  6  tests
 │
-├── component-tests/                     # 319 tests
+├── component-tests/                     # 322 tests
 │   ├── App.test.js                      # 68  tests
 │   ├── PackingCompletionOverlay.test.js # 10  tests
 │   ├── AppIcon.test.js                  #  4  tests
@@ -125,7 +125,7 @@ tests/
 │   ├── TemplateEditor.test.js           # 16  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 205 tests
+└── end2end-tests/                       # 206 tests
     ├── touchDragHelpers.js              # 長按微動與原生捲動手勢
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
@@ -163,7 +163,7 @@ tests/
 
 每一個測試檔案都以 `Test Group N` 分隔相關測試，並在每個 `it()` 或 `test()` 前以連續的 `Test Case N` 註解標記。每個檔案皆從 1 開始編號，且必須與可執行案例數一致（包括展開後的 parameterized cases）。註解以簡潔的 `Should ...` 說明所測行為。
 
-驗證：本機的 `npm run test:inventory` 會實際執行 Vitest 與 Playwright，再依其 reported test counts 驗證此慣例，並拒絕不符合 Unit → Component → E2E 順序的 inventory sections。`npm run verify:feature` 會讓每個 test runner 僅執行一次、將 JSON reports 寫入 `test-inventory-reports/`，再以 `npm run test:inventory:ci` 稽核這些 reports，不會重跑任一測試套件；GitHub Actions 也呼叫同一個 command。兩種模式一定稽核受 Git 追蹤的英文與中文 guides。測試通過後使用 `npm run test:inventory:sync` 更新生成的 guide totals 與 file-heading counts；它絕不改寫 test comments。
+驗證：本機的 `npm run test:inventory` 會實際執行 Vitest 與 Playwright，再依其 reported test counts 驗證此慣例，並拒絕不符合 Unit → Component → E2E 順序的 inventory sections。`npm run verify:feature` 會讓每個 test runner 僅執行一次、將 JSON reports 寫入 `test-inventory-reports/`，再以 `npm run test:inventory:ci` 稽核這些 reports，不會重跑任一測試套件；GitHub Actions 也呼叫同一個 command。兩種模式會將已執行案例識別與測試工具重新列出的清單比對，並拒絕 skipped、todo、flaky、漏收、重複或不完整的報告。兩種模式一定稽核受 Git 追蹤的英文與中文 guides。測試通過後使用 `npm run test:inventory:sync` 更新生成的 guide totals 與 file-heading counts；它絕不改寫 test comments。
 
 ## 4. Coverage Breakdown 覆蓋率明細
 
@@ -171,9 +171,9 @@ tests/
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 84.04%     | 74.43% | 83.4%  |
+| scripts/     | 84.21%     | 74.43% | 83.53% |
 | source/      | 74.72%     | 65.86% | 78.12% |
-| components/  | 81.48%     | 74.4%  | 84.35% |
+| components/  | 81.77%     | 74.08% | 84.66% |
 | composables/ | 95.04%     | 85.26% | 97.28% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.53%     | 83.5%  | 95.44% |
@@ -194,7 +194,7 @@ tests/
 | OverflowMenu.vue             | 87.5%      | 89.81% | 24    |
 | Category.vue                 | 79.2%      | 82.95% | 32    |
 | Checklist.vue                | 70.98%     | 75.07% | 44    |
-| Item.vue                     | 87.43%     | 91.44% | 31    |
+| Item.vue                     | 87.92%     | 91.91% | 34    |
 | NewChecklistDialog.vue       | 95%        | 95.94% | 12    |
 | PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
 | SaveTemplateDialog.vue       | 92.72%     | 93.87% | 10    |
@@ -208,7 +208,7 @@ tests/
 | Branch 分支     | 已執行的條件分支百分比   |
 | Lines 行數      | 已執行的原始碼行數百分比 |
 
-Coverage note: Branch 是最嚴格指標；未覆蓋分支主要落在防禦性 guard 與次要條件路徑。
+Coverage note: Branch 是最嚴格指標；未覆蓋分支主要落在防禦性 guard 與次要條件路徑。容器與報告 contract tests 由 Node 另外執行，不包含在這些 Vitest coverage 數字內。
 
 ## 5. Running Tests 執行測試
 
@@ -238,6 +238,10 @@ npm run test:e2e:ui   # 互動式 UI 模式
 ```bash
 npx playwright test tests/end2end-tests/app-loading.spec.js --headed
 ```
+
+### Linux Container Tests Linux 容器測試
+
+啟動 Docker 後，`sh scripts/ci-container.sh focused` 執行選定的高風險案例，`sh scripts/ci-container.sh full` 執行完整功能 gate。使用 `sh scripts/ci-container.sh case <Playwright arguments>` 執行個別案例。每次執行會在獨立暫存 volume 安裝 Linux 依賴，並把報告寫入新的 `.container-test-artifacts/` 目錄；不共用 Mac 的 `node_modules`。首次下載 image 與每次安裝依賴都需要時間和磁碟空間。本機 ARM64 容器與 CI amd64 runner 使用同一份 image 定義，但不是完全相同的機器。固定的瀏覽器依賴見 `docker/Dockerfile`；升級時須一起更新 image 與專案 Playwright 版本。
 
 ### Coverage Report 覆蓋率報告（最後執行）
 
@@ -756,7 +760,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 4   | protects manual CSS outside the marked region and fails for missing markers                | 保留 CSS 區域與標記            |
 | 5   | CLI check is read-only and returns a useful failure for a drifted fixture                  | 唯讀檢查與命令列重新生成       |
 
-### 8.2 Component Tests（319）
+### 8.2 Component Tests（322）
 
 #### 8.2.1 App.test.js（68）
 
@@ -881,41 +885,44 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 4   | should show quantity badge when quantity > 1                 | 數量顯示       |
 | 5   | should emit "update:item" with isPending=false on completion | 清除 pending   |
 
-#### 8.2.7 Item.test.js（31）
+#### 8.2.7 Item.test.js（34）
 
 | #   | Test                                                                             | 測試重點                 |
 | --- | -------------------------------------------------------------------------------- | ------------------------ |
 | 1   | keeps an item name draft on failed save and closes only after a successful retry | 行內寫入確認             |
-| 2   | should display the item name                                                     | 名稱渲染                 |
-| 3   | should render a checkbox input                                                   | checkbox 存在            |
-| 4   | should check the checkbox when item is packed                                    | checked 綁定             |
-| 5   | should apply line-through styling when item is packed                            | 打包樣式                 |
-| 6   | should display quantity value                                                    | 數量標籤                 |
-| 7   | should emit "update:item" with toggled isPacked when checkbox is clicked         | checkbox 切換事件        |
-| 8   | should clear isPending when item becomes packed                                  | 打包清除 pending         |
-| 9   | should enter edit mode when item name is clicked                                 | 編輯時聚焦全選           |
-| 10  | should save edited name on Enter key                                             | Enter 確認               |
-| 11  | should cancel edit mode on Escape key                                            | Escape 取消              |
-| 12  | should emit "update:item" with incremented quantity                              | 數量 +1                  |
-| 13  | should emit "update:item" with decremented quantity                              | 數量 -1                  |
-| 14  | should emit "delete:item" when quantity is 1 and delete button is clicked        | 刪除（數量1）            |
-| 15  | should emit "update:item" with toggled isPending                                 | 切換 pending             |
-| 16  | should clear isPacked when item is marked as pending                             | pending 清除 packed      |
-| 17  | should emit "copy:item" when OverflowMenu triggers copy                          | 複製轉發                 |
-| 18  | should emit "update:item" on blur with changed name                              | blur 儲存                |
-| 19  | should not emit "update:item" on blur with empty name                            | 空名稱檢查               |
-| 20  | should emit "delete:item" when OverflowMenu triggers delete                      | 刪除轉發                 |
-| 21  | should show action buttons on mouseenter                                         | hover 顯示               |
-| 22  | should hide action buttons on mouseleave                                         | hover 隱藏               |
-| 23  | should not save during IME composition                                           | IME 檢查                 |
-| 24  | should enter edit mode when newlyCreatedItemId matches                           | 新建自動聚焦全選         |
-| 25  | should not enter edit mode when newlyCreatedItemId does not match                | 無誤觸發                 |
-| 26  | should not decrement quantity below 1                                            | 最小數量檢查             |
-| 27  | should apply cursor-grabbing when isDragging is true                             | 拖曳視覺狀態             |
-| 28  | defers an inline action until composition ends and the name is saved             | 操作前取得最終組字文字   |
-| 29  | waits for the name save before an inline action and retains a failed draft       | 儲存確認與失敗保護       |
-| 30  | preserves a failed name draft when another edit entry is activated               | 失敗草稿與 baseline 保留 |
-| 31  | keeps the quantity-one delete action in the expanded touch region                | 數量為一的刪除操作       |
+| 2   | preserves a failed draft during another item pointer gesture                     | 儲存失敗保留草稿及錯誤   |
+| 3   | releases a held edit after pointerup                                             | 對應的指標放開後結束編輯 |
+| 4   | releases a held edit after pointercancel                                         | 對應的指標取消後結束編輯 |
+| 5   | should display the item name                                                     | 名稱渲染                 |
+| 6   | should render a checkbox input                                                   | checkbox 存在            |
+| 7   | should check the checkbox when item is packed                                    | checked 綁定             |
+| 8   | should apply line-through styling when item is packed                            | 打包樣式                 |
+| 9   | should display quantity value                                                    | 數量標籤                 |
+| 10  | should emit "update:item" with toggled isPacked when checkbox is clicked         | checkbox 切換事件        |
+| 11  | should clear isPending when item becomes packed                                  | 打包清除 pending         |
+| 12  | should enter edit mode when item name is clicked                                 | 編輯時聚焦全選           |
+| 13  | should save edited name on Enter key                                             | Enter 確認               |
+| 14  | should cancel edit mode on Escape key                                            | Escape 取消              |
+| 15  | should emit "update:item" with incremented quantity                              | 數量 +1                  |
+| 16  | should emit "update:item" with decremented quantity                              | 數量 -1                  |
+| 17  | should emit "delete:item" when quantity is 1 and delete button is clicked        | 刪除（數量1）            |
+| 18  | should emit "update:item" with toggled isPending                                 | 切換 pending             |
+| 19  | should clear isPacked when item is marked as pending                             | pending 清除 packed      |
+| 20  | should emit "copy:item" when OverflowMenu triggers copy                          | 複製轉發                 |
+| 21  | should emit "update:item" on blur with changed name                              | blur 儲存                |
+| 22  | should not emit "update:item" on blur with empty name                            | 空名稱檢查               |
+| 23  | should emit "delete:item" when OverflowMenu triggers delete                      | 刪除轉發                 |
+| 24  | should show action buttons on mouseenter                                         | hover 顯示               |
+| 25  | should hide action buttons on mouseleave                                         | hover 隱藏               |
+| 26  | should not save during IME composition                                           | IME 檢查                 |
+| 27  | should enter edit mode when newlyCreatedItemId matches                           | 新建自動聚焦全選         |
+| 28  | should not enter edit mode when newlyCreatedItemId does not match                | 無誤觸發                 |
+| 29  | should not decrement quantity below 1                                            | 最小數量檢查             |
+| 30  | should apply cursor-grabbing when isDragging is true                             | 拖曳視覺狀態             |
+| 31  | defers an inline action until composition ends and the name is saved             | 操作前取得最終組字文字   |
+| 32  | waits for the name save before an inline action and retains a failed draft       | 儲存確認與失敗保護       |
+| 33  | preserves a failed name draft when another edit entry is activated               | 失敗草稿與 baseline 保留 |
+| 34  | keeps the quantity-one delete action in the expanded touch region                | 數量為一的刪除操作       |
 
 #### 8.2.8 OverflowMenu.test.js（24）
 
@@ -1162,7 +1169,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | 觸控跨清單正常新增／移除              |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | 滑鼠跨清單正常新增／移除              |
 
-### 8.3 E2E Tests（205）
+### 8.3 E2E Tests（206）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1391,7 +1398,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 7   | settles rapid collapse reversals and viewport changes            | 反向操作、清理與無水平溢位     |
 | 8   | honors reduced motion and cancels active reflow                  | 即時動態偏好與直接完成版面     |
 
-#### 8.3.18 interaction-feedback.spec.js（8）
+#### 8.3.18 interaction-feedback.spec.js（9）
 
 | #   | Test                                                                                | 驗證內容                               |
 | --- | ----------------------------------------------------------------------------------- | -------------------------------------- |
@@ -1402,7 +1409,8 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 5   | phone: keeps normal and completed feedback consistent and animates inline actions   | 觸控操作列動效、物品虛線與對齊         |
 | 6   | phone: accepts items into a collapsed category and retains counts and order         | 觸控物品虛線對齊、收回／取消與排序保存 |
 | 7   | ends an old name edit when dragging a different item                                | 未改名／已改名的編輯收尾與保存         |
-| 8   | honors reduced motion for inline action expansion                                   | 直接展開、可用控制項與 Escape          |
+| 8   | saves a name when clicking another item without dragging                            | 儲存名稱並聚焦另一個物品               |
+| 9   | honors reduced motion for inline action expansion                                   | 直接展開、可用控制項與 Escape          |
 
 #### 8.3.19 drag-settlement.spec.js（15）
 

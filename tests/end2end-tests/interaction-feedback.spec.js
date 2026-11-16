@@ -293,11 +293,20 @@ for (const scenario of scenarios) {
           const card = document.querySelector(
             '[data-testid="category-card"][data-category-id="b"]'
           );
+          const preview = card
+            .querySelector('[data-testid="collapsed-drop-preview"]')
+            .closest('[data-height-motion]');
+          window.collapsedCloseFrames.push(card.getBoundingClientRect().height);
           const sample = () => {
             window.collapsedCloseFrames.push(card.getBoundingClientRect().height);
             if (window.collapsedCloseFrames.length < 40) requestAnimationFrame(sample);
           };
-          requestAnimationFrame(sample);
+          const observer = new MutationObserver(() => {
+            if (!preview.classList.contains('collapsed-preview-leave-active')) return;
+            observer.disconnect();
+            requestAnimationFrame(sample);
+          });
+          observer.observe(preview, { attributes: true, attributeFilter: ['class'] });
         });
         if (client)
           await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
@@ -398,7 +407,11 @@ test('ends an old name edit when dragging a different item', async ({ page }) =>
   await openFixture(page);
   await startDragDiagnostics(page);
   const edited = page.locator('[data-testid="item-row"][data-item-id="a0"]');
-  for (const name of [null, 'Renamed before drag']) {
+  for (const [name, gesture] of [
+    [null, 'unchanged'],
+    ['Renamed before drag', 'renamed'],
+    ['A longer name that wraps across multiple lines when editing an item', 'long-renamed'],
+  ]) {
     await edited.getByTestId('item-name').click();
     const input = edited.getByTestId('item-edit-input');
     await expect(input).toBeFocused();
@@ -408,14 +421,17 @@ test('ends an old name edit when dragging a different item', async ({ page }) =>
       .getByTestId('item-name')
       .boundingBox();
     const from = { x: source.x + source.width / 3, y: source.y + source.height / 2 };
-    await markDragGesture(page, name ? 'renamed' : 'unchanged');
+    const eventsBefore = await page.evaluate(() => ({
+      start: window.__packingListDragDiagnostics.events.filter(
+        (event) => event.kind === 'dragstart'
+      ).length,
+      end: window.__packingListDragDiagnostics.events.filter((event) => event.kind === 'dragend')
+        .length,
+    }));
+    await markDragGesture(page, gesture);
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();
-    await page.mouse.move(from.x + 12, from.y + 12, { steps: 4 });
-    await expect(page.locator('.ghost-item')).toHaveCount(1);
-    await expect(input).toHaveCount(0);
-    await page.mouse.up();
-    await expect(edited.getByTestId('item-name')).toHaveText(name ?? 'Item a0');
+    // The save may finish while a user is holding the mouse before moving.
     if (name)
       await expect
         .poll(() =>
@@ -427,10 +443,159 @@ test('ends an old name edit when dragging a different item', async ({ page }) =>
           )
         )
         .toBe(name);
+    await expect(input).toBeVisible();
+    const sourceAfterSave = await page
+      .locator('[data-testid="item-row"][data-item-id="a1"]')
+      .getByTestId('item-name')
+      .boundingBox();
+    expect(Math.abs(sourceAfterSave.y - source.y)).toBeLessThanOrEqual(1);
+    await page.mouse.move(from.x + 12, from.y + 12, { steps: 4 });
+    await expect(page.locator('.ghost-item')).toHaveCount(1);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            window.__packingListDragDiagnostics.events.filter((event) => event.kind === 'dragstart')
+              .length
+        )
+      )
+      .toBeGreaterThan(eventsBefore.start);
+    await expect(input).toBeVisible();
+    if (gesture === 'long-renamed') {
+      const destination = await page
+        .locator('[data-testid="item-row"][data-item-id="a2"]')
+        .boundingBox();
+      await page.mouse.move(
+        destination.x + destination.width / 2,
+        destination.y + destination.height - 2,
+        { steps: 12 }
+      );
+    }
+    await page.mouse.up();
+    await expect(input).toHaveCount(0);
+    if (gesture === 'long-renamed') {
+      const lines = await edited.getByTestId('item-name').evaluate((element) => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        return range.getClientRects().length;
+      });
+      expect(lines).toBeGreaterThan(1);
+    }
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            window.__packingListDragDiagnostics.events.filter((event) => event.kind === 'dragend')
+              .length
+        )
+      )
+      .toBeGreaterThan(eventsBefore.end);
+    await expect(edited.getByTestId('item-name')).toHaveText(name ?? 'Item a0');
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            JSON.parse(localStorage.getItem('packingListApp')).items.find(
+              (item) => item.id === 'a0'
+            ).name
+        )
+      )
+      .toBe(name ?? 'Item a0');
+    if (gesture === 'long-renamed') {
+      const rows = page.locator(
+        '[data-testid="category-items-draggable"][data-category-id="a"] [data-testid="item-row"]'
+      );
+      await expect
+        .poll(() =>
+          rows.evaluateAll((elements) => elements.map((element) => element.dataset.itemId))
+        )
+        .toEqual(['a0', 'a2', 'a1']);
+      await expect
+        .poll(() =>
+          page.evaluate(() =>
+            JSON.parse(localStorage.getItem('packingListApp'))
+              .items.filter((item) => item.categoryId === 'a')
+              .sort((a, b) => a.order - b.order)
+              .map((item) => item.id)
+          )
+        )
+        .toEqual(['a0', 'a2', 'a1']);
+      await page.reload();
+      await expect
+        .poll(() =>
+          rows.evaluateAll((elements) => elements.map((element) => element.dataset.itemId))
+        )
+        .toEqual(['a0', 'a2', 'a1']);
+    }
   }
 });
 
-// Test Case 8: Reduced motion keeps inline actions immediately usable and closing controls inert.
+// Test Case 8: Clicking another item saves the first name and starts the second edit.
+test('saves a name when clicking another item without dragging', async ({ page, browser }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openFixture(page);
+  const first = page.locator('[data-testid="item-row"][data-item-id="a0"]');
+  const second = page.locator('[data-testid="item-row"][data-item-id="a1"]');
+  await first.getByTestId('item-name').click();
+  await first.getByTestId('item-edit-input').fill('A long name that wraps after saving this item');
+  await second.getByTestId('item-name').click();
+  await expect(first.getByTestId('item-name')).toHaveText(
+    'A long name that wraps after saving this item'
+  );
+  await expect(second.getByTestId('item-edit-input')).toBeFocused();
+
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+  });
+  try {
+    const touchPage = await context.newPage();
+    await openFixture(touchPage);
+    const oldRow = touchPage.locator('[data-testid="item-row"][data-item-id="a0"]');
+    const dragRow = touchPage.locator('[data-testid="item-row"][data-item-id="a1"]');
+    await oldRow.getByTestId('item-name').tap();
+    await oldRow
+      .getByTestId('item-edit-input')
+      .fill('A long name to preserve during a touch gesture');
+    const box = await dragRow.getByTestId('item-name').boundingBox();
+    const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    const client = await context.newCDPSession(touchPage);
+    const rows = touchPage.locator(
+      '[data-testid="category-items-draggable"][data-category-id="a"] [data-testid="item-row"]'
+    );
+    const initialOrder = await rows.evaluateAll((elements) =>
+      elements.map((element) => element.dataset.itemId)
+    );
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+    await touchPage.waitForTimeout(280);
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: point.x + 3, y: point.y + 3 }],
+    });
+    await expect(touchPage.locator('.sortable-fallback')).toHaveCount(1);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+    await expect(touchPage.locator('.sortable-fallback, .chosen-item')).toHaveCount(0);
+    await expect(oldRow.getByTestId('item-name')).toHaveText(
+      'A long name to preserve during a touch gesture'
+    );
+    await expect
+      .poll(() => rows.evaluateAll((elements) => elements.map((element) => element.dataset.itemId)))
+      .toEqual(initialOrder);
+    await touchPage.reload();
+    await expect
+      .poll(() => rows.evaluateAll((elements) => elements.map((element) => element.dataset.itemId)))
+      .toEqual(initialOrder);
+    await expect(oldRow.getByTestId('item-name')).toHaveText(
+      'A long name to preserve during a touch gesture'
+    );
+    await client.detach();
+  } finally {
+    await context.close();
+  }
+});
+
+// Test Case 9: Reduced motion keeps inline actions immediately usable and closing controls inert.
 test('honors reduced motion for inline action expansion', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });

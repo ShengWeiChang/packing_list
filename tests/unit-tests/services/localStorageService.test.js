@@ -724,37 +724,25 @@ describe('LocalStorageService', () => {
 
     // Test Case 50: Duplicate category name truncation for long names
     it('should truncate duplicate category name when at max length', async () => {
-      await service.createChecklist({ name: 'Test' });
-      const data = await service.getData();
-      const categoryId = data.categories[0]?.id;
-
-      if (categoryId) {
-        // Set category name to max length
-        const longName = 'b'.repeat(100);
-        await service.updateCategory({ ...data.categories[0], name: longName }, data.categories[0]);
-
-        const duplicated = await service.duplicateCategory(categoryId);
-        expect(duplicated.name.length).toBeLessThanOrEqual(100);
-      }
+      const checklist = await service.createChecklist({ name: 'Test' });
+      const category = await service.createCategory(checklist.id, { name: 'b'.repeat(100) });
+      const duplicated = await service.duplicateCategory(category.id);
+      expect(duplicated.id).not.toBe(category.id);
+      expect(duplicated.name).toBe(`${'b'.repeat(93)} (Copy)`);
     });
 
     // Test Case 51: Duplicate item name truncation for long names
     it('should truncate duplicate item name when at max length', async () => {
       const cl = await service.createChecklist({ name: 'Test' });
-      const data = await service.getData();
-      const categoryId = data.categories[0]?.id;
-
-      if (categoryId) {
-        const longName = 'c'.repeat(100);
-        const item = await service.createItem(cl.id, {
-          name: longName,
-          categoryId,
-          quantity: 1,
-        });
-
-        const duplicated = await service.duplicateItem(cl.id, item.id);
-        expect(duplicated.name.length).toBeLessThanOrEqual(100);
-      }
+      const category = await service.createCategory(cl.id, { name: 'Category' });
+      const item = await service.createItem(cl.id, {
+        name: 'c'.repeat(100),
+        categoryId: category.id,
+        quantity: 1,
+      });
+      const duplicated = await service.duplicateItem(cl.id, item.id);
+      expect(duplicated.id).not.toBe(item.id);
+      expect(duplicated.name).toBe(`${'c'.repeat(93)} (Copy)`);
     });
   });
 
@@ -766,17 +754,13 @@ describe('LocalStorageService', () => {
     // Test Case 52: Should read locale from localStorage when no argument is passed
     it('should read user-locale from localStorage when no locale argument provided', () => {
       // Temporarily swap getItem to return zh-TW for user-locale
-      const origGetItem = localStorage.getItem;
-      localStorage.getItem = (key) => {
+      localStorage.getItem.mockImplementation((key) => {
         if (key === 'user-locale') return 'zh-TW';
         return mockStorage[key] || null;
-      };
+      });
 
       const suffix = service._getCopySuffix();
       expect(suffix).toBe(' (複製)');
-
-      // Restore
-      localStorage.getItem = origGetItem;
     });
 
     // Test Case 53: Should default to English when localStorage has no locale
@@ -865,16 +849,12 @@ describe('LocalStorageService', () => {
       const freshService = new LocalStorageService();
 
       // Simulate localStorage being disabled — getItem throws SecurityError
-      const origGetItem = localStorage.getItem;
-      localStorage.getItem = () => {
+      localStorage.getItem.mockImplementation(() => {
         throw new DOMException('Access denied', 'SecurityError');
-      };
+      });
 
       // getData calls _ensureInitialized → initializeStorage → getItem which throws
       await expect(async () => freshService.getData()).rejects.toThrow();
-
-      // Restore
-      localStorage.getItem = origGetItem;
     });
   });
 
@@ -1509,7 +1489,16 @@ describe('LocalStorageService', () => {
         [first, second]
       );
 
-      expect(updated.every((item) => item.isPacked)).toBe(true);
+      expect(updated.map((item) => ({ id: item.id, isPacked: item.isPacked }))).toEqual([
+        { id: first.id, isPacked: true },
+        { id: second.id, isPacked: true },
+      ]);
+      expect((await service.getData()).items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: first.id, isPacked: true }),
+          expect.objectContaining({ id: second.id, isPacked: true }),
+        ])
+      );
       expect(saveSpy).toHaveBeenCalledTimes(1);
     });
 

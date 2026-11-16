@@ -49,6 +49,7 @@ npm run serve            # Preview production build
 npm test                 # Run tests in watch mode
 npm run test:coverage    # Generate coverage report
 npm run test:e2e         # Run E2E tests
+sh scripts/ci-container.sh focused # Run high-risk tests in Linux (Docker required)
 
 # Code Quality
 npm run lint             # Lint code

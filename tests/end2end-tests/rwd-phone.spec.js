@@ -10,6 +10,7 @@ Created: 2026-10-30
 import { devices, expect, test } from '@playwright/test';
 
 import { selectGeneralRecommendedList } from './checklistHelpers.js';
+import { waitForLayoutMotion } from './layoutMotionHelpers.js';
 import { checkTouchHold, checkTouchScroll } from './touchDragHelpers.js';
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
@@ -855,6 +856,7 @@ test('preserves touch sorting while excluding action buttons', async ({
     await (await triggerFor(rows.nth(0))).tap();
     // Closing now animates; capture the final row bounds before synthesizing a hold.
     await expect(rows.nth(0).getByTestId('item-inline-actions')).toHaveCount(0);
+    await waitForLayoutMotion(page);
     await rows.nth(0).scrollIntoViewIfNeeded();
     const source = await rows.nth(0).locator('..').boundingBox();
     const name = await rows.nth(0).getByTestId('item-name').boundingBox();
