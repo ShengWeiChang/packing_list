@@ -9,9 +9,10 @@ argument-hint: '[feature or bug request]'
 Coordinate the delivery lifecycle for every feature, bug fix, or behavior
 change. `$feature-completion` owns verification and independent review; this
 skill owns planning, implementation milestones, progress reporting, and human
-approval boundaries. `$feature-learning` explains each completed milestone so
-the user can review the result with an accurate mental model of its design and
-tests. Do not require users to remember workflow prompt keywords.
+approval boundaries. Use `$feature-learning` when the user requests learning or
+when a substantive conceptual explanation materially helps the user evaluate
+the milestone; ordinary handoff still explains behavior and evidence. Do not
+require users to remember workflow prompt keywords.
 
 ## README Impact Rule
 
@@ -74,7 +75,10 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
    arbitrary file slice. Do not repeat a full final gate at every milestone.
    T1 uses focused local final evidence; T2/T3 run the full
    `$feature-completion` gate once after the feature's last implementation
-   milestone. Repository CI remains the full merge safeguard for every pull
+   milestone; for documentation-only or agent-instruction-only candidates use
+   its `--docs` gate and any separate evidence required by the changed content.
+   Source, test, execution-script or configuration changes require the full gate.
+   Repository CI remains the full merge safeguard for every pull
    request. Tiering reduces planning and independent-review cost without
    removing the user's implementation, commit, PR, or merge approvals.
 
@@ -137,20 +141,18 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
    `$feature-completion`; it is the sole coordinator for `$code-review`,
    triggered `$test-analysis`, and applicable UI/UX conformance evidence. Do
    not start a duplicate review cycle for the same candidate without a new
-   reason.
-7. After the milestone's required evidence and review are complete, invoke
-   `$feature-learning` in conversational mode for the implemented milestone
-   before asking for the milestone decision. Base the explanation on the
-   reviewed diff, implementation entry points, and representative tests. Focus
-   on the concepts and examples that help the user assess and maintain this
-   milestone; do not repeat command logs or substitute the lesson
-   for validation or a reviewer verdict. Do not create a learning document or
-   exercises for this milestone explanation unless the user requests them.
-   Record the explanation scope in the plan.
+   reason. Freeze the candidate after focused checks and known repairs before
+   dispatching final reviews when practical; do not wait to investigate an
+   issue that requires an independent perspective.
+7. Explain the milestone's behavior, evidence and risks concisely. Invoke
+   `$feature-learning` in conversational mode when the user requests learning or
+   a substantive conceptual explanation materially helps their decision; ground
+   it in the reviewed implementation and tests. Do not duplicate the handoff or
+   create a learning document or exercises unless requested. Record the scope
+   when learning is used.
 8. Set status to `awaiting milestone review` and present the changed scope,
    validation evidence, fingerprint when staged, reviewer verdict or explicit
-   reason it was not required, and the milestone explanation guided by
-   `$feature-learning`. Begin every
+   reason it was not required, and any requested conceptual explanation. Begin every
    status update by naming the current state and the one user decision needed.
    Wait for the user's response before continuing to a dependent milestone or
    commit. If this is the final milestone, a user acceptance moves it to
@@ -171,7 +173,11 @@ fresh reviewer verdict immediately only when the current tier/boundary requires
 an intermediate review or a prior reviewer raised a blocking or important
 finding. For T1 and non-integration T2 feedback, defer the required fresh review
 to the final gate so a user-requested adjustment does not manufacture a duplicate
-review. Never reuse a prior reviewer verdict after a repair that requires review.
+review. Never reuse a prior reviewer verdict for a repaired or affected boundary.
+A different fresh reviewer may examine a bounded repair and its potentially
+affected boundaries, with prior findings and unchanged evidence supplied as
+context. Reuse unaffected evidence only after confirming its candidate, scope
+and dependencies remain valid; expand the review if impact is uncertain.
 
 Only after required validation passes and any tier-required reviewer verdict is
 `ready` may a user accept a milestone's content. If validation fails, evidence
@@ -194,8 +200,8 @@ After the user accepts the final milestone in `awaiting milestone review`, enter
 `final verification` and run the tier-selected `$feature-completion` handoff
 before presenting a final decision. Do not require the user to restate each
 validation or review instruction. T1 uses focused final evidence; T2/T3 run the
-full feature gate unless the user explicitly agreed the change was trivial after
-discovery.
+full feature gate, or its `--docs` variant for documentation-only or
+agent-instruction-only candidates, with any separately required evidence.
 
 ## 4. Release Controls and Exceptions
 

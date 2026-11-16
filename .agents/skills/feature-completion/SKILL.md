@@ -63,8 +63,10 @@ omitted intermediate review as `not required by tier/boundary`, rather than
 representing it as missing evidence. A fresh reviewer did not implement the
 reviewed scope and has not issued a verdict during its current repair cycle.
 After a blocking or important finding is fixed, use a different read-only
-context that did not review the earlier repair-cycle revision. Record reviewer
-identity or context and the reviewed fingerprint.
+context that did not review the earlier repair-cycle revision. For a bounded
+repair, the fresh reviewer may focus on the change and affected boundaries while
+receiving earlier findings and valid unchanged evidence; broaden scope when
+impact is uncertain. Record each evidence scope, reviewer and fingerprint.
 
 Select milestone evidence from the changed boundary; do not replace relevant
 runtime proof with a cheaper unrelated command:
@@ -112,7 +114,9 @@ selects coverage. T2/T3 `npm run verify:feature` may already include coverage;
 do not add a separate coverage run unless the plan requires it. Compare with a
 baseline only when it used the same configuration and comparable source scope.
 Coverage movement is a signal to investigate changed modules, never a standalone
-pass/fail condition.
+pass/fail condition. Treat coverage figures as snapshots tied to a completed run;
+record material variance and its evidence or uncertainty rather than repeatedly
+rerunning suites to chase incidental changes.
 
 If required validation fails, a reviewer requests changes, or available evidence
 is insufficient, return that verdict to `$feature-workflow`; it must not present
@@ -164,7 +168,9 @@ Use targeted repository searches rather than broad cleanup. A clean lint result 
 
 At a milestone, run the smallest relevant commands and report every skipped
 layer and its reason. At a final gate, follow the tier table above; for a T2/T3
-documentation-only final gate, run `npm run verify:feature -- --docs`. The
+documentation-only or agent-instruction-only candidate, run
+`npm run verify:feature -- --docs` and obtain any separate evidence the changed
+content requires. The
 mechanical command does not replace runtime proof of a changed interaction;
 report the user flow exercised, manual observation or automated E2E evidence,
 and any limitation. The available layers are:
@@ -178,7 +184,25 @@ npx playwright test
 npm run build
 ```
 
-Run `npm run test:inventory` after changing test files or `testing-guide*.md`; use `npm run test:inventory:sync` only when executed results should update generated guide counts. Run the final residue audit after implementation and documentation have reached their intended names, then report its outcome alongside commands run, validation results, intentional omissions, coverage comparison (if available), manual test steps, remaining risks, and unresolved artifacts. Do not install dependencies, alter Git state, or create commits unless the user explicitly authorizes it.
+When test files or `testing-guide*.md` change, audit inventory once using the
+completed final gate's Vitest and Playwright reports (`npm run test:inventory:ci`),
+which the full gate already runs. Reuse reports only when their recorded candidate,
+test discovery and configuration, environment, execution scope and successful
+complete results match the audit. Report validation alone does not establish
+provenance. If evidence is missing or invalid, obtain a fresh run; never hide a
+failure, skip or flaky result. For a matching retained report, the supported
+`npm run test:inventory:ci -- --write` can sync generated counts; rerun the
+read-only audit after edits. Otherwise `npm run test:inventory:sync` runs the
+suites again. A documentation-only gate does not execute these tests: supply
+separate matching evidence when testing-guide content requires it.
+
+If only non-executable documentation statistics are synchronized after a
+successful gate, retain the prior gate for unchanged behavior and run relevant
+documentation and inventory checks; record both candidate fingerprints, the
+exact difference and why the prior evidence applies. Any test, configuration,
+execution or report change invalidates affected evidence and requires its
+appropriate gate. The candidate presented for approval still needs the full
+current fingerprint. Run the final residue audit after implementation and documentation have reached their intended names, then report its outcome alongside commands run, validation results, intentional omissions, coverage comparison (if available), manual test steps, remaining risks, and unresolved artifacts. Do not install dependencies, alter Git state, or create commits unless the user explicitly authorizes it.
 
 If Playwright's web server fails with `listen EPERM` inside a restricted execution sandbox, rerun the same test command with the narrow approval needed to bind its localhost port. Treat a repeated test assertion failure outside the sandbox as a product/test failure; do not report the initial port restriction as evidence that validation is unavailable.
 
