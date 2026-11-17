@@ -14,24 +14,41 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 851    |
+| Total tests 總測試數          | 862    |
 | Unit tests 單元測試           | 323    |
 | Component tests 組件測試      | 322    |
-| E2E tests E2E 測試            | 206    |
+| E2E tests E2E 測試            | 217    |
 | Line coverage 行覆蓋率        | 88.1%  |
 | Statement coverage 語句覆蓋率 | 86.03% |
-| Branch coverage 分支覆蓋率    | 76.86% |
+| Branch coverage 分支覆蓋率    | 76.65% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
 
 ### Testing Layers 測試層級
 
-| Layer     | Tool                     | Tests | Purpose                                     |
-| --------- | ------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                   | 323   | models、services、composables、utils 純邏輯 |
-| Component | Vitest + @vue/test-utils | 322   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright               | 206   | 真實瀏覽器中的完整使用者流程                |
+| Layer     | Tool                           | Tests | Purpose                                     |
+| --------- | ------------------------------ | ----- | ------------------------------------------- |
+| Unit      | Vitest                         | 323   | models、services、composables、utils 純邏輯 |
+| Component | Vitest + @vue/test-utils       | 322   | Vue 組件渲染、事件、狀態                    |
+| E2E       | Playwright + Chromium / WebKit | 217   | 在瀏覽器中檢查完整使用者流程                |
+
+### Platform Verification Matrix 平台驗證矩陣
+
+| 在哪裡跑              | Unit／Component                                              | E2E                                              | 怎麼跑及目前狀態                                                                                         |
+| --------------------- | ------------------------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| 本機 macOS            | 可在本機跑全部 323 個 Unit 和 322 個 Component 測試。        | 可跑全部 217 次瀏覽器執行，也可只選重點案例。    | `npm run verify:feature` 在 Mac 跑完整功能 gate；開發時可用 Vitest 或 Playwright 指令跑重點檢查。        |
+| 本機 Linux container  | 全部 323 個 Unit 和 322 個 Component 測試。                  | 全部 217 次瀏覽器執行。                          | 使用 Docker 執行 `sh scripts/ci-container.sh full`，包含功能 gate 與另外執行的 Node 容器／報告契約測試。 |
+| GitHub Linux CI       | 全部 323 個 Unit 和 322 個 Component 測試。                  | 全部 217 次瀏覽器執行。                          | 已設定的 Ubuntu job 使用相同 container 指令；M4 候選尚未在 PR CI 驗證。                                  |
+| GitHub Windows runner | 目前未規劃在這個 smoke job 重跑全部 Unit 和 Component 測試。 | 使用 Playwright Chromium 執行 6 個共用核心案例。 | 規劃於 M5 在 GitHub Windows runner 建立；目前尚未設定或驗證。                                            |
+| macOS 原生 Safari     | 不由 Safari 執行；可在同一台 Mac 用 Vitest 執行。            | 原生 Safari smoke 尚未驗證。                     | 使用者決定保持遠端自動化關閉；後續驗證另外追蹤。                                                         |
+| Android 與 iOS 裝置   | 不適用。                                                     | 原生手機瀏覽器與觸控尚未驗證。                   | 目前不納入 gate；瀏覽器模擬不提供手機作業系統。                                                          |
+
+217 次 E2E 執行包含 Chromium 的 207 次、Playwright WebKit 核心案例（`webkit-core`）6 次，以及 Playwright WebKit 響應式案例（`webkit-rwd`）4 次。同一原始案例在多個 project 執行時，每次執行分別計數。Chromium 執行一般 E2E 基準，包含相同的四個響應式案例；WebKit 額外執行選定的核心與響應式檢查，並非完整 Chromium 套件。
+
+六個核心案例涵蓋物品建立、編輯、數量、待處理及打包狀態、重載與刪除；兩種視窗寬度的日期編輯；儲存失敗與草稿恢復；鍵盤選單焦點；以及滑鼠排序後重載。五個選自既有案例，另一個串接原先缺少完整重載證據的物品生命週期。四個響應式案例涵蓋觸控模擬操作、短畫面 dialog 與日期、平板版面及短畫面手機導覽。
+
+Unit 與 Component 測試在 Vitest 的 Node／jsdom 環境執行，並非實際瀏覽器或作業系統介面。完整功能 gate 另檢查格式、lint、生成色彩、TypeScript、清冊與 production build。Node 容器／報告契約測試由 Linux container 入口另外執行，不計入 862 個測試總數。總數與平台次數描述目前候選；最後完整 gate 仍排在 M6。
 
 ### Toolchain 測試工具鏈
 
@@ -125,31 +142,34 @@ tests/
 │   ├── TemplateEditor.test.js           # 16  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 206 tests
+└── end2end-tests/                       # 217 tests
     ├── touchDragHelpers.js              # 長按微動與原生捲動手勢
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
-    ├── rwd-overlays.spec.js             #  5  tests
-    ├── rwd-webkit.spec.js               #  4  tests
+    ├── rwd-overlays.spec.js             #  6  tests
+    ├── rwd-webkit.spec.js               #  8  tests
     ├── sidebar-presentation.spec.js     #  8  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
     ├── checklist-management.spec.js     #  6  tests
     ├── category-crud.spec.js            #  3  tests
-    ├── drag-and-drop.spec.js            #  7  tests
+    ├── drag-and-drop.spec.js            #  8  tests
     ├── desktop-drag-presentation.spec.js # 19  tests
     ├── drag-settlement.spec.js           # 15  tests
     ├── drag-membership-conflict.spec.js  #  1  test
     ├── category-motion.spec.js          #  8  tests
-    ├── interaction-feedback.spec.js      #  8  tests
+    ├── interaction-feedback.spec.js      #  9  tests
     ├── multi-tab-sync.spec.js           #  6  tests
-    ├── checklist-dates.spec.js          # 16  tests
+    ├── core-smoke.spec.js               #  2  tests
+    ├── checklist-dates.spec.js          # 18  tests
     ├── template-navigation.spec.js      # 23  tests
     ├── template-management.spec.js      #  8  tests
     ├── recommended-lists.spec.js        #  1  test
-    └── storage-recovery.spec.js         # 28  tests
+    └── storage-recovery.spec.js         # 29  tests
 ```
+
+各 E2E 檔案數量統計瀏覽器 project 執行次數；`Test Case` 註解編號代表不同原始案例，共用案例在原始檔只編一次，此處則每個 project 列一次。
 
 ### Naming Conventions 命名慣例
 
@@ -177,7 +197,7 @@ tests/
 | composables/ | 95.04%     | 85.26% | 97.28% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.53%     | 83.5%  | 95.44% |
-| utils/       | 96.36%     | 90.37% | 96.62% |
+| utils/       | 96.36%     | 85.92% | 96.62% |
 
 ### By Component 各組件覆蓋率
 
@@ -272,7 +292,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ### Responsive Interaction Evidence 響應式互動證據
 
-`rwd-phone.spec.js` 明確設定 touch context，驗證 phone／tablet 操作、真實命中區、名稱幾何、一次一件展開、reload 與長按排序，並包含桌面滑鼠回歸。`rwd-overlays.spec.js` 涵蓋抽屜焦點、巢狀 dialog、短畫面、原生日期與模擬鍵盤幾何／錯誤恢復。`webkit-rwd` 只執行 `rwd-webkit.spec.js`，Chromium 忽略此檔，CI 安裝兩個引擎。Emulation 及合成 viewport／IME 事件不證明原生鍵盤或實機舒適度；實機結果另行記錄。
+`rwd-phone.spec.js` 明確設定 touch context，驗證 phone／tablet 操作、真實命中區、名稱幾何、一次一件展開、reload 與長按排序，並包含桌面滑鼠回歸。`rwd-overlays.spec.js` 涵蓋抽屜焦點、巢狀 dialog、短畫面、原生日期與模擬鍵盤幾何／錯誤恢復。`rwd-webkit.spec.js` 在 Chromium 和 `webkit-rwd` 使用相同觸控模擬設定執行；`webkit-core` 另外執行選定的桌面核心案例。CI 安裝兩個引擎。Emulation 及合成 viewport／IME 事件不證明原生鍵盤或實機舒適度；實機結果另行記錄。
 
 `drag-settlement.spec.js` 涵蓋各版面側欄待儲存順序、儲存失敗、七種接收／排序路徑在佔位移動後的 `touchcancel`，以及正常觸控放手。取消手勢使用 Chromium CDP 模擬，不證明實體 iOS／Safari 的中斷行為。`typedDraggable.test.js` 驗證真實 vuedraggable 的 model／change 邊界。`drag-membership-conflict.spec.js` 以兩個真實頁面驗證過期成員拒絕與重載；service／composable cases 涵蓋完整成員、隱藏列與相容欄位編輯。
 
@@ -1169,7 +1189,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | 觸控跨清單正常新增／移除              |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | 滑鼠跨清單正常新增／移除              |
 
-### 8.3 E2E Tests（206）
+### 8.3 E2E Tests（217）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1200,17 +1220,18 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | should copy a category via overflow menu            | 分類複製 |
 | 3   | should show copy suffix in duplicated category name | 複製後綴 |
 
-#### 8.3.4 drag-and-drop.spec.js（7）
+#### 8.3.4 drag-and-drop.spec.js（8）
 
-| #   | Test                                                                 | 測試重點               |
-| --- | -------------------------------------------------------------------- | ---------------------- |
-| 1   | should reorder checklists in sidebar by drag-and-drop                | Sidebar 清單拖放重排序 |
-| 2   | should reorder categories by drag-and-drop                           | 分類卡片拖放重排序     |
-| 3   | should reorder items within a category by drag-and-drop              | 分類內物品拖放重排序   |
-| 4   | should preserve packed item slots when filtered items are reordered  | 篩選物品重排           |
-| 5   | should persist a filtered move into a partially visible category     | 篩選跨分類插入         |
-| 6   | should persist a filtered move into an all-hidden category           | 空目標追加與持久化     |
-| 7   | preserves a remote item rename made while another tab is dragging it | 併發拖曳與重新命名     |
+| #   | Test                                                                  | 測試重點                   |
+| --- | --------------------------------------------------------------------- | -------------------------- |
+| 1   | should reorder checklists in sidebar by drag-and-drop                 | Sidebar 清單拖放重排序     |
+| 2   | should reorder categories by drag-and-drop                            | 分類卡片拖放重排序         |
+| 3   | should reorder items within a category by drag-and-drop               | 分類內物品拖放重排序       |
+| 4   | should preserve packed item slots when filtered items are reordered   | 篩選物品重排               |
+| 5   | should persist a filtered move into a partially visible category      | 篩選跨分類插入             |
+| 6   | should persist a filtered move into an all-hidden category            | 空目標追加與持久化         |
+| 7   | preserves a remote item rename made while another tab is dragging it  | 併發拖曳與重新命名         |
+| 8   | should reorder items within a category by drag-and-drop [webkit-core] | 相同核心行為，另一引擎執行 |
 
 #### 8.3.5 item-packing.spec.js（10）
 
@@ -1283,38 +1304,39 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | --- | ------------------------------------------------------------- | ---------------------- |
 | 1   | should create and persist a checklist from a recommended list | 來源識別名稱與重新載入 |
 
-#### 8.3.11 storage-recovery.spec.js（28）
+#### 8.3.11 storage-recovery.spec.js（29）
 
-| #   | Test                                 | 測試重點             |
-| --- | ------------------------------------ | -------------------- |
-| 1   | 儲存失敗後保留清單草稿               | 寫入失敗與重試       |
-| 2   | 儲存失敗後保留新範本草稿             | Dialog 來源與重試    |
-| 3   | 儲存失敗後保留範本編輯草稿           | 範本 editor 重試     |
-| 4   | 拒絕跨分頁的同欄位過期編輯           | 衝突與保留草稿       |
-| 5   | 合併跨分頁不同欄位編輯               | 欄位意圖             |
-| 6   | 回報瀏覽器 storage 無法存取          | 明確阻擋狀態         |
-| 7   | 拒絕失敗的分類打包                   | 不誤報完成或復原     |
-| 8   | 範本不支援時保留清單可用性           | Domain 隔離          |
-| 9   | 說明 Web Locks 無法使用              | 安全寫入後備行為     |
-| 10  | 切換清單時保留失敗草稿               | 草稿歸屬             |
-| 11  | 拒絕遠端刪除後排隊的編輯             | 不復活資料並保留草稿 |
-| 12  | 回報寫入成功但重新讀取失敗           | 區分寫入與讀取失敗   |
-| 13  | 取消編輯後顯示後續範本失敗           | 錯誤歸屬             |
-| 14  | 複製成功但重新讀取失敗時保留原選取   | 選取與寫入確認       |
-| 15  | 取消舊草稿時保留較新的錯誤           | 錯誤歸屬             |
-| 16  | 取消失敗的範本編輯後顯示後續清單錯誤 | 錯誤歸屬             |
-| 17  | 儲存等待鎖時阻止切換範本             | 等待中的編輯器歸屬   |
-| 18  | 拒絕切換時保留儲存失敗的範本草稿     | 明確放棄決策         |
-| 19  | 還原物品原名稱後顯示後續錯誤         | 無變更退出的錯誤歸屬 |
-| 20  | 英文桌面匯出損壞資料並重試           | 原始資料與鍵盤復原   |
-| 21  | 繁中 390px 匯出損壞資料並重試        | 本地化窄版復原       |
-| 22  | 切換清單後顯示排隊儲存失敗           | 已移除編輯器錯誤可見 |
-| 23  | 儲存正在編輯的範本標題               | 不按 Enter 直接儲存  |
-| 24  | 儲存正在編輯的範本分類               | 不按 Enter 直接儲存  |
-| 25  | 儲存正在編輯的範本物品               | 不按 Enter 直接儲存  |
-| 26  | 完成範本標題組字後才儲存             | 輸入法事件與最終文字 |
-| 27  | 拒絕打包後排隊的待處理               | 跨分頁物品衝突       |
-| 28  | 拒絕待處理後排隊的分類打包           | 跨分頁原子批次       |
+| #   | Test                                                                                     | 測試重點                   |
+| --- | ---------------------------------------------------------------------------------------- | -------------------------- |
+| 1   | 儲存失敗後保留清單草稿                                                                   | 寫入失敗與重試             |
+| 2   | 儲存失敗後保留新範本草稿                                                                 | Dialog 來源與重試          |
+| 3   | 儲存失敗後保留範本編輯草稿                                                               | 範本 editor 重試           |
+| 4   | 拒絕跨分頁的同欄位過期編輯                                                               | 衝突與保留草稿             |
+| 5   | 合併跨分頁不同欄位編輯                                                                   | 欄位意圖                   |
+| 6   | 回報瀏覽器 storage 無法存取                                                              | 明確阻擋狀態               |
+| 7   | 拒絕失敗的分類打包                                                                       | 不誤報完成或復原           |
+| 8   | 範本不支援時保留清單可用性                                                               | Domain 隔離                |
+| 9   | 說明 Web Locks 無法使用                                                                  | 安全寫入後備行為           |
+| 10  | 切換清單時保留失敗草稿                                                                   | 草稿歸屬                   |
+| 11  | 拒絕遠端刪除後排隊的編輯                                                                 | 不復活資料並保留草稿       |
+| 12  | 回報寫入成功但重新讀取失敗                                                               | 區分寫入與讀取失敗         |
+| 13  | 取消編輯後顯示後續範本失敗                                                               | 錯誤歸屬                   |
+| 14  | 複製成功但重新讀取失敗時保留原選取                                                       | 選取與寫入確認             |
+| 15  | 取消舊草稿時保留較新的錯誤                                                               | 錯誤歸屬                   |
+| 16  | 取消失敗的範本編輯後顯示後續清單錯誤                                                     | 錯誤歸屬                   |
+| 17  | 儲存等待鎖時阻止切換範本                                                                 | 等待中的編輯器歸屬         |
+| 18  | 拒絕切換時保留儲存失敗的範本草稿                                                         | 明確放棄決策               |
+| 19  | 還原物品原名稱後顯示後續錯誤                                                             | 無變更退出的錯誤歸屬       |
+| 20  | 英文桌面匯出損壞資料並重試                                                               | 原始資料與鍵盤復原         |
+| 21  | 繁中 390px 匯出損壞資料並重試                                                            | 本地化窄版復原             |
+| 22  | 切換清單後顯示排隊儲存失敗                                                               | 已移除編輯器錯誤可見       |
+| 23  | 儲存正在編輯的範本標題                                                                   | 不按 Enter 直接儲存        |
+| 24  | 儲存正在編輯的範本分類                                                                   | 不按 Enter 直接儲存        |
+| 25  | 儲存正在編輯的範本物品                                                                   | 不按 Enter 直接儲存        |
+| 26  | 完成範本標題組字後才儲存                                                                 | 輸入法事件與最終文字       |
+| 27  | 拒絕打包後排隊的待處理                                                                   | 跨分頁物品衝突             |
+| 28  | 拒絕待處理後排隊的分類打包                                                               | 跨分頁原子批次             |
+| 29  | keeps a checklist draft after a real storage failure and saves it on retry [webkit-core] | 相同核心行為，另一引擎執行 |
 
 #### 8.3.12 rwd-phone.spec.js (8 tests)
 
@@ -1329,7 +1351,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 7   | persists category sorting across tablet columns                       | 長按微動、跨欄抓取位置與排序保存                            |
 | 8   | moves an unpacked item into an all-hidden category by touch           | 觸控拖放至已篩選分類與重載                                  |
 
-#### 8.3.13 rwd-overlays.spec.js（5）
+#### 8.3.13 rwd-overlays.spec.js（6）
 
 | #   | Test                                                                                 | 測試重點                                 |
 | --- | ------------------------------------------------------------------------------------ | ---------------------------------------- |
@@ -1338,15 +1360,20 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 3   | short dialogs and narrow date editing fit without horizontal overflow                | 短 viewport、原生日期與觸控選單捲動      |
 | 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport 留白、錯誤與清理              |
 | 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup 範圍、初始焦點與 Escape            |
+| 6   | bottom popup fits and keyboard can activate and dismiss it [webkit-core]             | 相同核心行為，另一引擎執行               |
 
-#### 8.3.14 rwd-webkit.spec.js（4）
+#### 8.3.14 rwd-webkit.spec.js（8）
 
-| #   | Test                                                         | 測試重點                                      |
-| --- | ------------------------------------------------------------ | --------------------------------------------- |
-| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit 觸控狀態、抽屜動畫與回焦               |
-| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit 短 viewport 與日期幾何                 |
-| 3   | WebKit tablet columns retain visible touch actions           | WebKit 平板欄數、收合禁止捲動、觸控選單與密度 |
-| 4   | WebKit short mobile sidebar keeps navigation reachable       | 極短側欄清單與語言控制                        |
+| #   | Test                                                                    | 測試重點                                      |
+| --- | ----------------------------------------------------------------------- | --------------------------------------------- |
+| 1   | WebKit touch actions persist and drawer dismisses accessibly            | WebKit 觸控狀態、抽屜動畫與回焦               |
+| 2   | WebKit short dialogs and date fields fit the narrow viewport            | WebKit 短 viewport 與日期幾何                 |
+| 3   | WebKit tablet columns retain visible touch actions                      | WebKit 平板欄數、收合禁止捲動、觸控選單與密度 |
+| 4   | WebKit short mobile sidebar keeps navigation reachable                  | 極短側欄清單與語言控制                        |
+| 5   | WebKit touch actions persist and drawer dismisses accessibly [chromium] | 相同核心行為，另一引擎執行                    |
+| 6   | WebKit short dialogs and date fields fit the narrow viewport [chromium] | 相同核心行為，另一引擎執行                    |
+| 7   | WebKit tablet columns retain visible touch actions [chromium]           | 相同核心行為，另一引擎執行                    |
+| 8   | WebKit short mobile sidebar keeps navigation reachable [chromium]       | 相同核心行為，另一引擎執行                    |
 
 #### 8.3.15 sidebar-presentation.spec.js（8）
 
@@ -1438,7 +1465,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | --- | -------------------------------------------------------------------- | ------------------------------------- |
 | 1   | refreshes a stale drag instead of persisting duplicate target orders | 真實雙分頁拖曳衝突、原子storage與重載 |
 
-#### 8.3.21 checklist-dates.spec.js (16 tests)
+#### 8.3.21 checklist-dates.spec.js (18 tests)
 
 | #   | Test                                                                        | 測試重點                     |
 | --- | --------------------------------------------------------------------------- | ---------------------------- |
@@ -1458,6 +1485,8 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 14  | keeps 10-character name within the main viewport at 1280px                  | 不同寬度的清單名稱版面       |
 | 15  | keeps 100-character name within the main viewport at 1280px                 | 不同寬度的清單名稱版面       |
 | 16  | saves another category when its focus moves to a failed draft confirmation  | 儲存失敗草稿與跨分類焦點切換 |
+| 17  | edits labeled dates and confirms changes at 320px in en [webkit-core]       | 相同核心行為，另一引擎執行   |
+| 18  | edits labeled dates and confirms changes at 1280px in en [webkit-core]      | 相同核心行為，另一引擎執行   |
 
 #### 8.3.22 template-navigation.spec.js (23 tests)
 
@@ -1486,3 +1515,10 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 21  | discards the template once before copying a checklist                          | 範本導覽與草稿保護 |
 | 22  | keeps long template toolbar and focused content usable after rotation in en    | 範本導覽與草稿保護 |
 | 23  | keeps long template toolbar and focused content usable after rotation in zh-TW | 範本導覽與草稿保護 |
+
+#### 8.3.23 core-smoke.spec.js (2 tests)
+
+| #   | Test                                                             | 驗證內容                         |
+| --- | ---------------------------------------------------------------- | -------------------------------- |
+| 1   | creates, edits, packs and deletes a persisted item [chromium]    | 建立、編輯、打包、保存重載與刪除 |
+| 2   | creates, edits, packs and deletes a persisted item [webkit-core] | 建立、編輯、打包、保存重載與刪除 |

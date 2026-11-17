@@ -207,27 +207,34 @@ test.describe('Drag & Drop', () => {
 
   test.describe('item reorder within category', () => {
     // Test Case 3: Should reorder items within a category by drag-and-drop
-    test('should reorder items within a category by drag-and-drop', async ({ page }) => {
-      // Create a checklist from the general recommended list.
-      await createAndConfirmChecklist(page);
+    test(
+      'should reorder items within a category by drag-and-drop',
+      { tag: '@core-smoke' },
+      async ({ page }) => {
+        // Create a checklist from the general recommended list.
+        await createAndConfirmChecklist(page);
 
-      // Work with items inside the first category
-      const firstCategory = page.getByTestId('category-card').first();
-      const itemNames = firstCategory.getByTestId('item-name');
-      const itemCount = await itemNames.count();
-      expect(itemCount).toBeGreaterThanOrEqual(2);
+        // Work with items inside the first category
+        const firstCategory = page.getByTestId('category-card').first();
+        const itemNames = firstCategory.getByTestId('item-name');
+        const itemCount = await itemNames.count();
+        expect(itemCount).toBeGreaterThanOrEqual(2);
 
-      const firstItemName = await itemNames.nth(0).textContent();
-      const secondItemName = await itemNames.nth(1).textContent();
+        const firstItemName = await itemNames.nth(0).textContent();
+        const secondItemName = await itemNames.nth(1).textContent();
 
-      // Drag the second item onto the first within the same category
-      const itemRows = firstCategory.getByTestId('item-row');
-      await slowDragTo(page, itemRows.nth(1), itemRows.nth(0));
+        // Drag the second item onto the first within the same category
+        const itemRows = firstCategory.getByTestId('item-row');
+        await slowDragTo(page, itemRows.nth(1), itemRows.nth(0));
 
-      // Verify items swapped
-      await expect(itemNames.nth(0)).toHaveText(secondItemName);
-      await expect(itemNames.nth(1)).toHaveText(firstItemName);
-    });
+        // Verify items swapped
+        await expect(itemNames.nth(0)).toHaveText(secondItemName);
+        await expect(itemNames.nth(1)).toHaveText(firstItemName);
+        await page.reload();
+        await expect(itemNames.nth(0)).toHaveText(secondItemName);
+        await expect(itemNames.nth(1)).toHaveText(firstItemName);
+      }
+    );
 
     // Test Case 4: Should reorder visible items without moving packed slots
     test('should preserve packed item slots when filtered items are reordered', async ({

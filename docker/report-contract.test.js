@@ -151,7 +151,12 @@ test('inventory rejects missing or malformed report files', () => {
     mkdirSync(join(directory, 'test-inventory-reports'));
     writeFileSync(join(directory, 'package.json'), '{"type":"module"}');
     writeFileSync(join(directory, 'docs', 'testing-guide.md'), 'fixture');
-    for (const name of ['test-inventory.js', 'reportValidation.js']) {
+    for (const name of [
+      'test-inventory.js',
+      'reportValidation.js',
+      'coreSmokeValidation.js',
+      'playwrightInventory.js',
+    ]) {
       writeFileSync(join(directory, 'scripts', name), readFileSync(resolve('scripts', name)));
     }
     const execute = () =>
@@ -183,7 +188,12 @@ test('inventory includes Vitest failure details before removing its temporary re
     mkdirSync(join(directory, 'node_modules', 'vitest'), { recursive: true });
     writeFileSync(join(directory, 'package.json'), '{"type":"module"}');
     writeFileSync(join(directory, 'docs', 'testing-guide.md'), 'fixture');
-    for (const name of ['test-inventory.js', 'reportValidation.js']) {
+    for (const name of [
+      'test-inventory.js',
+      'reportValidation.js',
+      'coreSmokeValidation.js',
+      'playwrightInventory.js',
+    ]) {
       writeFileSync(join(directory, 'scripts', name), readFileSync(resolve('scripts', name)));
     }
     writeFileSync(

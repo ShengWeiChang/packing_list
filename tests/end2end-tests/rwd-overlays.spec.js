@@ -368,22 +368,26 @@ test('bottom item input keeps a buffer above a simulated keyboard', async ({ pag
 test.describe('desktop popup', () => {
   test.use({ viewport: { width: 1280, height: 500 }, hasTouch: false, isMobile: false });
   // Test Case 5: A bottom-edge menu opens upward outside transformed item cards; Escape returns focus.
-  test('bottom popup fits and keyboard can activate and dismiss it', async ({ page }) => {
-    await createList(page);
-    const row = page.getByTestId('item-row').last();
-    await row.scrollIntoViewIfNeeded();
-    await row.hover();
-    const trigger = row.locator('[data-testid^="overflow-trigger-item-"]');
-    await trigger.focus();
-    await page.keyboard.press('Enter');
-    const menu = page.locator('[data-testid^="overflow-dropdown-item-"]');
-    await expect(menu).toBeVisible();
-    await expect(menu.locator('button').first()).toBeFocused();
-    const bounds = await menu.boundingBox();
-    expect(bounds.y).toBeGreaterThanOrEqual(0);
-    expect(bounds.y + bounds.height).toBeLessThanOrEqual(500);
-    await page.keyboard.press('Escape');
-    await expect(menu).toHaveCount(0);
-    await expect(trigger).toBeFocused();
-  });
+  test(
+    'bottom popup fits and keyboard can activate and dismiss it',
+    { tag: '@core-smoke' },
+    async ({ page }) => {
+      await createList(page);
+      const row = page.getByTestId('item-row').last();
+      await row.scrollIntoViewIfNeeded();
+      await row.hover();
+      const trigger = row.locator('[data-testid^="overflow-trigger-item-"]');
+      await trigger.focus();
+      await page.keyboard.press('Enter');
+      const menu = page.locator('[data-testid^="overflow-dropdown-item-"]');
+      await expect(menu).toBeVisible();
+      await expect(menu.locator('button').first()).toBeFocused();
+      const bounds = await menu.boundingBox();
+      expect(bounds.y).toBeGreaterThanOrEqual(0);
+      expect(bounds.y + bounds.height).toBeLessThanOrEqual(500);
+      await page.keyboard.press('Escape');
+      await expect(menu).toHaveCount(0);
+      await expect(trigger).toBeFocused();
+    }
+  );
 });

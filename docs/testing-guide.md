@@ -14,24 +14,41 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 851    |
+| Total tests        | 862    |
 | Unit tests         | 323    |
 | Component tests    | 322    |
-| E2E tests          | 206    |
+| E2E tests          | 217    |
 | Line coverage      | 88.1%  |
 | Statement coverage | 86.03% |
-| Branch coverage    | 76.86% |
+| Branch coverage    | 76.65% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
 
 ### Testing Layers
 
-| Layer     | Tool                     | Tests | Purpose                                            |
-| --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 323   | Pure logic in models, services, composables, utils |
-| Component | Vitest + @vue/test-utils | 322   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 206   | Full user flows in a real browser                  |
+| Layer     | Tool                           | Tests | Purpose                                            |
+| --------- | ------------------------------ | ----- | -------------------------------------------------- |
+| Unit      | Vitest                         | 323   | Pure logic in models, services, composables, utils |
+| Component | Vitest + @vue/test-utils       | 322   | Vue component rendering, events, state             |
+| E2E       | Playwright + Chromium / WebKit | 217   | Full user flows in browser engines                 |
+
+### Platform Verification Matrix
+
+| Where                   | Unit / Component                                                             | E2E                                                          | How and current status                                                                                                |
+| ----------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Local macOS             | All 323 Unit and 322 Component tests can run locally.                        | All 217 browser executions can run, or select focused tests. | `npm run verify:feature` runs the full feature gate on the Mac; use Vitest or Playwright commands for focused checks. |
+| Local Linux container   | All 323 Unit and 322 Component tests.                                        | All 217 browser executions.                                  | `sh scripts/ci-container.sh full` runs the feature gate and separate Node container/report contract tests in Docker.  |
+| GitHub Linux CI         | All 323 Unit and 322 Component tests.                                        | All 217 browser executions.                                  | The configured Ubuntu job runs the same container command; the M4 candidate has not yet been verified in PR CI.       |
+| GitHub Windows runner   | Full Unit and Component suites are not currently planned for this smoke job. | Six shared core cases in Playwright Chromium.                | Planned for M5 on a GitHub Windows runner; not yet configured or verified.                                            |
+| Native macOS Safari     | Not run by Safari; Vitest can run on the same Mac.                           | Native Safari smoke is unverified.                           | Remote Automation remains disabled by user choice; follow-up verification is tracked separately.                      |
+| Android and iOS devices | Not applicable.                                                              | Native mobile browsers and touch are unverified.             | Not part of the current gate; browser emulation does not provide a mobile operating system.                           |
+
+The 217 E2E executions are 207 in Chromium, 6 selected core cases in Playwright WebKit (`webkit-core`), and 4 responsive cases in Playwright WebKit (`webkit-rwd`). A source case executed in multiple projects counts once per execution. Chromium runs the general E2E baseline, including the same four responsive cases; WebKit adds the selected core and responsive checks, not the full Chromium suite.
+
+The six core cases cover item creation, editing, quantity, pending and packed status, reload and deletion; two viewport sizes for date editing; storage failure and draft recovery; keyboard menu focus; and mouse sorting with reload. Five are selected existing cases and one joins an item lifecycle that previously lacked complete reload evidence. The four responsive cases cover touch-emulated actions, short dialogs and dates, tablet layout, and short mobile navigation.
+
+Unit and Component tests run in Vitest's Node/jsdom environment, not in the actual browser or operating system UI. The full feature gate also checks formatting, lint, generated colors, TypeScript, inventory and production build. Node container/report contract tests run separately through the Linux container entrypoint and are not included in the 862 test total. The totals and platform counts describe the current candidate; the final full gate remains scheduled for M6.
 
 ### Toolchain
 
@@ -125,31 +142,34 @@ tests/
 │   ├── TemplateEditor.test.js           # 16  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 206 tests
+└── end2end-tests/                       # 217 tests
     ├── touchDragHelpers.js              # Hold-motion and native-scroll gestures
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
-    ├── rwd-overlays.spec.js             #  5  tests
-    ├── rwd-webkit.spec.js               #  4  tests
+    ├── rwd-overlays.spec.js             #  6  tests
+    ├── rwd-webkit.spec.js               #  8  tests
     ├── sidebar-presentation.spec.js     #  8  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
     ├── checklist-management.spec.js     #  6  tests
     ├── category-crud.spec.js            #  3  tests
-    ├── drag-and-drop.spec.js            #  7  tests
+    ├── drag-and-drop.spec.js            #  8  tests
     ├── desktop-drag-presentation.spec.js # 19  tests
     ├── drag-settlement.spec.js           # 15  tests
     ├── drag-membership-conflict.spec.js  #  1  test
     ├── category-motion.spec.js          #  8  tests
-    ├── interaction-feedback.spec.js      #  8  tests
+    ├── interaction-feedback.spec.js      #  9  tests
     ├── multi-tab-sync.spec.js           #  6  tests
-    ├── checklist-dates.spec.js          # 16  tests
+    ├── core-smoke.spec.js               #  2  tests
+    ├── checklist-dates.spec.js          # 18  tests
     ├── template-navigation.spec.js      # 23  tests
     ├── template-management.spec.js      #  8  tests
     ├── recommended-lists.spec.js        #  1  test
-    └── storage-recovery.spec.js         # 28  tests
+    └── storage-recovery.spec.js         # 29  tests
 ```
+
+Each per-file E2E count records browser-project executions; `Test Case` comments number distinct source cases, so shared cases appear once in source and once per project here.
 
 ### Naming Conventions
 
@@ -177,7 +197,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | composables/ | 95.04%     | 85.26% | 97.28% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.53%     | 83.5%  | 95.44% |
-| utils/       | 96.36%     | 90.37% | 96.62% |
+| utils/       | 96.36%     | 85.92% | 96.62% |
 
 ### By Component
 
@@ -272,7 +292,7 @@ This project uses three layers to balance speed and reliability.
 
 ### Responsive Interaction Evidence
 
-`rwd-phone.spec.js` explicitly sets touch contexts and verifies phone/tablet actions, real hit areas, name geometry, once-one expansion, reload and long-press sorting, plus desktop mouse regression. `rwd-overlays.spec.js` covers drawer focus, nested dialogs, short screens, native dates and simulated keyboard geometry/error recovery. `webkit-rwd` runs only `rwd-webkit.spec.js`; Chromium ignores that file and CI installs both engines. Emulation and synthetic viewport/IME events do not prove native keyboard or physical-device comfort; record physical-device results separately.
+`rwd-phone.spec.js` explicitly sets touch contexts and verifies phone/tablet actions, real hit areas, name geometry, once-one expansion, reload and long-press sorting, plus desktop mouse regression. `rwd-overlays.spec.js` covers drawer focus, nested dialogs, short screens, native dates and simulated keyboard geometry/error recovery. `rwd-webkit.spec.js` runs under both Chromium and `webkit-rwd` with the same touch-emulated settings; `webkit-core` additionally runs the selected desktop core cases. CI installs both engines. Emulation and synthetic viewport/IME events do not prove native keyboard or physical-device comfort; record physical-device results separately.
 
 `drag-settlement.spec.js` covers pending sidebar order across layouts, failed saves, moved-placeholder `touchcancel` for seven receiving/reordering paths, and normal touch release. Its cancellation gestures use Chromium CDP emulation; they do not prove physical iOS/Safari interruption behavior. `typedDraggable.test.js` exercises the real vuedraggable model/change boundary. `drag-membership-conflict.spec.js` uses two real pages to verify stale membership rejection and reload; service/composable cases cover exact membership, hidden rows and compatible field edits.
 
@@ -1169,7 +1189,7 @@ This project uses three layers to balance speed and reliability.
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | Completed touch cross-list add/remove                         |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | Completed mouse cross-list add/remove                         |
 
-### 8.3 E2E Tests (206 tests)
+### 8.3 E2E Tests (217 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -1200,17 +1220,18 @@ This project uses three layers to balance speed and reliability.
 | 2   | should copy a category via overflow menu            | Category duplication     |
 | 3   | should show copy suffix in duplicated category name | Copy suffix localization |
 
-#### 8.3.4 drag-and-drop.spec.js (7 tests)
+#### 8.3.4 drag-and-drop.spec.js (8 tests)
 
-| #   | Test                                                                 | What it verifies                |
-| --- | -------------------------------------------------------------------- | ------------------------------- |
-| 1   | should reorder checklists in sidebar by drag-and-drop                | Sidebar checklist reordering    |
-| 2   | should reorder categories by drag-and-drop                           | Category card reordering        |
-| 3   | should reorder items within a category by drag-and-drop              | Item reordering within category |
-| 4   | should preserve packed item slots when filtered items are reordered  | Filtered item reordering        |
-| 5   | should persist a filtered move into a partially visible category     | Filtered cross-category insert  |
-| 6   | should persist a filtered move into an all-hidden category           | Empty-target append and persist |
-| 7   | preserves a remote item rename made while another tab is dragging it | Concurrent drag and rename      |
+| #   | Test                                                                  | What it verifies                                |
+| --- | --------------------------------------------------------------------- | ----------------------------------------------- |
+| 1   | should reorder checklists in sidebar by drag-and-drop                 | Sidebar checklist reordering                    |
+| 2   | should reorder categories by drag-and-drop                            | Category card reordering                        |
+| 3   | should reorder items within a category by drag-and-drop               | Item reordering within category                 |
+| 4   | should preserve packed item slots when filtered items are reordered   | Filtered item reordering                        |
+| 5   | should persist a filtered move into a partially visible category      | Filtered cross-category insert                  |
+| 6   | should persist a filtered move into an all-hidden category            | Empty-target append and persist                 |
+| 7   | preserves a remote item rename made while another tab is dragging it  | Concurrent drag and rename                      |
+| 8   | should reorder items within a category by drag-and-drop [webkit-core] | Same core behavior executed in the other engine |
 
 #### 8.3.5 item-packing.spec.js (10 tests)
 
@@ -1283,38 +1304,39 @@ This project uses three layers to balance speed and reliability.
 | --- | ------------------------------------------------------------- | ---------------------------- |
 | 1   | should create and persist a checklist from a recommended list | Source-aware name and reload |
 
-#### 8.3.11 storage-recovery.spec.js (28 tests)
+#### 8.3.11 storage-recovery.spec.js (29 tests)
 
-| #   | Test                                                                 | What it verifies                   |
-| --- | -------------------------------------------------------------------- | ---------------------------------- |
-| 1   | Retain a checklist draft after storage failure                       | Failed write and retry             |
-| 2   | Retain a new template draft after storage failure                    | Dialog source and retry            |
-| 3   | Retain an edited template draft after storage failure                | Template editor retry              |
-| 4   | Reject a stale same-field edit across tabs                           | Conflict and draft preservation    |
-| 5   | Merge different-field edits across tabs                              | Field intent                       |
-| 6   | Report inaccessible browser storage                                  | Explicit blocked state             |
-| 7   | Reject failed category packing                                       | No false completion or undo        |
-| 8   | Keep checklist data usable with unsupported templates                | Domain isolation                   |
-| 9   | Explain unavailable Web Locks                                        | Safe-write fallback                |
-| 10  | Preserve a failed draft when switching lists                         | Draft ownership                    |
-| 11  | Reject an edit queued after a remote deletion                        | No resurrection and retained draft |
-| 12  | Report a successful write with failed refresh                        | Saved versus refresh failure       |
-| 13  | Show a later template failure after cancelling an edit               | Error ownership                    |
-| 14  | Keep original selection after copy and failed refresh                | Selection and acknowledgement      |
-| 15  | Preserve a newer error when an older draft is cancelled              | Error ownership                    |
-| 16  | Show later checklist failure after cancelling a failed template edit | Error ownership                    |
-| 17  | Prevent switching templates while a save waits for a lock            | Pending editor identity            |
-| 18  | Keep a failed template draft when switching is declined              | Explicit discard decision          |
-| 19  | Show later errors after restoring an item's original name            | No-op error ownership              |
-| 20  | Export and retry corrupt data in English on desktop                  | Raw data and keyboard recovery     |
-| 21  | Export and retry corrupt data in Chinese at 390px                    | Localized narrow recovery          |
-| 22  | Show queued save failure after switching lists                       | Displaced editor error visibility  |
-| 23  | Save an active template title                                        | Direct save without Enter          |
-| 24  | Save an active template category                                     | Direct save without Enter          |
-| 25  | Save an active template item                                         | Direct save without Enter          |
-| 26  | Finish composing a template title before saving                      | IME event and final stored text    |
-| 27  | Reject queued pending after another tab packs the item               | Cross-tab item conflict            |
-| 28  | Reject queued category pack after another tab marks the item pending | Cross-tab atomic batch             |
+| #   | Test                                                                                     | What it verifies                                |
+| --- | ---------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| 1   | Retain a checklist draft after storage failure                                           | Failed write and retry                          |
+| 2   | Retain a new template draft after storage failure                                        | Dialog source and retry                         |
+| 3   | Retain an edited template draft after storage failure                                    | Template editor retry                           |
+| 4   | Reject a stale same-field edit across tabs                                               | Conflict and draft preservation                 |
+| 5   | Merge different-field edits across tabs                                                  | Field intent                                    |
+| 6   | Report inaccessible browser storage                                                      | Explicit blocked state                          |
+| 7   | Reject failed category packing                                                           | No false completion or undo                     |
+| 8   | Keep checklist data usable with unsupported templates                                    | Domain isolation                                |
+| 9   | Explain unavailable Web Locks                                                            | Safe-write fallback                             |
+| 10  | Preserve a failed draft when switching lists                                             | Draft ownership                                 |
+| 11  | Reject an edit queued after a remote deletion                                            | No resurrection and retained draft              |
+| 12  | Report a successful write with failed refresh                                            | Saved versus refresh failure                    |
+| 13  | Show a later template failure after cancelling an edit                                   | Error ownership                                 |
+| 14  | Keep original selection after copy and failed refresh                                    | Selection and acknowledgement                   |
+| 15  | Preserve a newer error when an older draft is cancelled                                  | Error ownership                                 |
+| 16  | Show later checklist failure after cancelling a failed template edit                     | Error ownership                                 |
+| 17  | Prevent switching templates while a save waits for a lock                                | Pending editor identity                         |
+| 18  | Keep a failed template draft when switching is declined                                  | Explicit discard decision                       |
+| 19  | Show later errors after restoring an item's original name                                | No-op error ownership                           |
+| 20  | Export and retry corrupt data in English on desktop                                      | Raw data and keyboard recovery                  |
+| 21  | Export and retry corrupt data in Chinese at 390px                                        | Localized narrow recovery                       |
+| 22  | Show queued save failure after switching lists                                           | Displaced editor error visibility               |
+| 23  | Save an active template title                                                            | Direct save without Enter                       |
+| 24  | Save an active template category                                                         | Direct save without Enter                       |
+| 25  | Save an active template item                                                             | Direct save without Enter                       |
+| 26  | Finish composing a template title before saving                                          | IME event and final stored text                 |
+| 27  | Reject queued pending after another tab packs the item                                   | Cross-tab item conflict                         |
+| 28  | Reject queued category pack after another tab marks the item pending                     | Cross-tab atomic batch                          |
+| 29  | keeps a checklist draft after a real storage failure and saves it on retry [webkit-core] | Same core behavior executed in the other engine |
 
 #### 8.3.12 rwd-phone.spec.js (8 tests)
 
@@ -1329,7 +1351,7 @@ This project uses three layers to balance speed and reliability.
 | 7   | persists category sorting across tablet columns                       | Hold jitter, cross-column grab position and persistence                                     |
 | 8   | moves an unpacked item into an all-hidden category by touch           | Touch drop into filtered footer and reload                                                  |
 
-#### 8.3.13 rwd-overlays.spec.js (5 tests)
+#### 8.3.13 rwd-overlays.spec.js (6 tests)
 
 | #   | Test                                                                                 | What it verifies                                             |
 | --- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -1338,15 +1360,20 @@ This project uses three layers to balance speed and reliability.
 | 3   | short dialogs and narrow date editing fit without horizontal overflow                | Short viewport, native dates and scrollable touch menu       |
 | 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport buffer, error and cleanup                         |
 | 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup bounds, initial focus and Escape                       |
+| 6   | bottom popup fits and keyboard can activate and dismiss it [webkit-core]             | Same core behavior executed in the other engine              |
 
-#### 8.3.14 rwd-webkit.spec.js (4 tests)
+#### 8.3.14 rwd-webkit.spec.js (8 tests)
 
-| #   | Test                                                         | What it verifies                                                      |
-| --- | ------------------------------------------------------------ | --------------------------------------------------------------------- |
-| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit touch state, drawer motion and focus return                    |
-| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit short viewport and date geometry                               |
-| 3   | WebKit tablet columns retain visible touch actions           | WebKit tablet columns, collapsed scroll lock, touch menus and density |
-| 4   | WebKit short mobile sidebar keeps navigation reachable       | Short drawer checklist and language controls                          |
+| #   | Test                                                                    | What it verifies                                                      |
+| --- | ----------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 1   | WebKit touch actions persist and drawer dismisses accessibly            | WebKit touch state, drawer motion and focus return                    |
+| 2   | WebKit short dialogs and date fields fit the narrow viewport            | WebKit short viewport and date geometry                               |
+| 3   | WebKit tablet columns retain visible touch actions                      | WebKit tablet columns, collapsed scroll lock, touch menus and density |
+| 4   | WebKit short mobile sidebar keeps navigation reachable                  | Short drawer checklist and language controls                          |
+| 5   | WebKit touch actions persist and drawer dismisses accessibly [chromium] | Same core behavior executed in the other engine                       |
+| 6   | WebKit short dialogs and date fields fit the narrow viewport [chromium] | Same core behavior executed in the other engine                       |
+| 7   | WebKit tablet columns retain visible touch actions [chromium]           | Same core behavior executed in the other engine                       |
+| 8   | WebKit short mobile sidebar keeps navigation reachable [chromium]       | Same core behavior executed in the other engine                       |
 
 #### 8.3.15 sidebar-presentation.spec.js (8 tests)
 
@@ -1438,7 +1465,7 @@ This project uses three layers to balance speed and reliability.
 | --- | -------------------------------------------------------------------- | ----------------------------------------------------- |
 | 1   | refreshes a stale drag instead of persisting duplicate target orders | Real two-tab drag conflict, atomic storage and reload |
 
-#### 8.3.21 checklist-dates.spec.js (16 tests)
+#### 8.3.21 checklist-dates.spec.js (18 tests)
 
 | #   | Test                                                                        | What it verifies                                 |
 | --- | --------------------------------------------------------------------------- | ------------------------------------------------ |
@@ -1458,6 +1485,8 @@ This project uses three layers to balance speed and reliability.
 | 14  | keeps 10-character name within the main viewport at 1280px                  | Checklist name layout across viewport widths     |
 | 15  | keeps 100-character name within the main viewport at 1280px                 | Checklist name layout across viewport widths     |
 | 16  | saves another category when its focus moves to a failed draft confirmation  | Failed draft and cross-category focus transition |
+| 17  | edits labeled dates and confirms changes at 320px in en [webkit-core]       | Same core behavior executed in the other engine  |
+| 18  | edits labeled dates and confirms changes at 1280px in en [webkit-core]      | Same core behavior executed in the other engine  |
 
 #### 8.3.22 template-navigation.spec.js (23 tests)
 
@@ -1486,3 +1515,10 @@ This project uses three layers to balance speed and reliability.
 | 21  | discards the template once before copying a checklist                          | Template navigation and draft protection |
 | 22  | keeps long template toolbar and focused content usable after rotation in en    | Template navigation and draft protection |
 | 23  | keeps long template toolbar and focused content usable after rotation in zh-TW | Template navigation and draft protection |
+
+#### 8.3.23 core-smoke.spec.js (2 tests)
+
+| #   | Test                                                             | What it verifies                                      |
+| --- | ---------------------------------------------------------------- | ----------------------------------------------------- |
+| 1   | creates, edits, packs and deletes a persisted item [chromium]    | Create, edit, pack, reload persisted state and delete |
+| 2   | creates, edits, packs and deletes a persisted item [webkit-core] | Create, edit, pack, reload persisted state and delete |

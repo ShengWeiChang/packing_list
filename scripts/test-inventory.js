@@ -19,6 +19,8 @@ import { tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
+import { validateCoreSmokeCoverage } from './coreSmokeValidation.js';
+import { summarizePlaywrightCases } from './playwrightInventory.js';
 import { validatePlaywrightReport, validateVitestReport } from './reportValidation.js';
 
 // -----------------------------------------------------------------------------
@@ -210,17 +212,23 @@ function collectVitestRecords(report) {
  * @param {object} suite - Playwright JSON suite.
  * @param {Array<{filePath: string, layer: string, count: number}>} records - Destination records.
  * @param {string} testRoot - Absolute Playwright test root.
+ * @param {string[]} [parents] - Ancestor suite titles for stable source-case identity.
  * @returns {void}
  */
-function collectPlaywrightSuite(suite, records, testRoot) {
+function collectPlaywrightSuite(suite, records, testRoot, parents = []) {
+  const suitePath = [...parents, suite.title];
   for (const spec of suite.specs ?? []) {
     const filePath = toPlaywrightProjectPath(spec.file ?? suite.file, testRoot);
     const count = spec.tests.filter((test) => test.status !== 'skipped').length;
-    records.push({ filePath, layer: getLayer(filePath), count });
+    records.push({
+      filePath,
+      count,
+      caseKey: JSON.stringify([...suitePath, spec.title, spec.line, spec.column]),
+    });
   }
 
   for (const nestedSuite of suite.suites ?? []) {
-    collectPlaywrightSuite(nestedSuite, records, testRoot);
+    collectPlaywrightSuite(nestedSuite, records, testRoot, suitePath);
   }
 }
 
@@ -292,12 +300,10 @@ function collectPlaywrightRecords(report) {
     collectPlaywrightSuite(suite, specRecords, report.config.rootDir);
   }
 
-  const totals = new Map();
-  for (const record of specRecords) {
-    totals.set(record.filePath, (totals.get(record.filePath) ?? 0) + record.count);
-  }
-
-  return [...totals].map(([filePath, count]) => ({ filePath, layer: getLayer(filePath), count }));
+  return summarizePlaywrightCases(specRecords).map((record) => ({
+    ...record,
+    layer: getLayer(record.filePath),
+  }));
 }
 
 // -----------------------------------------------------------------------------
@@ -333,14 +339,15 @@ function getCommentCaseNumbers(source) {
 function getCommentErrors(record) {
   const source = readFileSync(join(PROJECT_ROOT, record.filePath), 'utf8');
   const commentNumbers = getCommentCaseNumbers(source);
-  const expectedNumbers = Array.from({ length: record.count }, (_, index) => index + 1);
+  const expectedCount = record.uniqueCaseCount ?? record.count;
+  const expectedNumbers = Array.from({ length: expectedCount }, (_, index) => index + 1);
 
   if (commentNumbers.join(',') === expectedNumbers.join(',')) {
     return [];
   }
 
   return [
-    `${record.filePath}: Test Case comments cover ${commentNumbers.length} cases; expected 1-${record.count}.`,
+    `${record.filePath}: Test Case comments cover ${commentNumbers.length} cases; expected 1-${expectedCount}.`,
   ];
 }
 
@@ -449,7 +456,7 @@ function updateGuideCounts(guide, records) {
   for (const [layer, count] of Object.entries(totals)) {
     if (layer === 'total') continue;
 
-    const label = layer[0].toUpperCase() + layer.slice(1);
+    const label = layer === 'e2e' ? 'E2E' : layer[0].toUpperCase() + layer.slice(1);
     const pattern = new RegExp(`(\\|\\s*${label}\\s*\\|[^|]*\\|\\s*)\\d+(\\s*\\|)`, 'g');
     updatedGuide = updatedGuide.replace(pattern, `$1${count}$2`);
   }
@@ -491,6 +498,7 @@ function main() {
     );
     validateVitestReport(vitestReport, expectedVitest, PROJECT_ROOT);
     validatePlaywrightReport(playwrightReport, expectedPlaywright);
+    validateCoreSmokeCoverage(playwrightReport);
     const records = [
       ...collectVitestRecords(vitestReport),
       ...collectPlaywrightRecords(playwrightReport),

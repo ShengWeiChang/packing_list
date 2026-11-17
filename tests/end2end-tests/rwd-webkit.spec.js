@@ -12,6 +12,8 @@ import { expect, test } from '@playwright/test';
 import { selectGeneralRecommendedList } from './checklistHelpers.js';
 import { armDrawerTransition, sampleDrawerTransition } from './drawerMotionHelpers.js';
 
+test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
 // Test Case 1: WebKit touch reachability, persisted quick actions, and drawer Escape.
 test('WebKit touch actions persist and drawer dismisses accessibly', async ({ page }) => {
   await page.goto('/');

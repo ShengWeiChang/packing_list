@@ -28,161 +28,186 @@ const checklists = [
 
 for (const locale of ['en', 'zh-TW']) {
   for (const width of [320, 390, 820, 1280]) {
-    test(`edits labeled dates and confirms changes at ${width}px in ${locale}`, async ({
-      page,
-    }) => {
-      await page.setViewportSize({ width, height: 900 });
-      await page.addInitScript(
-        ({ language, initialChecklists }) => {
-          localStorage.setItem('user-locale', language);
-          localStorage.setItem(
-            'packingListApp',
-            JSON.stringify({
-              checklists: initialChecklists,
-              categories: [
-                { id: 'date-category', checklistId: 'date-checklist', name: 'Packing', order: 0 },
-              ],
-              items: [],
-            })
+    test(
+      `edits labeled dates and confirms changes at ${width}px in ${locale}`,
+      { tag: locale === 'en' && (width === 320 || width === 1280) ? '@core-smoke' : [] },
+      async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.addInitScript(
+          ({ language, initialChecklists }) => {
+            if (localStorage.getItem('packingListApp')) return;
+            localStorage.setItem('user-locale', language);
+            localStorage.setItem(
+              'packingListApp',
+              JSON.stringify({
+                checklists: initialChecklists,
+                categories: [
+                  { id: 'date-category', checklistId: 'date-checklist', name: 'Packing', order: 0 },
+                ],
+                items: [],
+              })
+            );
+            localStorage.setItem('packingListLastOpenedChecklistId', 'date-checklist');
+          },
+          { language: locale, initialChecklists: checklists }
+        );
+        await page.goto('/');
+        const startLabel = locale === 'en' ? 'Start Date' : '開始日期';
+        const endLabel = locale === 'en' ? 'End Date' : '結束日期';
+        await expect(
+          page.getByRole('button', { name: 'Nov 26, 2025 - Jan 5, 2026' })
+        ).toBeVisible();
+        await expect(page.getByText(startLabel, { exact: true })).toHaveCount(0);
+        await expect(page.getByText(endLabel, { exact: true })).toHaveCount(0);
+        await page.evaluate(async () => {
+          await new Promise(requestAnimationFrame);
+          await Promise.all(
+            document.getAnimations().map((animation) => animation.finished.catch(() => {}))
           );
-          localStorage.setItem('packingListLastOpenedChecklistId', 'date-checklist');
-        },
-        { language: locale, initialChecklists: checklists }
-      );
-      await page.goto('/');
-      const startLabel = locale === 'en' ? 'Start Date' : '開始日期';
-      const endLabel = locale === 'en' ? 'End Date' : '結束日期';
-      await expect(page.getByRole('button', { name: 'Nov 26, 2025 - Jan 5, 2026' })).toBeVisible();
-      await expect(page.getByText(startLabel, { exact: true })).toHaveCount(0);
-      await expect(page.getByText(endLabel, { exact: true })).toHaveCount(0);
-      await page.evaluate(async () => {
-        await new Promise(requestAnimationFrame);
-        await Promise.all(
-          document.getAnimations().map((animation) => animation.finished.catch(() => {}))
+        });
+        if (width === 320) await rememberDateLayout(page);
+        const before = await page.getByTestId('checklist-name').boundingBox();
+        const nameMetrics = await page.getByTestId('checklist-name').evaluate((element) => {
+          const range = document.createRange();
+          range.selectNodeContents(element);
+          const style = getComputedStyle(element);
+          return {
+            lines: range.getClientRects().length,
+            bounds: element.getBoundingClientRect().toJSON(),
+            availableWidth: element.parentElement.getBoundingClientRect().width,
+            font: style.font,
+            viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
+          };
+        });
+        expect(nameMetrics.lines, JSON.stringify(nameMetrics)).toBe(1);
+        const dateBefore = await page
+          .getByRole('button', { name: 'Nov 26, 2025 - Jan 5, 2026' })
+          .boundingBox();
+        const contentBefore = await page.getByTestId('category-card').boundingBox();
+        const trigger = page
+          .getByRole('main')
+          .getByTestId('overflow-trigger-checklist-date-checklist');
+        const triggerBefore = await trigger.boundingBox();
+        await page.getByTestId('checklist-name').click();
+        const after = await page.getByTestId('checklist-name-input').boundingBox();
+        const triggerAfter = await trigger.boundingBox();
+        expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
+        expect(Math.abs(triggerAfter.x - triggerBefore.x)).toBeLessThanOrEqual(1);
+        expect(Math.abs(triggerAfter.y - triggerBefore.y)).toBeLessThanOrEqual(1);
+        await expect(trigger).toHaveAttribute('aria-label', locale === 'en' ? 'Save' : '儲存');
+        const start = page.getByLabel(startLabel, { exact: true });
+        const end = page.getByLabel(endLabel, { exact: true });
+        const dateAfter = await start.boundingBox();
+        const contentAfter = await page.getByTestId('category-card').boundingBox();
+        const endBox = await end.boundingBox();
+        const dateRows = endBox.y > dateAfter.y ? 2 : 1;
+        expect(
+          Math.abs(dateAfter.y - dateBefore.y),
+          JSON.stringify({
+            nameMetrics,
+            nameBefore: before,
+            nameAfter: after,
+            dateBefore,
+            dateAfter,
+          })
+        ).toBeLessThanOrEqual(8);
+        expect(Math.abs(contentAfter.y - contentBefore.y)).toBeLessThanOrEqual(
+          dateRows === 2 ? dateAfter.height + 10 : 10
         );
-      });
-      if (width === 320) await rememberDateLayout(page);
-      const before = await page.getByTestId('checklist-name').boundingBox();
-      const nameMetrics = await page.getByTestId('checklist-name').evaluate((element) => {
-        const range = document.createRange();
-        range.selectNodeContents(element);
-        const style = getComputedStyle(element);
-        return {
-          lines: range.getClientRects().length,
-          bounds: element.getBoundingClientRect().toJSON(),
-          availableWidth: element.parentElement.getBoundingClientRect().width,
-          font: style.font,
-          viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
-        };
-      });
-      expect(nameMetrics.lines, JSON.stringify(nameMetrics)).toBe(1);
-      const dateBefore = await page
-        .getByRole('button', { name: 'Nov 26, 2025 - Jan 5, 2026' })
-        .boundingBox();
-      const contentBefore = await page.getByTestId('category-card').boundingBox();
-      const trigger = page
-        .getByRole('main')
-        .getByTestId('overflow-trigger-checklist-date-checklist');
-      const triggerBefore = await trigger.boundingBox();
-      await page.getByTestId('checklist-name').click();
-      const after = await page.getByTestId('checklist-name-input').boundingBox();
-      const triggerAfter = await trigger.boundingBox();
-      expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
-      expect(Math.abs(triggerAfter.x - triggerBefore.x)).toBeLessThanOrEqual(1);
-      expect(Math.abs(triggerAfter.y - triggerBefore.y)).toBeLessThanOrEqual(1);
-      await expect(trigger).toHaveAttribute('aria-label', locale === 'en' ? 'Save' : '儲存');
-      const start = page.getByLabel(startLabel, { exact: true });
-      const end = page.getByLabel(endLabel, { exact: true });
-      const dateAfter = await start.boundingBox();
-      const contentAfter = await page.getByTestId('category-card').boundingBox();
-      const endBox = await end.boundingBox();
-      const dateRows = endBox.y > dateAfter.y ? 2 : 1;
-      expect(
-        Math.abs(dateAfter.y - dateBefore.y),
-        JSON.stringify({ nameMetrics, nameBefore: before, nameAfter: after, dateBefore, dateAfter })
-      ).toBeLessThanOrEqual(8);
-      expect(Math.abs(contentAfter.y - contentBefore.y)).toBeLessThanOrEqual(
-        dateRows === 2 ? dateAfter.height + 10 : 10
-      );
-      await expect(start).toBeVisible();
-      await expect(end).toBeVisible();
-      await expect(page.locator(`label[for="checklist-date-checklist-start-date"]`)).toBeVisible();
-      await expect(page.locator(`label[for="checklist-date-checklist-end-date"]`)).toBeVisible();
-      await expect(page.locator(`label[for="checklist-date-checklist-start-date"]`)).toHaveText(
-        locale === 'en' ? 'Start' : '開始'
-      );
-      await expect(page.locator(`label[for="checklist-date-checklist-end-date"]`)).toHaveText(
-        locale === 'en' ? 'End' : '結束'
-      );
-      for (const label of [
-        page.locator('label[for="checklist-date-checklist-start-date"]'),
-        page.locator('label[for="checklist-date-checklist-end-date"]'),
-      ]) {
-        expect(await label.evaluate((element) => element.firstChild.nodeType)).toBe(3);
-        expect(await label.evaluate((element) => element.firstChild.textContent.trim())).not.toBe(
-          ''
+        await expect(start).toBeVisible();
+        await expect(end).toBeVisible();
+        await expect(
+          page.locator(`label[for="checklist-date-checklist-start-date"]`)
+        ).toBeVisible();
+        await expect(page.locator(`label[for="checklist-date-checklist-end-date"]`)).toBeVisible();
+        await expect(page.locator(`label[for="checklist-date-checklist-start-date"]`)).toHaveText(
+          locale === 'en' ? 'Start' : '開始'
         );
-      }
-      for (const input of [start, end]) {
-        const box = await input.boundingBox();
-        expect(box.x).toBeGreaterThanOrEqual(0);
-        expect(box.x + box.width).toBeLessThanOrEqual(width);
-      }
-      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-        width
-      );
-      await start.fill('2026-01-06');
-      await start.press('Enter');
-      await expect
-        .poll(async () =>
-          page.evaluate(
-            () => JSON.parse(localStorage.getItem('packingListApp')).checklists[0].endDate
+        await expect(page.locator(`label[for="checklist-date-checklist-end-date"]`)).toHaveText(
+          locale === 'en' ? 'End' : '結束'
+        );
+        for (const label of [
+          page.locator('label[for="checklist-date-checklist-start-date"]'),
+          page.locator('label[for="checklist-date-checklist-end-date"]'),
+        ]) {
+          expect(await label.evaluate((element) => element.firstChild.nodeType)).toBe(3);
+          expect(await label.evaluate((element) => element.firstChild.textContent.trim())).not.toBe(
+            ''
+          );
+        }
+        for (const input of [start, end]) {
+          const box = await input.boundingBox();
+          expect(box.x).toBeGreaterThanOrEqual(0);
+          expect(box.x + box.width).toBeLessThanOrEqual(width);
+        }
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+          width
+        );
+        await start.fill('2026-01-06');
+        await start.press('Enter');
+        await expect
+          .poll(async () =>
+            page.evaluate(
+              () => JSON.parse(localStorage.getItem('packingListApp')).checklists[0].endDate
+            )
           )
-        )
-        .toBe('2026-01-06');
-      await page.getByTestId('checklist-name').click();
-      await page.getByLabel(endLabel, { exact: true }).fill('2026-01-08');
-      await page.locator('main').click({ position: { x: 5, y: 5 } });
-      await expect
-        .poll(async () =>
-          page.evaluate(
-            () => JSON.parse(localStorage.getItem('packingListApp')).checklists[0].endDate
+          .toBe('2026-01-06');
+        await page.getByTestId('checklist-name').click();
+        await page.getByLabel(endLabel, { exact: true }).fill('2026-01-08');
+        await page.locator('main').click({ position: { x: 5, y: 5 } });
+        await expect
+          .poll(async () =>
+            page.evaluate(
+              () => JSON.parse(localStorage.getItem('packingListApp')).checklists[0].endDate
+            )
           )
-        )
-        .toBe('2026-01-08');
-      await page.getByTestId('checklist-name').click();
-      await page.getByTestId('checklist-name-input').fill('Updated trip');
-      await trigger.click();
-      await expect(page.getByTestId('checklist-name')).toHaveText('Updated trip');
-      await expect(trigger).toHaveAttribute(
-        'aria-label',
-        locale === 'en' ? 'More options' : '更多選項'
-      );
-      await page.getByTestId('category-name').click();
-      await page.getByTestId('category-name-input').fill('Updated category');
-      const categoryTrigger = page.getByTestId('overflow-trigger-category-date-category');
-      await expect(categoryTrigger).toHaveAttribute(
-        'aria-label',
-        locale === 'en' ? 'Save' : '儲存'
-      );
-      await categoryTrigger.click();
-      await expect(page.getByTestId('category-name')).toHaveText('Updated category');
-      await expect
-        .poll(async () =>
-          page.evaluate(() => JSON.parse(localStorage.getItem('packingListApp')).categories[0].name)
-        )
-        .toBe('Updated category');
-      await page.getByTestId('checklist-name').click();
-      await page.getByTestId('checklist-name-input').fill('Keyboard trip');
-      await trigger.focus();
-      await page.keyboard.press('Tab');
-      await expect(page.getByTestId('checklist-name')).toHaveText('Keyboard trip');
-      await page.getByTestId('category-name').click();
-      await page.getByTestId('category-name-input').fill('Keyboard category');
-      await categoryTrigger.focus();
-      await page.keyboard.press('Tab');
-      await expect(page.getByTestId('category-name')).toHaveText('Keyboard category');
-    });
+          .toBe('2026-01-08');
+        await page.reload();
+        await expect
+          .poll(() =>
+            page.evaluate(() => {
+              const checklist = JSON.parse(localStorage.getItem('packingListApp')).checklists[0];
+              return [checklist.startDate, checklist.endDate];
+            })
+          )
+          .toEqual(['2026-01-06', '2026-01-08']);
+        await expect(page.getByTestId('checklist-name')).toHaveText('Japan trip');
+        await page.getByTestId('checklist-name').click();
+        await page.getByTestId('checklist-name-input').fill('Updated trip');
+        await trigger.click();
+        await expect(page.getByTestId('checklist-name')).toHaveText('Updated trip');
+        await expect(trigger).toHaveAttribute(
+          'aria-label',
+          locale === 'en' ? 'More options' : '更多選項'
+        );
+        await page.getByTestId('category-name').click();
+        await page.getByTestId('category-name-input').fill('Updated category');
+        const categoryTrigger = page.getByTestId('overflow-trigger-category-date-category');
+        await expect(categoryTrigger).toHaveAttribute(
+          'aria-label',
+          locale === 'en' ? 'Save' : '儲存'
+        );
+        await categoryTrigger.click();
+        await expect(page.getByTestId('category-name')).toHaveText('Updated category');
+        await expect
+          .poll(async () =>
+            page.evaluate(
+              () => JSON.parse(localStorage.getItem('packingListApp')).categories[0].name
+            )
+          )
+          .toBe('Updated category');
+        await page.getByTestId('checklist-name').click();
+        await page.getByTestId('checklist-name-input').fill('Keyboard trip');
+        await trigger.focus();
+        await page.keyboard.press('Tab');
+        await expect(page.getByTestId('checklist-name')).toHaveText('Keyboard trip');
+        await page.getByTestId('category-name').click();
+        await page.getByTestId('category-name-input').fill('Keyboard category');
+        await categoryTrigger.focus();
+        await page.keyboard.press('Tab');
+        await expect(page.getByTestId('category-name')).toHaveText('Keyboard category');
+      }
+    );
   }
 }
 
