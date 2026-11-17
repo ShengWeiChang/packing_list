@@ -35,22 +35,21 @@
 
 ### Platform Verification Matrix 平台驗證矩陣
 
-| 在哪裡跑              | Unit／Component                                              | E2E                                              | 怎麼跑及目前狀態                                                                                         |
-| --------------------- | ------------------------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| 本機 macOS            | 可在本機跑全部 323 個 Unit 和 322 個 Component 測試。        | 可跑全部 217 次瀏覽器執行，也可只選重點案例。    | `npm run verify:feature` 在 Mac 跑完整功能 gate；開發時可用 Vitest 或 Playwright 指令跑重點檢查。        |
-| 本機 Linux container  | 全部 323 個 Unit 和 322 個 Component 測試。                  | 全部 217 次瀏覽器執行。                          | 使用 Docker 執行 `sh scripts/ci-container.sh full`，包含功能 gate 與另外執行的 Node 容器／報告契約測試。 |
-| GitHub Linux CI       | 全部 323 個 Unit 和 322 個 Component 測試。                  | 全部 217 次瀏覽器執行。                          | 已設定的 Ubuntu job 使用相同 container 指令；M4 候選尚未在 PR CI 驗證。                                  |
-| GitHub Windows runner | 目前未規劃在這個 smoke job 重跑全部 Unit 和 Component 測試。 | 使用 Playwright Chromium 執行 6 個共用核心案例。 | 已設定 Windows 2025 job，每個 PR 執行；尚未在 PR CI 實際驗證。                                           |
-| macOS 原生 Safari     | 不由 Safari 執行；可在同一台 Mac 用 Vitest 執行。            | 原生 Safari smoke 尚未驗證。                     | 使用者決定保持遠端自動化關閉；後續驗證另外追蹤。                                                         |
-| Android 與 iOS 裝置   | 不適用。                                                     | 原生手機瀏覽器與觸控尚未驗證。                   | 目前不納入 gate；瀏覽器模擬不提供手機作業系統。                                                          |
+| 在哪裡跑              | Unit／Component                                       | E2E                                                               | 怎麼跑                                                                                                   |
+| --------------------- | ----------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 本機 macOS            | 可在本機跑全部 323 個 Unit 和 322 個 Component 測試。 | 可跑全部 217 次瀏覽器執行，也可只選重點案例。                     | `npm run verify:feature` 在 Mac 跑完整功能 gate；開發時可用 Vitest 或 Playwright 指令跑重點檢查。        |
+| 本機 Linux container  | 全部 323 個 Unit 和 322 個 Component 測試。           | 全部 217 次瀏覽器執行。                                           | 使用 Docker 執行 `sh scripts/ci-container.sh full`，包含功能 gate 與另外執行的 Node 容器／報告契約測試。 |
+| GitHub Linux CI       | 全部 323 個 Unit 和 322 個 Component 測試。           | 全部 217 次瀏覽器執行。                                           | Ubuntu job 在每個 PR 使用相同 container 指令。                                                           |
+| GitHub Windows runner | Windows smoke job 不包含 Unit 和 Component 測試。     | 使用 Playwright Chromium 執行 6 個共用核心案例。                  | Windows 2025 job 在每個 PR 執行核心 smoke。                                                              |
+| Android 與 iOS 裝置   | 不適用。                                              | 沒有手機實機測試；Chromium 與 WebKit 模擬手機畫面及部分觸控操作。 | 瀏覽器模擬不提供手機作業系統。                                                                           |
 
-Windows job 用 Node 24 和專案的 Playwright Chromium 執行相同六個核心案例，並以固定清單及執行報告拒絕漏收、多收、skip、flaky 或 runner error；Windows 報告不與 Linux 全套清冊混算。`node scripts/windowsSmoke.js` 可在本機測試選取與報告流程，但結果屬執行時的作業系統，不能當作 Windows 已通過。job 將 checkout／PR head／base、OS、瀏覽器版本與診斷檔存於獨立 artifact；實際 PR CI 和 branch protection 仍待驗證。
+Windows job 用 Node 24 和專案的 Playwright Chromium 執行相同六個核心案例，並以固定清單及執行報告拒絕漏收、多收、skip、flaky 或 runner error；Windows 報告不與 Linux 全套清冊混算。`node scripts/windowsSmoke.js` 可在本機測試選取與報告流程，結果屬執行時的作業系統。job 將 checkout／PR head／base、OS、瀏覽器版本與診斷檔存於獨立 artifact。
 
-217 次 E2E 執行包含 Chromium 的 207 次、Playwright WebKit 核心案例（`webkit-core`）6 次，以及 Playwright WebKit 響應式案例（`webkit-rwd`）4 次。同一原始案例在多個 project 執行時，每次執行分別計數。Chromium 執行一般 E2E 基準，包含相同的四個響應式案例；WebKit 額外執行選定的核心與響應式檢查，並非完整 Chromium 套件。
+217 次 E2E 執行包含 Chromium 的 207 次、Playwright WebKit 核心案例（`webkit-core`）6 次，以及 Playwright WebKit 響應式案例（`webkit-rwd`）4 次。同一原始案例在多個 project 執行時，每次執行分別計數。Chromium 執行一般 E2E 基準，包含相同的四個響應式案例；WebKit 額外執行選定的核心與響應式檢查，並非完整 Chromium 套件。Playwright Chromium 和 WebKit 並非 Google Chrome 或原生 Safari。
 
 六個核心案例涵蓋物品建立、編輯、數量、待處理及打包狀態、重載與刪除；兩種視窗寬度的日期編輯；儲存失敗與草稿恢復；鍵盤選單焦點；以及滑鼠排序後重載。五個選自既有案例，另一個串接原先缺少完整重載證據的物品生命週期。四個響應式案例涵蓋觸控模擬操作、短畫面 dialog 與日期、平板版面及短畫面手機導覽。
 
-Unit 與 Component 測試在 Vitest 的 Node／jsdom 環境執行，並非實際瀏覽器或作業系統介面。完整功能 gate 另檢查格式、lint、生成色彩、TypeScript、清冊與 production build。Node 容器／報告契約測試由 Linux container 入口另外執行，不計入 862 個測試總數。總數與平台次數描述目前候選；最後完整 gate 仍排在 M6。
+Unit 與 Component 測試在 Vitest 的 Node／jsdom 環境執行，並非實際瀏覽器或作業系統介面。完整功能 gate 另檢查格式、lint、生成色彩、TypeScript、清冊與 production build。Node 容器／報告契約測試由 Linux container 入口另外執行，不計入 862 個測試總數。總數與平台次數描述目前的測試清冊。
 
 ### Toolchain 測試工具鏈
 
@@ -263,7 +262,7 @@ npx playwright test tests/end2end-tests/app-loading.spec.js --headed
 
 ### Linux Container Tests Linux 容器測試
 
-啟動 Docker 後，`sh scripts/ci-container.sh focused` 執行選定的高風險案例，`sh scripts/ci-container.sh full` 執行完整功能 gate。使用 `sh scripts/ci-container.sh case <Playwright arguments>` 執行個別案例。每次執行會在獨立暫存 volume 安裝 Linux 依賴，並把報告寫入新的 `.container-test-artifacts/` 目錄；不共用 Mac 的 `node_modules`。首次下載 image 與每次安裝依賴都需要時間和磁碟空間。本機 ARM64 容器與 CI amd64 runner 使用同一份 image 定義，但不是完全相同的機器。固定的瀏覽器依賴見 `docker/Dockerfile`；升級時須一起更新 image 與專案 Playwright 版本。
+啟動 Docker 後，`sh scripts/ci-container.sh focused` 執行選定的高風險案例，`sh scripts/ci-container.sh full` 執行完整功能 gate。使用 `sh scripts/ci-container.sh case <Playwright arguments>` 執行個別案例。每次執行會在獨立暫存 volume 安裝 Linux 依賴，並把報告寫入新的 `.container-test-artifacts/` 目錄；不共用 Mac 的 `node_modules`。首次下載 image 與每次安裝依賴都需要時間和磁碟空間。本機 ARM64 容器與 CI amd64 runner 使用同一份 image 定義，但不是完全相同的機器。升級時依變動一併維護 `.nvmrc`、`docker/Dockerfile` 固定的 image digest、`scripts/ci-container.sh` 與 `docker/test-entrypoint.sh` 對應的 image／架構 digest 紀錄、entrypoint 的版本檢查，以及 Playwright lockfile。重新執行 Linux 完整 gate 與 Windows smoke，並驗證兩種 image 架構及實際 PR jobs。變更固定 runner 版本時重新評估；image 標籤不會凍結所有已安裝更新。
 
 ### Coverage Report 覆蓋率報告（最後執行）
 
