@@ -15,6 +15,7 @@ Created: 2026-10-13
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 import process from 'node:process';
@@ -28,6 +29,7 @@ import { validatePlaywrightReport, validateVitestReport } from './reportValidati
 // -----------------------------------------------------------------------------
 
 const PROJECT_ROOT = resolve(import.meta.dirname, '..');
+const require = createRequire(import.meta.url);
 const TEMP_PREFIX = join(tmpdir(), 'packing-list-test-inventory-');
 const REQUIRED_TEST_GUIDE = 'docs/testing-guide.md';
 const OPTIONAL_TEST_GUIDES = ['docs/testing-guide-zh.md'];
@@ -51,7 +53,7 @@ function runCommand(command, args) {
     return execFileSync(command, args, {
       cwd: PROJECT_ROOT,
       encoding: 'utf8',
-      maxBuffer: 10 * 1024 * 1024,
+      maxBuffer: 32 * 1024 * 1024,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch (error) {
@@ -108,8 +110,11 @@ function runVitest(reportDirectory) {
  * @returns {object} Playwright JSON report.
  */
 function runPlaywright() {
-  const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-  const output = runCommand(npxCommand, ['playwright', 'test', '--reporter=json']);
+  const output = runCommand(process.execPath, [
+    require.resolve('@playwright/test/cli'),
+    'test',
+    '--reporter=json',
+  ]);
   return JSON.parse(output);
 }
 
@@ -491,10 +496,14 @@ function main() {
       ? readTestReport(PLAYWRIGHT_REPORT_PATH, 'Playwright')
       : runPlaywright();
     const vitestPath = join(PROJECT_ROOT, 'node_modules', 'vitest', 'vitest.mjs');
-    const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
     const expectedVitest = JSON.parse(runCommand(process.execPath, [vitestPath, 'list', '--json']));
     const expectedPlaywright = JSON.parse(
-      runCommand(npxCommand, ['playwright', 'test', '--list', '--reporter=json'])
+      runCommand(process.execPath, [
+        require.resolve('@playwright/test/cli'),
+        'test',
+        '--list',
+        '--reporter=json',
+      ])
     );
     validateVitestReport(vitestReport, expectedVitest, PROJECT_ROOT);
     validatePlaywrightReport(playwrightReport, expectedPlaywright);

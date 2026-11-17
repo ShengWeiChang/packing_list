@@ -373,7 +373,7 @@ Validation
 - Validate (lint + format check): `npm run validate`
 - Check application types and checker contracts: `npm run typecheck`
 - Pre-commit: lint-staged runs automatically on staged files
-- GitHub Actions runs `npm run verify:feature` in the shared Linux test container on pull requests and pushes to `main`; see `.github/workflows/test.yml`.
+- GitHub Actions runs `npm run verify:feature` on macOS and Windows and the core smoke in the Linux test container on pull requests and pushes to `main`; see `.github/workflows/test.yml`.
 - Maintain the pinned image digest in `docker/Dockerfile` and the matching Playwright version in `docker/test-entrypoint.sh` together with the lockfile; verify both supported architectures and rerun the container checks when upgrading.
 
 ## 6. Editor Integration (VS Code)

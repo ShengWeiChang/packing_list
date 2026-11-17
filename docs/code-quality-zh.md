@@ -373,7 +373,7 @@ Validation 驗證
 - 驗證（lint + format 檢查）：`npm run validate`
 - 檢查應用型別與 checker contracts：`npm run typecheck`
 - Pre-commit：對已暫存檔案自動執行 lint-staged
-- GitHub Actions 在 pull request 與 push 到 `main` 時，於共用 Linux 測試容器執行 `npm run verify:feature`；參見 `.github/workflows/test.yml`。
+- GitHub Actions 在 pull request 與 push 到 `main` 時，於 macOS 與 Windows 執行 `npm run verify:feature`，並於 Linux 測試容器執行核心 smoke；參見 `.github/workflows/test.yml`。
 - 維護 `docker/Dockerfile` 固定的 image digest 時，須一併維護 `docker/test-entrypoint.sh` 的 Playwright 版本與 lockfile；升級時驗證兩種支援架構並重跑容器檢查。
 
 ## 6. Editor Integration (VS Code) 編輯器整合

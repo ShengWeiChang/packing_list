@@ -1,0 +1,62 @@
+name: Failure artifact probe
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - 'docker/**'
+      - 'scripts/**'
+      - 'patches/**'
+      - '.dockerignore'
+      - '.nvmrc'
+      - '.npmrc'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'playwright.config.js'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'docker/**'
+      - 'scripts/**'
+      - 'patches/**'
+      - '.dockerignore'
+      - '.nvmrc'
+      - '.npmrc'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'playwright.config.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  failure-artifact-probe:
+    runs-on: ubuntu-24.04
+    env:
+      CI_ARTIFACT_DIR: .container-test-artifacts/probe-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Run intentionally failing test
+        id: probe
+        continue-on-error: true
+        run: sh scripts/ci-container.sh probe
+      - name: Upload Playwright failure artifacts
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-failure-probe
+          path: ${{ env.CI_ARTIFACT_DIR }}/test-results/
+          if-no-files-found: error
+          include-hidden-files: true
+      - name: Verify probe outcome and attachment
+        if: always()
+        env:
+          PROBE_OUTCOME: ${{ steps.probe.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        run: |
+          test "$PROBE_OUTCOME" = failure
+          test "$UPLOAD_OUTCOME" = success
+          find "$CI_ARTIFACT_DIR/test-results" -type f -name 'intentional-failure-*.json' | grep -q .

@@ -7,10 +7,11 @@ mode=${1:-}
 if [ "$#" -gt 0 ]; then shift; fi
 case "$mode" in
   full) set -- npm run verify:feature ;;
+  smoke) set -- node scripts/linuxSmoke.js ;;
   probe) set -- npx playwright test --config=docker/probe.config.js ;;
   focused) set -- npx playwright test tests/end2end-tests/checklist-dates.spec.js tests/end2end-tests/interaction-feedback.spec.js tests/end2end-tests/rwd-overlays.spec.js --project=chromium --grep 'edits labeled dates and confirms changes at 320px|ends an old name edit when dragging a different item|short dialogs and narrow date editing fit without horizontal overflow' --retries=0 ;;
   case) [ "$#" -gt 0 ] || { echo 'Pass Playwright arguments after case.' >&2; exit 2; }; set -- npx playwright test "$@" ;;
-  *) echo 'Usage: sh scripts/ci-container.sh full|focused|probe|case [Playwright arguments]' >&2; exit 2 ;;
+  *) echo 'Usage: sh scripts/ci-container.sh full|smoke|focused|probe|case [Playwright arguments]' >&2; exit 2 ;;
 esac
 
 mkdir -p .container-test-artifacts

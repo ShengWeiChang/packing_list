@@ -39,11 +39,14 @@
 | --------------------- | ----------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | 本機 macOS            | 可在本機跑全部 323 個 Unit 和 322 個 Component 測試。 | 可跑全部 217 次瀏覽器執行，也可只選重點案例。                     | `npm run verify:feature` 在 Mac 跑完整功能 gate；開發時可用 Vitest 或 Playwright 指令跑重點檢查。        |
 | 本機 Linux container  | 全部 323 個 Unit 和 322 個 Component 測試。           | 全部 217 次瀏覽器執行。                                           | 使用 Docker 執行 `sh scripts/ci-container.sh full`，包含功能 gate 與另外執行的 Node 容器／報告契約測試。 |
-| GitHub Linux CI       | 全部 323 個 Unit 和 322 個 Component 測試。           | 全部 217 次瀏覽器執行。                                           | Ubuntu job 在每個 PR 使用相同 container 指令。                                                           |
-| GitHub Windows runner | Windows smoke job 不包含 Unit 和 Component 測試。     | 使用 Playwright Chromium 執行 6 個共用核心案例。                  | Windows 2025 job 在每個 PR 執行核心 smoke。                                                              |
+| GitHub Linux CI       | Node 容器／報告契約測試。                             | Chromium 的 6 個共用核心 smoke 案例。                             | 每個 PR 以 Docker 執行 `sh scripts/ci-container.sh smoke`。                                              |
+| GitHub Windows runner | 全部 323 個 Unit 和 322 個 Component 測試。           | 全部 217 次瀏覽器執行。                                           | Windows 2025 job 在每個 PR 執行 `npm run verify:feature`。                                               |
+| GitHub macOS runner   | 全部 323 個 Unit 和 322 個 Component 測試。           | 全部 217 次瀏覽器執行。                                           | macOS job 在每個 PR 執行 `npm run verify:feature`。                                                      |
 | Android 與 iOS 裝置   | 不適用。                                              | 沒有手機實機測試；Chromium 與 WebKit 模擬手機畫面及部分觸控操作。 | 瀏覽器模擬不提供手機作業系統。                                                                           |
 
-Windows job 用 Node 24 和專案的 Playwright Chromium 執行相同六個核心案例，並以固定清單及執行報告拒絕漏收、多收、skip、flaky 或 runner error；Windows 報告不與 Linux 全套清冊混算。`node scripts/windowsSmoke.js` 可在本機測試選取與報告流程，結果屬執行時的作業系統。job 將 checkout／PR head／base、OS、瀏覽器版本與診斷檔存於獨立 artifact。
+PR 的 `macos-full` 和 `windows-full` 執行完整 gate；`linux-smoke` 執行六個共用核心案例。各完整 gate 分別上傳執行時已產生的測試報告、失敗附件、checkout 資訊及 Playwright 瀏覽器版本。Linux smoke 不包含編輯中拖曳另一物品的回歸案例；要在 Linux 檢查此情境，可使用下方 focused 或 full container 指令。獨立的 failure-artifact probe 只在 workflow、Docker、測試腳本、依賴清單、patch 或 Playwright 設定變更時執行。路徑篩選維護於 `.github/workflows/failure-artifact-probe.yml`；該 workflow 存在於預設分支後也可手動執行。probe 檢查受控失敗與附件上傳，不測試產品行為。變更平台 check 名稱時，先確認新 check 能執行，再同步更新 GitHub required status checks；不要將路徑篩選的 probe 設為全域 required。
+
+Linux smoke 以固定清單及執行報告拒絕漏收、多收、skip、flaky 或 runner error。`node scripts/windowsSmoke.js` 可在本機執行相同六個案例，結果屬執行時的作業系統。每個平台 job 將已產生的 checkout 資訊與診斷檔上傳至獨立 artifact。
 
 217 次 E2E 執行包含 Chromium 的 207 次、Playwright WebKit 核心案例（`webkit-core`）6 次，以及 Playwright WebKit 響應式案例（`webkit-rwd`）4 次。同一原始案例在多個 project 執行時，每次執行分別計數。Chromium 執行一般 E2E 基準，包含相同的四個響應式案例；WebKit 額外執行選定的核心與響應式檢查，並非完整 Chromium 套件。Playwright Chromium 和 WebKit 並非 Google Chrome 或原生 Safari。
 
@@ -262,7 +265,7 @@ npx playwright test tests/end2end-tests/app-loading.spec.js --headed
 
 ### Linux Container Tests Linux 容器測試
 
-啟動 Docker 後，`sh scripts/ci-container.sh focused` 執行選定的高風險案例，`sh scripts/ci-container.sh full` 執行完整功能 gate。使用 `sh scripts/ci-container.sh case <Playwright arguments>` 執行個別案例。每次執行會在獨立暫存 volume 安裝 Linux 依賴，並把報告寫入新的 `.container-test-artifacts/` 目錄；不共用 Mac 的 `node_modules`。首次下載 image 與每次安裝依賴都需要時間和磁碟空間。本機 ARM64 容器與 CI amd64 runner 使用同一份 image 定義，但不是完全相同的機器。升級時依變動一併維護 `.nvmrc`、`docker/Dockerfile` 固定的 image digest、`scripts/ci-container.sh` 與 `docker/test-entrypoint.sh` 對應的 image／架構 digest 紀錄、entrypoint 的版本檢查，以及 Playwright lockfile。重新執行 Linux 完整 gate 與 Windows smoke，並驗證兩種 image 架構及實際 PR jobs。變更固定 runner 版本時重新評估；image 標籤不會凍結所有已安裝更新。
+啟動 Docker 後，`sh scripts/ci-container.sh smoke` 執行六個共用核心案例，`sh scripts/ci-container.sh focused` 執行選定的高風險案例，`sh scripts/ci-container.sh full` 執行完整功能 gate。使用 `sh scripts/ci-container.sh case <Playwright arguments>` 執行個別案例。每次執行會在獨立暫存 volume 安裝 Linux 依賴，並把報告寫入新的 `.container-test-artifacts/` 目錄；不共用 Mac 的 `node_modules`。首次下載 image 與每次安裝依賴都需要時間和磁碟空間。本機 ARM64 容器與 CI amd64 runner 使用同一份 image 定義，但不是完全相同的機器。升級時依變動一併維護 `.nvmrc`、`docker/Dockerfile` 固定的 image digest、`scripts/ci-container.sh` 與 `docker/test-entrypoint.sh` 對應的 image／架構 digest 紀錄、entrypoint 的版本檢查，以及 Playwright lockfile。重新執行 Linux smoke 及 macOS／Windows 完整 gate，並驗證兩種 image 架構及實際 PR jobs。變更固定 runner 版本時重新評估；image 標籤不會凍結所有已安裝更新。
 
 ### Coverage Report 覆蓋率報告（最後執行）
 

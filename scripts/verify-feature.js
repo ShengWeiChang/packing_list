@@ -11,6 +11,7 @@ Created: 2026-10-21
 
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +20,7 @@ const PROJECT_ROOT = resolve(import.meta.dirname, '..');
 const REPORT_DIRECTORY = resolve(PROJECT_ROOT, 'test-inventory-reports');
 const DOCUMENTATION_MODE = process.argv.includes('--docs');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+const require = createRequire(import.meta.url);
 const ANSI_ESCAPE_PATTERN = new RegExp(`${String.fromCharCode(27)}\\[[0-?]*[ -/]*[@-~]`, 'g');
 
 /**
@@ -127,6 +128,11 @@ function runCommand(label, command, args, options = {}) {
   process.stdout.write(`\n→ ${label}\n`);
 
   try {
+    if (process.platform === 'win32' && command === npmCommand) {
+      if (!process.env.npm_execpath) throw new Error('npm_execpath is required on Windows.');
+      args = [process.env.npm_execpath, ...args];
+      command = process.execPath;
+    }
     return execFileSync(command, args, {
       cwd: PROJECT_ROOT,
       encoding: 'utf8',
@@ -149,15 +155,16 @@ function runCommand(label, command, args, options = {}) {
 function runPlaywrightE2E() {
   const label = 'Run Playwright E2E';
   const reportPath = resolve(REPORT_DIRECTORY, 'playwright.json');
-  const args = ['playwright', 'test', '--reporter=json'];
+  const args = [require.resolve('@playwright/test/cli'), 'test', '--reporter=json'];
 
   process.stdout.write(`\n→ ${label}\n`);
 
   try {
-    const report = execFileSync(npxCommand, args, {
+    const report = execFileSync(process.execPath, args, {
       cwd: PROJECT_ROOT,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
+      maxBuffer: 32 * 1024 * 1024,
     });
     writeFileSync(reportPath, report);
     return report;
