@@ -40,9 +40,11 @@
 | 本機 macOS            | 可在本機跑全部 323 個 Unit 和 322 個 Component 測試。        | 可跑全部 217 次瀏覽器執行，也可只選重點案例。    | `npm run verify:feature` 在 Mac 跑完整功能 gate；開發時可用 Vitest 或 Playwright 指令跑重點檢查。        |
 | 本機 Linux container  | 全部 323 個 Unit 和 322 個 Component 測試。                  | 全部 217 次瀏覽器執行。                          | 使用 Docker 執行 `sh scripts/ci-container.sh full`，包含功能 gate 與另外執行的 Node 容器／報告契約測試。 |
 | GitHub Linux CI       | 全部 323 個 Unit 和 322 個 Component 測試。                  | 全部 217 次瀏覽器執行。                          | 已設定的 Ubuntu job 使用相同 container 指令；M4 候選尚未在 PR CI 驗證。                                  |
-| GitHub Windows runner | 目前未規劃在這個 smoke job 重跑全部 Unit 和 Component 測試。 | 使用 Playwright Chromium 執行 6 個共用核心案例。 | 規劃於 M5 在 GitHub Windows runner 建立；目前尚未設定或驗證。                                            |
+| GitHub Windows runner | 目前未規劃在這個 smoke job 重跑全部 Unit 和 Component 測試。 | 使用 Playwright Chromium 執行 6 個共用核心案例。 | 已設定 Windows 2025 job，每個 PR 執行；尚未在 PR CI 實際驗證。                                           |
 | macOS 原生 Safari     | 不由 Safari 執行；可在同一台 Mac 用 Vitest 執行。            | 原生 Safari smoke 尚未驗證。                     | 使用者決定保持遠端自動化關閉；後續驗證另外追蹤。                                                         |
 | Android 與 iOS 裝置   | 不適用。                                                     | 原生手機瀏覽器與觸控尚未驗證。                   | 目前不納入 gate；瀏覽器模擬不提供手機作業系統。                                                          |
+
+Windows job 用 Node 24 和專案的 Playwright Chromium 執行相同六個核心案例，並以固定清單及執行報告拒絕漏收、多收、skip、flaky 或 runner error；Windows 報告不與 Linux 全套清冊混算。`node scripts/windowsSmoke.js` 可在本機測試選取與報告流程，但結果屬執行時的作業系統，不能當作 Windows 已通過。job 將 checkout／PR head／base、OS、瀏覽器版本與診斷檔存於獨立 artifact；實際 PR CI 和 branch protection 仍待驗證。
 
 217 次 E2E 執行包含 Chromium 的 207 次、Playwright WebKit 核心案例（`webkit-core`）6 次，以及 Playwright WebKit 響應式案例（`webkit-rwd`）4 次。同一原始案例在多個 project 執行時，每次執行分別計數。Chromium 執行一般 E2E 基準，包含相同的四個響應式案例；WebKit 額外執行選定的核心與響應式檢查，並非完整 Chromium 套件。
 

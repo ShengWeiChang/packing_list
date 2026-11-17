@@ -26,6 +26,7 @@ test('container runner uses fresh reports and propagates the test exit code', ()
       ...process.env,
       PATH: `${join(root, 'bin')}:${process.env.PATH}`,
       CI_ARTIFACT_DIR: '.container-test-artifacts/new',
+      GITHUB_SHA: 'fixture-commit',
     };
     const result = spawnSync('sh', [join(root, 'scripts', 'ci-container.sh'), 'full'], {
       cwd: root,
@@ -42,6 +43,17 @@ test('container runner uses fresh reports and propagates the test exit code', ()
       'utf8'
     );
     assert.match(metadata, /checkout=fixture-commit/);
+    const mismatch = spawnSync('sh', [join(root, 'scripts', 'ci-container.sh'), 'full'], {
+      cwd: root,
+      env: {
+        ...environment,
+        CI_ARTIFACT_DIR: '.container-test-artifacts/mismatch',
+        GITHUB_SHA: 'different-commit',
+      },
+      encoding: 'utf8',
+    });
+    assert.notEqual(mismatch.status, 0);
+    assert.match(mismatch.stderr, /Checkout does not match/);
     assert.throws(() =>
       execFileSync('sh', [join(root, 'scripts', 'ci-container.sh'), 'full'], {
         cwd: root,

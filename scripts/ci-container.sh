@@ -25,9 +25,11 @@ fi
 output=$(CDPATH= cd -- "$output" && pwd)
 for folder in coverage test-inventory-reports test-results dist; do mkdir "$output/$folder"; done
 printf 'Artifacts: %s\n' "$output"
-printf 'Checkout: %s\n' "$(git rev-parse HEAD)"
+checkout=$(git rev-parse HEAD)
+printf 'Checkout: %s\n' "$checkout"
 {
-  printf 'checkout=%s\n' "$(git rev-parse HEAD)"
+  printf 'checkout=%s\n' "$checkout"
+  printf 'expected_checkout=%s\n' "${GITHUB_SHA:-not-a-github-run}"
   if [ -n "$(git status --porcelain --untracked-files=normal)" ]; then
     printf 'worktree=dirty\n'
   else
@@ -39,6 +41,10 @@ printf 'Checkout: %s\n' "$(git rev-parse HEAD)"
   printf 'base_linux_amd64=sha256:65cefd09a5e943921ecd3a6e5414c603db2eb161e9eb48f2e2ccc63486dc7dc0\n'
   printf 'base_linux_arm64=sha256:68f1c3dca663d0e8331e8af4681b0b315eca7de1bd7fa934aac0accbeb9f8323\n'
 } > "$output/test-inventory-reports/run-metadata.txt"
+if [ -n "${GITHUB_SHA:-}" ] && [ "$checkout" != "$GITHUB_SHA" ]; then
+  echo 'Checkout does not match the GitHub event revision.' >&2
+  exit 1
+fi
 docker build --file docker/Dockerfile --tag packing-list-test:local .
 docker run --rm --init --ipc=host \
   --env "HOST_UID=$(id -u)" --env "HOST_GID=$(id -g)" \
