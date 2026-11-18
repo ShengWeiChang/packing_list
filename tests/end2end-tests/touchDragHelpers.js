@@ -41,8 +41,11 @@ export async function checkTouchScroll(page, client, target) {
   const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   const before = await page.evaluate(() => window.scrollY);
   const scrollState = await page.evaluateHandle(() => {
-    const state = { ended: false };
-    const onScroll = () => (state.ended = false);
+    const state = { ended: false, lastScroll: performance.now(), released: 0 };
+    const onScroll = () => {
+      state.ended = false;
+      state.lastScroll = performance.now();
+    };
     const onEnd = () => (state.ended = true);
     document.addEventListener('scroll', onScroll);
     document.addEventListener('scrollend', onEnd);
@@ -67,9 +70,20 @@ export async function checkTouchScroll(page, client, target) {
       await page.waitForTimeout(16);
     }
     await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await scrollState.evaluate(({ state }) => {
+      state.released = performance.now();
+    });
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before);
-    // A subsequent tap must run after native momentum ends, not just after movement starts.
-    await expect.poll(() => scrollState.evaluate(({ state }) => state.ended)).toBe(true);
+    // A CDP touch gesture may scroll without an observed document scrollend event.
+    // Require a quiet period after the latest scroll or touch release as a fallback.
+    await expect
+      .poll(() =>
+        scrollState.evaluate(
+          ({ state }) =>
+            state.ended || performance.now() - Math.max(state.lastScroll, state.released) >= 300
+        )
+      )
+      .toBe(true);
     await expect(page.locator('.sortable-fallback, .chosen-item, .chosen-category')).toHaveCount(0);
   } finally {
     await scrollState.evaluate(({ cleanup }) => cleanup());

@@ -13,16 +13,27 @@ import { selectGeneralRecommendedList } from './checklistHelpers.js';
 import { armDrawerTransition, sampleDrawerTransition } from './drawerMotionHelpers.js';
 import { attachShortMenuDiagnostics } from './layoutDiagnostics.js';
 
+const popupDiagnostics = new WeakMap();
+
 test.afterEach(async ({ page }, testInfo) => {
-  if (
-    testInfo.title !== 'short dialogs and narrow date editing fit without horizontal overflow' ||
-    testInfo.status === 'passed'
-  )
-    return;
+  const popup = popupDiagnostics.get(page);
   try {
-    await attachShortMenuDiagnostics(page, testInfo);
+    if (testInfo.status !== 'passed') {
+      if (
+        testInfo.title === 'short dialogs and narrow date editing fit without horizontal overflow'
+      )
+        await attachShortMenuDiagnostics(page, testInfo);
+      if (popup)
+        await testInfo.attach('keyboard-popup-events', {
+          body: JSON.stringify(await popup.jsonValue(), null, 2),
+          contentType: 'application/json',
+        });
+    }
   } catch (error) {
-    console.error('Unable to attach short-menu diagnostics:', error);
+    console.error('Unable to attach menu diagnostics:', error);
+  } finally {
+    if (popup) await popup.dispose();
+    popupDiagnostics.delete(page);
   }
 });
 
@@ -373,11 +384,41 @@ test.describe('desktop popup', () => {
     { tag: '@core-smoke' },
     async ({ page }) => {
       await createList(page);
+      const events = await page.evaluateHandle(() => {
+        const state = { lastScroll: performance.now(), events: [] };
+        for (const type of ['scroll', 'focusin', 'focusout', 'keydown', 'keyup', 'click']) {
+          window.addEventListener(
+            type,
+            (event) => {
+              const target = event.target instanceof Element ? event.target : null;
+              if (type === 'scroll') state.lastScroll = performance.now();
+              if (state.events.length < 150)
+                state.events.push({
+                  type,
+                  time: performance.now(),
+                  scrollY,
+                  target: target?.getAttribute('data-testid') ?? target?.tagName ?? null,
+                  active: document.activeElement?.getAttribute('data-testid') ?? null,
+                  key: event instanceof KeyboardEvent ? event.key : null,
+                  defaultPrevented: event.defaultPrevented,
+                });
+            },
+            true
+          );
+        }
+        return state;
+      });
+      popupDiagnostics.set(page, events);
       const row = page.getByTestId('item-row').last();
       await row.scrollIntoViewIfNeeded();
       await row.hover();
       const trigger = row.locator('[data-testid^="overflow-trigger-item-"]');
       await trigger.focus();
+      await expect(trigger).toBeFocused();
+      // Scroll can continue after the target becomes visible and dismiss an opened menu.
+      await expect
+        .poll(() => events.evaluate((state) => performance.now() - state.lastScroll))
+        .toBeGreaterThanOrEqual(300);
       await page.keyboard.press('Enter');
       const menu = page.locator('[data-testid^="overflow-dropdown-item-"]');
       await expect(menu).toBeVisible();

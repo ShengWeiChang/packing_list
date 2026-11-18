@@ -5,7 +5,7 @@ import { attachDateLayoutDiagnostics, rememberDateLayout } from './layoutDiagnos
 
 test.afterEach(async ({ page }, testInfo) => {
   if (
-    !testInfo.title.startsWith('edits labeled dates and confirms changes at 320px') ||
+    !/^edits labeled dates and confirms changes at (320|1280)px/.test(testInfo.title) ||
     testInfo.status === 'passed'
   )
     return;
@@ -65,7 +65,7 @@ for (const locale of ['en', 'zh-TW']) {
             document.getAnimations().map((animation) => animation.finished.catch(() => {}))
           );
         });
-        if (width === 320) await rememberDateLayout(page);
+        if (width === 320 || width === 1280) await rememberDateLayout(page);
         const before = await page.getByTestId('checklist-name').boundingBox();
         const nameMetrics = await page.getByTestId('checklist-name').evaluate((element) => {
           const range = document.createRange();

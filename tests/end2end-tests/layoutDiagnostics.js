@@ -89,16 +89,27 @@ async function dateLayout(page) {
           clientHeight: element.clientHeight,
         },
         font: { family: style.fontFamily, size: style.fontSize, lineHeight: style.lineHeight },
+        box: {
+          boxSizing: style.boxSizing,
+          display: style.display,
+          appearance: style.appearance,
+          padding: style.padding,
+          border: style.borderWidth,
+        },
         lineRects: range.getClientRects().length,
       };
     };
     const main = document.querySelector('main');
+    const name = main?.querySelector('[data-testid="checklist-name"]');
+    const nameInput = main?.querySelector('[data-testid="checklist-name-input"]');
     return {
       time: performance.now(),
       viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
       main: measure(main),
-      name: measure(main?.querySelector('[data-testid="checklist-name"]')),
-      nameInput: measure(main?.querySelector('[data-testid="checklist-name-input"]')),
+      name: measure(name),
+      nameInput: measure(nameInput),
+      nameContainer: measure((name ?? nameInput)?.parentElement),
+      activeElement: document.activeElement?.getAttribute('data-testid') ?? null,
       dateDisplay: measure(main?.querySelector('span[role="button"]')),
       dates: [...(main?.querySelectorAll('input[type="date"]') ?? [])].map(measure),
       dateLabels: [...(main?.querySelectorAll('label:has(input[type="date"])') ?? [])].map(measure),
