@@ -91,7 +91,11 @@ for (const locale of ['en', 'zh-TW']) {
         await page.getByTestId('checklist-name').click();
         const after = await page.getByTestId('checklist-name-input').boundingBox();
         const triggerAfter = await trigger.boundingBox();
-        expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
+        // Native input heights vary by platform; preserve the visual center and bound the size change.
+        expect(
+          Math.abs(after.y + after.height / 2 - (before.y + before.height / 2))
+        ).toBeLessThanOrEqual(1);
+        expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(4);
         expect(Math.abs(triggerAfter.x - triggerBefore.x)).toBeLessThanOrEqual(1);
         expect(Math.abs(triggerAfter.y - triggerBefore.y)).toBeLessThanOrEqual(1);
         await expect(trigger).toHaveAttribute('aria-label', locale === 'en' ? 'Save' : '儲存');
