@@ -214,6 +214,14 @@ present its impact and a repair proposal, and wait for user approval before
 fixing it. After a fix, use a new fresh reviewer and repeat the applicable gate;
 failed CI or unresolved blocking findings never authorize merge.
 
+When a CI-only platform failure requires repeated experiments, consider a temporary
+debug branch based on the affected PR and a narrowly triggered workflow on the
+matching hosted runner. Run the failing cases with retries disabled, retain
+reports and traces, and verify test selection. Keep the debug workflow out of
+the product PR; carry back only the validated repair. A focused pass aids
+diagnosis but does not replace the PR's complete required checks. Confirm the
+workflow trigger actually covers the debug branch and preserve Git approvals.
+
 After a successful final gate, set status to `awaiting final decision` and
 present the final evidence report. If the user accepts it and a final candidate
 has uncommitted files, set status to `awaiting final commit approval`, present
