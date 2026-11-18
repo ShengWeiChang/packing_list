@@ -10,9 +10,26 @@ Created: 2026-10-30
 import { devices, expect, test } from '@playwright/test';
 
 import { selectGeneralRecommendedList } from './checklistHelpers.js';
+import { waitForLayoutMotion } from './layoutMotionHelpers.js';
 import { checkTouchHold, checkTouchScroll } from './touchDragHelpers.js';
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+test.afterEach(async ({ page }, testInfo) => {
+  if (
+    testInfo.title !== 'preserves touch sorting while excluding action buttons' ||
+    testInfo.status === 'passed'
+  )
+    return;
+  try {
+    await testInfo.attach('touch-event-diagnostics', {
+      body: JSON.stringify(await page.evaluate(() => window.__touchTestEvents ?? []), null, 2),
+      contentType: 'application/json',
+    });
+  } catch (error) {
+    console.error('Unable to attach touch event diagnostics:', error);
+  }
+});
 
 /**
  * Create isolated data through the visible navigation at each width.
@@ -826,6 +843,41 @@ test('preserves touch sorting while excluding action buttons', async ({
   context,
   browser,
 }) => {
+  await page.addInitScript(() => {
+    window.__touchTestEvents = [];
+    for (const type of [
+      'touchstart',
+      'touchmove',
+      'touchend',
+      'touchcancel',
+      'pointerdown',
+      'pointerup',
+      'pointercancel',
+      'click',
+      'scroll',
+      'scrollend',
+    ]) {
+      for (const capture of [true, false]) {
+        document.addEventListener(
+          type,
+          (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            window.__touchTestEvents.push({
+              type,
+              capture,
+              time: performance.now(),
+              scrollY,
+              target: target?.closest('[data-testid]')?.getAttribute('data-testid') ?? null,
+              prevented: event.defaultPrevented,
+              trusted: event.isTrusted,
+            });
+            if (window.__touchTestEvents.length > 250) window.__touchTestEvents.shift();
+          },
+          capture
+        );
+      }
+    }
+  });
   await createList(page);
   const client = await context.newCDPSession(page);
   for (const width of [390, 1024]) {
@@ -838,7 +890,24 @@ test('preserves touch sorting while excluding action buttons', async ({
       shouldDrag: false,
     });
     await checkTouchScroll(page, client, rows.nth(0).getByTestId('item-name'));
-    await (await triggerFor(rows.nth(0))).tap();
+    const actionTrigger = await triggerFor(rows.nth(0));
+    await actionTrigger.evaluate((element) => {
+      element.addEventListener(
+        'click',
+        (event) => {
+          window.__touchTestEvents.push({
+            type: 'trigger-click',
+            time: performance.now(),
+            scrollY,
+            prevented: event.defaultPrevented,
+            trusted: event.isTrusted,
+          });
+        },
+        { capture: true, once: true }
+      );
+    });
+    await actionTrigger.tap();
+    await expect(actionTrigger).toHaveAttribute('aria-expanded', 'true');
     const quantity = Number(
       (await rows.nth(0).getByTestId('item-quantity-value').textContent()).replace(/\D/g, '')
     );
@@ -855,6 +924,7 @@ test('preserves touch sorting while excluding action buttons', async ({
     await (await triggerFor(rows.nth(0))).tap();
     // Closing now animates; capture the final row bounds before synthesizing a hold.
     await expect(rows.nth(0).getByTestId('item-inline-actions')).toHaveCount(0);
+    await waitForLayoutMotion(page);
     await rows.nth(0).scrollIntoViewIfNeeded();
     const source = await rows.nth(0).locator('..').boundingBox();
     const name = await rows.nth(0).getByTestId('item-name').boundingBox();

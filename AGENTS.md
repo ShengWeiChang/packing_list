@@ -187,7 +187,14 @@ final review and adds an intermediate review only at a non-final integration
 boundary; T3 adds fresh non-final integration-boundary reviews and final
 risk-triggered specialist
 evidence. T1 may use focused local final evidence; T2/T3 run the full final
-`npm run verify:feature` gate once, after the last implementation milestone.
+`npm run verify:feature` gate once after the last implementation milestone.
+When the candidate changes only non-executable documentation or agent
+instructions, use `npm run verify:feature -- --docs` instead, plus any separate
+evidence the changed content requires. Changes to source, tests, execution
+scripts or configuration require the full gate.
+A post-gate documentation-only synchronization may reuse the gate only if it
+does not affect executable behavior, test discovery, configuration or reports;
+validate the changed documentation and record the exact candidate difference.
 All pull requests remain subject to the repository's full CI before merge.
 Report the current plan state and the one user decision needed before proceeding.
 
@@ -204,7 +211,10 @@ reviewer. A fresh reviewer is a read-only context that did not implement the
 reviewed scope and has not issued a verdict in the current repair cycle. After a
 blocking or important finding is fixed, the follow-up reviewer must be a
 different read-only context that did not review the earlier repair-cycle
-revision. Record its identity or context and reviewed fingerprint. When the host
+revision. A fresh reviewer may focus on the repair and affected boundaries when
+unchanged prior evidence remains valid; give it the prior findings and enough
+context to assess wider impact. Escalate the scope if the repair can affect it.
+Record both evidence scopes, reviewer identities and fingerprints. When the host
 supports delegation, request a fresh `$code-review` at the final gate for every
 non-trivial tier. Add an intermediate fresh review only when the selected tier
 and integration boundary require it: never for ordinary T1 work, only for a

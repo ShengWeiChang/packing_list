@@ -408,9 +408,8 @@ describe('Category', () => {
       // The Item component with id=item-1 should now have isDragging=true
       const items = wrapper.findAllComponents({ name: 'Item' });
       const item1 = items.find((c) => c.props('item').id === 'item-1');
-      if (item1) {
-        expect(item1.props('isDragging')).toBe(true);
-      }
+      expect(item1).toBeDefined();
+      expect(item1.props('isDragging')).toBe(true);
     });
 
     // Test Case 21: Should clear dragging item ID on drag end
@@ -425,6 +424,11 @@ describe('Category', () => {
       itemEl.appendChild(childEl);
       draggableComp.vm.$emit('start', { item: itemEl });
       await wrapper.vm.$nextTick();
+      const dragged = wrapper
+        .findAllComponents({ name: 'Item' })
+        .find((item) => item.props('item').id === 'item-1');
+      expect(dragged).toBeDefined();
+      expect(dragged.props('isDragging')).toBe(true);
 
       // End drag
       draggableComp.vm.$emit('end', {});
@@ -432,6 +436,7 @@ describe('Category', () => {
 
       // All items should have isDragging=false
       const items = wrapper.findAllComponents({ name: 'Item' });
+      expect(items.length).toBeGreaterThan(0);
       items.forEach((item) => {
         expect(item.props('isDragging')).toBe(false);
       });

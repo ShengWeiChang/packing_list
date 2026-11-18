@@ -15,15 +15,21 @@ Created: 2026-10-13
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 import process from 'node:process';
+
+import { validateCoreSmokeCoverage } from './coreSmokeValidation.js';
+import { summarizePlaywrightCases } from './playwrightInventory.js';
+import { validatePlaywrightReport, validateVitestReport } from './reportValidation.js';
 
 // -----------------------------------------------------------------------------
 // Constants
 // -----------------------------------------------------------------------------
 
 const PROJECT_ROOT = resolve(import.meta.dirname, '..');
+const require = createRequire(import.meta.url);
 const TEMP_PREFIX = join(tmpdir(), 'packing-list-test-inventory-');
 const REQUIRED_TEST_GUIDE = 'docs/testing-guide.md';
 const OPTIONAL_TEST_GUIDES = ['docs/testing-guide-zh.md'];
@@ -47,7 +53,7 @@ function runCommand(command, args) {
     return execFileSync(command, args, {
       cwd: PROJECT_ROOT,
       encoding: 'utf8',
-      maxBuffer: 10 * 1024 * 1024,
+      maxBuffer: 32 * 1024 * 1024,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch (error) {
@@ -65,7 +71,32 @@ function runVitest(reportDirectory) {
   const reportPath = join(reportDirectory, 'vitest.json');
   const vitestPath = join(PROJECT_ROOT, 'node_modules', 'vitest', 'vitest.mjs');
 
-  runCommand(process.execPath, [vitestPath, 'run', '--reporter=json', '--outputFile', reportPath]);
+  try {
+    runCommand(process.execPath, [
+      vitestPath,
+      'run',
+      '--reporter=json',
+      '--outputFile',
+      reportPath,
+    ]);
+  } catch (error) {
+    let details = '';
+    try {
+      const failedReport = JSON.parse(readFileSync(reportPath, 'utf8'));
+      const failures = (failedReport.testResults ?? []).flatMap((file) => [
+        ...(file.message ? [`${file.name}: ${file.message}`] : []),
+        ...(file.assertionResults ?? [])
+          .filter((assertion) => assertion.status === 'failed')
+          .map(
+            (assertion) => `${assertion.fullName}: ${(assertion.failureMessages ?? []).join('\n')}`
+          ),
+      ]);
+      if (failures.length) details = `\nVitest failure details:\n${failures.join('\n')}`;
+    } catch {
+      // Keep the original runner error when it did not write a usable report.
+    }
+    throw new Error(`${error.message}${details}`);
+  }
 
   if (!existsSync(reportPath)) {
     throw new Error('Vitest completed without writing its JSON report.');
@@ -79,8 +110,11 @@ function runVitest(reportDirectory) {
  * @returns {object} Playwright JSON report.
  */
 function runPlaywright() {
-  const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-  const output = runCommand(npxCommand, ['playwright', 'test', '--reporter=json']);
+  const output = runCommand(process.execPath, [
+    require.resolve('@playwright/test/cli'),
+    'test',
+    '--reporter=json',
+  ]);
   return JSON.parse(output);
 }
 
@@ -183,17 +217,23 @@ function collectVitestRecords(report) {
  * @param {object} suite - Playwright JSON suite.
  * @param {Array<{filePath: string, layer: string, count: number}>} records - Destination records.
  * @param {string} testRoot - Absolute Playwright test root.
+ * @param {string[]} [parents] - Ancestor suite titles for stable source-case identity.
  * @returns {void}
  */
-function collectPlaywrightSuite(suite, records, testRoot) {
+function collectPlaywrightSuite(suite, records, testRoot, parents = []) {
+  const suitePath = [...parents, suite.title];
   for (const spec of suite.specs ?? []) {
     const filePath = toPlaywrightProjectPath(spec.file ?? suite.file, testRoot);
     const count = spec.tests.filter((test) => test.status !== 'skipped').length;
-    records.push({ filePath, layer: getLayer(filePath), count });
+    records.push({
+      filePath,
+      count,
+      caseKey: JSON.stringify([...suitePath, spec.title, spec.line, spec.column]),
+    });
   }
 
   for (const nestedSuite of suite.suites ?? []) {
-    collectPlaywrightSuite(nestedSuite, records, testRoot);
+    collectPlaywrightSuite(nestedSuite, records, testRoot, suitePath);
   }
 }
 
@@ -265,12 +305,10 @@ function collectPlaywrightRecords(report) {
     collectPlaywrightSuite(suite, specRecords, report.config.rootDir);
   }
 
-  const totals = new Map();
-  for (const record of specRecords) {
-    totals.set(record.filePath, (totals.get(record.filePath) ?? 0) + record.count);
-  }
-
-  return [...totals].map(([filePath, count]) => ({ filePath, layer: getLayer(filePath), count }));
+  return summarizePlaywrightCases(specRecords).map((record) => ({
+    ...record,
+    layer: getLayer(record.filePath),
+  }));
 }
 
 // -----------------------------------------------------------------------------
@@ -306,14 +344,15 @@ function getCommentCaseNumbers(source) {
 function getCommentErrors(record) {
   const source = readFileSync(join(PROJECT_ROOT, record.filePath), 'utf8');
   const commentNumbers = getCommentCaseNumbers(source);
-  const expectedNumbers = Array.from({ length: record.count }, (_, index) => index + 1);
+  const expectedCount = record.uniqueCaseCount ?? record.count;
+  const expectedNumbers = Array.from({ length: expectedCount }, (_, index) => index + 1);
 
   if (commentNumbers.join(',') === expectedNumbers.join(',')) {
     return [];
   }
 
   return [
-    `${record.filePath}: Test Case comments cover ${commentNumbers.length} cases; expected 1-${record.count}.`,
+    `${record.filePath}: Test Case comments cover ${commentNumbers.length} cases; expected 1-${expectedCount}.`,
   ];
 }
 
@@ -422,7 +461,7 @@ function updateGuideCounts(guide, records) {
   for (const [layer, count] of Object.entries(totals)) {
     if (layer === 'total') continue;
 
-    const label = layer[0].toUpperCase() + layer.slice(1);
+    const label = layer === 'e2e' ? 'E2E' : layer[0].toUpperCase() + layer.slice(1);
     const pattern = new RegExp(`(\\|\\s*${label}\\s*\\|[^|]*\\|\\s*)\\d+(\\s*\\|)`, 'g');
     updatedGuide = updatedGuide.replace(pattern, `$1${count}$2`);
   }
@@ -456,6 +495,19 @@ function main() {
     const playwrightReport = READ_REPORTS_MODE
       ? readTestReport(PLAYWRIGHT_REPORT_PATH, 'Playwright')
       : runPlaywright();
+    const vitestPath = join(PROJECT_ROOT, 'node_modules', 'vitest', 'vitest.mjs');
+    const expectedVitest = JSON.parse(runCommand(process.execPath, [vitestPath, 'list', '--json']));
+    const expectedPlaywright = JSON.parse(
+      runCommand(process.execPath, [
+        require.resolve('@playwright/test/cli'),
+        'test',
+        '--list',
+        '--reporter=json',
+      ])
+    );
+    validateVitestReport(vitestReport, expectedVitest, PROJECT_ROOT);
+    validatePlaywrightReport(playwrightReport, expectedPlaywright);
+    validateCoreSmokeCoverage(playwrightReport);
     const records = [
       ...collectVitestRecords(vitestReport),
       ...collectPlaywrightRecords(playwrightReport),

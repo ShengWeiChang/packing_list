@@ -13,7 +13,7 @@ Created: 2026-02-05
 // Imports
 // -----------------------------------------------------------------------------
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { Checklist } from '../../../source/models/Checklist';
 
@@ -29,13 +29,19 @@ describe('Checklist', () => {
   describe('constructor and defaults', () => {
     // Test Case 1: Checklist should be created with all required properties
     it('should create a checklist with default values', () => {
-      const checklist = new Checklist({ name: 'Japan Trip' });
-      const today = new Date().toISOString().slice(0, 10);
-
-      expect(checklist.name).toBe('Japan Trip');
-      expect(checklist.startDate).toBe(today);
-      expect(checklist.endDate).toBe(today);
-      expect(checklist.order).toBe(0);
+      const clock = vi
+        .spyOn(Date.prototype, 'toISOString')
+        .mockReturnValueOnce('2026-01-01T23:59:59.999Z')
+        .mockReturnValueOnce('2026-01-02T00:00:00.000Z');
+      try {
+        const checklist = new Checklist({ id: 'fixed-id', name: 'Japan Trip' });
+        expect(checklist.name).toBe('Japan Trip');
+        expect(checklist.startDate).toBe('2026-01-01');
+        expect(checklist.endDate).toBe('2026-01-01');
+        expect(checklist.order).toBe(0);
+      } finally {
+        clock.mockRestore();
+      }
     });
 
     // Test Case 2: Custom values should override defaults
@@ -51,6 +57,16 @@ describe('Checklist', () => {
       expect(checklist.startDate).toBe('2026-06-01');
       expect(checklist.endDate).toBe('2026-06-15');
       expect(checklist.order).toBe(3);
+
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date('2026-07-04T23:59:59.999Z'));
+        const partial = new Checklist({ startDate: null, endDate: undefined });
+        expect(partial.startDate).toBeNull();
+        expect(partial.endDate).toBe('2026-07-04');
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     // Test Case 3: Checklist should generate a unique ID

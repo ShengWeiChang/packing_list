@@ -418,14 +418,15 @@ describe('Sidebar', () => {
       mockItem.dataset.checklistId = 'cl-1';
       draggableComp.vm.$emit('start', { item: mockItem });
       await wrapper.vm.$nextTick();
+      const buttons = wrapper.findAll('[data-testid="sidebar-checklist-item"]');
+      expect(buttons[1].classes()).toContain('cursor-grabbing');
 
       // Then end drag
       draggableComp.vm.$emit('end', {});
       await wrapper.vm.$nextTick();
 
       // Dragging class should be removed
-      const buttons = wrapper.findAll('[data-testid="sidebar-checklist-item"]');
-      expect(buttons[0].classes()).not.toContain('cursor-grabbing');
+      expect(buttons[1].classes()).not.toContain('cursor-grabbing');
     });
   });
 

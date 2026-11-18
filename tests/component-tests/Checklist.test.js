@@ -15,11 +15,13 @@ Created: 2026-02-11
 // -----------------------------------------------------------------------------
 
 import { flushPromises, mount, shallowMount } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createI18n } from 'vue-i18n';
 
 import Checklist from '../../source/components/Checklist.vue';
 import ProgressBar from '../../source/components/ProgressBar.vue';
+
+afterEach(() => vi.useRealTimers());
 
 // -----------------------------------------------------------------------------
 // Test Data

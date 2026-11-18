@@ -34,8 +34,19 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: '**/rwd-webkit.spec.js',
       use: { browserName: 'chromium' },
+    },
+    {
+      name: 'webkit-core',
+      testMatch: [
+        '**/core-smoke.spec.js',
+        '**/storage-recovery.spec.js',
+        '**/checklist-dates.spec.js',
+        '**/rwd-overlays.spec.js',
+        '**/drag-and-drop.spec.js',
+      ],
+      grep: /@core-smoke/,
+      use: { browserName: 'webkit' },
     },
     {
       name: 'webkit-rwd',

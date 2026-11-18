@@ -10,6 +10,9 @@ Created: 2026-11-04
 import { expect, test } from '@playwright/test';
 
 import { selectGeneralRecommendedList } from './checklistHelpers.js';
+import { armDrawerTransition, sampleDrawerTransition } from './drawerMotionHelpers.js';
+
+test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
 // Test Case 1: WebKit touch reachability, persisted quick actions, and drawer Escape.
 test('WebKit touch actions persist and drawer dismisses accessibly', async ({ page }) => {
@@ -26,24 +29,13 @@ test('WebKit touch actions persist and drawer dismisses accessibly', async ({ pa
   await expect(
     page.locator(`[data-item-id="${id}"] [data-testid="item-quantity-summary"]`)
   ).toHaveText('×2');
+  await armDrawerTransition(page);
   await page.getByTestId('topbar-toggle').click();
   const drawer = page.getByTestId('overlay-sidebar');
   await expect(drawer).toBeVisible();
-  const opening = await drawer.evaluate(
-    (element) =>
-      new Promise((resolve) => {
-        const start = performance.now();
-        const positions = [];
-        const sample = () => {
-          positions.push(element.getBoundingClientRect().x);
-          if (performance.now() - start < 350) requestAnimationFrame(sample);
-          else resolve(positions);
-        };
-        requestAnimationFrame(sample);
-      })
-  );
-  expect(opening.some((x) => x < -1)).toBe(true);
-  expect(Math.abs(opening.at(-1))).toBeLessThan(1);
+  const opening = await sampleDrawerTransition(page);
+  expect(opening.some(({ x, width }) => x < -1 && x > -width + 1)).toBe(true);
+  expect(Math.abs(opening.at(-1).x)).toBeLessThan(1);
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('overlay-sidebar')).toHaveCount(0);
   await expect(page.getByTestId('topbar-toggle')).toBeFocused();

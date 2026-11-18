@@ -44,6 +44,7 @@ Thumbs.db
 # Coverage and test output
 coverage/
 test-inventory-reports/
+.container-test-artifacts/
 
 # Playwright test output
 test-results/

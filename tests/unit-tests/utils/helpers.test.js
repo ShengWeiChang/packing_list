@@ -36,6 +36,7 @@ describe('helpers', () => {
   // ---------------------------------------------------------------------------
 
   describe('generateSecureId', () => {
+    afterEach(() => vi.unstubAllGlobals());
     // Test Case 1: Should generate ID with empty prefix when called without args
     it('should generate ID with empty prefix when called without args', () => {
       const id = generateSecureId();
@@ -73,39 +74,22 @@ describe('helpers', () => {
 
     // Test Case 5: Should fallback when crypto is unavailable
     it('should fallback to Date.now/Math.random when crypto is unavailable', () => {
-      const originalCrypto = globalThis.crypto;
-
-      // Remove crypto
-      // (setup.js makes this configurable)
-
-      globalThis.crypto = undefined;
+      vi.stubGlobal('crypto', undefined);
 
       const id = generateSecureId('fallback-');
       expect(id).toMatch(/^fallback-/);
-
-      // Restore
-      globalThis.crypto = originalCrypto;
     });
 
     // Test Case 6: Should fallback when crypto.randomUUID throws
     it('should fallback when crypto.randomUUID throws', () => {
-      const originalCrypto = globalThis.crypto;
-
-      Object.defineProperty(globalThis, 'crypto', {
-        value: {
-          randomUUID: () => {
-            throw new Error('randomUUID failed');
-          },
+      vi.stubGlobal('crypto', {
+        randomUUID: () => {
+          throw new Error('randomUUID failed');
         },
-        writable: true,
-        configurable: true,
       });
 
       const id = generateSecureId('fallback-');
       expect(id).toMatch(/^fallback-/);
-
-      // Restore
-      globalThis.crypto = originalCrypto;
     });
   });
 
@@ -114,22 +98,20 @@ describe('helpers', () => {
   // ---------------------------------------------------------------------------
 
   describe('formatDate', () => {
+    beforeEach(() => vi.stubEnv('TZ', 'UTC'));
+    afterEach(() => vi.unstubAllEnvs());
     // Test Case 7: Should format date string correctly
     it('should format date string correctly', () => {
       const formatted = formatDate('2026-03-15');
 
-      expect(formatted).toMatch(/2026/);
-      expect(formatted).toMatch(/3|03|Mar/i);
-      expect(formatted).toMatch(/15|14|16/);
+      expect(formatted).toBe('March 15, 2026');
     });
 
     // Test Case 8: Should handle null date (returns epoch date)
     it('should handle null date (returns epoch date)', () => {
       const formatted = formatDate(null);
 
-      // Date(null) = epoch, which may render as Dec 31, 1969 or Jan 1, 1970
-      // depending on the runtime timezone.
-      expect(formatted).toMatch(/(December 31, 1969|January 1, 1970)/);
+      expect(formatted).toBe('January 1, 1970');
     });
 
     // Test Case 9: Should handle undefined date (returns Invalid Date)

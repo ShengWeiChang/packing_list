@@ -43,14 +43,18 @@ export class Checklist implements ChecklistDTO {
   constructor({
     id = generateSecureId('checklist-'),
     name = '',
-    startDate = new Date().toISOString().slice(0, 10),
-    endDate = new Date().toISOString().slice(0, 10),
+    startDate,
+    endDate,
     order = 0,
   }: ChecklistInput = {}) {
+    const today =
+      startDate === undefined || endDate === undefined
+        ? new Date().toISOString().slice(0, 10)
+        : undefined;
     this.id = id;
     this.name = this.validateName(name);
-    this.startDate = startDate;
-    this.endDate = endDate;
+    this.startDate = startDate === undefined ? today : startDate;
+    this.endDate = endDate === undefined ? today : endDate;
     this.order = order;
   }
 

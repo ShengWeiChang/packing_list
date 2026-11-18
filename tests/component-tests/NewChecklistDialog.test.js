@@ -8,10 +8,12 @@ Created: 2026-10-13
 ================================================================================
 */
 
-import { flushPromises, mount } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import NewChecklistDialog from '../../source/components/NewChecklistDialog.vue';
+
+enableAutoUnmount(afterEach);
 
 describe('NewChecklistDialog', () => {
   const template = {

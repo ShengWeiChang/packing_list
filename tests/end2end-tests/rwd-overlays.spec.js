@@ -10,6 +10,32 @@ Created: 2026-11-04
 import { expect, test } from '@playwright/test';
 
 import { selectGeneralRecommendedList } from './checklistHelpers.js';
+import { armDrawerTransition, sampleDrawerTransition } from './drawerMotionHelpers.js';
+import { attachShortMenuDiagnostics } from './layoutDiagnostics.js';
+
+const popupDiagnostics = new WeakMap();
+
+test.afterEach(async ({ page }, testInfo) => {
+  const popup = popupDiagnostics.get(page);
+  try {
+    if (testInfo.status !== 'passed') {
+      if (
+        testInfo.title === 'short dialogs and narrow date editing fit without horizontal overflow'
+      )
+        await attachShortMenuDiagnostics(page, testInfo);
+      if (popup)
+        await testInfo.attach('keyboard-popup-events', {
+          body: JSON.stringify(await popup.jsonValue(), null, 2),
+          contentType: 'application/json',
+        });
+    }
+  } catch (error) {
+    console.error('Unable to attach menu diagnostics:', error);
+  } finally {
+    if (popup) await popup.dispose();
+    popupDiagnostics.delete(page);
+  }
+});
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
@@ -31,25 +57,14 @@ test('drawer isolates background, traps keyboard and restores focus through nest
 }) => {
   await createList(page);
   const trigger = page.getByTestId('topbar-toggle');
+  await armDrawerTransition(page);
   await trigger.click();
   const drawer = page.getByTestId('overlay-sidebar');
   await expect(drawer).toBeVisible();
-  const opening = await drawer.evaluate(
-    (element) =>
-      new Promise((resolve) => {
-        const start = performance.now();
-        const positions = [];
-        const sample = () => {
-          positions.push(element.getBoundingClientRect().x);
-          if (performance.now() - start < 350) requestAnimationFrame(sample);
-          else resolve(positions);
-        };
-        requestAnimationFrame(sample);
-      })
-  );
+  const opening = await sampleDrawerTransition(page);
   const drawerWidth = (await drawer.boundingBox()).width;
-  expect(opening.some((x) => x < -1 && x > -drawerWidth + 1)).toBe(true);
-  expect(Math.abs(opening.at(-1))).toBeLessThan(1);
+  expect(opening.some(({ x }) => x < -1 && x > -drawerWidth + 1)).toBe(true);
+  expect(Math.abs(opening.at(-1).x)).toBeLessThan(1);
   await expect
     .poll(() => drawer.evaluate((element) => element.contains(document.activeElement)))
     .toBe(true);
@@ -80,23 +95,9 @@ test('drawer isolates background, traps keyboard and restores focus through nest
     .poll(() => drawer.evaluate((element) => element.contains(document.activeElement)))
     .toBe(true);
   expect(await page.evaluate(() => document.body.style.overflow)).toBe('hidden');
-  const closing = page.evaluate(
-    () =>
-      new Promise((resolve) => {
-        const start = performance.now();
-        const positions = [];
-        const sample = () => {
-          const element = document.querySelector('[data-testid="overlay-sidebar"]');
-          if (element)
-            positions.push({ x: element.getBoundingClientRect().x, inert: element.inert });
-          if (performance.now() - start < 400) requestAnimationFrame(sample);
-          else resolve(positions);
-        };
-        requestAnimationFrame(sample);
-      })
-  );
+  await armDrawerTransition(page);
   await page.keyboard.press('Escape');
-  const closingFrames = await closing;
+  const closingFrames = await sampleDrawerTransition(page);
   expect(
     closingFrames.some((frame) => frame.x < -1 && frame.x > -drawerWidth + 1 && frame.inert)
   ).toBe(true);
@@ -363,7 +364,9 @@ test('bottom item input keeps a buffer above a simulated keyboard', async ({ pag
   });
   await input.press('Enter');
   await expect(input).toHaveValue('Keyboard buffer');
-  await expect(input.locator('xpath=..').getByRole('alert')).toBeVisible();
+  await expect(
+    page.getByTestId('item-row').filter({ has: input }).getByRole('alert')
+  ).toBeVisible();
   await expect
     .poll(async () => (await input.boundingBox()).y + (await input.boundingBox()).height)
     .toBeLessThanOrEqual(373);
@@ -376,22 +379,56 @@ test('bottom item input keeps a buffer above a simulated keyboard', async ({ pag
 test.describe('desktop popup', () => {
   test.use({ viewport: { width: 1280, height: 500 }, hasTouch: false, isMobile: false });
   // Test Case 5: A bottom-edge menu opens upward outside transformed item cards; Escape returns focus.
-  test('bottom popup fits and keyboard can activate and dismiss it', async ({ page }) => {
-    await createList(page);
-    const row = page.getByTestId('item-row').last();
-    await row.scrollIntoViewIfNeeded();
-    await row.hover();
-    const trigger = row.locator('[data-testid^="overflow-trigger-item-"]');
-    await trigger.focus();
-    await page.keyboard.press('Enter');
-    const menu = page.locator('[data-testid^="overflow-dropdown-item-"]');
-    await expect(menu).toBeVisible();
-    await expect(menu.locator('button').first()).toBeFocused();
-    const bounds = await menu.boundingBox();
-    expect(bounds.y).toBeGreaterThanOrEqual(0);
-    expect(bounds.y + bounds.height).toBeLessThanOrEqual(500);
-    await page.keyboard.press('Escape');
-    await expect(menu).toHaveCount(0);
-    await expect(trigger).toBeFocused();
-  });
+  test(
+    'bottom popup fits and keyboard can activate and dismiss it',
+    { tag: '@core-smoke' },
+    async ({ page }) => {
+      await createList(page);
+      const events = await page.evaluateHandle(() => {
+        const state = { lastScroll: performance.now(), events: [] };
+        for (const type of ['scroll', 'focusin', 'focusout', 'keydown', 'keyup', 'click']) {
+          window.addEventListener(
+            type,
+            (event) => {
+              const target = event.target instanceof Element ? event.target : null;
+              if (type === 'scroll') state.lastScroll = performance.now();
+              if (state.events.length < 150)
+                state.events.push({
+                  type,
+                  time: performance.now(),
+                  scrollY,
+                  target: target?.getAttribute('data-testid') ?? target?.tagName ?? null,
+                  active: document.activeElement?.getAttribute('data-testid') ?? null,
+                  key: event instanceof KeyboardEvent ? event.key : null,
+                  defaultPrevented: event.defaultPrevented,
+                });
+            },
+            true
+          );
+        }
+        return state;
+      });
+      popupDiagnostics.set(page, events);
+      const row = page.getByTestId('item-row').last();
+      await row.scrollIntoViewIfNeeded();
+      await row.hover();
+      const trigger = row.locator('[data-testid^="overflow-trigger-item-"]');
+      await trigger.focus();
+      await expect(trigger).toBeFocused();
+      // Scroll can continue after the target becomes visible and dismiss an opened menu.
+      await expect
+        .poll(() => events.evaluate((state) => performance.now() - state.lastScroll))
+        .toBeGreaterThanOrEqual(300);
+      await page.keyboard.press('Enter');
+      const menu = page.locator('[data-testid^="overflow-dropdown-item-"]');
+      await expect(menu).toBeVisible();
+      await expect(menu.locator('button').first()).toBeFocused();
+      const bounds = await menu.boundingBox();
+      expect(bounds.y).toBeGreaterThanOrEqual(0);
+      expect(bounds.y + bounds.height).toBeLessThanOrEqual(500);
+      await page.keyboard.press('Escape');
+      await expect(menu).toHaveCount(0);
+      await expect(trigger).toBeFocused();
+    }
+  );
 });

@@ -14,24 +14,45 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 847    |
+| Total tests        | 862    |
 | Unit tests         | 323    |
-| Component tests    | 319    |
-| E2E tests          | 205    |
-| Line coverage      | 88.01% |
-| Statement coverage | 85.96% |
-| Branch coverage    | 76.99% |
+| Component tests    | 322    |
+| E2E tests          | 217    |
+| Line coverage      | 88.1%  |
+| Statement coverage | 86.03% |
+| Branch coverage    | 76.65% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
 
 ### Testing Layers
 
-| Layer     | Tool                     | Tests | Purpose                                            |
-| --------- | ------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                   | 323   | Pure logic in models, services, composables, utils |
-| Component | Vitest + @vue/test-utils | 319   | Vue component rendering, events, state             |
-| E2E       | Playwright               | 205   | Full user flows in a real browser                  |
+| Layer     | Tool                           | Tests | Purpose                                            |
+| --------- | ------------------------------ | ----- | -------------------------------------------------- |
+| Unit      | Vitest                         | 323   | Pure logic in models, services, composables, utils |
+| Component | Vitest + @vue/test-utils       | 322   | Vue component rendering, events, state             |
+| E2E       | Playwright + Chromium / WebKit | 217   | Full user flows in browser engines                 |
+
+### Platform Verification Matrix
+
+| Where                   | Unit / Component                                      | E2E                                                                                                   | How                                                                                                                   |
+| ----------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Local macOS             | All 323 Unit and 322 Component tests can run locally. | All 217 browser executions can run, or select focused tests.                                          | `npm run verify:feature` runs the full feature gate on the Mac; use Vitest or Playwright commands for focused checks. |
+| Local Linux container   | All 323 Unit and 322 Component tests.                 | All 217 browser executions.                                                                           | `sh scripts/ci-container.sh full` runs the feature gate and separate Node container/report contract tests in Docker.  |
+| GitHub Linux CI         | Node container/report contract tests.                 | Six shared Chromium core smoke cases.                                                                 | `sh scripts/ci-container.sh smoke` runs in Docker on each PR.                                                         |
+| GitHub Windows runner   | All 323 Unit and 322 Component tests.                 | All 217 browser executions.                                                                           | The Windows 2025 job runs `npm run verify:feature` on each PR.                                                        |
+| GitHub macOS runner     | All 323 Unit and 322 Component tests.                 | All 217 browser executions.                                                                           | The macOS job runs `npm run verify:feature` on each PR.                                                               |
+| Android and iOS devices | Not applicable.                                       | No tests on mobile devices; Chromium and WebKit emulate mobile viewports and some touch interactions. | Browser emulation does not provide a mobile operating system.                                                         |
+
+The PR checks `macos-full` and `windows-full` run the full gates; `linux-smoke` runs the six shared core cases. Each full gate uploads available test reports, failure attachments, checkout metadata and Playwright browser versions in its own artifact. Linux smoke does not include the edit-while-dragging regression; use the focused or full container command below to check that scenario on Linux. A separate failure-artifact probe runs when workflows, Docker, test scripts, dependency manifests, patches or Playwright configuration change. Its path filters are maintained in `.github/workflows/failure-artifact-probe.yml`; the workflow can also be run manually after it exists on the default branch. The probe checks a controlled failure and attachment upload, not product behavior. When renaming platform checks, verify the new checks run and update GitHub required status checks; do not make the path-filtered probe globally required.
+
+The Linux smoke uses a fixed list and execution report to reject missing, extra, skipped, flaky or runner-error cases. `node scripts/windowsSmoke.js` can exercise the same six cases locally; its result belongs to the host OS. Each platform job uploads available checkout metadata and diagnostics to a separate artifact.
+
+The 217 E2E executions are 207 in Chromium, 6 selected core cases in Playwright WebKit (`webkit-core`), and 4 responsive cases in Playwright WebKit (`webkit-rwd`). A source case executed in multiple projects counts once per execution. Chromium runs the general E2E baseline, including the same four responsive cases; WebKit adds the selected core and responsive checks, not the full Chromium suite. Playwright Chromium and WebKit are not branded Google Chrome or native Safari.
+
+The six core cases cover item creation, editing, quantity, pending and packed status, reload and deletion; two viewport sizes for date editing; storage failure and draft recovery; keyboard menu focus; and mouse sorting with reload. Five are selected existing cases and one joins an item lifecycle that previously lacked complete reload evidence. The four responsive cases cover touch-emulated actions, short dialogs and dates, tablet layout, and short mobile navigation.
+
+Unit and Component tests run in Vitest's Node/jsdom environment, not in the actual browser or operating system UI. The full feature gate also checks formatting, lint, generated colors, TypeScript, inventory and production build. Node container/report contract tests run separately through the Linux container entrypoint and are not included in the 862 test total. The totals and platform counts describe the current test inventory.
 
 ### Toolchain
 
@@ -106,7 +127,7 @@ tests/
 │       ├── cssVars.test.js              #  5  tests
 │       └── verifyFeature.test.js        #  6  tests
 │
-├── component-tests/                     # 319 tests
+├── component-tests/                     # 322 tests
 │   ├── App.test.js                      # 68  tests
 │   ├── PackingCompletionOverlay.test.js # 10  tests
 │   ├── AppIcon.test.js                  #  4  tests
@@ -125,31 +146,34 @@ tests/
 │   ├── TemplateEditor.test.js           # 16  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 205 tests
+└── end2end-tests/                       # 217 tests
     ├── touchDragHelpers.js              # Hold-motion and native-scroll gestures
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
-    ├── rwd-overlays.spec.js             #  5  tests
-    ├── rwd-webkit.spec.js               #  4  tests
+    ├── rwd-overlays.spec.js             #  6  tests
+    ├── rwd-webkit.spec.js               #  8  tests
     ├── sidebar-presentation.spec.js     #  8  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
     ├── checklist-management.spec.js     #  6  tests
     ├── category-crud.spec.js            #  3  tests
-    ├── drag-and-drop.spec.js            #  7  tests
+    ├── drag-and-drop.spec.js            #  8  tests
     ├── desktop-drag-presentation.spec.js # 19  tests
     ├── drag-settlement.spec.js           # 15  tests
     ├── drag-membership-conflict.spec.js  #  1  test
     ├── category-motion.spec.js          #  8  tests
-    ├── interaction-feedback.spec.js      #  8  tests
+    ├── interaction-feedback.spec.js      #  9  tests
     ├── multi-tab-sync.spec.js           #  6  tests
-    ├── checklist-dates.spec.js          # 16  tests
+    ├── core-smoke.spec.js               #  2  tests
+    ├── checklist-dates.spec.js          # 18  tests
     ├── template-navigation.spec.js      # 23  tests
     ├── template-management.spec.js      #  8  tests
     ├── recommended-lists.spec.js        #  1  test
-    └── storage-recovery.spec.js         # 28  tests
+    └── storage-recovery.spec.js         # 29  tests
 ```
+
+Each per-file E2E count records browser-project executions; `Test Case` comments number distinct source cases, so shared cases appear once in source and once per project here.
 
 ### Naming Conventions
 
@@ -163,7 +187,7 @@ tests/
 
 Every test file groups related assertions with `Test Group N` dividers and prefixes every `it()` or `test()` case with a sequential `Test Case N` comment. Numbering begins at 1 in each file and must match the executable case count (including expanded parameterized cases). The comment is a concise `Should ...` description of the behavior under test.
 
-Validation: Local `npm run test:inventory` executes Vitest and Playwright, then verifies this convention against their reported test counts and rejects inventory sections that are out of Unit → Component → E2E order. `npm run verify:feature` runs each test runner once, writes their JSON reports to `test-inventory-reports/`, then uses `npm run test:inventory:ci` to audit those reports without rerunning either suite; GitHub Actions calls this same command. Both modes always audit the tracked English and Chinese guides. Use `npm run test:inventory:sync` to update generated guide totals and file-heading counts after the tests pass; it never rewrites test comments.
+Validation: Local `npm run test:inventory` executes Vitest and Playwright, then verifies this convention against their reported test counts and rejects inventory sections that are out of Unit → Component → E2E order. `npm run verify:feature` runs each test runner once, writes their JSON reports to `test-inventory-reports/`, then uses `npm run test:inventory:ci` to audit those reports without rerunning either suite; GitHub Actions calls this same command. Both modes compare executed case identities with fresh runner lists and reject skipped, todo, flaky, missing, duplicate, or incomplete reports. Both modes always audit the tracked English and Chinese guides. Use `npm run test:inventory:sync` to update generated guide totals and file-heading counts after the tests pass; it never rewrites test comments.
 
 ## 4. Coverage Breakdown
 
@@ -171,13 +195,13 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 84.04%     | 74.43% | 83.4%  |
+| scripts/     | 84.21%     | 74.43% | 83.53% |
 | source/      | 74.72%     | 65.86% | 78.12% |
-| components/  | 81.48%     | 74.4%  | 84.35% |
+| components/  | 81.77%     | 74.08% | 84.66% |
 | composables/ | 95.04%     | 85.26% | 97.28% |
 | models/      | 100%       | 100%   | 100%   |
 | services/    | 95.53%     | 83.5%  | 95.44% |
-| utils/       | 96.36%     | 90.37% | 96.62% |
+| utils/       | 96.36%     | 85.92% | 96.62% |
 
 ### By Component
 
@@ -194,7 +218,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | OverflowMenu.vue             | 87.5%      | 89.81% | 24    |
 | Category.vue                 | 79.2%      | 82.95% | 32    |
 | Checklist.vue                | 70.98%     | 75.07% | 44    |
-| Item.vue                     | 87.43%     | 91.44% | 31    |
+| Item.vue                     | 87.92%     | 91.91% | 34    |
 | NewChecklistDialog.vue       | 95%        | 95.94% | 12    |
 | PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
 | SaveTemplateDialog.vue       | 92.72%     | 93.87% | 10    |
@@ -208,7 +232,7 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 | Branch     | Percentage of conditional branches taken     |
 | Lines      | Percentage of source lines executed          |
 
-Coverage note: Branch is the strictest metric. Remaining uncovered branches are mostly defensive guards and secondary conditional paths.
+Coverage note: Branch is the strictest metric. Remaining uncovered branches are mostly defensive guards and secondary conditional paths. The container and report contract tests run separately with Node and are not included in these Vitest coverage figures.
 
 ## 5. Running Tests
 
@@ -239,6 +263,10 @@ npm run test:e2e:ui   # Interactive UI mode
 npx playwright test tests/end2end-tests/app-loading.spec.js --headed
 ```
 
+### Linux Container Tests
+
+With Docker running, `sh scripts/ci-container.sh smoke` runs the six shared core cases, `sh scripts/ci-container.sh focused` runs the selected high-risk cases, and `sh scripts/ci-container.sh full` runs the complete feature gate. Use `sh scripts/ci-container.sh case <Playwright arguments>` for an individual case. Each run installs Linux dependencies in a separate temporary volume and writes reports to a new `.container-test-artifacts/` directory; the Mac `node_modules` is not shared. The first image download and each dependency installation take time and disk space. A local ARM64 container and the CI amd64 runner use the same image definition but are not identical machines. When upgrading, maintain `.nvmrc`, the pinned image digest in `docker/Dockerfile`, the matching image and architecture digest metadata in `scripts/ci-container.sh` and `docker/test-entrypoint.sh`, the entrypoint version check, and the Playwright lockfile together as applicable. Re-run the Linux smoke and the macOS and Windows full gates, and verify both image architectures and the actual PR jobs. Reassess pinned runner versions when changing them; an image label does not freeze every installed update.
+
 ### Coverage Report (run last)
 
 ```bash
@@ -268,7 +296,7 @@ This project uses three layers to balance speed and reliability.
 
 ### Responsive Interaction Evidence
 
-`rwd-phone.spec.js` explicitly sets touch contexts and verifies phone/tablet actions, real hit areas, name geometry, once-one expansion, reload and long-press sorting, plus desktop mouse regression. `rwd-overlays.spec.js` covers drawer focus, nested dialogs, short screens, native dates and simulated keyboard geometry/error recovery. `webkit-rwd` runs only `rwd-webkit.spec.js`; Chromium ignores that file and CI installs both engines. Emulation and synthetic viewport/IME events do not prove native keyboard or physical-device comfort; record physical-device results separately.
+`rwd-phone.spec.js` explicitly sets touch contexts and verifies phone/tablet actions, real hit areas, name geometry, once-one expansion, reload and long-press sorting, plus desktop mouse regression. `rwd-overlays.spec.js` covers drawer focus, nested dialogs, short screens, native dates and simulated keyboard geometry/error recovery. `rwd-webkit.spec.js` runs under both Chromium and `webkit-rwd` with the same touch-emulated settings; `webkit-core` additionally runs the selected desktop core cases. CI installs both engines. Emulation and synthetic viewport/IME events do not prove native keyboard or physical-device comfort; record physical-device results separately.
 
 `drag-settlement.spec.js` covers pending sidebar order across layouts, failed saves, moved-placeholder `touchcancel` for seven receiving/reordering paths, and normal touch release. Its cancellation gestures use Chromium CDP emulation; they do not prove physical iOS/Safari interruption behavior. `typedDraggable.test.js` exercises the real vuedraggable model/change boundary. `drag-membership-conflict.spec.js` uses two real pages to verify stale membership rejection and reload; service/composable cases cover exact membership, hidden rows and compatible field edits.
 
@@ -756,7 +784,7 @@ This project uses three layers to balance speed and reliability.
 | 4   | protects manual CSS outside the marked region and fails for missing markers                | CSS region preservation and markers         |
 | 5   | CLI check is read-only and returns a useful failure for a drifted fixture                  | Read-only check and CLI regeneration        |
 
-### 8.2 Component Tests (319 tests)
+### 8.2 Component Tests (322 tests)
 
 #### 8.2.1 App.test.js (68 tests)
 
@@ -881,41 +909,44 @@ This project uses three layers to balance speed and reliability.
 | 4   | should show quantity badge when quantity is greater than 1                    | Quantity display             |
 | 5   | should emit "update:item" with isPending=false when completion button clicked | Clear pending                |
 
-#### 8.2.7 Item.test.js (31 tests)
+#### 8.2.7 Item.test.js (34 tests)
 
-| #   | Test                                                                             | What it verifies                       |
-| --- | -------------------------------------------------------------------------------- | -------------------------------------- |
-| 1   | keeps an item name draft on failed save and closes only after a successful retry | Inline acknowledgement                 |
-| 2   | should display the item name                                                     | Name rendering                         |
-| 3   | should render a checkbox input                                                   | Checkbox exists                        |
-| 4   | should check the checkbox when item is packed                                    | Checked state binding                  |
-| 5   | should apply line-through styling when item is packed                            | Packed visual style                    |
-| 6   | should display quantity value                                                    | Quantity label                         |
-| 7   | should emit "update:item" with toggled isPacked when checkbox is clicked         | Checkbox toggle event                  |
-| 8   | should clear isPending when item becomes packed                                  | Packed clears pending                  |
-| 9   | should enter edit mode when item name is clicked                                 | Focus + select on edit                 |
-| 10  | should save edited name on Enter key                                             | Enter confirms edit                    |
-| 11  | should cancel edit mode on Escape key                                            | Escape cancels edit                    |
-| 12  | should emit "update:item" with incremented quantity                              | Quantity increment                     |
-| 13  | should emit "update:item" with decremented quantity                              | Quantity decrement                     |
-| 14  | should emit "delete:item" when quantity is 1 and delete button is clicked        | Delete at quantity 1                   |
-| 15  | should emit "update:item" with toggled isPending                                 | Toggle pending                         |
-| 16  | should clear isPacked when item is marked as pending                             | Pending clears packed                  |
-| 17  | should emit "copy:item" when OverflowMenu triggers copy                          | Copy event forward                     |
-| 18  | should emit "update:item" on blur with changed name                              | Blur-save                              |
-| 19  | should not emit "update:item" on blur with empty name                            | Empty name guard                       |
-| 20  | should emit "delete:item" when OverflowMenu triggers delete                      | Delete event forward                   |
-| 21  | should show action buttons on mouseenter                                         | Hover-in shows controls                |
-| 22  | should hide action buttons on mouseleave                                         | Hover-out hides controls               |
-| 23  | should not save during IME composition                                           | IME guard                              |
-| 24  | should enter edit mode when newlyCreatedItemId matches                           | Auto-focus + select                    |
-| 25  | should not enter edit mode when newlyCreatedItemId does not match                | No false trigger                       |
-| 26  | should not decrement quantity below 1                                            | Minimum quantity guard                 |
-| 27  | should apply cursor-grabbing when isDragging is true                             | Drag visual state                      |
-| 28  | defers an inline action until composition ends and the name is saved             | Final IME text before action           |
-| 29  | waits for the name save before an inline action and retains a failed draft       | Save acknowledgement and failure guard |
-| 30  | preserves a failed name draft when another edit entry is activated               | Failed draft and baseline retention    |
-| 31  | keeps the quantity-one delete action in the expanded touch region                | Quantity-one trash action              |
+| #   | Test                                                                             | What it verifies                            |
+| --- | -------------------------------------------------------------------------------- | ------------------------------------------- |
+| 1   | keeps an item name draft on failed save and closes only after a successful retry | Inline acknowledgement                      |
+| 2   | preserves a failed draft during another item pointer gesture                     | Failed save retains the draft and error     |
+| 3   | releases a held edit after pointerup                                             | Matching pointer release ends the edit      |
+| 4   | releases a held edit after pointercancel                                         | Matching pointer cancellation ends the edit |
+| 5   | should display the item name                                                     | Name rendering                              |
+| 6   | should render a checkbox input                                                   | Checkbox exists                             |
+| 7   | should check the checkbox when item is packed                                    | Checked state binding                       |
+| 8   | should apply line-through styling when item is packed                            | Packed visual style                         |
+| 9   | should display quantity value                                                    | Quantity label                              |
+| 10  | should emit "update:item" with toggled isPacked when checkbox is clicked         | Checkbox toggle event                       |
+| 11  | should clear isPending when item becomes packed                                  | Packed clears pending                       |
+| 12  | should enter edit mode when item name is clicked                                 | Focus + select on edit                      |
+| 13  | should save edited name on Enter key                                             | Enter confirms edit                         |
+| 14  | should cancel edit mode on Escape key                                            | Escape cancels edit                         |
+| 15  | should emit "update:item" with incremented quantity                              | Quantity increment                          |
+| 16  | should emit "update:item" with decremented quantity                              | Quantity decrement                          |
+| 17  | should emit "delete:item" when quantity is 1 and delete button is clicked        | Delete at quantity 1                        |
+| 18  | should emit "update:item" with toggled isPending                                 | Toggle pending                              |
+| 19  | should clear isPacked when item is marked as pending                             | Pending clears packed                       |
+| 20  | should emit "copy:item" when OverflowMenu triggers copy                          | Copy event forward                          |
+| 21  | should emit "update:item" on blur with changed name                              | Blur-save                                   |
+| 22  | should not emit "update:item" on blur with empty name                            | Empty name guard                            |
+| 23  | should emit "delete:item" when OverflowMenu triggers delete                      | Delete event forward                        |
+| 24  | should show action buttons on mouseenter                                         | Hover-in shows controls                     |
+| 25  | should hide action buttons on mouseleave                                         | Hover-out hides controls                    |
+| 26  | should not save during IME composition                                           | IME guard                                   |
+| 27  | should enter edit mode when newlyCreatedItemId matches                           | Auto-focus + select                         |
+| 28  | should not enter edit mode when newlyCreatedItemId does not match                | No false trigger                            |
+| 29  | should not decrement quantity below 1                                            | Minimum quantity guard                      |
+| 30  | should apply cursor-grabbing when isDragging is true                             | Drag visual state                           |
+| 31  | defers an inline action until composition ends and the name is saved             | Final IME text before action                |
+| 32  | waits for the name save before an inline action and retains a failed draft       | Save acknowledgement and failure guard      |
+| 33  | preserves a failed name draft when another edit entry is activated               | Failed draft and baseline retention         |
+| 34  | keeps the quantity-one delete action in the expanded touch region                | Quantity-one trash action                   |
 
 #### 8.2.8 OverflowMenu.test.js (24 tests)
 
@@ -1162,7 +1193,7 @@ This project uses three layers to balance speed and reliability.
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | Completed touch cross-list add/remove                         |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | Completed mouse cross-list add/remove                         |
 
-### 8.3 E2E Tests (205 tests)
+### 8.3 E2E Tests (217 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -1193,17 +1224,18 @@ This project uses three layers to balance speed and reliability.
 | 2   | should copy a category via overflow menu            | Category duplication     |
 | 3   | should show copy suffix in duplicated category name | Copy suffix localization |
 
-#### 8.3.4 drag-and-drop.spec.js (7 tests)
+#### 8.3.4 drag-and-drop.spec.js (8 tests)
 
-| #   | Test                                                                 | What it verifies                |
-| --- | -------------------------------------------------------------------- | ------------------------------- |
-| 1   | should reorder checklists in sidebar by drag-and-drop                | Sidebar checklist reordering    |
-| 2   | should reorder categories by drag-and-drop                           | Category card reordering        |
-| 3   | should reorder items within a category by drag-and-drop              | Item reordering within category |
-| 4   | should preserve packed item slots when filtered items are reordered  | Filtered item reordering        |
-| 5   | should persist a filtered move into a partially visible category     | Filtered cross-category insert  |
-| 6   | should persist a filtered move into an all-hidden category           | Empty-target append and persist |
-| 7   | preserves a remote item rename made while another tab is dragging it | Concurrent drag and rename      |
+| #   | Test                                                                  | What it verifies                                |
+| --- | --------------------------------------------------------------------- | ----------------------------------------------- |
+| 1   | should reorder checklists in sidebar by drag-and-drop                 | Sidebar checklist reordering                    |
+| 2   | should reorder categories by drag-and-drop                            | Category card reordering                        |
+| 3   | should reorder items within a category by drag-and-drop               | Item reordering within category                 |
+| 4   | should preserve packed item slots when filtered items are reordered   | Filtered item reordering                        |
+| 5   | should persist a filtered move into a partially visible category      | Filtered cross-category insert                  |
+| 6   | should persist a filtered move into an all-hidden category            | Empty-target append and persist                 |
+| 7   | preserves a remote item rename made while another tab is dragging it  | Concurrent drag and rename                      |
+| 8   | should reorder items within a category by drag-and-drop [webkit-core] | Same core behavior executed in the other engine |
 
 #### 8.3.5 item-packing.spec.js (10 tests)
 
@@ -1276,38 +1308,39 @@ This project uses three layers to balance speed and reliability.
 | --- | ------------------------------------------------------------- | ---------------------------- |
 | 1   | should create and persist a checklist from a recommended list | Source-aware name and reload |
 
-#### 8.3.11 storage-recovery.spec.js (28 tests)
+#### 8.3.11 storage-recovery.spec.js (29 tests)
 
-| #   | Test                                                                 | What it verifies                   |
-| --- | -------------------------------------------------------------------- | ---------------------------------- |
-| 1   | Retain a checklist draft after storage failure                       | Failed write and retry             |
-| 2   | Retain a new template draft after storage failure                    | Dialog source and retry            |
-| 3   | Retain an edited template draft after storage failure                | Template editor retry              |
-| 4   | Reject a stale same-field edit across tabs                           | Conflict and draft preservation    |
-| 5   | Merge different-field edits across tabs                              | Field intent                       |
-| 6   | Report inaccessible browser storage                                  | Explicit blocked state             |
-| 7   | Reject failed category packing                                       | No false completion or undo        |
-| 8   | Keep checklist data usable with unsupported templates                | Domain isolation                   |
-| 9   | Explain unavailable Web Locks                                        | Safe-write fallback                |
-| 10  | Preserve a failed draft when switching lists                         | Draft ownership                    |
-| 11  | Reject an edit queued after a remote deletion                        | No resurrection and retained draft |
-| 12  | Report a successful write with failed refresh                        | Saved versus refresh failure       |
-| 13  | Show a later template failure after cancelling an edit               | Error ownership                    |
-| 14  | Keep original selection after copy and failed refresh                | Selection and acknowledgement      |
-| 15  | Preserve a newer error when an older draft is cancelled              | Error ownership                    |
-| 16  | Show later checklist failure after cancelling a failed template edit | Error ownership                    |
-| 17  | Prevent switching templates while a save waits for a lock            | Pending editor identity            |
-| 18  | Keep a failed template draft when switching is declined              | Explicit discard decision          |
-| 19  | Show later errors after restoring an item's original name            | No-op error ownership              |
-| 20  | Export and retry corrupt data in English on desktop                  | Raw data and keyboard recovery     |
-| 21  | Export and retry corrupt data in Chinese at 390px                    | Localized narrow recovery          |
-| 22  | Show queued save failure after switching lists                       | Displaced editor error visibility  |
-| 23  | Save an active template title                                        | Direct save without Enter          |
-| 24  | Save an active template category                                     | Direct save without Enter          |
-| 25  | Save an active template item                                         | Direct save without Enter          |
-| 26  | Finish composing a template title before saving                      | IME event and final stored text    |
-| 27  | Reject queued pending after another tab packs the item               | Cross-tab item conflict            |
-| 28  | Reject queued category pack after another tab marks the item pending | Cross-tab atomic batch             |
+| #   | Test                                                                                     | What it verifies                                |
+| --- | ---------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| 1   | Retain a checklist draft after storage failure                                           | Failed write and retry                          |
+| 2   | Retain a new template draft after storage failure                                        | Dialog source and retry                         |
+| 3   | Retain an edited template draft after storage failure                                    | Template editor retry                           |
+| 4   | Reject a stale same-field edit across tabs                                               | Conflict and draft preservation                 |
+| 5   | Merge different-field edits across tabs                                                  | Field intent                                    |
+| 6   | Report inaccessible browser storage                                                      | Explicit blocked state                          |
+| 7   | Reject failed category packing                                                           | No false completion or undo                     |
+| 8   | Keep checklist data usable with unsupported templates                                    | Domain isolation                                |
+| 9   | Explain unavailable Web Locks                                                            | Safe-write fallback                             |
+| 10  | Preserve a failed draft when switching lists                                             | Draft ownership                                 |
+| 11  | Reject an edit queued after a remote deletion                                            | No resurrection and retained draft              |
+| 12  | Report a successful write with failed refresh                                            | Saved versus refresh failure                    |
+| 13  | Show a later template failure after cancelling an edit                                   | Error ownership                                 |
+| 14  | Keep original selection after copy and failed refresh                                    | Selection and acknowledgement                   |
+| 15  | Preserve a newer error when an older draft is cancelled                                  | Error ownership                                 |
+| 16  | Show later checklist failure after cancelling a failed template edit                     | Error ownership                                 |
+| 17  | Prevent switching templates while a save waits for a lock                                | Pending editor identity                         |
+| 18  | Keep a failed template draft when switching is declined                                  | Explicit discard decision                       |
+| 19  | Show later errors after restoring an item's original name                                | No-op error ownership                           |
+| 20  | Export and retry corrupt data in English on desktop                                      | Raw data and keyboard recovery                  |
+| 21  | Export and retry corrupt data in Chinese at 390px                                        | Localized narrow recovery                       |
+| 22  | Show queued save failure after switching lists                                           | Displaced editor error visibility               |
+| 23  | Save an active template title                                                            | Direct save without Enter                       |
+| 24  | Save an active template category                                                         | Direct save without Enter                       |
+| 25  | Save an active template item                                                             | Direct save without Enter                       |
+| 26  | Finish composing a template title before saving                                          | IME event and final stored text                 |
+| 27  | Reject queued pending after another tab packs the item                                   | Cross-tab item conflict                         |
+| 28  | Reject queued category pack after another tab marks the item pending                     | Cross-tab atomic batch                          |
+| 29  | keeps a checklist draft after a real storage failure and saves it on retry [webkit-core] | Same core behavior executed in the other engine |
 
 #### 8.3.12 rwd-phone.spec.js (8 tests)
 
@@ -1322,7 +1355,7 @@ This project uses three layers to balance speed and reliability.
 | 7   | persists category sorting across tablet columns                       | Hold jitter, cross-column grab position and persistence                                     |
 | 8   | moves an unpacked item into an all-hidden category by touch           | Touch drop into filtered footer and reload                                                  |
 
-#### 8.3.13 rwd-overlays.spec.js (5 tests)
+#### 8.3.13 rwd-overlays.spec.js (6 tests)
 
 | #   | Test                                                                                 | What it verifies                                             |
 | --- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -1331,15 +1364,20 @@ This project uses three layers to balance speed and reliability.
 | 3   | short dialogs and narrow date editing fit without horizontal overflow                | Short viewport, native dates and scrollable touch menu       |
 | 4   | bottom item input keeps a buffer above a simulated keyboard                          | Scrollport buffer, error and cleanup                         |
 | 5   | bottom popup fits and keyboard can activate and dismiss it                           | Popup bounds, initial focus and Escape                       |
+| 6   | bottom popup fits and keyboard can activate and dismiss it [webkit-core]             | Same core behavior executed in the other engine              |
 
-#### 8.3.14 rwd-webkit.spec.js (4 tests)
+#### 8.3.14 rwd-webkit.spec.js (8 tests)
 
-| #   | Test                                                         | What it verifies                                                      |
-| --- | ------------------------------------------------------------ | --------------------------------------------------------------------- |
-| 1   | WebKit touch actions persist and drawer dismisses accessibly | WebKit touch state, drawer motion and focus return                    |
-| 2   | WebKit short dialogs and date fields fit the narrow viewport | WebKit short viewport and date geometry                               |
-| 3   | WebKit tablet columns retain visible touch actions           | WebKit tablet columns, collapsed scroll lock, touch menus and density |
-| 4   | WebKit short mobile sidebar keeps navigation reachable       | Short drawer checklist and language controls                          |
+| #   | Test                                                                    | What it verifies                                                      |
+| --- | ----------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 1   | WebKit touch actions persist and drawer dismisses accessibly            | WebKit touch state, drawer motion and focus return                    |
+| 2   | WebKit short dialogs and date fields fit the narrow viewport            | WebKit short viewport and date geometry                               |
+| 3   | WebKit tablet columns retain visible touch actions                      | WebKit tablet columns, collapsed scroll lock, touch menus and density |
+| 4   | WebKit short mobile sidebar keeps navigation reachable                  | Short drawer checklist and language controls                          |
+| 5   | WebKit touch actions persist and drawer dismisses accessibly [chromium] | Same core behavior executed in the other engine                       |
+| 6   | WebKit short dialogs and date fields fit the narrow viewport [chromium] | Same core behavior executed in the other engine                       |
+| 7   | WebKit tablet columns retain visible touch actions [chromium]           | Same core behavior executed in the other engine                       |
+| 8   | WebKit short mobile sidebar keeps navigation reachable [chromium]       | Same core behavior executed in the other engine                       |
 
 #### 8.3.15 sidebar-presentation.spec.js (8 tests)
 
@@ -1391,7 +1429,7 @@ This project uses three layers to balance speed and reliability.
 | 7   | settles rapid collapse reversals and viewport changes            | Interruption, cleanup and no horizontal overflow      |
 | 8   | honors reduced motion and cancels active reflow                  | Live motion preference and immediate layout           |
 
-#### 8.3.18 interaction-feedback.spec.js (8 tests)
+#### 8.3.18 interaction-feedback.spec.js (9 tests)
 
 | #   | Test                                                                                | What it verifies                                                    |
 | --- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
@@ -1402,7 +1440,8 @@ This project uses three layers to balance speed and reliability.
 | 5   | phone: keeps normal and completed feedback consistent and animates inline actions   | Touch action motion, item outline and row alignment                 |
 | 6   | phone: accepts items into a collapsed category and retains counts and order         | Aligned touch item outline, retraction/cancellation and saved order |
 | 7   | ends an old name edit when dragging a different item                                | Unchanged/changed edit teardown and saved name                      |
-| 8   | honors reduced motion for inline action expansion                                   | Immediate expansion, usable controls and Escape                     |
+| 8   | saves a name when clicking another item without dragging                            | Save the name and focus the other item                              |
+| 9   | honors reduced motion for inline action expansion                                   | Immediate expansion, usable controls and Escape                     |
 
 #### 8.3.19 drag-settlement.spec.js (15 tests)
 
@@ -1430,7 +1469,7 @@ This project uses three layers to balance speed and reliability.
 | --- | -------------------------------------------------------------------- | ----------------------------------------------------- |
 | 1   | refreshes a stale drag instead of persisting duplicate target orders | Real two-tab drag conflict, atomic storage and reload |
 
-#### 8.3.21 checklist-dates.spec.js (16 tests)
+#### 8.3.21 checklist-dates.spec.js (18 tests)
 
 | #   | Test                                                                        | What it verifies                                 |
 | --- | --------------------------------------------------------------------------- | ------------------------------------------------ |
@@ -1450,6 +1489,8 @@ This project uses three layers to balance speed and reliability.
 | 14  | keeps 10-character name within the main viewport at 1280px                  | Checklist name layout across viewport widths     |
 | 15  | keeps 100-character name within the main viewport at 1280px                 | Checklist name layout across viewport widths     |
 | 16  | saves another category when its focus moves to a failed draft confirmation  | Failed draft and cross-category focus transition |
+| 17  | edits labeled dates and confirms changes at 320px in en [webkit-core]       | Same core behavior executed in the other engine  |
+| 18  | edits labeled dates and confirms changes at 1280px in en [webkit-core]      | Same core behavior executed in the other engine  |
 
 #### 8.3.22 template-navigation.spec.js (23 tests)
 
@@ -1478,3 +1519,10 @@ This project uses three layers to balance speed and reliability.
 | 21  | discards the template once before copying a checklist                          | Template navigation and draft protection |
 | 22  | keeps long template toolbar and focused content usable after rotation in en    | Template navigation and draft protection |
 | 23  | keeps long template toolbar and focused content usable after rotation in zh-TW | Template navigation and draft protection |
+
+#### 8.3.23 core-smoke.spec.js (2 tests)
+
+| #   | Test                                                             | What it verifies                                      |
+| --- | ---------------------------------------------------------------- | ----------------------------------------------------- |
+| 1   | creates, edits, packs and deletes a persisted item [chromium]    | Create, edit, pack, reload persisted state and delete |
+| 2   | creates, edits, packs and deletes a persisted item [webkit-core] | Create, edit, pack, reload persisted state and delete |

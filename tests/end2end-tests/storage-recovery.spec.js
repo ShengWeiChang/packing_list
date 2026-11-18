@@ -5,39 +5,41 @@ import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
 // Test Case 1: Retain the checklist draft through storage failure and retry.
-test('keeps a checklist draft after a real storage failure and saves it on retry', async ({
-  page,
-}) => {
-  await page.addInitScript(() => {
-    const originalSetItem = Storage.prototype.setItem;
-    Storage.prototype.setItem = function (key, value) {
-      if (window.failPackingWrites && key === 'packingListApp') {
-        throw new DOMException('Storage full', 'QuotaExceededError');
-      }
-      return originalSetItem.call(this, key, value);
-    };
-  });
-  await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto('/');
-  await page.getByTestId('sidebar-new-checklist').click();
-  await page.getByTestId('new-checklist-option-empty').click();
-  const input = page.getByTestId('checklist-name-input');
-  await expect(input).toBeVisible();
-  await page.evaluate(() => {
-    window.failPackingWrites = true;
-  });
-  await input.fill('My trip draft');
-  await input.press('Enter');
-  await expect(input).toHaveValue('My trip draft');
-  await expect(page.getByRole('alert').filter({ hasText: 'storage is full' })).toBeVisible();
-  await page.evaluate(() => {
-    window.failPackingWrites = false;
-  });
-  await input.press('Enter');
-  await expect(page.getByTestId('checklist-name')).toHaveText('My trip draft');
-  await page.reload();
-  await expect(page.getByTestId('checklist-name')).toHaveText('My trip draft');
-});
+test(
+  'keeps a checklist draft after a real storage failure and saves it on retry',
+  { tag: '@core-smoke' },
+  async ({ page }) => {
+    await page.addInitScript(() => {
+      const originalSetItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key, value) {
+        if (window.failPackingWrites && key === 'packingListApp') {
+          throw new DOMException('Storage full', 'QuotaExceededError');
+        }
+        return originalSetItem.call(this, key, value);
+      };
+    });
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/');
+    await page.getByTestId('sidebar-new-checklist').click();
+    await page.getByTestId('new-checklist-option-empty').click();
+    const input = page.getByTestId('checklist-name-input');
+    await expect(input).toBeVisible();
+    await page.evaluate(() => {
+      window.failPackingWrites = true;
+    });
+    await input.fill('My trip draft');
+    await input.press('Enter');
+    await expect(input).toHaveValue('My trip draft');
+    await expect(page.getByRole('alert').filter({ hasText: 'storage is full' })).toBeVisible();
+    await page.evaluate(() => {
+      window.failPackingWrites = false;
+    });
+    await input.press('Enter');
+    await expect(page.getByTestId('checklist-name')).toHaveText('My trip draft');
+    await page.reload();
+    await expect(page.getByTestId('checklist-name')).toHaveText('My trip draft');
+  }
+);
 
 // Test Case 2: Retain the template name and source through failure and retry.
 test('preserves a template name and source after a failed write and retries successfully', async ({

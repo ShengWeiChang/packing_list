@@ -12,19 +12,44 @@ export async function checkTouchHold(page, client, target, { jitter = 2, shouldD
   await target.scrollIntoViewIfNeeded();
   const box = await target.boundingBox();
   const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
-  await page.waitForTimeout(60);
-  await client.send('Input.dispatchTouchEvent', {
-    type: 'touchMove',
-    touchPoints: [{ x: start.x + jitter, y: start.y + jitter }],
+  const gesture = await page.evaluateHandle(() => {
+    const state = { down: null, move: null, dpr: devicePixelRatio };
+    const onDown = (event) =>
+      (state.down = { timestamp: event.timeStamp, received: performance.now() });
+    const onMove = (event) =>
+      (state.move = { timestamp: event.timeStamp, received: performance.now() });
+    window.addEventListener('pointerdown', onDown, { capture: true, once: true });
+    window.addEventListener('pointermove', onMove, { capture: true, once: true });
+    return {
+      state,
+      cleanup: () => {
+        window.removeEventListener('pointerdown', onDown, true);
+        window.removeEventListener('pointermove', onMove, true);
+      },
+    };
   });
-  await page.waitForTimeout(220);
-  await page.evaluate(
-    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-  );
   const chosen = page.locator('.chosen-item, .chosen-category, .chosen-checklist');
-  await expect(chosen).toHaveCount(shouldDrag ? 1 : 0);
-  await client.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+  try {
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
+    // Dispatch promptly: a delayed test runner must not turn jitter into a long press.
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: start.x + jitter, y: start.y + jitter }],
+    });
+    await expect.poll(() => gesture.evaluate(({ state }) => state.move !== null)).toBe(true);
+    const timing = await gesture.evaluate(({ state }) => state);
+    expect(timing.down, JSON.stringify(timing)).not.toBeNull();
+    expect(timing.move.received - timing.down.received, JSON.stringify(timing)).toBeLessThan(200);
+    await page.waitForTimeout(220);
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    );
+    await expect(chosen).toHaveCount(shouldDrag ? 1 : 0);
+  } finally {
+    await client.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+    await gesture.evaluate(({ cleanup }) => cleanup());
+    await gesture.dispose();
+  }
   await expect(chosen).toHaveCount(0);
   await expect(page.locator('.sortable-fallback')).toHaveCount(0);
 }
@@ -40,39 +65,30 @@ export async function checkTouchScroll(page, client, target) {
   const box = await target.boundingBox();
   const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   const before = await page.evaluate(() => window.scrollY);
-  const scrollState = await page.evaluateHandle(() => {
-    const state = { ended: false };
-    const onScroll = () => (state.ended = false);
-    const onEnd = () => (state.ended = true);
-    document.addEventListener('scroll', onScroll);
-    document.addEventListener('scrollend', onEnd);
-    return {
-      state,
-      cleanup: () => {
-        document.removeEventListener('scroll', onScroll);
-        document.removeEventListener('scrollend', onEnd);
-      },
-    };
-  });
-  try {
+  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
+  for (let step = 1; step <= 8; step++) {
     await client.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [start],
+      type: 'touchMove',
+      touchPoints: [{ x: start.x, y: start.y - step * 20 }],
     });
-    for (let step = 1; step <= 8; step++) {
-      await client.send('Input.dispatchTouchEvent', {
-        type: 'touchMove',
-        touchPoints: [{ x: start.x, y: start.y - step * 20 }],
-      });
-      await page.waitForTimeout(16);
-    }
-    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before);
-    // A subsequent tap must run after native momentum ends, not just after movement starts.
-    await expect.poll(() => scrollState.evaluate(({ state }) => state.ended)).toBe(true);
-    await expect(page.locator('.sortable-fallback, .chosen-item, .chosen-category')).toHaveCount(0);
-  } finally {
-    await scrollState.evaluate(({ cleanup }) => cleanup());
-    await scrollState.dispose();
+    await page.waitForTimeout(16);
   }
+  // Release after the finger stops moving so this scenario does not start a fling.
+  await page.waitForTimeout(250);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before);
+  // Observe the post-release position until it has remained still for a short interval.
+  let lastPosition = await page.evaluate(() => window.scrollY);
+  let lastChange = Date.now();
+  await expect
+    .poll(async () => {
+      const position = await page.evaluate(() => window.scrollY);
+      if (position !== lastPosition) {
+        lastPosition = position;
+        lastChange = Date.now();
+      }
+      return Date.now() - lastChange;
+    })
+    .toBeGreaterThanOrEqual(300);
+  await expect(page.locator('.sortable-fallback, .chosen-item, .chosen-category')).toHaveCount(0);
 }

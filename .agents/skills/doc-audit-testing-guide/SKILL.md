@@ -40,11 +40,14 @@ Ensure the following items are consistent, correct, and fixed:
 
 ## 2. Mandatory Rules (Must Follow)
 
-1. Cannot infer from documentation alone - must actually execute tests to get latest numbers.
-2. Required commands:
-   - `npm run test:run`
-   - `npm run test:coverage`
-   - `npx playwright test --list`
+1. Do not infer execution results from documentation or test collection alone.
+2. Reuse a completed full gate's actual Vitest coverage and Playwright reports
+   when the evidence satisfies `$feature-completion`'s candidate, scope,
+   configuration, environment, provenance and result requirements. The full gate
+   already executes the runners and `test:inventory:ci`; do not rerun them solely
+   for this audit. A `--docs` gate does not supply test evidence. If suitable
+   evidence is unavailable, execute the necessary runners and inventory audit;
+   distinguish collected tests from successfully executed tests.
 
 3. When any command fails, must preserve:
    - Failed command
@@ -61,13 +64,22 @@ Ensure the following items are consistent, correct, and fixed:
 
 ## 3. Recommended Execution Flow (Investigate → Fix)
 
-1. Run tests and coverage first to get latest numbers.
+1. Locate matching completed execution and coverage evidence, or run the missing
+   checks. Treat coverage as a recorded run snapshot; investigate meaningful
+   changes rather than repeatedly rerunning to chase incidental variance.
 2. Parse Vitest and Playwright:
    - Vitest: Total / Unit / Component
    - Playwright: E2E test total and file count
 
-3. Run `npm run test:inventory`. This local script executes Vitest and Playwright, then uses their JSON results to verify actual case counts, parameterized expansion, `Test Case` ranges, the tracked English testing-guide inventory, and the Chinese inventory when it is available locally. CI uses `npm run test:inventory:ci` only after its single Vitest and Playwright executions have written `test-inventory-reports/vitest.json` and `test-inventory-reports/playwright.json`; it audits those reports without rerunning either suite.
-4. Use `npm run test:inventory:sync` only after the executed tests pass and generated count fields need updating. It does not write or renumber test comments.
+3. Use the successful final gate's `npm run test:inventory:ci` result, or audit
+   verified matching reports with that command. If no reusable reports exist,
+   `npm run test:inventory` executes both suites and audits their results. Both
+   check counts, parameterized expansion, comments and available guides; confirm
+   both paired guides exist before claiming bilingual audit completion.
+4. Only after successful, matching complete executions, use
+   `npm run test:inventory:ci -- --write` to sync counts from retained reports;
+   follow with the read-only audit. `npm run test:inventory:sync` instead executes
+   the suites again. Neither command renumbers test comments.
 
 5. Compare documentation:
    - `docs/testing-guide.md`
@@ -103,7 +115,7 @@ Only output the following content, no lengthy reports needed:
 1. Execution result summary
    - Command success/failure
    - Latest statistics (Unit / Component / E2E / Total)
-   - Latest Coverage (Line / Statement / Branch)
+   - Coverage snapshot (Line / Statement / Branch, run and relevant variance)
 
 2. Actual fix list
    - Modified file paths

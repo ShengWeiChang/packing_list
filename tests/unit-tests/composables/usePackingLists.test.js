@@ -13,12 +13,14 @@ Created: 2026-02-05
 // Imports
 // -----------------------------------------------------------------------------
 
-import { flushPromises, mount } from '@vue/test-utils';
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usePackingLists } from '../../../source/composables/usePackingLists';
 import { LocalStorageService } from '../../../source/services/localStorageService';
 import { STORAGE_KEYS } from '../../../source/utils/constants';
+
+enableAutoUnmount(afterEach);
 
 // -----------------------------------------------------------------------------
 // usePackingLists Tests
@@ -49,6 +51,7 @@ describe('usePackingLists', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -585,7 +588,7 @@ describe('usePackingLists', () => {
   describe('delete category and item', () => {
     // Test Case 24: Should delete a category and its items
     it('should delete a category and refresh both categories and items', async () => {
-      const { initialize, createChecklist, categories, createItem, deleteCategory } =
+      const { initialize, createChecklist, categories, items, createItem, deleteCategory } =
         usePackingLists();
 
       await initialize();
@@ -595,11 +598,15 @@ describe('usePackingLists', () => {
       const categoryId = categories.value[0]?.id;
       expect(categoryId).toEqual(expect.any(String));
 
-      await createItem({ name: 'Test Item', categoryId });
+      const item = await createItem({ name: 'Test Item', categoryId });
+      expect(items.value.some((entry) => entry.id === item.id)).toBe(true);
 
       await deleteCategory(categoryId);
 
       expect(categories.value.find((c) => c.id === categoryId)).toBeUndefined();
+      expect(items.value.some((entry) => entry.id === item.id)).toBe(false);
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.APP_DATA));
+      expect(stored.items.some((entry) => entry.id === item.id)).toBe(false);
     });
 
     // Test Case 25: Should delete an item
