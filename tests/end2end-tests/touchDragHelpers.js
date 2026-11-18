@@ -40,14 +40,30 @@ export async function checkTouchScroll(page, client, target) {
   const box = await target.boundingBox();
   const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   const before = await page.evaluate(() => window.scrollY);
-  // Chromium completes the gesture without a lingering fling before the next tap.
-  await client.send('Input.synthesizeScrollGesture', {
-    ...start,
-    yDistance: -160,
-    speed: 1200,
-    gestureSourceType: 'touch',
-    preventFling: true,
-  });
+  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
+  for (let step = 1; step <= 8; step++) {
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: start.x, y: start.y - step * 20 }],
+    });
+    await page.waitForTimeout(16);
+  }
+  // Release after the finger stops moving so this scenario does not start a fling.
+  await page.waitForTimeout(250);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before);
+  // Observe the post-release position until it has remained still for a short interval.
+  let lastPosition = await page.evaluate(() => window.scrollY);
+  let lastChange = Date.now();
+  await expect
+    .poll(async () => {
+      const position = await page.evaluate(() => window.scrollY);
+      if (position !== lastPosition) {
+        lastPosition = position;
+        lastChange = Date.now();
+      }
+      return Date.now() - lastChange;
+    })
+    .toBeGreaterThanOrEqual(300);
   await expect(page.locator('.sortable-fallback, .chosen-item, .chosen-category')).toHaveCount(0);
 }
