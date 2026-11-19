@@ -127,8 +127,8 @@ tests/
 │       ├── cssVars.test.js              #  5  tests
 │       └── verifyFeature.test.js        #  6  tests
 │
-├── component-tests/                     # 322 tests
-│   ├── App.test.js                      # 68  tests
+├── component-tests/                     # 323 tests
+│   ├── App.test.js                      # 69  tests
 │   ├── PackingCompletionOverlay.test.js # 10  tests
 │   ├── AppIcon.test.js                  #  4  tests
 │   ├── Checklist.test.js                # 44  tests
@@ -784,80 +784,81 @@ This project uses three layers to balance speed and reliability.
 | 4   | protects manual CSS outside the marked region and fails for missing markers                | CSS region preservation and markers         |
 | 5   | CLI check is read-only and returns a useful failure for a drifted fixture                  | Read-only check and CLI regeneration        |
 
-### 8.2 Component Tests (322 tests)
+### 8.2 Component Tests (323 tests)
 
-#### 8.2.1 App.test.js (68 tests)
+#### 8.2.1 App.test.js (69 tests)
 
-| #   | Test                                                                             | What it verifies                                     |
-| --- | -------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| 1   | should render the main layout with sidebar and content                           | Main layout rendering                                |
-| 2   | should show empty state when no checklist is selected                            | Empty state display                                  |
-| 3   | should show ChecklistComponent when a checklist is selected                      | Checklist visibility                                 |
-| 4   | should set isMobileViewport to true for narrow screens                           | Mobile viewport detection                            |
-| 5   | should auto-collapse sidebar on mobile viewport                                  | Auto-collapse on mobile                              |
-| 6   | should auto-expand sidebar on wide desktop when not manually collapsed           | Auto-expand on desktop                               |
-| 7   | should not auto-expand sidebar when manually collapsed key exists                | Collapse persistence                                 |
-| 8   | should detect small desktop viewport as overlay zone                             | Overlay zone detection                               |
-| 9   | should toggle sidebar when sidebar emits toggle-sidebar                          | Sidebar toggle event                                 |
-| 10  | should persist sidebar collapse to localStorage on desktop                       | Collapse persistence                                 |
-| 11  | should remove collapsed key from localStorage when sidebar re-opened             | Expand cleanup                                       |
-| 12  | should toggle sidebar from Topbar on mobile                                      | Topbar toggle event                                  |
-| 13  | should open source selection from Sidebar without creating immediately           | Sidebar source dialog                                |
-| 14  | should open source selection from Topbar on mobile                               | Topbar source dialog                                 |
-| 15  | should select and mark checklist for editing on handleChecklistEdit              | Edit mode trigger                                    |
-| 16  | should duplicate checklist and select the copy on handleChecklistCopy            | Checklist duplication                                |
-| 17  | should delete checklist after user confirms the dialog                           | Confirmed deletion                                   |
-| 18  | should not delete checklist when user cancels the dialog                         | Cancelled deletion                                   |
-| 19  | should delegate selected checklist deletion to the composable                    | Delete delegation                                    |
-| 20  | should update checklist via ChecklistComponent emit                              | Checklist update                                     |
-| 21  | should call updateMultipleChecklists on handleChecklistMove                      | Checklist move                                       |
-| 22  | should update selectedChecklistId from overlay sidebar select-checklist          | Overlay sidebar selection                            |
-| 23  | should update selectedChecklistId from inline sidebar select-checklist           | Inline sidebar selection                             |
-| 24  | should create item with maxOrder + 1 in the target category                      | Item order calculation                               |
-| 25  | should create item with order 0 in an empty category                             | Empty category item creation                         |
-| 26  | should update item and clear newlyCreatedItemId if matching                      | Item update + flag clear                             |
-| 27  | should call duplicateItem on copy:item emit                                      | Item duplication                                     |
-| 28  | should call deleteItem on delete:item emit                                       | Item deletion                                        |
-| 29  | should update item categoryId and reordered items on move type                   | Cross-category move                                  |
-| 30  | should update all items with new order on reorder type                           | Same-category reorder                                |
-| 31  | should handle move with empty reorderedItems gracefully                          | Empty reorder boundary                               |
-| 32  | should create category with correct order                                        | Category order calculation                           |
-| 33  | should update category and clear newlyCreatedCategoryId if matching              | Category update + flag clear                         |
-| 34  | should call duplicateCategory on copy:category emit                              | Category duplication                                 |
-| 35  | should call deleteCategory on delete:category emit                               | Category deletion                                    |
-| 36  | should update each category and call getCategories                               | Category reorder                                     |
-| 37  | should display overlay backdrop when sidebar is open on mobile                   | Overlay rendering                                    |
-| 38  | should close sidebar when overlay backdrop is clicked                            | Overlay close                                        |
-| 39  | should set body overflow hidden when overlay is active                           | Body scroll lock                                     |
-| 40  | should set body overflow hidden when sidebar opens on small desktop              | Small desktop scroll lock                            |
-| 41  | should call initialize on mount                                                  | Lifecycle: mount init                                |
-| 42  | should clean up resize event listener on unmount                                 | Lifecycle: unmount cleanup                           |
-| 43  | should open an isolated editor without creating a checklist                      | Template editor isolation                            |
-| 44  | should save only through the templates composable                                | Template persistence routing                         |
-| 45  | should open the named template dialog and save its selected checklist            | Named template save flow                             |
-| 46  | should create a checklist from a selected personal template                      | Template application flow                            |
-| 47  | should delete the active template and leave the editor                           | Template delete flow                                 |
-| 48  | should create an explicitly empty checklist                                      | Empty source flow                                    |
-| 49  | handles failed template creation and ignores missing sources                     | Creation failure and missing-source guard            |
-| 50  | should ignore requests to edit a missing template                                | Missing template guard                               |
-| 51  | should keep the editor open when saving fails                                    | Save failure state                                   |
-| 52  | should discard a template draft when canceled                                    | Draft cancellation                                   |
-| 53  | should preserve a template when deletion is canceled                             | Delete cancellation                                  |
-| 54  | should close both template dialogs without operations                            | Dialog cancellation                                  |
-| 55  | should leave state unchanged when empty creation fails                           | Empty creation failure                               |
-| 56  | should keep the editor open when template deletion fails                         | Delete failure state                                 |
-| 57  | should use an empty initial name for an unknown checklist                        | Missing checklist fallback                           |
-| 58  | should ignore duplicate save events after source state clears                    | Duplicate save guard                                 |
-| 59  | should create a checklist from a selected recommended list                       | recommended list flow                                |
-| 60  | should apply a category packing change and offer one-click undo                  | Batch packing undo action                            |
-| 61  | should use Ctrl+Z for packing undo but preserve input-native undo                | Keyboard shortcut isolation                          |
-| 62  | shows the completion overlay after the final local item is packed                | Local completion transition                          |
-| 63  | should defer the complete undo window until the completion overlay closes        | Inert background, focus return, and full Undo window |
-| 64  | shows the completion overlay only when redo completes the checklist              | Redo transition, sidebar isolation, and guard        |
-| 65  | keeps completed initialization and checklist switching silent                    | Passive transition exclusions                        |
-| 66  | should defer an existing category undo window when a final item opens completion | Cross-path full Undo window                          |
-| 67  | keeps a template dialog open until retry succeeds                                | Template draft and retry                             |
-| 68  | keeps checklist source selection open until retry succeeds                       | Checklist creation retry                             |
+| #   | Test                                                                                 | What it verifies                                     |
+| --- | ------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| 1   | should render the main layout with sidebar and content                               | Main layout rendering                                |
+| 2   | should show empty state when no checklist is selected                                | Empty state display                                  |
+| 3   | should show ChecklistComponent when a checklist is selected                          | Checklist visibility                                 |
+| 4   | should set isMobileViewport to true for narrow screens                               | Mobile viewport detection                            |
+| 5   | should auto-collapse sidebar on mobile viewport                                      | Auto-collapse on mobile                              |
+| 6   | should auto-expand sidebar on wide desktop when not manually collapsed               | Auto-expand on desktop                               |
+| 7   | should not auto-expand sidebar when manually collapsed key exists                    | Collapse persistence                                 |
+| 8   | should detect small desktop viewport as overlay zone                                 | Overlay zone detection                               |
+| 9   | should toggle sidebar when sidebar emits toggle-sidebar                              | Sidebar toggle event                                 |
+| 10  | should persist sidebar collapse to localStorage on desktop                           | Collapse persistence                                 |
+| 11  | should remove collapsed key from localStorage when sidebar re-opened                 | Expand cleanup                                       |
+| 12  | should toggle sidebar from Topbar on mobile                                          | Topbar toggle event                                  |
+| 13  | should open source selection from Sidebar without creating immediately               | Sidebar source dialog                                |
+| 14  | should open source selection from Topbar on mobile                                   | Topbar source dialog                                 |
+| 15  | should select and mark checklist for editing on handleChecklistEdit                  | Edit mode trigger                                    |
+| 16  | should duplicate checklist and select the copy on handleChecklistCopy                | Checklist duplication                                |
+| 17  | should delete checklist after user confirms the dialog                               | Confirmed deletion                                   |
+| 18  | should not delete checklist when user cancels the dialog                             | Cancelled deletion                                   |
+| 19  | should delegate selected checklist deletion to the composable                        | Delete delegation                                    |
+| 20  | should update checklist via ChecklistComponent emit                                  | Checklist update                                     |
+| 21  | should call updateMultipleChecklists on handleChecklistMove                          | Checklist move                                       |
+| 22  | should update selectedChecklistId from overlay sidebar select-checklist              | Overlay sidebar selection                            |
+| 23  | should update selectedChecklistId from inline sidebar select-checklist               | Inline sidebar selection                             |
+| 24  | should create item with maxOrder + 1 in the target category                          | Item order calculation                               |
+| 25  | should create item with order 0 in an empty category                                 | Empty category item creation                         |
+| 26  | should update item and clear newlyCreatedItemId if matching                          | Item update + flag clear                             |
+| 27  | should call duplicateItem on copy:item emit                                          | Item duplication                                     |
+| 28  | should call deleteItem on delete:item emit                                           | Item deletion                                        |
+| 29  | should update item categoryId and reordered items on move type                       | Cross-category move                                  |
+| 30  | should update all items with new order on reorder type                               | Same-category reorder                                |
+| 31  | should handle move with empty reorderedItems gracefully                              | Empty reorder boundary                               |
+| 32  | should create category with correct order                                            | Category order calculation                           |
+| 33  | should update category and clear newlyCreatedCategoryId if matching                  | Category update + flag clear                         |
+| 34  | should call duplicateCategory on copy:category emit                                  | Category duplication                                 |
+| 35  | should call deleteCategory on delete:category emit                                   | Category deletion                                    |
+| 36  | should update each category and call getCategories                                   | Category reorder                                     |
+| 37  | should display overlay backdrop when sidebar is open on mobile                       | Overlay rendering                                    |
+| 38  | should close sidebar when overlay backdrop is clicked                                | Overlay close                                        |
+| 39  | should set body overflow hidden when overlay is active                               | Body scroll lock                                     |
+| 40  | should preserve the existing right padding while compensating for a hidden scrollbar | Scroll-lock compensation and restoration             |
+| 41  | should set body overflow hidden when sidebar opens on small desktop                  | Small desktop scroll lock                            |
+| 42  | should call initialize on mount                                                      | Lifecycle: mount init                                |
+| 43  | should clean up resize event listener on unmount                                     | Lifecycle: unmount cleanup                           |
+| 44  | should open an isolated editor without creating a checklist                          | Template editor isolation                            |
+| 45  | should save only through the templates composable                                    | Template persistence routing                         |
+| 46  | should open the named template dialog and save its selected checklist                | Named template save flow                             |
+| 47  | should create a checklist from a selected personal template                          | Template application flow                            |
+| 48  | should delete the active template and leave the editor                               | Template delete flow                                 |
+| 49  | should create an explicitly empty checklist                                          | Empty source flow                                    |
+| 50  | handles failed template creation and ignores missing sources                         | Creation failure and missing-source guard            |
+| 51  | should ignore requests to edit a missing template                                    | Missing template guard                               |
+| 52  | should keep the editor open when saving fails                                        | Save failure state                                   |
+| 53  | should discard a template draft when canceled                                        | Draft cancellation                                   |
+| 54  | should preserve a template when deletion is canceled                                 | Delete cancellation                                  |
+| 55  | should close both template dialogs without operations                                | Dialog cancellation                                  |
+| 56  | should leave state unchanged when empty creation fails                               | Empty creation failure                               |
+| 57  | should keep the editor open when template deletion fails                             | Delete failure state                                 |
+| 58  | should use an empty initial name for an unknown checklist                            | Missing checklist fallback                           |
+| 59  | should ignore duplicate save events after source state clears                        | Duplicate save guard                                 |
+| 60  | should create a checklist from a selected recommended list                           | Recommended list flow                                |
+| 61  | should apply a category packing change and offer one-click undo                      | Batch packing undo action                            |
+| 62  | should use Ctrl+Z for packing undo but preserve input-native undo                    | Keyboard shortcut isolation                          |
+| 63  | shows the completion overlay after the final local item is packed                    | Local completion transition                          |
+| 64  | should defer the complete undo window until the completion overlay closes            | Inert background, focus return, and full Undo window |
+| 65  | shows the completion overlay only when redo completes the checklist                  | Redo transition, sidebar isolation, and guard        |
+| 66  | keeps completed initialization and checklist switching silent                        | Passive transition exclusions                        |
+| 67  | should defer an existing category undo window when a final item opens completion     | Cross-path full Undo window                          |
+| 68  | keeps a template dialog open until retry succeeds                                    | Template draft and retry                             |
+| 69  | keeps checklist source selection open until retry succeeds                           | Checklist creation retry                             |
 
 #### 8.2.2 Topbar.test.js (2 tests)
 

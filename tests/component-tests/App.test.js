@@ -1211,7 +1211,47 @@ describe('App', () => {
       expect(document.body.style.overflow).toBe('');
     });
 
-    // Test Case 43: Should lock body scroll on small desktop overlay
+    // Test Case 43: Should compensate and restore body padding around an overlay lock
+    it('should preserve the existing right padding while compensating for a hidden scrollbar', async () => {
+      const originalClientWidth = Object.getOwnPropertyDescriptor(
+        document.documentElement,
+        'clientWidth'
+      );
+      const originalPaddingRight = document.body.style.paddingRight;
+
+      try {
+        Object.defineProperty(document.documentElement, 'clientWidth', {
+          configurable: true,
+          value: 360,
+        });
+        document.body.style.paddingRight = '12px';
+        setInnerWidth(375);
+        const wrapper = createWrapper();
+        await flushPromises();
+        await wrapper.vm.$nextTick();
+
+        await wrapper.findComponent({ name: 'Topbar' }).vm.$emit('toggle');
+        await wrapper.vm.$nextTick();
+
+        expect(document.body.style.overflow).toBe('hidden');
+        expect(document.body.style.paddingRight).toBe('27px');
+
+        await wrapper.findComponent({ name: 'Topbar' }).vm.$emit('toggle');
+        await wrapper.vm.$nextTick();
+
+        expect(document.body.style.overflow).toBe('');
+        expect(document.body.style.paddingRight).toBe('12px');
+      } finally {
+        document.body.style.paddingRight = originalPaddingRight;
+        if (originalClientWidth) {
+          Object.defineProperty(document.documentElement, 'clientWidth', originalClientWidth);
+        } else {
+          delete document.documentElement.clientWidth;
+        }
+      }
+    });
+
+    // Test Case 44: Should lock body scroll on small desktop overlay
     it('should set body overflow hidden when sidebar opens on small desktop', async () => {
       // Reset body style from previous tests
       document.body.style.overflow = '';
@@ -1249,14 +1289,14 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('lifecycle', () => {
-    // Test Case 44: Should call initialize on mount
+    // Test Case 45: Should call initialize on mount
     it('should call initialize on mount', () => {
       setInnerWidth(1280);
       createWrapper();
       expect(mockInitialize).toHaveBeenCalledWith();
     });
 
-    // Test Case 45: Should remove resize listener on unmount
+    // Test Case 46: Should remove resize listener on unmount
     it('should clean up resize event listener on unmount', async () => {
       const removeSpy = vi.spyOn(window, 'removeEventListener');
 
@@ -1275,7 +1315,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('template editing', () => {
-    // Test Case 46: Should open an isolated editor without creating a checklist
+    // Test Case 47: Should open an isolated editor without creating a checklist
     it('should open an isolated editor without creating a checklist', async () => {
       mockTemplates.value = [
         { id: 'template-1', name: 'Weekend', order: 0, categories: [], items: [] },
@@ -1294,7 +1334,7 @@ describe('App', () => {
       expect(mockDeleteChecklist).not.toHaveBeenCalled();
     });
 
-    // Test Case 47: Should save only through the templates composable
+    // Test Case 48: Should save only through the templates composable
     it('should save only through the templates composable', async () => {
       const template = {
         id: 'template-1',
@@ -1316,7 +1356,7 @@ describe('App', () => {
       expect(mockCreateChecklist).not.toHaveBeenCalled();
     });
 
-    // Test Case 48: Should save a selected checklist through the named template dialog
+    // Test Case 49: Should save a selected checklist through the named template dialog
     it('opens the named template dialog and saves its selected checklist', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -1329,7 +1369,7 @@ describe('App', () => {
       expect(mockSaveAsTemplate).toHaveBeenCalledWith('cl-1', 'Trip Template');
     });
 
-    // Test Case 49: Preserve the template dialog until retry succeeds.
+    // Test Case 50: Preserve the template dialog until retry succeeds.
     it('keeps the template dialog open after failure and closes after retry succeeds', async () => {
       mockSaveAsTemplate.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'template-1' });
       setInnerWidth(1280);
@@ -1348,7 +1388,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'SaveTemplateDialog' }).props('visible')).toBe(false);
     });
 
-    // Test Case 50: Should create a checklist from a selected personal template
+    // Test Case 51: Should create a checklist from a selected personal template
     it('creates a checklist from a selected personal template', async () => {
       const longTemplateName = 'W'.repeat(100);
       mockTemplates.value = [
@@ -1381,7 +1421,7 @@ describe('App', () => {
       expect(mockCreateChecklist.mock.calls[0][0].name).toHaveLength(100);
     });
 
-    // Test Case 51: Should delete the active template and leave the editor
+    // Test Case 52: Should delete the active template and leave the editor
     it('deletes the active template and leaves the editor', async () => {
       const template = {
         id: 'template-1',
@@ -1405,7 +1445,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(false);
     });
 
-    // Test Case 52: Should create an explicitly empty checklist
+    // Test Case 53: Should create an explicitly empty checklist
     it('creates an explicitly empty checklist', async () => {
       mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
       mockCreateChecklist.mockResolvedValue({ id: 'cl-empty' });
@@ -1423,7 +1463,7 @@ describe('App', () => {
       );
     });
 
-    // Test Case 53: Should handle a failed template creation and ignore missing sources
+    // Test Case 54: Should handle a failed template creation and ignore missing sources
     it('handles failed template creation and ignores missing sources', async () => {
       mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
       mockCreateChecklist.mockResolvedValue(null);
@@ -1446,7 +1486,7 @@ describe('App', () => {
       expect(mockApplyTemplate).not.toHaveBeenCalled();
     });
 
-    // Test Case 54: Preserve the checklist source selection until retry succeeds.
+    // Test Case 55: Preserve the checklist source selection until retry succeeds.
     it('keeps checklist source selection open after a failed creation and closes on retry', async () => {
       mockCreateChecklist.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'cl-retry' });
       setInnerWidth(1280);
@@ -1465,7 +1505,7 @@ describe('App', () => {
       expect(mockCreateChecklist).toHaveBeenCalledTimes(2);
     });
 
-    // Test Case 55: Should ignore requests to edit a missing template
+    // Test Case 56: Should ignore requests to edit a missing template
     it('ignores requests to edit a missing template', async () => {
       mockTemplates.value = [];
       setInnerWidth(1280);
@@ -1476,7 +1516,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(false);
     });
 
-    // Test Case 56: Should keep the editor open when saving a template fails
+    // Test Case 57: Should keep the editor open when saving a template fails
     it('keeps the editor open when saving a template fails', async () => {
       const template = { id: 'template-1', name: 'Weekend', categories: [], items: [] };
       mockTemplates.value = [template];
@@ -1491,7 +1531,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(true);
     });
 
-    // Test Case 57: Should discard a template draft when editing is canceled
+    // Test Case 58: Should discard a template draft when editing is canceled
     it('discards a template draft when editing is canceled', async () => {
       const template = { id: 'template-1', name: 'Weekend', categories: [], items: [] };
       mockTemplates.value = [template];
@@ -1507,7 +1547,7 @@ describe('App', () => {
       expect(mockUpdateTemplate).not.toHaveBeenCalled();
     });
 
-    // Test Case 58: Should preserve a template when deletion is canceled
+    // Test Case 59: Should preserve a template when deletion is canceled
     it('preserves a template when deletion is canceled', async () => {
       const template = { id: 'template-1', name: 'Weekend', categories: [], items: [] };
       mockTemplates.value = [template];
@@ -1523,7 +1563,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(true);
     });
 
-    // Test Case 59: Should close both template dialogs without performing an operation
+    // Test Case 60: Should close both template dialogs without performing an operation
     it('closes both template dialogs without performing an operation', async () => {
       mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
       setInnerWidth(1280);
@@ -1538,7 +1578,7 @@ describe('App', () => {
       expect(mockSaveAsTemplate).not.toHaveBeenCalled();
     });
 
-    // Test Case 60: Should leave checklist state unchanged when empty creation fails
+    // Test Case 61: Should leave checklist state unchanged when empty creation fails
     it('leaves checklist state unchanged when empty creation fails', async () => {
       mockTemplates.value = [{ id: 'template-1', name: 'Weekend', categories: [], items: [] }];
       mockCreateChecklist.mockResolvedValue(null);
@@ -1554,7 +1594,7 @@ describe('App', () => {
       expect(mockSelectedChecklistId.value).toBe('cl-1');
     });
 
-    // Test Case 61: Should keep the editor open when template deletion fails
+    // Test Case 62: Should keep the editor open when template deletion fails
     it('keeps the editor open when template deletion fails', async () => {
       const template = { id: 'template-1', name: 'Weekend', categories: [], items: [] };
       mockTemplates.value = [template];
@@ -1571,7 +1611,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(true);
     });
 
-    // Test Case 62: Should use an empty initial name for an unknown checklist
+    // Test Case 63: Should use an empty initial name for an unknown checklist
     it('uses an empty initial name for an unknown checklist', async () => {
       setInnerWidth(1280);
       const wrapper = createWrapper();
@@ -1581,7 +1621,7 @@ describe('App', () => {
       expect(wrapper.findComponent({ name: 'SaveTemplateDialog' }).props('initialName')).toBe('');
     });
 
-    // Test Case 63: Should ignore duplicate template save events after source state is cleared
+    // Test Case 64: Should ignore duplicate template save events after source state is cleared
     it('ignores duplicate template save events after source state is cleared', async () => {
       mockSaveAsTemplate.mockResolvedValue({ id: 'template-1' });
       setInnerWidth(1280);
@@ -1596,7 +1636,7 @@ describe('App', () => {
       expect(mockSaveAsTemplate).toHaveBeenCalledTimes(1);
     });
 
-    // Test Case 64: Should create a checklist from a selected recommended list
+    // Test Case 65: Should create a checklist from a selected recommended list
     it('creates a checklist from a selected recommended list', async () => {
       const seedData = { categories: [{ id: 'category-new' }], items: [] };
       mockApplyRecommendedList.mockReturnValue(seedData);
@@ -1629,7 +1669,7 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('packing undo', () => {
-    // Test Case 65: Should offer one-click undo after a category packing change
+    // Test Case 66: Should offer one-click undo after a category packing change
     it('should apply a category packing change and offer one-click undo', async () => {
       mockSetCategoryPacked.mockResolvedValue([{ id: 'item-1', isPacked: true }]);
       mockUndoPackingChange.mockResolvedValue(true);
@@ -1679,7 +1719,7 @@ describe('App', () => {
       expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
     });
 
-    // Test Case 66: Should preserve native undo inside an input
+    // Test Case 67: Should preserve native undo inside an input
     it('should use Ctrl+Z for packing undo but preserve input-native undo', async () => {
       mockUndoPackingChange.mockResolvedValue(true);
       setInnerWidth(1280);
@@ -1731,7 +1771,7 @@ describe('App', () => {
       wrapper.unmount();
     });
 
-    // Test Case 67: Should defer the complete undo window until the completion overlay closes
+    // Test Case 68: Should defer the complete undo window until the completion overlay closes
     it('should defer the complete undo window until the completion overlay closes', async () => {
       vi.useFakeTimers();
       mockCanUndoPackingChange.value = true;
@@ -1789,7 +1829,7 @@ describe('App', () => {
       focusTrigger.remove();
     });
 
-    // Test Case 68: Should restart a visible category Undo window after item completion closes
+    // Test Case 69: Should restart a visible category Undo window after item completion closes
     it('should defer an existing category undo window when a final item opens completion', async () => {
       vi.useFakeTimers();
       mockCanUndoPackingChange.value = true;

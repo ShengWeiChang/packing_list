@@ -253,6 +253,8 @@ test.describe('Item Packing Workflow', () => {
     test('should show and dismiss the completion journey after the final category is packed', async ({
       page,
     }) => {
+      const main = page.locator('main');
+      const mainBoxBeforeCompletion = await main.boundingBox();
       await completeChecklistByCategory(page);
 
       const completionOverlay = page.getByTestId('packing-completion-overlay');
@@ -260,6 +262,13 @@ test.describe('Item Packing Workflow', () => {
       await expect(completionOverlay).toContainText('Ready to go');
       await expect(page.getByTestId('packing-completion-skip')).toBeFocused();
       await expect(page.getByTestId('packing-undo-toast')).toBeHidden();
+      await expect
+        .poll(async () => (await main.boundingBox())?.width)
+        .toBe(mainBoxBeforeCompletion?.width);
+      await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('hidden');
+      await expect
+        .poll(() => page.evaluate(() => document.querySelector('#app > div')?.inert))
+        .toBe(true);
       await expect
         .poll(() =>
           completionOverlay
@@ -273,6 +282,13 @@ test.describe('Item Packing Workflow', () => {
       await page.getByTestId('packing-completion-skip').click();
       await expect(completionOverlay).toBeHidden();
       await expect(page.getByTestId('packing-undo-toast')).toBeVisible();
+      await expect
+        .poll(async () => (await main.boundingBox())?.width)
+        .toBe(mainBoxBeforeCompletion?.width);
+      await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('');
+      await expect
+        .poll(() => page.evaluate(() => document.querySelector('#app > div')?.inert))
+        .toBe(false);
     });
 
     // Test Case 8: Should contain keyboard focus and support Escape and backdrop dismissal

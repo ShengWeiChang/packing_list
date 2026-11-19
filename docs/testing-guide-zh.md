@@ -127,8 +127,8 @@ tests/
 │       ├── cssVars.test.js              #  5  tests
 │       └── verifyFeature.test.js        #  6  tests
 │
-├── component-tests/                     # 322 tests
-│   ├── App.test.js                      # 68  tests
+├── component-tests/                     # 323 tests
+│   ├── App.test.js                      # 69  tests
 │   ├── PackingCompletionOverlay.test.js # 10  tests
 │   ├── AppIcon.test.js                  #  4  tests
 │   ├── Checklist.test.js                # 44  tests
@@ -784,80 +784,81 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 4   | protects manual CSS outside the marked region and fails for missing markers                | 保留 CSS 區域與標記            |
 | 5   | CLI check is read-only and returns a useful failure for a drifted fixture                  | 唯讀檢查與命令列重新生成       |
 
-### 8.2 Component Tests（322）
+### 8.2 Component Tests（323）
 
-#### 8.2.1 App.test.js（68）
+#### 8.2.1 App.test.js（69）
 
-| #   | Test                                                                             | 測試重點                             |
-| --- | -------------------------------------------------------------------------------- | ------------------------------------ |
-| 1   | should render the main layout with sidebar and content                           | 主佈局渲染                           |
-| 2   | should show empty state when no checklist is selected                            | 空狀態顯示                           |
-| 3   | should show ChecklistComponent when a checklist is selected                      | 清單可見性                           |
-| 4   | should set isMobileViewport to true for narrow screens                           | 行動版視窗偵測                       |
-| 5   | should auto-collapse sidebar on mobile viewport                                  | 行動版自動收合                       |
-| 6   | should auto-expand sidebar on wide desktop when not manually collapsed           | 桌面版自動展開                       |
-| 7   | should not auto-expand sidebar when manually collapsed key exists                | 收合持久化                           |
-| 8   | should detect small desktop viewport as overlay zone                             | 覆蓋區域偵測                         |
-| 9   | should toggle sidebar when sidebar emits toggle-sidebar                          | 側邊欄切換事件                       |
-| 10  | should persist sidebar collapse to localStorage on desktop                       | 收合持久化                           |
-| 11  | should remove collapsed key from localStorage when sidebar re-opened             | 展開清除                             |
-| 12  | should toggle sidebar from Topbar on mobile                                      | Topbar 切換事件                      |
-| 13  | should open source selection from Sidebar without creating immediately           | 側邊欄來源 dialog                    |
-| 14  | should open source selection from Topbar on mobile                               | Topbar 來源 dialog                   |
-| 15  | should select and mark checklist for editing on handleChecklistEdit              | 編輯模式觸發                         |
-| 16  | should duplicate checklist and select the copy on handleChecklistCopy            | 清單複製                             |
-| 17  | should delete checklist after user confirms the dialog                           | 確認刪除                             |
-| 18  | should not delete checklist when user cancels the dialog                         | 取消刪除                             |
-| 19  | should delegate selected checklist deletion to the composable                    | 刪除委派                             |
-| 20  | should update checklist via ChecklistComponent emit                              | 清單更新                             |
-| 21  | should call updateMultipleChecklists on handleChecklistMove                      | 清單移動                             |
-| 22  | should update selectedChecklistId from overlay sidebar select-checklist          | overlay 側欄選取同步                 |
-| 23  | should update selectedChecklistId from inline sidebar select-checklist           | inline 側欄選取同步                  |
-| 24  | should create item with maxOrder + 1 in the target category                      | 物品建立順序                         |
-| 25  | should create item with order 0 in an empty category                             | 空分類物品                           |
-| 26  | should update item and clear newlyCreatedItemId if matching                      | 物品更新 + 旗標清除                  |
-| 27  | should call duplicateItem on copy:item emit                                      | 物品複製                             |
-| 28  | should call deleteItem on delete:item emit                                       | 物品刪除                             |
-| 29  | should update item categoryId and reordered items on move type                   | 跨分類移動                           |
-| 30  | should update all items with new order on reorder type                           | 同分類重排                           |
-| 31  | should handle move with empty reorderedItems gracefully                          | 空重排邊界                           |
-| 32  | should create category with correct order                                        | 分類建立順序                         |
-| 33  | should update category and clear newlyCreatedCategoryId if matching              | 分類更新 + 旗標清除                  |
-| 34  | should call duplicateCategory on copy:category emit                              | 分類複製                             |
-| 35  | should call deleteCategory on delete:category emit                               | 分類刪除                             |
-| 36  | should update each category and call getCategories                               | 分類重排                             |
-| 37  | should display overlay backdrop when sidebar is open on mobile                   | 覆蓋層渲染                           |
-| 38  | should close sidebar when overlay backdrop is clicked                            | 覆蓋層關閉                           |
-| 39  | should set body overflow hidden when overlay is active                           | Body 捲動鎖定                        |
-| 40  | should set body overflow hidden when sidebar opens on small desktop              | 小型桌面捲動鎖定                     |
-| 41  | should call initialize on mount                                                  | 生命週期：掛載初始化                 |
-| 42  | should clean up resize event listener on unmount                                 | 生命週期：卸載清理                   |
-| 43  | should open an isolated editor without creating a checklist                      | Template editor 隔離                 |
-| 44  | should save only through the templates composable                                | Template 儲存路由                    |
-| 45  | should open the named template dialog and save its selected checklist            | 命名 template 儲存流程               |
-| 46  | should create a checklist from a selected personal template                      | Template 套用流程                    |
-| 47  | should delete the active template and leave the editor                           | Template 刪除流程                    |
-| 48  | should create an explicitly empty checklist                                      | 空白來源流程                         |
-| 49  | handles failed template creation and ignores missing sources                     | 建立失敗與缺少來源防護               |
-| 50  | should ignore requests to edit a missing template                                | 缺少 template guard                  |
-| 51  | should keep the editor open when saving fails                                    | 儲存失敗狀態                         |
-| 52  | should discard a template draft when canceled                                    | 草稿取消                             |
-| 53  | should preserve a template when deletion is canceled                             | 刪除取消                             |
-| 54  | should close both template dialogs without operations                            | Dialog 取消                          |
-| 55  | should leave state unchanged when empty creation fails                           | 空白建立失敗                         |
-| 56  | should keep the editor open when template deletion fails                         | 刪除失敗狀態                         |
-| 57  | should use an empty initial name for an unknown checklist                        | 缺少 checklist 後備                  |
-| 58  | should ignore duplicate save events after source state clears                    | 重複儲存 guard                       |
-| 59  | should create a checklist from a selected recommended list                       | 推薦清單流程                         |
-| 60  | should apply a category packing change and offer one-click undo                  | 批次打包復原操作                     |
-| 61  | should use Ctrl+Z for packing undo but preserve input-native undo                | 鍵盤快捷鍵隔離                       |
-| 62  | shows the completion overlay after the final local item is packed                | 本機完成轉場                         |
-| 63  | should defer the complete undo window until the completion overlay closes        | inert 背景、焦點返回與完整 Undo 時窗 |
-| 64  | shows the completion overlay only when redo completes the checklist              | redo 轉場、sidebar 隔離與 guard      |
-| 65  | keeps completed initialization and checklist switching silent                    | 被動轉場排除                         |
-| 66  | should defer an existing category undo window when a final item opens completion | 跨路徑完整 Undo 時窗                 |
-| 67  | 範本 dialog 保持開啟直到重試成功                                                 | 範本草稿與重試                       |
-| 68  | 清單來源選擇保持開啟直到重試成功                                                 | 建立清單重試                         |
+| #   | Test                                                                                 | 測試重點                             |
+| --- | ------------------------------------------------------------------------------------ | ------------------------------------ |
+| 1   | should render the main layout with sidebar and content                               | 主佈局渲染                           |
+| 2   | should show empty state when no checklist is selected                                | 空狀態顯示                           |
+| 3   | should show ChecklistComponent when a checklist is selected                          | 清單可見性                           |
+| 4   | should set isMobileViewport to true for narrow screens                               | 行動版視窗偵測                       |
+| 5   | should auto-collapse sidebar on mobile viewport                                      | 行動版自動收合                       |
+| 6   | should auto-expand sidebar on wide desktop when not manually collapsed               | 桌面版自動展開                       |
+| 7   | should not auto-expand sidebar when manually collapsed key exists                    | 收合持久化                           |
+| 8   | should detect small desktop viewport as overlay zone                                 | 覆蓋區域偵測                         |
+| 9   | should toggle sidebar when sidebar emits toggle-sidebar                              | 側邊欄切換事件                       |
+| 10  | should persist sidebar collapse to localStorage on desktop                           | 收合持久化                           |
+| 11  | should remove collapsed key from localStorage when sidebar re-opened                 | 展開清除                             |
+| 12  | should toggle sidebar from Topbar on mobile                                          | Topbar 切換事件                      |
+| 13  | should open source selection from Sidebar without creating immediately               | 側邊欄來源 dialog                    |
+| 14  | should open source selection from Topbar on mobile                                   | Topbar 來源 dialog                   |
+| 15  | should select and mark checklist for editing on handleChecklistEdit                  | 編輯模式觸發                         |
+| 16  | should duplicate checklist and select the copy on handleChecklistCopy                | 清單複製                             |
+| 17  | should delete checklist after user confirms the dialog                               | 確認刪除                             |
+| 18  | should not delete checklist when user cancels the dialog                             | 取消刪除                             |
+| 19  | should delegate selected checklist deletion to the composable                        | 刪除委派                             |
+| 20  | should update checklist via ChecklistComponent emit                                  | 清單更新                             |
+| 21  | should call updateMultipleChecklists on handleChecklistMove                          | 清單移動                             |
+| 22  | should update selectedChecklistId from overlay sidebar select-checklist              | overlay 側欄選取同步                 |
+| 23  | should update selectedChecklistId from inline sidebar select-checklist               | inline 側欄選取同步                  |
+| 24  | should create item with maxOrder + 1 in the target category                          | 物品建立順序                         |
+| 25  | should create item with order 0 in an empty category                                 | 空分類物品                           |
+| 26  | should update item and clear newlyCreatedItemId if matching                          | 物品更新 + 旗標清除                  |
+| 27  | should call duplicateItem on copy:item emit                                          | 物品複製                             |
+| 28  | should call deleteItem on delete:item emit                                           | 物品刪除                             |
+| 29  | should update item categoryId and reordered items on move type                       | 跨分類移動                           |
+| 30  | should update all items with new order on reorder type                               | 同分類重排                           |
+| 31  | should handle move with empty reorderedItems gracefully                              | 空重排邊界                           |
+| 32  | should create category with correct order                                            | 分類建立順序                         |
+| 33  | should update category and clear newlyCreatedCategoryId if matching                  | 分類更新 + 旗標清除                  |
+| 34  | should call duplicateCategory on copy:category emit                                  | 分類複製                             |
+| 35  | should call deleteCategory on delete:category emit                                   | 分類刪除                             |
+| 36  | should update each category and call getCategories                                   | 分類重排                             |
+| 37  | should display overlay backdrop when sidebar is open on mobile                       | 覆蓋層渲染                           |
+| 38  | should close sidebar when overlay backdrop is clicked                                | 覆蓋層關閉                           |
+| 39  | should set body overflow hidden when overlay is active                               | Body 捲動鎖定                        |
+| 40  | should preserve the existing right padding while compensating for a hidden scrollbar | Scroll-lock 補償與還原               |
+| 41  | should set body overflow hidden when sidebar opens on small desktop                  | 小型桌面捲動鎖定                     |
+| 42  | should call initialize on mount                                                      | 生命週期：掛載初始化                 |
+| 43  | should clean up resize event listener on unmount                                     | 生命週期：卸載清理                   |
+| 44  | should open an isolated editor without creating a checklist                          | Template editor 隔離                 |
+| 45  | should save only through the templates composable                                    | Template 儲存路由                    |
+| 46  | should open the named template dialog and save its selected checklist                | 命名 template 儲存流程               |
+| 47  | should create a checklist from a selected personal template                          | Template 套用流程                    |
+| 48  | should delete the active template and leave the editor                               | Template 刪除流程                    |
+| 49  | should create an explicitly empty checklist                                          | 空白來源流程                         |
+| 50  | handles failed template creation and ignores missing sources                         | 建立失敗與缺少來源防護               |
+| 51  | should ignore requests to edit a missing template                                    | 缺少 template guard                  |
+| 52  | should keep the editor open when saving fails                                        | 儲存失敗狀態                         |
+| 53  | should discard a template draft when canceled                                        | 草稿取消                             |
+| 54  | should preserve a template when deletion is canceled                                 | 刪除取消                             |
+| 55  | should close both template dialogs without operations                                | Dialog 取消                          |
+| 56  | should leave state unchanged when empty creation fails                               | 空白建立失敗                         |
+| 57  | should keep the editor open when template deletion fails                             | Delete 失敗狀態                      |
+| 58  | should use an empty initial name for an unknown checklist                            | 缺少 checklist 後備                  |
+| 59  | should ignore duplicate save events after source state clears                        | 重複儲存 guard                       |
+| 60  | should create a checklist from a selected recommended list                           | 推薦清單流程                         |
+| 61  | should apply a category packing change and offer one-click undo                      | 批次打包復原操作                     |
+| 62  | should use Ctrl+Z for packing undo but preserve input-native undo                    | 鍵盤快捷鍵隔離                       |
+| 63  | shows the completion overlay after the final local item is packed                    | 本機完成轉場                         |
+| 64  | should defer the complete undo window until the completion overlay closes            | inert 背景、焦點返回與完整 Undo 時窗 |
+| 65  | shows the completion overlay only when redo completes the checklist                  | redo 轉場、sidebar 隔離與 guard      |
+| 66  | keeps completed initialization and checklist switching silent                        | 被動轉場排除                         |
+| 67  | should defer an existing category undo window when a final item opens completion     | 跨路徑完整 Undo 時窗                 |
+| 68  | 範本 dialog 保持開啟直到重試成功                                                     | 範本草稿與重試                       |
+| 69  | 清單來源選擇保持開啟直到重試成功                                                     | 建立清單重試                         |
 
 #### 8.2.2 Topbar.test.js（2）
 
