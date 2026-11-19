@@ -104,136 +104,33 @@ provider-specific copies unless a future host demonstrably requires one.
   separately requested, scoped review outside that lifecycle.
 - When modifying a paired document, use its matching `$doc-audit-*` skill.
 
-## Adaptive Planning and Product Decisions
+## Feature Delivery Controls
 
-At read-only discovery, `$feature-workflow` must select the smallest justified
-T0–T3 planning tier from requirement clarity, existing patterns, blast radius,
-side effects, interaction complexity, evidence difficulty, and user impact.
-T0/T1 must remain lightweight; they do not automatically receive a multi-agent
-council or repeated decision rounds. Persistence, sensitive data, access
-control, external boundaries, irreversible actions, or high user impact are a
-floor of T3.
+`$feature-workflow` owns planning tiers, implementation milestones, and the
+approval sequence. `$feature-completion` owns verification, independent review,
+evidence reuse, and bounded repair cycles. Use the smallest justified tier;
+persistence, sensitive data, access control, external boundaries, irreversible
+actions, or high user impact remain a floor of T3. Apply `$ui-ux-design` to
+non-trivial user-visible interaction changes as directed by the workflow.
 
-For a non-trivial user-visible UI or interaction change, use `$ui-ux-design`
-during planning: T1 gets its compact applicable checklist, while T2/T3 use a
-fresh read-only design specialist. Do not invoke it for pure data, tooling,
-documentation, or tiny established-pattern changes. Keep existing product
-patterns and task efficiency ahead of speculative visual novelty.
+Begin feature, bug, and behavior changes with read-only discovery and an ignored
+plan in `plans/`; present the plan and obtain explicit implementation approval
+before tracked edits. For a trivial wording, formatting, or documentation-only
+change, the user may explicitly approve the reduced T0 record and implementation
+together after discovery. Preserve separate approvals for commit, push, PR, and
+merge; an explicit PR request also authorizes its ordinary necessary push.
 
-Agents must investigate facts available from the repository, documentation, or
-focused tools. Ask the user only about material product decisions that affect
-behavior, scope, evidence, risk, or irreversible choices; include viable
-options, a recommendation, and consequences. Record a reversible low-risk
-assumption when no such decision remains. `$feature-workflow` owns the detailed
-tier, role-selection, decision-frontier, and output rules.
+For a new feature branch, inspect the worktree and branch, switch to `main`,
+fast-forward pull from `origin/main`, and create the branch from updated `main`.
+Preserve existing work and stop if switching or updating is unsafe or fails.
+Use another base only when explicitly requested.
 
-Choose engineering solutions for long-term maintainability and evolution:
-consider ownership, compatibility, testing and migration, and avoid speculative
-abstraction. For material architecture or dependency decisions, inspect the
-repository and consult current official platform or framework guidance; use
-relevant mature application examples when they add evidence. Record applicable
-tradeoffs rather than copying patterns from a different context. Keep shared
-instructions in the smallest appropriate owner instead of repeating them across
-skills.
-
-When starting a new feature branch, first check the worktree and branch, switch
-to `main`, update it from `origin/main` with a fast-forward-only pull, and create
-the branch from the updated `main`. Preserve existing work; if switching or
-updating is unsafe or fails, stop and report the blocker. Use another base only
-when the user explicitly requests it.
-
-New evidence may raise a tier immediately. After plan approval, lowering a tier
-requires documented new evidence and explicit user agreement because it reduces
-the approved validation and independent-review budget.
-
-## Feature Delivery Control Points
-
-For every feature request, bug fix, or behavior change, begin in planning mode.
-Read the relevant implementation and create `plans/<feature>-plan-zh.md` before
-changing tracked files. During discovery, only this ignored plan may be written.
-The plan must record its state, request, observable finish conditions, affected
-areas and risks, feasible options and their decision, validation/reviewer plan,
-implementation milestones, approval/evidence log, and the feature base HEAD
-SHA. Use `$feature-workflow` to coordinate this lifecycle.
-
-Present the plan and wait for explicit approval before implementation. `Start
-implementation` authorizes only the approved scope; it does not authorize a
-commit, push, PR, merge, or unrelated cleanup. Update the plan after each
-meaningful implementation milestone with completed work, changed scope,
-evidence, reviewed scope or revision, reviewer verdict, and user decision.
-Before committing, present the scoped diff and validation status for review and
-confirm it has not changed since review. The approval/evidence log must record
-the base HEAD SHA, scoped file list, `git status --short`, and a reproducible
-candidate-diff fingerprint covering tracked and candidate untracked files.
-Use `npm run fingerprint:candidate -- <scoped files>` to produce this canonical
-record at review and immediately before commit; it requires the complete
-candidate to be staged, rejects extra staged changes and scoped unstaged or
-untracked changes, and fingerprints the index content that Git will commit.
-Recompute it before committing. A `commit` approval applies only to that reviewed
-candidate. An explicit request to create a PR also authorizes the ordinary push
-needed for that PR; merge and other Git actions remain separately authorized.
-
-Only after read-only investigation may a user explicitly agree to treat a
-wording, formatting, or documentation-only change as trivial and skip **full**
-planning mode. T0 still requires a reduced record in
-`plans/<feature>-plan-zh.md` containing the read-only scope, explicit trivial
-agreement, base HEAD, and validation evidence. Otherwise do not infer that a
-feature request authorizes tracked-file edits before the plan is approved.
-
-Use the selected tier's verification budget. Every milestone gets the smallest
-evidence that proves its changed boundary, but does not automatically get an
-independent reviewer. T1 gets one fresh final `$code-review`; T2 gets one fresh
-final review and adds an intermediate review only at a non-final integration
-boundary; T3 adds fresh non-final integration-boundary reviews and final
-risk-triggered specialist
-evidence. T1 may use focused local final evidence; T2/T3 run the full final
-`npm run verify:feature` gate once after the last implementation milestone.
-When the candidate changes only non-executable documentation or agent
-instructions, use `npm run verify:feature -- --docs` instead, plus any separate
-evidence the changed content requires. Changes to source, tests, execution
-scripts or configuration require the full gate.
-A post-gate documentation-only synchronization may reuse the gate only if it
-does not affect executable behavior, test discovery, configuration or reports;
-validate the changed documentation and record the exact candidate difference.
-All pull requests remain subject to the repository's full CI before merge.
-Report the current plan state and the one user decision needed before proceeding.
-
-Do not present a commit candidate or final handoff when required validation
-fails, evidence is insufficient, or a reviewer requests changes. Return to the
-approved repair loop instead. A remaining non-blocking risk requires explicit
-user acceptance recorded in the plan before it can proceed.
-
-## Independent Feature Verification
-
-For every feature, bug, or behavior change that has not been explicitly reduced
-to trivial after discovery, the implementation agent must not be the final
-reviewer. A fresh reviewer is a read-only context that did not implement the
-reviewed scope and has not issued a verdict in the current repair cycle. After a
-blocking or important finding is fixed, the follow-up reviewer must be a
-different read-only context that did not review the earlier repair-cycle
-revision. A fresh reviewer may focus on the repair and affected boundaries when
-unchanged prior evidence remains valid; give it the prior findings and enough
-context to assess wider impact. Escalate the scope if the repair can affect it.
-Record both evidence scopes, reviewer identities and fingerprints. When the host
-supports delegation, request a fresh `$code-review` at the final gate for every
-non-trivial tier. Add an intermediate fresh review only when the selected tier
-and integration boundary require it: never for ordinary T1 work, only for a
-meaningful non-final T2 integration boundary, and for non-final T3 integration
-boundaries. Request
-fresh `$test-analysis` for triggered T2 changes (persistence, state/data
-transformations, browser-only or cross-boundary behavior, complex interaction,
-or missing direct behavior proof) and for every T3 final gate. Reviewers must
-not edit implementation files.
-
-After fixing a finding, obtain a new fresh reviewer verdict before handoff. If
-the host cannot delegate, perform the reviews sequentially and report the
-result as `degraded: no independent delegation`; never represent it as an
-independent review. Do not let multiple agents edit the same file concurrently.
-
-If PR CI or an external review raises a finding, update the plan, present the
-impact and repair proposal, and wait for implementation approval. After a fix,
-return through the same applicable milestone or final verification gate; never
-merge with failed CI or an unresolved blocking finding.
+Before commit approval, present the scoped candidate and validation; bind the
+staged index to its base and scope with `npm run fingerprint:candidate --
+<scoped files>`, and recompute it immediately before committing. Do not present
+a candidate as ready while required validation fails, evidence is insufficient,
+or a blocking or important finding remains unresolved. Explicitly record user
+acceptance of any remaining non-blocking risk. CI must pass before merge.
 
 ## Evidence-Based Feature Handoff
 

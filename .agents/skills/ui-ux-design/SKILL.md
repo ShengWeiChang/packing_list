@@ -26,7 +26,8 @@ Use the planning depth selected by `$feature-workflow`:
   the evidence that justifies the higher tier.
 - **T2/T3**: a fresh, read-only UI/UX specialist must prepare the memo. It must
   return bounded conclusions, not redesign the product or hold an open-ended
-  agent debate.
+  agent debate. Count this role among the specialists selected by the workflow,
+  rather than adding a duplicate role for the same risk.
 
 The applicable T1 checklist or T2/T3 memo is the approved **UI/UX artifact**.
 Record it in the feature plan so final verification can compare the delivered

@@ -13,7 +13,7 @@ Review the implementation diff, not an imagined rewrite. This is an AI-assisted 
 - `code-review`: implementation correctness and maintainability in the changed code.
 - `test-analysis`: independent evaluation of test design, risk coverage, and test quality.
 - `feature-workflow`: owns requirements, planning, human approval gates, and delivery state.
-- `feature-completion`: owns verification evidence and the completion-review handoff.
+- `feature-completion`: owns verification evidence, repair-review policy, and the completion-review handoff.
 - `doc-audit-*`: audits the named bilingual documentation pair only.
 
 Do not repeat another Skill's full workflow. Refer to it when the review reveals that it is needed.
