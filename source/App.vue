@@ -468,6 +468,7 @@ const appShell = ref<HTMLElement | null>(null);
 const sidebarOverlay = ref<HTMLElement | null>(null);
 let sidebarTrigger: HTMLElement | null = null;
 let previousBodyOverflow: string | null = null;
+let previousBodyPaddingRight: string | null = null;
 let previousViewportWidth: number | null = null;
 let packingUndoTimer: number | undefined;
 let packingCompletionTrigger: HTMLElement | null = null;
@@ -1483,7 +1484,7 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handlePackingHistoryKeydown);
   window.clearTimeout(packingUndoTimer);
   if (appShell.value) appShell.value.inert = false;
-  if (previousBodyOverflow !== null) document.body.style.overflow = previousBodyOverflow;
+  restoreBodyScroll();
 });
 
 // ------------------------------------------------------------------------------
@@ -1497,17 +1498,38 @@ function prepareSidebarLeave(element: Element) {
   drawer.setAttribute('aria-hidden', 'true');
 }
 
-// Prevent layout shift caused by scrollbar/body resizing when overlay drawer is active
+/** Lock document scrolling while preserving the pre-lock layout width. */
+function lockBodyScroll() {
+  if (previousBodyOverflow !== null) return;
+
+  previousBodyOverflow = document.body.style.overflow;
+  previousBodyPaddingRight = document.body.style.paddingRight;
+  const scrollbarWidth = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+  const bodyPaddingRight = Number.parseFloat(window.getComputedStyle(document.body).paddingRight);
+
+  document.body.style.overflow = 'hidden';
+  if (scrollbarWidth > 0) {
+    document.body.style.paddingRight = `${bodyPaddingRight + scrollbarWidth}px`;
+  }
+}
+
+/** Restore the inline body styles captured before the first active overlay. */
+function restoreBodyScroll() {
+  if (previousBodyOverflow === null) return;
+
+  document.body.style.overflow = previousBodyOverflow;
+  document.body.style.paddingRight = previousBodyPaddingRight ?? '';
+  previousBodyOverflow = null;
+  previousBodyPaddingRight = null;
+}
+
+// Keep shared overlay locking and scrollbar compensation active until the last surface closes.
 watch([isOverlayVisible, isDialogVisible, showPackingCompletion], () => {
   const overlayActive =
     showPackingCompletion.value || isOverlayVisible.value || isDialogVisible.value;
   if (overlayActive) {
-    previousBodyOverflow ??= document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-  } else if (previousBodyOverflow !== null) {
-    document.body.style.overflow = previousBodyOverflow;
-    previousBodyOverflow = null;
-  }
+    lockBodyScroll();
+  } else restoreBodyScroll();
 
   if (appShell.value) appShell.value.inert = overlayActive;
 });

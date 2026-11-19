@@ -1211,7 +1211,47 @@ describe('App', () => {
       expect(document.body.style.overflow).toBe('');
     });
 
-    // Test Case 43: Should lock body scroll on small desktop overlay
+    // Test Case 43: Should compensate and restore body padding around an overlay lock
+    it('should preserve the existing right padding while compensating for a hidden scrollbar', async () => {
+      const originalClientWidth = Object.getOwnPropertyDescriptor(
+        document.documentElement,
+        'clientWidth'
+      );
+      const originalPaddingRight = document.body.style.paddingRight;
+
+      try {
+        Object.defineProperty(document.documentElement, 'clientWidth', {
+          configurable: true,
+          value: 360,
+        });
+        document.body.style.paddingRight = '12px';
+        setInnerWidth(375);
+        const wrapper = createWrapper();
+        await flushPromises();
+        await wrapper.vm.$nextTick();
+
+        await wrapper.findComponent({ name: 'Topbar' }).vm.$emit('toggle');
+        await wrapper.vm.$nextTick();
+
+        expect(document.body.style.overflow).toBe('hidden');
+        expect(document.body.style.paddingRight).toBe('27px');
+
+        await wrapper.findComponent({ name: 'Topbar' }).vm.$emit('toggle');
+        await wrapper.vm.$nextTick();
+
+        expect(document.body.style.overflow).toBe('');
+        expect(document.body.style.paddingRight).toBe('12px');
+      } finally {
+        document.body.style.paddingRight = originalPaddingRight;
+        if (originalClientWidth) {
+          Object.defineProperty(document.documentElement, 'clientWidth', originalClientWidth);
+        } else {
+          delete document.documentElement.clientWidth;
+        }
+      }
+    });
+
+    // Test Case 44: Should lock body scroll on small desktop overlay
     it('should set body overflow hidden when sidebar opens on small desktop', async () => {
       // Reset body style from previous tests
       document.body.style.overflow = '';
