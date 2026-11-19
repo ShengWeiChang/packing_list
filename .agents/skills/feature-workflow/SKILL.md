@@ -19,7 +19,13 @@ require users to remember workflow prompt keywords.
 1. Begin with read-only investigation of the relevant source, tests,
    specifications, and existing behavior. Do not change tracked files, create a
    commit, or make external Git changes in this stage. Creating or updating the
-   ignored plan below is the sole permitted write.
+   ignored plan below is the sole permitted write, except user-requested
+   project-related discussion previews or prototypes in a dedicated ignored
+   directory under `plans/`. Keep them isolated from real user data and clearly
+   distinguish previews from implementation. When no longer needed for the
+   approved discussion or handoff, stop any preview server and clean up only
+   temporary artifacts created for the task. Retain plans and evidence still
+   needed for handoff; do not require the user to remember routine cleanup.
 2. Select the smallest justified planning tier using requirement clarity,
    existing patterns, blast radius, data or side effects, interaction
    complexity, evidence difficulty, and user impact. Persistence, sensitive
@@ -39,7 +45,12 @@ require users to remember workflow prompt keywords.
    facts, conflicts and unresolved decisions. Name the applicable doc-audit skill
    for any paired document update. Reconcile this assessment with the final diff.
    Use the states in the delivery steps below, recording milestone numbers where
-   relevant.
+   relevant. Include a clearly visible progress section with numbered milestones
+   (`M1`, `M2`, ...) and Markdown checkboxes (`[ ]` / `[x]`) for meaningful
+   work, applicable evidence, and user acceptance. Mark a milestone complete
+   only when its required work, verification, and acceptance are complete;
+   distinguish planning progress from implementation not yet started. Update
+   the checkboxes after each meaningful milestone.
 
    For potential T0, read-only discovery comes first. The user may explicitly
    agree that the scope is trivial and approve its implementation in the same
