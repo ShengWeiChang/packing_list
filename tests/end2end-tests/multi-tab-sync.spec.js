@@ -223,6 +223,46 @@ test.describe('Multi-tab sync', () => {
       await context.close();
     });
 
+    test('restores the last deleted checklist with its contents through keyboard undo and redo', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await createChecklist(page);
+      await renameSelectedChecklist(page, 'Restorable trip');
+      await expect
+        .poll(() =>
+          page.evaluate(() =>
+            JSON.parse(localStorage.getItem('packingListApp')).checklists.some(
+              (entry) => entry.name === 'Restorable trip'
+            )
+          )
+        )
+        .toBe(true);
+      const before = await page.evaluate(() => JSON.parse(localStorage.getItem('packingListApp')));
+      const checklist = before.checklists.find((entry) => entry.name === 'Restorable trip');
+      expect(
+        before.items.filter((entry) => entry.checklistId === checklist.id).length
+      ).toBeGreaterThan(0);
+      await deleteSelectedChecklist(page);
+      await expect(
+        page.getByTestId('sidebar-checklist-item').filter({ hasText: 'Restorable trip' })
+      ).toHaveCount(0);
+      await page.keyboard.press('Control+z');
+      await expect(
+        page.getByTestId('sidebar-checklist-item').filter({ hasText: 'Restorable trip' })
+      ).toBeVisible();
+      const restored = await page.evaluate(() =>
+        JSON.parse(localStorage.getItem('packingListApp'))
+      );
+      expect(restored.items.filter((entry) => entry.checklistId === checklist.id)).toEqual(
+        before.items.filter((entry) => entry.checklistId === checklist.id)
+      );
+      await page.keyboard.press('Control+Shift+z');
+      await expect(
+        page.getByTestId('sidebar-checklist-item').filter({ hasText: 'Restorable trip' })
+      ).toHaveCount(0);
+    });
+
     test('identifies the affected checklist after cross-checklist undo and redo', async ({
       page,
     }) => {
@@ -248,17 +288,17 @@ test.describe('Multi-tab sync', () => {
       await page.keyboard.press('Control+z');
       await expect(page.getByTestId('cross-checklist-history-feedback')).toBeInViewport();
       await expect(
-        page.getByRole('status').filter({ hasText: 'Undid a packing change in “First trip”' })
+        page.getByRole('status').filter({ hasText: 'Undid a change in “First trip”' })
       ).toBeVisible();
       await page.keyboard.press('Control+Shift+z');
       await expect(
-        page.getByRole('status').filter({ hasText: 'Redid a packing change in “First trip”' })
+        page.getByRole('status').filter({ hasText: 'Redid a change in “First trip”' })
       ).toBeVisible();
       await expect(page.getByTestId('checklist-name')).toHaveText('Second trip');
       await page.getByTestId('sidebar-language-button').click();
       await page.getByTestId('sidebar-language-option-zh-TW').click();
       await expect(page.getByTestId('cross-checklist-history-feedback')).toContainText(
-        '已重做「First trip」的打包變更。'
+        '已重做「First trip」的變更。'
       );
       await page.getByTestId('category-checkbox').first().click();
       await expect(page.getByTestId('cross-checklist-history-feedback')).toBeHidden();

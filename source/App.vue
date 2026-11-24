@@ -493,9 +493,14 @@ const crossChecklistHistoryAction = ref<{
 const crossChecklistHistoryFeedback = computed(() => {
   const action = crossChecklistHistoryAction.value;
   if (!action) return '';
-  const name =
-    checklists.value.find((checklist) => checklist.id === action.checklistId)?.name ||
-    t('checklist.untitled');
+  const name = checklists.value.find((checklist) => checklist.id === action.checklistId)?.name;
+  if (!name) {
+    return t(
+      action.direction === 'undo'
+        ? 'storage.undoOtherChecklistUnknown'
+        : 'storage.redoOtherChecklistUnknown'
+    );
+  }
   return t(
     action.direction === 'undo' ? 'storage.undoOtherChecklist' : 'storage.redoOtherChecklist',
     { name }
@@ -515,8 +520,7 @@ const checklistCreateFailed = ref(false);
 const inlineSaveFailed = ref(false);
 let inlineFailureVersion: number | null = null;
 let inlineFailureOwner: string | null = null;
-// A displaced editor cannot display an async failure; leave that error global.
-let inlineDraftGeneration = 0;
+const failedInlineDrafts = new Map<string, symbol>();
 const displacedDrafts = ref<(RetainedDraft & { id: number })[]>([]);
 let nextDisplacedDraftId = 0;
 const exportFailure = ref<string | null>(null);
@@ -591,7 +595,6 @@ const visibleOperationError = computed(() => {
  */
 function retainDisplacedDraft(draft: RetainedDraft) {
   displacedDrafts.value.push({ ...draft, id: ++nextDisplacedDraftId });
-  inlineDraftGeneration++;
   inlineSaveFailed.value = false;
 }
 
@@ -600,6 +603,7 @@ function retainDisplacedDraft(draft: RetainedDraft) {
  * @param {string} id - ID of the edited entity.
  */
 function clearInlineFailure(kind: EditKind, id: string) {
+  failedInlineDrafts.delete(`${kind}:${id}`);
   if (inlineFailureOwner !== `${kind}:${id}`) return;
   inlineSaveFailed.value = false;
   if (inlineFailureVersion !== null) clearChecklistOperationError?.(inlineFailureVersion);
@@ -883,14 +887,18 @@ async function handleItemCreate(categoryId: string) {
  */
 async function handleItemUpdate(item: ItemDTO, expected?: ItemDTO) {
   const before = getPackingCompletionSnapshot();
-  const draftGeneration = inlineDraftGeneration;
+  const draftOwner = `item:${item.id}`;
+  const draftToken = expected ? Symbol(draftOwner) : null;
+  if (draftToken) failedInlineDrafts.set(draftOwner, draftToken);
   const updatedItem = await handleAsyncAction(updateItem, item, expected);
-  if (expected && !updatedItem && draftGeneration === inlineDraftGeneration) {
+  if (expected && !updatedItem && failedInlineDrafts.get(draftOwner) === draftToken) {
     inlineSaveFailed.value = true;
     inlineFailureVersion = checklistOperationErrorVersion?.value ?? null;
     inlineFailureOwner = `item:${item.id}`;
   }
   if (updatedItem) {
+    if (expected && failedInlineDrafts.get(draftOwner) === draftToken)
+      clearInlineFailure('item', item.id);
     showPackingCompletionForTransition(before);
   }
 
@@ -969,12 +977,18 @@ async function handleCategoryCreate() {
  * @returns {Promise<object|null>} Committed category or null on failure.
  */
 async function handleCategoryUpdate(category: CategoryDTO, expected?: CategoryDTO) {
-  const draftGeneration = inlineDraftGeneration;
+  const draftOwner = `category:${category.id}`;
+  const draftToken = expected ? Symbol(draftOwner) : null;
+  if (draftToken) failedInlineDrafts.set(draftOwner, draftToken);
   const updatedCategory = await handleAsyncAction(updateCategory, category, expected);
-  if (expected && !updatedCategory && draftGeneration === inlineDraftGeneration) {
+  if (expected && !updatedCategory && failedInlineDrafts.get(draftOwner) === draftToken) {
     inlineSaveFailed.value = true;
     inlineFailureVersion = checklistOperationErrorVersion?.value ?? null;
     inlineFailureOwner = `category:${category.id}`;
+  }
+
+  if (updatedCategory && expected && failedInlineDrafts.get(draftOwner) === draftToken) {
+    clearInlineFailure('category', category.id);
   }
 
   // Clear the newly-created flag if this was the category being edited
@@ -1041,7 +1055,7 @@ function showCrossChecklistHistoryFeedback() {
 
 /** Undo the most recent category-wide packing status change. */
 async function handleUndoPackingChange() {
-  if (!(await undoPackingChange())) return;
+  if (!(await undoPackingChange(isHistoryActionAllowed))) return;
   const action = lastPackingHistoryAction?.value;
   if (!action || action.eventVersion !== (historyEventVersion?.value ?? 0)) return;
   showPackingUndo.value = false;
@@ -1054,7 +1068,7 @@ async function handleUndoPackingChange() {
  */
 async function handleRedoPackingChange() {
   const before = getPackingCompletionSnapshot();
-  if (await redoPackingChange()) {
+  if (await redoPackingChange(isHistoryActionAllowed)) {
     showCrossChecklistHistoryFeedback();
     const action = lastPackingHistoryAction?.value;
     const ownerId = action?.checklistId;
@@ -1084,13 +1098,24 @@ function isEditableTarget(target: EventTarget | null) {
   );
 }
 
+/** History may be waiting for the storage lock while an editor starts saving. */
+function isHistoryActionAllowed() {
+  return (
+    !showPackingCompletion.value &&
+    !isDialogVisible.value &&
+    !templateEditing.value &&
+    failedInlineDrafts.size === 0
+  );
+}
+
 /**
- * Handle global undo/redo shortcuts for category-wide packing status changes.
+ * Handle global undo/redo shortcuts when no modal or template editor owns focus.
  * @param {KeyboardEvent} event - Window keydown event
  */
 function handlePackingHistoryKeydown(event: KeyboardEvent) {
   if (
-    showPackingCompletion.value ||
+    !isHistoryActionAllowed() ||
+    event.isComposing ||
     event.repeat ||
     event.altKey ||
     (!event.ctrlKey && !event.metaKey) ||
@@ -1258,12 +1283,17 @@ async function handleNewChecklistSelect(selection: ChecklistSelection) {
  * @returns {Promise<object|null>} Committed checklist or null on failure.
  */
 async function handleChecklistUpdate(checklist: ChecklistDTO, expected?: ChecklistDTO) {
-  const draftGeneration = inlineDraftGeneration;
+  const draftOwner = `checklist:${checklist.id}`;
+  const draftToken = expected ? Symbol(draftOwner) : null;
+  if (draftToken) failedInlineDrafts.set(draftOwner, draftToken);
   const result = await handleAsyncAction(updateChecklist, checklist, expected);
-  if (expected && !result && draftGeneration === inlineDraftGeneration) {
+  if (expected && !result && failedInlineDrafts.get(draftOwner) === draftToken) {
     inlineSaveFailed.value = true;
     inlineFailureVersion = checklistOperationErrorVersion?.value ?? null;
     inlineFailureOwner = `checklist:${checklist.id}`;
+  }
+  if (result && expected && failedInlineDrafts.get(draftOwner) === draftToken) {
+    clearInlineFailure('checklist', checklist.id);
   }
   return result;
 }
@@ -1660,6 +1690,18 @@ watch(isOverlayVisible, async (open) => {
     }
   }
 });
+
+// A contextual packing action must never target a newer, unrelated history entry.
+watch(
+  () => historyEventVersion?.value,
+  (version, previous) => {
+    if (version === previous) return;
+    showPackingUndo.value = false;
+    packingUndoPendingAfterCompletion = false;
+    window.clearTimeout(packingUndoTimer);
+  },
+  { flush: 'sync' }
+);
 
 watch(
   () => historyBarrierVersion?.value,

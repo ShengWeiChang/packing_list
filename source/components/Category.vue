@@ -878,7 +878,7 @@ onBeforeUnmount(() => {
   if (isEditing.value && editBaseline && editedName.value !== editBaseline.name) {
     props.retainDraft?.({ name: editedName.value });
   }
-  if (editSaveFailed.value) props.editCancelled?.('category', props.category.id);
+  props.editCancelled?.('category', props.category.id);
 });
 onUnmounted(() => {
   isUnmounted = true;

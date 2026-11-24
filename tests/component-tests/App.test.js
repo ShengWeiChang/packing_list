@@ -325,6 +325,9 @@ describe('App', () => {
               'newlyCreatedItemId',
               'newlyCreatedCategoryId',
               'newlyCreatedChecklistId',
+              'saveItemEdit',
+              'retainDraft',
+              'editCancelled',
             ],
             emits: [
               'update:checklist',
@@ -1802,6 +1805,108 @@ describe('App', () => {
       expect(wrapper.find('[data-testid="cross-checklist-history-feedback"]').exists()).toBe(false);
     });
 
+    it('dismisses the packing toast when a newer action changes history', async () => {
+      mockCanUndoPackingChange.value = true;
+      mockSetCategoryPacked.mockResolvedValue([{ id: 'item-1', isPacked: true }]);
+      const wrapper = createWrapper();
+      await wrapper
+        .findComponent({ name: 'ChecklistComponent' })
+        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
+      await flushPromises();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
+      mockHistoryEventVersion.value += 1;
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
+    });
+
+    it('does not route global undo into the checklist while a template editor is open', async () => {
+      mockCanUndoPackingChange.value = true;
+      mockTemplates.value = [
+        { id: 'template-1', name: 'Weekend', order: 0, categories: [], items: [] },
+      ];
+      const wrapper = createWrapper();
+      await wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('edit-template', 'template-1');
+      await wrapper.vm.$nextTick();
+      expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(true);
+      const key = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+      window.dispatchEvent(key);
+      expect(key.defaultPrevented).toBe(false);
+      expect(mockUndoPackingChange).not.toHaveBeenCalled();
+      expect(wrapper.findComponent({ name: 'TemplateEditor' }).exists()).toBe(true);
+    });
+
+    it('does not undo the underlying item when its inline edit failed to save', async () => {
+      mockCanUndoPackingChange.value = true;
+      mockUpdateItem.mockResolvedValue(null);
+      const wrapper = createWrapper();
+      const checklist = wrapper.findComponent({ name: 'ChecklistComponent' });
+      const original = {
+        id: 'item-1',
+        name: 'Hat',
+        categoryId: 'cat-1',
+        checklistId: 'cl-1',
+        quantity: 1,
+        order: 0,
+        isPacked: false,
+        isPending: false,
+      };
+      const save = checklist.props('saveItemEdit');
+      expect(await save({ ...original, name: 'Unsaved draft' }, original)).toBeNull();
+      await checklist.vm.$emit('copy:item', 'different-item');
+      await flushPromises();
+      let finish;
+      mockUpdateItem.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          })
+      );
+      const retry = save({ ...original, name: 'Unsaved draft' }, original);
+      const key = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+      window.dispatchEvent(key);
+      expect(key.defaultPrevented).toBe(false);
+      expect(mockUndoPackingChange).not.toHaveBeenCalled();
+      expect(checklist.exists()).toBe(true);
+      finish({ ...original, name: 'Unsaved draft' });
+      await retry;
+      const afterSave = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+      window.dispatchEvent(afterSave);
+      expect(afterSave.defaultPrevented).toBe(true);
+      expect(mockUndoPackingChange).toHaveBeenCalledOnce();
+    });
+
+    it('keeps draft owners independent when another editor is displaced during a save', async () => {
+      mockCanUndoPackingChange.value = true;
+      let finish;
+      mockUpdateItem.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          })
+      );
+      const wrapper = createWrapper();
+      const checklist = wrapper.findComponent({ name: 'ChecklistComponent' });
+      const item = {
+        id: 'item-1',
+        name: 'Hat',
+        categoryId: 'cat-1',
+        checklistId: 'cl-1',
+        quantity: 1,
+        order: 0,
+        isPacked: false,
+        isPending: false,
+      };
+      const pending = checklist.props('saveItemEdit')({ ...item, name: 'Cap' }, item);
+      checklist.props('retainDraft')({ name: 'Other displaced draft' });
+      checklist.props('editCancelled')('item', 'item-2');
+      finish({ ...item, name: 'Cap' });
+      await pending;
+      const key = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+      window.dispatchEvent(key);
+      expect(key.defaultPrevented).toBe(true);
+      expect(mockUndoPackingChange).toHaveBeenCalledOnce();
+    });
+
     it('announces and dismisses a history barrier', async () => {
       const wrapper = createWrapper();
       mockHistoryBarrierVersion.value += 1;
@@ -1979,6 +2084,27 @@ describe('App', () => {
       await wrapper.vm.$nextTick();
       expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
       focusTrigger.remove();
+    });
+
+    it('does not reopen a deferred packing toast when history changes during completion', async () => {
+      mockCanUndoPackingChange.value = true;
+      mockItems.value = [
+        { id: 'item-1', name: 'Hat', categoryId: 'cat-1', isPacked: false, order: 0 },
+      ];
+      mockSetCategoryPacked.mockImplementation(async () => {
+        mockItems.value = mockItems.value.map((item) => ({ ...item, isPacked: true }));
+        return mockItems.value;
+      });
+      const wrapper = createWrapper();
+      await wrapper
+        .findComponent({ name: 'ChecklistComponent' })
+        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
+      await flushPromises();
+      expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(true);
+      mockHistoryEventVersion.value += 1;
+      await wrapper.findComponent({ name: 'PackingCompletionOverlay' }).vm.$emit('close');
+      await flushPromises();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
     });
 
     // Test Case 69: Should restart a visible category Undo window after item completion closes

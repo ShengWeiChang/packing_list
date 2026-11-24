@@ -31,6 +31,7 @@ import type {
   Mutation,
 } from '../models/contracts';
 import { Item } from '../models/Item';
+import type { HistoryPatch } from '../services/historyPatch';
 import { LocalStorageService } from '../services/localStorageService';
 import { StorageError } from '../services/storageTransaction';
 import type {
@@ -51,16 +52,6 @@ const PACKING_HISTORY_LIMIT = 50;
 type EntityState<T> = T & { toJSON?: () => T };
 type EditBaseline<T extends { id: string }> = Mutation<T> & { toJSON?: () => T };
 type CollectionView<T> = Readonly<Ref<readonly Readonly<EntityState<T>>[]>>;
-
-export type PackingStatus = Readonly<Pick<ItemDTO, 'isPacked' | 'isPending'>>;
-export interface PackingHistoryEntry {
-  readonly checklistId: string;
-  readonly changes: readonly {
-    readonly itemId: string;
-    readonly before: PackingStatus;
-    readonly after: PackingStatus;
-  }[];
-}
 
 export interface ItemBatchOptions {
   recordHistory?: boolean;
@@ -144,7 +135,7 @@ export function usePackingLists() {
   const operationErrorVersion = ref(0);
   const refreshAfterSaveFailed = ref(false);
   let postCommitRefreshes = 0;
-  const packingHistory = useUndoHistory<PackingHistoryEntry>(
+  const packingHistory = useUndoHistory<HistoryPatch>(
     PACKING_HISTORY_LIMIT,
     (entry, undo, isCurrent, onCommitted) =>
       applyPackingHistoryEntry(entry, undo ? 'before' : 'after', isCurrent, onCommitted)
@@ -157,8 +148,10 @@ export function usePackingLists() {
   const historyBarrierVersion = ref(0);
   const historyEventVersion = ref(0);
   const packingBatchVersions = new WeakMap<readonly CommittedItem[], number>();
-  // Until every data mutation is undoable, never skip over a committed mutation.
-  dataService.onDataCommitted = invalidateHistoryForUnsupportedChange;
+  dataService.onDataCommitted = (patch) => {
+    packingHistory.record(patch);
+    historyEventVersion.value += 1;
+  };
 
   /** Clear existing history and expose an explanation for an unsupported mutation. */
   function invalidateHistoryForUnsupportedChange() {
@@ -314,92 +307,34 @@ export function usePackingLists() {
     packingHistory.clear();
   }
 
-  /**
-   * Record one logical category-wide packing status change.
-   * @param {Array<object>} beforeItems - Items before the operation
-   * @param {Array<object>} afterItems - Items after the operation
-   * @param {string|null} [checklistId=selectedChecklistId.value] - Checklist owning the change
-   */
-  function recordPackingBatchChange(
-    beforeItems: readonly ItemDTO[],
-    afterItems: readonly ItemDTO[],
-    checklistId = selectedChecklistId.value
-  ) {
-    const changes = afterItems
-      .map((afterItem) => {
-        const beforeItem = beforeItems.find((item) => item.id === afterItem.id);
-        if (!beforeItem) return null;
-
-        const before = {
-          isPacked: beforeItem.isPacked,
-          isPending: beforeItem.isPending,
-        };
-        const after = {
-          isPacked: afterItem.isPacked,
-          isPending: afterItem.isPending,
-        };
-
-        if (before.isPacked === after.isPacked && before.isPending === after.isPending) {
-          return null;
-        }
-
-        return { itemId: afterItem.id, before, after };
-      })
-      .filter((entry) => entry !== null);
-
-    if (changes.length === 0 || !checklistId) return;
-
-    packingHistory.record({ checklistId, changes });
-    historyEventVersion.value += 1;
-  }
-
-  /** Apply packing history to its owning checklist without changing selection. */
+  /** Apply the recorded change without navigating away from the selected checklist. */
   async function applyPackingHistoryEntry(
-    entry: PackingHistoryEntry | undefined,
+    entry: HistoryPatch,
     direction: 'before' | 'after',
     isCurrent: () => boolean,
     onCommitted: () => void
   ): Promise<boolean> {
-    if (!entry) return false;
-    const currentItems = await loadData(
-      () => dataService.getItems(entry.checklistId),
-      'Error reading items for history',
-      true
-    );
-    if (!currentItems) return false;
-    const updates = entry.changes.map((change) => {
-      const current = currentItems.find((item) => item.id === change.itemId);
-      return current ? new Item({ ...current, ...change[direction] }) : null;
-    });
-    if (updates.some((item) => item === null)) {
-      operationError.value = 'conflict';
-      operationErrorVersion.value += 1;
-      return false;
-    }
-    const intended = updates.filter((item) => item !== null);
-    const expected = intended.map((item) => {
-      const change = entry.changes.find((candidate) => candidate.itemId === item.id)!;
-      return { ...item, ...change[direction === 'before' ? 'after' : 'before'] };
-    });
     const result = await loadData(
       () =>
-        dataService.updateMultipleItems(entry.checklistId, intended, expected, {
-          preserveHistory: true,
-          beforeWrite: isCurrent,
-          onCommitted: () => {
-            onCommitted();
-            historyEventVersion.value += 1;
-            lastPackingHistoryAction.value = {
-              checklistId: entry.checklistId,
-              direction: direction === 'before' ? 'undo' : 'redo',
-              eventVersion: historyEventVersion.value,
-            };
-          },
+        dataService.applyHistory(entry, direction === 'before', isCurrent, () => {
+          onCommitted();
+          historyEventVersion.value += 1;
+          lastPackingHistoryAction.value = {
+            checklistId: entry.checklistId,
+            direction: direction === 'before' ? 'undo' : 'redo',
+            eventVersion: historyEventVersion.value,
+          };
         }),
       'Error applying history'
     );
     if (!result) return false;
-    if (selectedChecklistId.value === entry.checklistId) await refreshAfterCommit(getItems);
+    await refreshAfterCommit(async () => {
+      await getChecklists();
+      if (selectedChecklistId.value) {
+        await getCategories();
+        await getItems();
+      }
+    });
     return true;
   }
 
@@ -879,9 +814,13 @@ export function usePackingLists() {
         ...(recordHistory
           ? {
               onCommitted: (before: ItemDTO[], after: CommittedItem[]) => {
-                const previousVersion = historyEventVersion.value;
-                recordPackingBatchChange(before, after, checklistId);
-                if (historyEventVersion.value !== previousVersion) {
+                if (
+                  before.some(
+                    (item, index) =>
+                      item.isPacked !== after[index]?.isPacked ||
+                      item.isPending !== after[index]?.isPending
+                  )
+                ) {
                   packingBatchVersions.set(after, historyEventVersion.value);
                 }
               },

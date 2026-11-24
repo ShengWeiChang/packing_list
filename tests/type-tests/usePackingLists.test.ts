@@ -6,7 +6,6 @@ License: MIT (SPDX: MIT)
 ================================================================================
 */
 
-import type { PackingHistoryEntry } from '../../source/composables/usePackingLists';
 import type { usePackingLists } from '../../source/composables/usePackingLists';
 import type { ItemDTO } from '../../source/models/contracts';
 
@@ -96,31 +95,4 @@ export async function checkPackingStateContracts(api: PackingAPI) {
   // @ts-expect-error -- A save callback may fail and return null.
   const guaranteedSave: (item: ItemDTO) => Promise<ItemDTO> = api.updateItem;
   return { isAnyResult, removed, undone, pendingRemoval, save, guaranteedSave };
-}
-
-/** History carries immutable packing snapshots rather than complete entity copies. */
-export function checkPackingHistoryContracts(entry: PackingHistoryEntry) {
-  const change = entry.changes[0];
-  if (change) {
-    const before: boolean = change.before.isPacked;
-    // @ts-expect-error -- A recorded snapshot is immutable.
-    change.after.isPending = true;
-    // @ts-expect-error -- Later name edits are not part of packing history.
-    void change.before.name;
-    void before;
-  }
-  // @ts-expect-error -- The history entry cannot acquire new item changes in place.
-  entry.changes.push({ itemId: 'hat' });
-  const invalid: PackingHistoryEntry = {
-    checklistId: 'trip',
-    changes: [
-      {
-        itemId: 'hat',
-        before: { isPacked: false, isPending: true },
-        // @ts-expect-error -- Packing snapshots carry boolean state.
-        after: { isPacked: 'false', isPending: false },
-      },
-    ],
-  };
-  return invalid;
 }

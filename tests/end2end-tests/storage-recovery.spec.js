@@ -41,6 +41,46 @@ test(
   }
 );
 
+test('keeps a failed item draft when undo is pressed after focus leaves the editor', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'packingListApp',
+      JSON.stringify({
+        checklists: [{ id: 'cl', name: 'Trip', order: 0 }],
+        categories: [{ id: 'cat', checklistId: 'cl', name: 'Clothes', order: 0 }],
+        items: [],
+      })
+    );
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (window.failPackingWrites && key === 'packingListApp')
+        throw new DOMException('Full', 'QuotaExceededError');
+      return original.call(this, key, value);
+    };
+  });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/');
+  await page.getByTestId('add-item-button').first().click();
+  const draft = page.getByTestId('item-edit-input').first();
+  await expect(draft).toBeVisible();
+  await page.evaluate(() => {
+    window.failPackingWrites = true;
+  });
+  await draft.fill('Unsaved hat');
+  await draft.press('Enter');
+  await expect(draft).toHaveValue('Unsaved hat');
+  await page.locator('body').click({ position: { x: 1, y: 1 } });
+  await page.keyboard.press('Control+z');
+  await expect(draft).toHaveValue('Unsaved hat');
+  await page.evaluate(() => {
+    window.failPackingWrites = false;
+  });
+  await draft.press('Enter');
+  await expect(page.getByTestId('item-name').filter({ hasText: 'Unsaved hat' })).toBeVisible();
+});
+
 // Test Case 2: Retain the template name and source through failure and retry.
 test('preserves a template name and source after a failed write and retries successfully', async ({
   page,

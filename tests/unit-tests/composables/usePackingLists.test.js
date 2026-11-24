@@ -449,7 +449,7 @@ describe('usePackingLists', () => {
 
       const updated = items.value.find((i) => i.id === item.id);
       expect(updated.isPacked).toBe(true);
-      expect(canUndoPackingChange.value).toBe(false);
+      expect(canUndoPackingChange.value).toBe(true);
     });
   });
 
@@ -910,6 +910,198 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('packing history', () => {
+    it('restores a deleted checklist subtree with the same IDs and values, then redoes deletion', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      const list = await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothes' });
+      const item = await api.createItem({
+        name: 'Hat',
+        categoryId: category.id,
+        quantity: 3,
+        isPending: true,
+      });
+      const before = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      expect(await api.deleteChecklist(list.id)).toBe(true);
+      expect(await api.undoPackingChange()).toBe(true);
+      const restored = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      expect(restored.checklists.find((entry) => entry.id === list.id)).toEqual(
+        before.checklists.find((entry) => entry.id === list.id)
+      );
+      expect(restored.categories.find((entry) => entry.id === category.id)).toEqual(
+        before.categories.find((entry) => entry.id === category.id)
+      );
+      expect(restored.items.find((entry) => entry.id === item.id)).toEqual(
+        before.items.find((entry) => entry.id === item.id)
+      );
+      expect(await api.redoPackingChange()).toBe(true);
+      const deleted = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      expect(deleted.checklists.some((entry) => entry.id === list.id)).toBe(false);
+      expect(deleted.items.some((entry) => entry.id === item.id)).toBe(false);
+    });
+
+    it('undoes and redoes item edits, pending status, duplication and deletion as separate steps', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothes' });
+      const item = await api.createItem({ name: 'Hat', categoryId: category.id, quantity: 1 });
+      api.clearPackingHistory();
+      await api.updateItem({ ...item, name: 'Cap', quantity: 2 }, item);
+      const edited = api.items.value.find((entry) => entry.id === item.id);
+      await api.updateItem({ ...edited, isPending: true }, edited);
+      const copy = await api.duplicateItem(item.id);
+      await api.deleteItem(item.id);
+      expect(api.items.value.map((entry) => entry.id)).toEqual([copy.id]);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value.find((entry) => entry.id === item.id)).toMatchObject({
+        name: 'Cap',
+        quantity: 2,
+        isPending: true,
+      });
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value.some((entry) => entry.id === copy.id)).toBe(false);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value.find((entry) => entry.id === item.id).isPending).toBe(false);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value.find((entry) => entry.id === item.id)).toMatchObject({
+        name: 'Hat',
+        quantity: 1,
+      });
+      expect(api.canUndoPackingChange.value).toBe(false);
+      for (let index = 0; index < 4; index++) expect(await api.redoPackingChange()).toBe(true);
+      expect(api.items.value.map((entry) => entry.id)).toEqual([copy.id]);
+    });
+
+    it('restores a category deletion with its items and reverses a cross-category move', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const first = await api.createCategory({ name: 'First', order: 0 });
+      const second = await api.createCategory({ name: 'Second', order: 1 });
+      const item = await api.createItem({ name: 'Hat', categoryId: first.id, order: 0 });
+      api.clearPackingHistory();
+      await api.updateMultipleItems([{ ...item, categoryId: second.id, order: 0 }], {
+        fields: ['categoryId', 'order'],
+        expectedItems: [item],
+      });
+      await api.deleteCategory(second.id);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value.find((entry) => entry.id === item.id).categoryId).toBe(second.id);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value.find((entry) => entry.id === item.id).categoryId).toBe(first.id);
+      expect(await api.redoPackingChange()).toBe(true);
+      expect(await api.redoPackingChange()).toBe(true);
+      expect(api.items.value.some((entry) => entry.id === item.id)).toBe(false);
+    });
+
+    it('rejects undoing a cross-category move when the destination membership changed', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      const list = await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const first = await api.createCategory({ name: 'First' });
+      const second = await api.createCategory({ name: 'Second' });
+      const item = await api.createItem({ name: 'Hat', categoryId: first.id });
+      await api.updateMultipleItems([{ ...item, categoryId: second.id }], {
+        fields: ['categoryId', 'order'],
+        expectedItems: [item],
+      });
+      const external = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      external.items.push({
+        id: 'external',
+        checklistId: list.id,
+        categoryId: second.id,
+        name: 'External',
+        quantity: 1,
+        isPacked: false,
+        isPending: false,
+        order: 1,
+      });
+      mockStorage[STORAGE_KEYS.APP_DATA] = JSON.stringify(external);
+      expect(await api.undoPackingChange()).toBe(false);
+      expect(api.operationError.value).toBe('conflict');
+      expect(JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA])).toEqual(external);
+    });
+
+    it('undoes and redoes category duplication with its complete item subtree', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothes' });
+      await api.createItem({ name: 'Hat', categoryId: category.id, quantity: 4 });
+      api.clearPackingHistory();
+      const copy = await api.duplicateCategory(category.id);
+      const copiedItem = api.items.value.find((entry) => entry.categoryId === copy.id);
+      expect(copiedItem.quantity).toBe(4);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.categories.value.some((entry) => entry.id === copy.id)).toBe(false);
+      expect(api.items.value.some((entry) => entry.id === copiedItem.id)).toBe(false);
+      expect(await api.redoPackingChange()).toBe(true);
+      expect(api.items.value.find((entry) => entry.id === copiedItem.id)).toMatchObject({
+        categoryId: copy.id,
+        quantity: 4,
+      });
+    });
+
+    it('rejects undoing a created checklist if another tab added a descendant before its event', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      const list = await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const external = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      external.categories.push({
+        id: 'external',
+        checklistId: list.id,
+        name: 'External',
+        order: 0,
+      });
+      mockStorage[STORAGE_KEYS.APP_DATA] = JSON.stringify(external);
+      expect(await api.undoPackingChange()).toBe(false);
+      expect(api.operationError.value).toBe('conflict');
+      expect(JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA])).toEqual(external);
+    });
+
+    it('rejects undo of a reorder after another tab changes membership, preserving the other edit', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const first = await api.createCategory({ name: 'First', order: 0 });
+      const second = await api.createCategory({ name: 'Second', order: 1 });
+      await api.updateMultipleCategories(
+        [
+          { ...first, order: 1 },
+          { ...second, order: 0 },
+        ],
+        [first, second]
+      );
+      const external = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      external.categories.push({
+        id: 'external',
+        checklistId: first.checklistId,
+        name: 'External',
+        order: 2,
+      });
+      mockStorage[STORAGE_KEYS.APP_DATA] = JSON.stringify(external);
+      expect(await api.undoPackingChange()).toBe(false);
+      expect(api.operationError.value).toBe('conflict');
+      expect(JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA])).toEqual(external);
+    });
+
+    it('reverses an edit without overwriting an unrelated external field change', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothes' });
+      const item = await api.createItem({ name: 'Hat', categoryId: category.id, quantity: 1 });
+      await api.updateItem({ ...item, name: 'Cap' }, item);
+      const external = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      external.items.find((entry) => entry.id === item.id).quantity = 7;
+      mockStorage[STORAGE_KEYS.APP_DATA] = JSON.stringify(external);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(
+        JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).items.find((entry) => entry.id === item.id)
+      ).toMatchObject({ name: 'Hat', quantity: 7 });
+    });
+
     it('rejects undo if a different tab changed the saved status before its event arrives', async () => {
       const api = usePackingLists();
       await api.initialize();
@@ -933,7 +1125,7 @@ describe('usePackingLists', () => {
       expect(api.canUndoPackingChange.value).toBe(true);
       expect(api.operationError.value).toBe('conflict');
     });
-    it('keeps history for a no-op but blocks undo past a later unsupported edit', async () => {
+    it('keeps history for a no-op and undoes a later edit before the packing change', async () => {
       const api = usePackingLists();
       await api.initialize();
       await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
@@ -945,9 +1137,12 @@ describe('usePackingLists', () => {
       expect(api.canUndoPackingChange.value).toBe(true);
       expect(api.historyBarrierVersion.value).toBe(0);
       await api.updateItem({ ...unchanged, name: 'Cap' }, unchanged);
-      expect(api.historyBarrierVersion.value).toBe(1);
-      expect(api.canUndoPackingChange.value).toBe(false);
-      expect(await api.undoPackingChange()).toBe(false);
+      expect(api.historyBarrierVersion.value).toBe(0);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value[0].name).toBe('Hat');
+      expect(api.items.value[0].isPacked).toBe(true);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value[0].isPacked).toBe(false);
     });
 
     it('preserves a committed batch in history if the following refresh fails', async () => {
@@ -977,7 +1172,7 @@ describe('usePackingLists', () => {
       api.selectedChecklistId.value = first.id;
       await flushPromises();
       await api.setCategoryPacked(category.id, true);
-      const original = LocalStorageService.prototype.updateMultipleItems;
+      const original = LocalStorageService.prototype.applyHistory;
       let release;
       let entered;
       const ready = new Promise((resolve) => {
@@ -986,13 +1181,13 @@ describe('usePackingLists', () => {
       const gate = new Promise((resolve) => {
         release = resolve;
       });
-      vi.spyOn(LocalStorageService.prototype, 'updateMultipleItems').mockImplementation(
-        async function (...args) {
-          entered();
-          await gate;
-          return original.apply(this, args);
-        }
-      );
+      vi.spyOn(LocalStorageService.prototype, 'applyHistory').mockImplementation(async function (
+        ...args
+      ) {
+        entered();
+        await gate;
+        return original.apply(this, args);
+      });
       const pending = api.undoPackingChange();
       await ready;
       api.selectedChecklistId.value = second.id;
@@ -1112,7 +1307,7 @@ describe('usePackingLists', () => {
         ...args
       ) {
         calls += 1;
-        if (calls === 2) {
+        if (calls === 1) {
           entered();
           await gate;
         }
@@ -1139,7 +1334,7 @@ describe('usePackingLists', () => {
       await api.createItem({ name: 'Hat', categoryId: first.id });
       await api.createItem({ name: 'Coat', categoryId: second.id });
       await api.setCategoryPacked(first.id, true);
-      const original = LocalStorageService.prototype.updateMultipleItems;
+      const original = LocalStorageService.prototype.applyHistory;
       let release;
       let entered;
       const ready = new Promise((resolve) => {
@@ -1148,15 +1343,13 @@ describe('usePackingLists', () => {
       const gate = new Promise((resolve) => {
         release = resolve;
       });
-      vi.spyOn(LocalStorageService.prototype, 'updateMultipleItems').mockImplementation(
-        async function (...args) {
-          if (args[3]?.beforeWrite) {
-            entered();
-            await gate;
-          }
-          return original.apply(this, args);
-        }
-      );
+      vi.spyOn(LocalStorageService.prototype, 'applyHistory').mockImplementation(async function (
+        ...args
+      ) {
+        entered();
+        await gate;
+        return original.apply(this, args);
+      });
       const pending = api.undoPackingChange();
       await ready;
       await api.setCategoryPacked(second.id, true);
@@ -1341,12 +1534,12 @@ describe('usePackingLists', () => {
       expect(api.canRedoPackingChange.value).toBe(true);
       const currentPackedItem = api.items.value.find((item) => item.id === packed.id);
       await api.updateItem({ ...currentPackedItem, isPacked: false, isPending: true });
-      expect(api.canUndoPackingChange.value).toBe(false);
+      expect(api.canUndoPackingChange.value).toBe(true);
       expect(api.canRedoPackingChange.value).toBe(false);
-      expect(await api.undoPackingChange()).toBe(false);
+      expect(await api.undoPackingChange()).toBe(true);
       expect(api.items.value).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ id: packed.id, isPacked: false, isPending: true }),
+          expect.objectContaining({ id: packed.id, isPacked: true, isPending: false }),
         ])
       );
     });

@@ -121,6 +121,33 @@ describe('Item', () => {
       expect(w.find('[data-testid="item-edit-input"]').exists()).toBe(false);
       expect(saveItemEdit).toHaveBeenCalledTimes(2);
     });
+    it('releases its draft owner on unmount while a failed edit retry is pending', async () => {
+      let finish;
+      const saveItemEdit = vi
+        .fn()
+        .mockResolvedValueOnce(null)
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              finish = resolve;
+            })
+        );
+      const retainDraft = vi.fn();
+      const editCancelled = vi.fn();
+      const w = createWrapper({ saveItemEdit, retainDraft, editCancelled });
+      await w.get('[data-testid="item-name"]').trigger('click');
+      await w.get('[data-testid="item-edit-input"]').setValue('Unsaved hat');
+      await w.get('[data-testid="item-edit-input"]').trigger('keydown.enter');
+      await flushPromises();
+      await w.get('[data-testid="item-edit-input"]').trigger('keydown.enter');
+      w.unmount();
+      wrapper = null;
+      expect(retainDraft).toHaveBeenCalledWith({ name: 'Unsaved hat' });
+      expect(editCancelled).toHaveBeenCalledWith('item', 'item-1');
+      finish(null);
+      await flushPromises();
+    });
+
     // Test Case 2: A failed save retains the draft during another item's gesture.
     it('preserves a failed draft during another item pointer gesture', async () => {
       const saveItemEdit = vi.fn().mockResolvedValue(null);

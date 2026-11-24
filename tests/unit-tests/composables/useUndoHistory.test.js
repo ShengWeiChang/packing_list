@@ -86,6 +86,32 @@ describe('undo history', () => {
     expect(history.canRedo.value).toBe(false);
   });
 
+  it('does not commit queued undo when an editor begins saving before the lock is acquired', async () => {
+    let allowed = true;
+    let release;
+    let entered;
+    const ready = new Promise((resolve) => {
+      entered = resolve;
+    });
+    const history = useUndoHistory(3, async (_entry, _undo, isCurrent, committed) => {
+      entered();
+      await new Promise((resolve) => {
+        release = resolve;
+      });
+      if (!isCurrent()) return false;
+      committed();
+      return true;
+    });
+    history.record('item created');
+    const pending = history.undo(() => allowed);
+    await ready;
+    allowed = false;
+    release();
+    expect(await pending).toBe(false);
+    expect(history.canUndo.value).toBe(true);
+    expect(history.canRedo.value).toBe(false);
+  });
+
   it('retains only the most recent actions within the limit', async () => {
     const apply = vi.fn(async (_entry, _undo, _current, committed) => {
       committed();

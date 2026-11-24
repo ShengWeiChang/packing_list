@@ -35,8 +35,8 @@ export function useUndoHistory<T>(
    * @param {boolean} undo - Whether to undo instead of redo.
    * @returns {Promise<boolean>} Whether the action committed.
    */
-  async function execute(undo: boolean): Promise<boolean> {
-    if (applying) return false;
+  async function execute(undo: boolean, allowed: () => boolean): Promise<boolean> {
+    if (applying || !allowed()) return false;
     const source = undo ? undoStack : redoStack;
     const destination = undo ? redoStack : undoStack;
     const entry = source.value.at(-1);
@@ -44,7 +44,7 @@ export function useUndoHistory<T>(
     applying = true;
     const startedAt = revision;
     let committed = false;
-    const isCurrent = () => revision === startedAt && source.value.at(-1) === entry;
+    const isCurrent = () => allowed() && revision === startedAt && source.value.at(-1) === entry;
     const onCommitted = () => {
       if (!isCurrent()) return;
       revision += 1;
@@ -65,7 +65,7 @@ export function useUndoHistory<T>(
     canRedo: computed(() => redoStack.value.length > 0),
     clear,
     record,
-    undo: () => execute(true),
-    redo: () => execute(false),
+    undo: (allowed: () => boolean = () => true) => execute(true, allowed),
+    redo: (allowed: () => boolean = () => true) => execute(false, allowed),
   };
 }

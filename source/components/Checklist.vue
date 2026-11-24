@@ -1087,7 +1087,7 @@ onBeforeUnmount(() => {
       endDate: editedEndDate.value,
     });
   }
-  if (editSaveFailed.value) props.editCancelled?.('checklist', props.checklist.id);
+  props.editCancelled?.('checklist', props.checklist.id);
 });
 onUnmounted(() => cleanupEditingFocus());
 </script>

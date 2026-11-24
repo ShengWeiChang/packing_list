@@ -931,7 +931,7 @@ onBeforeUnmount(() => {
   if (isEditing.value && editBaseline && editedName.value !== editBaseline.name) {
     props.retainDraft?.({ name: editedName.value });
   }
-  if (editSaveFailed.value) props.editCancelled?.('item', props.item.id);
+  props.editCancelled?.('item', props.item.id);
 });
 onUnmounted(() => cleanupEditingFocus());
 </script>
