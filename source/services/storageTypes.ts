@@ -62,6 +62,9 @@ export type ChecklistSourceOptions = {
 /** Drag-only preconditions; ordinary packing/name batches keep field-level merging. */
 export interface ItemBatchStorageOptions {
   expectedCategoryMembership?: { categoryId: string; itemIds: string[] }[];
+  onCommitted?: (before: ItemDTO[], after: CommittedItem[]) => void;
+  preserveHistory?: boolean;
+  beforeWrite?: () => boolean;
 }
 
 export type StorageErrorCode =

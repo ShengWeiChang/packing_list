@@ -223,6 +223,158 @@ test.describe('Multi-tab sync', () => {
       await context.close();
     });
 
+    test('identifies the affected checklist after cross-checklist undo and redo', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await createChecklist(page);
+      await renameSelectedChecklist(page, 'First trip');
+      await createChecklist(page);
+      await renameSelectedChecklist(page, 'Second trip');
+      await page.getByTestId('sidebar-checklist-item').filter({ hasText: 'First trip' }).click();
+      await page.getByTestId('category-checkbox').first().click();
+      await expect(page.getByTestId('packing-undo-toast')).toBeVisible();
+      await page.getByTestId('sidebar-checklist-item').filter({ hasText: 'Second trip' }).click();
+      await expect(page.getByTestId('packing-undo-toast')).toBeHidden();
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.locator('main').evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await expect
+        .poll(() =>
+          page.evaluate(() => Math.max(window.scrollY, document.querySelector('main').scrollTop))
+        )
+        .toBeGreaterThan(0);
+      await page.keyboard.press('Control+z');
+      await expect(page.getByTestId('cross-checklist-history-feedback')).toBeInViewport();
+      await expect(
+        page.getByRole('status').filter({ hasText: 'Undid a packing change in “First trip”' })
+      ).toBeVisible();
+      await page.keyboard.press('Control+Shift+z');
+      await expect(
+        page.getByRole('status').filter({ hasText: 'Redid a packing change in “First trip”' })
+      ).toBeVisible();
+      await expect(page.getByTestId('checklist-name')).toHaveText('Second trip');
+      await page.getByTestId('sidebar-language-button').click();
+      await page.getByTestId('sidebar-language-option-zh-TW').click();
+      await expect(page.getByTestId('cross-checklist-history-feedback')).toContainText(
+        '已重做「First trip」的打包變更。'
+      );
+      await page.getByTestId('category-checkbox').first().click();
+      await expect(page.getByTestId('cross-checklist-history-feedback')).toBeHidden();
+      await expect(page.getByTestId('packing-undo-toast')).toBeVisible();
+    });
+
+    test('keeps long Chinese cross-checklist feedback operable at 320px', async ({ page }) => {
+      await page.setViewportSize({ width: 320, height: 640 });
+      const longName = '旅'.repeat(100);
+      await page.addInitScript((name) => {
+        localStorage.setItem('user-locale', 'zh-TW');
+        localStorage.setItem('packingListLastOpenedChecklistId', 'list-a');
+        localStorage.setItem(
+          'packingListApp',
+          JSON.stringify({
+            checklists: [
+              { id: 'list-a', name, order: 0 },
+              { id: 'list-b', name: '第二份清單', order: 1 },
+            ],
+            categories: [
+              { id: 'cat-a', checklistId: 'list-a', name: '第一類', order: 0 },
+              { id: 'cat-a2', checklistId: 'list-a', name: '另一類', order: 1 },
+              { id: 'cat-b', checklistId: 'list-b', name: '用品', order: 0 },
+            ],
+            items: [
+              {
+                id: 'item-a',
+                checklistId: 'list-a',
+                categoryId: 'cat-a',
+                name: '護照',
+                quantity: 1,
+                isPacked: false,
+                isPending: false,
+                order: 0,
+              },
+              {
+                id: 'item-a2',
+                checklistId: 'list-a',
+                categoryId: 'cat-a2',
+                name: '衣服',
+                quantity: 1,
+                isPacked: false,
+                isPending: false,
+                order: 0,
+              },
+              ...Array.from({ length: 25 }, (_, index) => ({
+                id: `item-b-${index}`,
+                checklistId: 'list-b',
+                categoryId: 'cat-b',
+                name: `物品 ${index}`,
+                quantity: 1,
+                isPacked: false,
+                isPending: false,
+                order: index,
+              })),
+            ],
+          })
+        );
+      }, longName);
+      await page.goto('/');
+      await page.getByTestId('category-checkbox').first().click();
+      await page.getByTestId('topbar-toggle').click();
+      await page.getByTestId('sidebar-checklist-item').filter({ hasText: '第二份清單' }).click();
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.locator('main').evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await page.keyboard.press('Control+z');
+      const notice = page.getByTestId('cross-checklist-history-feedback');
+      await expect(notice).toBeInViewport();
+      await expect(notice).toContainText(longName);
+      const box = await notice.boundingBox();
+      const button = notice.getByRole('button', { name: '關閉' });
+      const buttonBox = await button.boundingBox();
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(320);
+      expect(buttonBox.x).toBeGreaterThanOrEqual(0);
+      expect(buttonBox.x + buttonBox.width).toBeLessThanOrEqual(320);
+      await button.click();
+      await expect(notice).toBeHidden();
+    });
+
+    test('does not undo a later packing change from another tab', async ({ browser }) => {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+      const pageA = await context.newPage();
+      const pageB = await context.newPage();
+      await pageA.goto('/');
+      await pageB.goto('/');
+      await createChecklist(pageA);
+      const synced = pageB.getByTestId('sidebar-checklist-item').first();
+      await expect(synced).toBeVisible();
+      await synced.click();
+      const categoryA = pageA.getByTestId('category-card').first();
+      const categoryB = pageB.getByTestId('category-card').first();
+      await categoryA.getByTestId('category-checkbox').click();
+      const itemB = categoryB.getByTestId('item-checkbox').first();
+      await expect(itemB).toBeChecked();
+      await itemB.click();
+      await expect(itemB).not.toBeChecked();
+      const itemA = categoryA.getByTestId('item-checkbox').first();
+      await expect(itemA).not.toBeChecked();
+      await pageA.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await pageA.locator('main').evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await expect(pageA.getByTestId('history-barrier-feedback')).toBeInViewport();
+      await expect(
+        pageA.getByRole('status').filter({ hasText: 'Undo and redo history was cleared' })
+      ).toBeVisible();
+      await pageA.locator('main').click({ position: { x: 2, y: 2 } });
+      await pageA.keyboard.press('Control+z');
+      await expect(itemA).not.toBeChecked();
+      await expect(itemB).not.toBeChecked();
+      await context.close();
+    });
+
     // Test Case 6: Should serialize concurrent template saves across real browser tabs
     test('keeps both templates when two tabs save behind the same lock barrier', async ({
       browser,

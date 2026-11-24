@@ -43,6 +43,7 @@ import type {
 import { STORAGE_KEYS } from '../utils/constants';
 import { debounce } from '../utils/helpers';
 import { describeOperationError } from '../utils/operationErrors';
+import { useUndoHistory } from './useUndoHistory';
 
 const PACKING_HISTORY_LIMIT = 50;
 
@@ -104,7 +105,7 @@ export function usePackingLists() {
     if (!e || (e.key !== STORAGE_KEYS.APP_DATA && e.key !== null)) return;
 
     // History becomes unsafe immediately, even while the refresh is debounced.
-    clearPackingHistory();
+    invalidateHistoryForUnsupportedChange();
     itemsRequestRevision += 1;
     categoriesRequestRevision += 1;
     refreshFromStorage();
@@ -143,10 +144,29 @@ export function usePackingLists() {
   const operationErrorVersion = ref(0);
   const refreshAfterSaveFailed = ref(false);
   let postCommitRefreshes = 0;
-  const packingUndoStack = ref<PackingHistoryEntry[]>([]);
-  const packingRedoStack = ref<PackingHistoryEntry[]>([]);
-  let isApplyingPackingHistory = false;
-  let packingHistoryRevision = 0;
+  const packingHistory = useUndoHistory<PackingHistoryEntry>(
+    PACKING_HISTORY_LIMIT,
+    (entry, undo, isCurrent, onCommitted) =>
+      applyPackingHistoryEntry(entry, undo ? 'before' : 'after', isCurrent, onCommitted)
+  );
+  const lastPackingHistoryAction = ref<{
+    checklistId: string;
+    direction: 'undo' | 'redo';
+    eventVersion: number;
+  } | null>(null);
+  const historyBarrierVersion = ref(0);
+  const historyEventVersion = ref(0);
+  const packingBatchVersions = new WeakMap<readonly CommittedItem[], number>();
+  // Until every data mutation is undoable, never skip over a committed mutation.
+  dataService.onDataCommitted = invalidateHistoryForUnsupportedChange;
+
+  /** Clear existing history and expose an explanation for an unsupported mutation. */
+  function invalidateHistoryForUnsupportedChange() {
+    if (!packingHistory.canUndo.value && !packingHistory.canRedo.value) return;
+    packingHistory.clear();
+    historyBarrierVersion.value += 1;
+    historyEventVersion.value += 1;
+  }
   let selectionRevision = 0;
   let itemsRequestRevision = 0;
   let categoriesRequestRevision = 0;
@@ -164,8 +184,8 @@ export function usePackingLists() {
     if (totalItems.value === 0) return 0;
     return Math.round((packedItems.value / totalItems.value) * 100);
   });
-  const canUndoPackingChange = computed(() => packingUndoStack.value.length > 0);
-  const canRedoPackingChange = computed(() => packingRedoStack.value.length > 0);
+  const canUndoPackingChange = packingHistory.canUndo;
+  const canRedoPackingChange = packingHistory.canRedo;
 
   // ---------------------------------------------------------------------------
   // Functions
@@ -288,12 +308,10 @@ export function usePackingLists() {
 
   /**
    * Clear packing-only undo and redo history.
-   * History is intentionally scoped to the current checklist and browser tab.
+   * History is scoped to this browser tab and can span checklists.
    */
   function clearPackingHistory() {
-    packingHistoryRevision += 1;
-    packingUndoStack.value = [];
-    packingRedoStack.value = [];
+    packingHistory.clear();
   }
 
   /**
@@ -331,106 +349,65 @@ export function usePackingLists() {
 
     if (changes.length === 0 || !checklistId) return;
 
-    packingHistoryRevision += 1;
-    packingUndoStack.value = [...packingUndoStack.value, { checklistId, changes }].slice(
-      -PACKING_HISTORY_LIMIT
-    );
-    packingRedoStack.value = [];
+    packingHistory.record({ checklistId, changes });
+    historyEventVersion.value += 1;
   }
 
-  /**
-   * Invalidate redo when an individual item changes packing state.
-   * Individual item actions stay outside the category-level undo history.
-   * @param {object|undefined} beforeItem - Item before the update
-   * @param {object} afterItem - Item after the update
-   */
-  function invalidatePackingRedo(beforeItem: ItemDTO | undefined, afterItem: ItemDTO) {
-    if (
-      !beforeItem ||
-      (beforeItem.isPacked === afterItem.isPacked && beforeItem.isPending === afterItem.isPending)
-    ) {
-      return;
-    }
-
-    packingHistoryRevision += 1;
-    packingRedoStack.value = [];
-  }
-
-  /**
-   * Apply one stored history entry against the latest in-memory item data.
-   * Only packing fields are changed so later edits to names or quantities survive.
-   * @param {object} entry - Packing history entry
-   * @param {'before'|'after'} direction - State snapshot to apply
-   * @returns {Promise<boolean>} Whether the entry was applied
-   */
+  /** Apply packing history to its owning checklist without changing selection. */
   async function applyPackingHistoryEntry(
     entry: PackingHistoryEntry | undefined,
-    direction: 'before' | 'after'
+    direction: 'before' | 'after',
+    isCurrent: () => boolean,
+    onCommitted: () => void
   ): Promise<boolean> {
-    if (!entry || entry.checklistId !== selectedChecklistId.value) return false;
-
-    const updates = entry.changes
-      .map((change) => {
-        const currentItem = items.value.find((item) => item.id === change.itemId);
-        if (!currentItem) return null;
-        return new Item({ ...currentItem, ...change[direction] });
-      })
-      .filter((entry) => entry !== null);
-
-    if (updates.length === 0 || updates.length !== entry.changes.length) return false;
-    const result = await updateMultipleItems(updates, { recordHistory: false });
-    return Boolean(result && entry.checklistId === selectedChecklistId.value);
-  }
-
-  /**
-   * Undo the latest category-wide packing status change.
-   * @returns {Promise<boolean>} Whether a change was undone
-   */
-  async function undoPackingChange() {
-    if (isApplyingPackingHistory) return false;
-    isApplyingPackingHistory = true;
-    try {
-      const entry = packingUndoStack.value.at(-1);
-      const revision = packingHistoryRevision;
-      if (!entry) return false;
-      if (!(await applyPackingHistoryEntry(entry, 'before'))) return false;
-      if (packingHistoryRevision !== revision || packingUndoStack.value.at(-1) !== entry) {
-        return false;
-      }
-
-      packingHistoryRevision += 1;
-      packingUndoStack.value = packingUndoStack.value.slice(0, -1);
-      packingRedoStack.value = [...packingRedoStack.value, entry].slice(-PACKING_HISTORY_LIMIT);
-      return true;
-    } finally {
-      isApplyingPackingHistory = false;
+    if (!entry) return false;
+    const currentItems = await loadData(
+      () => dataService.getItems(entry.checklistId),
+      'Error reading items for history',
+      true
+    );
+    if (!currentItems) return false;
+    const updates = entry.changes.map((change) => {
+      const current = currentItems.find((item) => item.id === change.itemId);
+      return current ? new Item({ ...current, ...change[direction] }) : null;
+    });
+    if (updates.some((item) => item === null)) {
+      operationError.value = 'conflict';
+      operationErrorVersion.value += 1;
+      return false;
     }
+    const intended = updates.filter((item) => item !== null);
+    const expected = intended.map((item) => {
+      const change = entry.changes.find((candidate) => candidate.itemId === item.id)!;
+      return { ...item, ...change[direction === 'before' ? 'after' : 'before'] };
+    });
+    const result = await loadData(
+      () =>
+        dataService.updateMultipleItems(entry.checklistId, intended, expected, {
+          preserveHistory: true,
+          beforeWrite: isCurrent,
+          onCommitted: () => {
+            onCommitted();
+            historyEventVersion.value += 1;
+            lastPackingHistoryAction.value = {
+              checklistId: entry.checklistId,
+              direction: direction === 'before' ? 'undo' : 'redo',
+              eventVersion: historyEventVersion.value,
+            };
+          },
+        }),
+      'Error applying history'
+    );
+    if (!result) return false;
+    if (selectedChecklistId.value === entry.checklistId) await refreshAfterCommit(getItems);
+    return true;
   }
 
-  /**
-   * Redo the latest undone category-wide packing status change.
-   * @returns {Promise<boolean>} Whether a change was redone
-   */
-  async function redoPackingChange() {
-    if (isApplyingPackingHistory) return false;
-    isApplyingPackingHistory = true;
-    try {
-      const entry = packingRedoStack.value.at(-1);
-      const revision = packingHistoryRevision;
-      if (!entry) return false;
-      if (!(await applyPackingHistoryEntry(entry, 'after'))) return false;
-      if (packingHistoryRevision !== revision || packingRedoStack.value.at(-1) !== entry) {
-        return false;
-      }
+  /** Undo the latest category-wide packing status change. */
+  const undoPackingChange = packingHistory.undo;
 
-      packingHistoryRevision += 1;
-      packingRedoStack.value = packingRedoStack.value.slice(0, -1);
-      packingUndoStack.value = [...packingUndoStack.value, entry].slice(-PACKING_HISTORY_LIMIT);
-      return true;
-    } finally {
-      isApplyingPackingHistory = false;
-    }
-  }
+  /** Redo the latest undone category-wide packing status change. */
+  const redoPackingChange = packingHistory.redo;
 
   /**
    * Toggle the packed status of an item
@@ -733,7 +710,6 @@ export function usePackingLists() {
       return true;
     }, 'Error deleting category');
     if (!deleted) return false;
-    clearPackingHistory();
     await refreshAfterCommit(() => Promise.all([getCategories(), getItems()]));
     return true;
   }
@@ -848,7 +824,6 @@ export function usePackingLists() {
       if (selectedChecklistId.value !== checklistId || selectionRevision !== selectionAtStart) {
         return result;
       }
-      invalidatePackingRedo(previousItem, result);
       return result;
     }
     return null;
@@ -899,11 +874,20 @@ export function usePackingLists() {
             };
           })
         : itemData;
-      return expectedCategoryMembership.length
-        ? dataService.updateMultipleItems(checklistId, intendedItems, baseline, {
-            expectedCategoryMembership,
-          })
-        : dataService.updateMultipleItems(checklistId, intendedItems, baseline);
+      return dataService.updateMultipleItems(checklistId, intendedItems, baseline, {
+        ...(expectedCategoryMembership.length ? { expectedCategoryMembership } : {}),
+        ...(recordHistory
+          ? {
+              onCommitted: (before: ItemDTO[], after: CommittedItem[]) => {
+                const previousVersion = historyEventVersion.value;
+                recordPackingBatchChange(before, after, checklistId);
+                if (historyEventVersion.value !== previousVersion) {
+                  packingBatchVersions.set(after, historyEventVersion.value);
+                }
+              },
+            }
+          : {}),
+      });
     }, 'Error updating items');
     if (result) {
       if (selectedChecklistId.value !== checklistId || selectionRevision !== selectionAtStart) {
@@ -912,9 +896,6 @@ export function usePackingLists() {
       await refreshAfterCommit(getItems);
       if (selectedChecklistId.value !== checklistId || selectionRevision !== selectionAtStart) {
         return null;
-      }
-      if (recordHistory) {
-        recordPackingBatchChange(previousItems, result, checklistId);
       }
       return result;
     }
@@ -959,7 +940,6 @@ export function usePackingLists() {
       return true;
     }, 'Error deleting item');
     if (!deleted) return false;
-    clearPackingHistory();
     await refreshAfterCommit(getItems);
     return true;
   }
@@ -996,7 +976,6 @@ export function usePackingLists() {
         items.value = [];
         persistLastOpenedChecklistId(newId);
         selectionRevision += 1;
-        clearPackingHistory();
       }
     },
     { flush: 'sync' }
@@ -1046,6 +1025,11 @@ export function usePackingLists() {
     progress,
     canUndoPackingChange,
     canRedoPackingChange,
+    clearPackingHistory,
+    historyBarrierVersion: readonly(historyBarrierVersion),
+    historyEventVersion: readonly(historyEventVersion),
+    lastPackingHistoryAction: readonly(lastPackingHistoryAction),
+    invalidateHistoryForUnsupportedChange,
 
     // System
     initialize,
@@ -1077,6 +1061,8 @@ export function usePackingLists() {
     // Item utilities
     toggleItemPacked,
     setCategoryPacked,
+    getPackingBatchEventVersion: (result: readonly CommittedItem[]) =>
+      packingBatchVersions.get(result),
     undoPackingChange,
     redoPackingChange,
   };

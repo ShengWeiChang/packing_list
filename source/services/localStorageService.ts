@@ -117,6 +117,7 @@ export class LocalStorageService extends DataService {
   declare _cacheRaw: string | null;
   declare _initialized: boolean;
   declare _storageListener?: ((event: StorageEvent) => void) | null;
+  onDataCommitted?: () => void;
   /**
    * Initialize the LocalStorage service with caching and cross-tab sync
    */
@@ -164,11 +165,13 @@ export class LocalStorageService extends DataService {
    * Save all data to localStorage and update cache
    * @param {object} data - Data object to save
    */
-  _saveData(data: StoredAppData) {
+  _saveData(data: StoredAppData, preserveHistory = false) {
     const candidate = decodeAppData(JSON.stringify(data));
+    const changed = JSON.stringify(this._cache) !== JSON.stringify(candidate);
     const raw = writeStorage(this.STORAGE_KEY, candidate);
     this._cache = decodeAppData(raw);
     this._cacheRaw = raw;
+    if (changed && !preserveHistory) this.onDataCommitted?.();
   }
 
   /**
@@ -845,6 +848,8 @@ export class LocalStorageService extends DataService {
         );
       }
 
+      const beforeItems = indexes.map((index) => Item.fromJSON(items[index]!).toJSON());
+
       updatedItems.forEach((item, index) => {
         const expected = expectedItems?.find((entry) => entry.id === item.id);
         if (expectedItems && !expected) {
@@ -868,9 +873,14 @@ export class LocalStorageService extends DataService {
         };
       });
       data.items = items;
-      this._saveData(data);
+      if (options.beforeWrite && !options.beforeWrite()) {
+        throw new StorageError('conflict', 'History changed before the operation could commit');
+      }
+      this._saveData(data, Boolean(options.onCommitted || options.preserveHistory));
       // Each returned index was overwritten above with the complete Item.toJSON result.
-      return indexes.map((index) => items[index]! as CommittedItem);
+      const committed = indexes.map((index) => items[index]! as CommittedItem);
+      options.onCommitted?.(beforeItems, committed);
+      return committed;
     });
   }
 

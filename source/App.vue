@@ -301,6 +301,55 @@ Created: 2025-09-19
       />
     </Teleport>
 
+    <Teleport to="body">
+      <div
+        v-if="
+          historyBarrierVersion &&
+          historyBarrierVersion > dismissedHistoryBarrierVersion &&
+          !crossChecklistHistoryFeedback &&
+          !showPackingUndo &&
+          !showPackingCompletion &&
+          !isDialogVisible &&
+          !isOverlayVisible
+        "
+        class="fixed bottom-4 left-1/2 z-[60] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-4 rounded-lg bg-primary px-4 py-3 text-white shadow-lg"
+        role="status"
+        data-testid="history-barrier-feedback"
+      >
+        <span class="min-w-0 break-words">{{ $t('storage.historyClearedByChange') }}</span>
+        <button
+          type="button"
+          class="shrink-0 font-semibold text-white underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          @click="dismissedHistoryBarrierVersion = historyBarrierVersion"
+        >
+          {{ $t('storage.dismissHistoryNotice') }}
+        </button>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div
+        v-if="
+          crossChecklistHistoryFeedback &&
+          !showPackingCompletion &&
+          !isDialogVisible &&
+          !isOverlayVisible
+        "
+        class="fixed bottom-4 left-1/2 z-[60] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-4 rounded-lg bg-primary px-4 py-3 text-white shadow-lg"
+        role="status"
+        data-testid="cross-checklist-history-feedback"
+      >
+        <span class="min-w-0 break-all">{{ crossChecklistHistoryFeedback }}</span>
+        <button
+          type="button"
+          class="font-semibold text-white underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          @click="crossChecklistHistoryAction = null"
+        >
+          {{ $t('storage.dismissHistoryNotice') }}
+        </button>
+      </div>
+    </Teleport>
+
     <div
       v-if="showPackingUndo && canUndoPackingChange"
       class="fixed bottom-4 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-4 rounded-lg bg-primary px-4 py-3 text-white shadow-lg"
@@ -406,8 +455,13 @@ const {
   deleteItem,
   duplicateItem,
   setCategoryPacked,
+  getPackingBatchEventVersion,
   canUndoPackingChange,
   canRedoPackingChange,
+  historyBarrierVersion,
+  historyEventVersion,
+  lastPackingHistoryAction,
+  invalidateHistoryForUnsupportedChange,
   undoPackingChange,
   redoPackingChange,
 } = usePackingLists();
@@ -422,7 +476,7 @@ const {
   storageHealth: templateStorageHealth,
   operationError: templateOperationError,
   refreshAfterSaveFailed: templateRefreshAfterSaveFailed,
-} = useTemplates();
+} = useTemplates(() => invalidateHistoryForUnsupportedChange());
 const recommendedListService = new RecommendedListService();
 
 // ------------------------------------------------------------------------------
@@ -430,6 +484,23 @@ const recommendedListService = new RecommendedListService();
 // ------------------------------------------------------------------------------
 
 // UI state
+const dismissedHistoryBarrierVersion = ref(0);
+const crossChecklistHistoryAction = ref<{
+  checklistId: string;
+  direction: 'undo' | 'redo';
+  eventVersion: number;
+} | null>(null);
+const crossChecklistHistoryFeedback = computed(() => {
+  const action = crossChecklistHistoryAction.value;
+  if (!action) return '';
+  const name =
+    checklists.value.find((checklist) => checklist.id === action.checklistId)?.name ||
+    t('checklist.untitled');
+  return t(
+    action.direction === 'undo' ? 'storage.undoOtherChecklist' : 'storage.redoOtherChecklist',
+    { name }
+  );
+});
 const isSidebarOpen = ref(true);
 const isMobileViewport = ref(false);
 const isSmallDesktop = ref(false);
@@ -675,6 +746,8 @@ async function handlePackingCompletionClose() {
 
 /** Show the category packing recovery action for its complete five-second window. */
 function showPackingUndoToast() {
+  crossChecklistHistoryAction.value = null;
+  dismissedHistoryBarrierVersion.value = historyBarrierVersion?.value ?? 0;
   showPackingUndo.value = true;
   window.clearTimeout(packingUndoTimer);
   packingUndoTimer = window.setTimeout(() => {
@@ -937,7 +1010,11 @@ async function handleCategoryPacked({ categoryId, isPacked }: CategoryPackedChan
   const checklistId = selectedChecklistId.value;
   const before = getPackingCompletionSnapshot();
   const updatedItems = await handleAsyncAction(setCategoryPacked, categoryId, isPacked);
-  if (!updatedItems?.length || selectedChecklistId.value !== checklistId) {
+  if (
+    !updatedItems?.length ||
+    selectedChecklistId.value !== checklistId ||
+    getPackingBatchEventVersion(updatedItems) !== historyEventVersion.value
+  ) {
     return;
   }
 
@@ -951,14 +1028,25 @@ async function handleCategoryPacked({ categoryId, isPacked }: CategoryPackedChan
   showPackingUndoToast();
 }
 
-/**
- * Undo the most recent category-wide packing status change.
- */
-async function handleUndoPackingChange() {
-  if (await undoPackingChange()) {
-    showPackingUndo.value = false;
-    window.clearTimeout(packingUndoTimer);
+/** Announce a history action affecting another checklist. */
+function showCrossChecklistHistoryFeedback() {
+  const action = lastPackingHistoryAction?.value;
+  if (action && action.eventVersion !== (historyEventVersion?.value ?? 0)) return;
+  if (action && action.checklistId !== selectedChecklistId.value) {
+    dismissedHistoryBarrierVersion.value = historyBarrierVersion?.value ?? 0;
   }
+  crossChecklistHistoryAction.value =
+    action && action.checklistId !== selectedChecklistId.value ? action : null;
+}
+
+/** Undo the most recent category-wide packing status change. */
+async function handleUndoPackingChange() {
+  if (!(await undoPackingChange())) return;
+  const action = lastPackingHistoryAction?.value;
+  if (!action || action.eventVersion !== (historyEventVersion?.value ?? 0)) return;
+  showPackingUndo.value = false;
+  window.clearTimeout(packingUndoTimer);
+  showCrossChecklistHistoryFeedback();
 }
 
 /**
@@ -967,7 +1055,17 @@ async function handleUndoPackingChange() {
 async function handleRedoPackingChange() {
   const before = getPackingCompletionSnapshot();
   if (await redoPackingChange()) {
-    showPackingCompletionForTransition(before);
+    showCrossChecklistHistoryFeedback();
+    const action = lastPackingHistoryAction?.value;
+    const ownerId = action?.checklistId;
+    if (
+      ownerId &&
+      action.eventVersion === (historyEventVersion?.value ?? 0) &&
+      ownerId === before.checklistId &&
+      ownerId === selectedChecklistId.value
+    ) {
+      showPackingCompletionForTransition(before);
+    }
   }
 }
 
@@ -1561,6 +1659,24 @@ watch(isOverlayVisible, async (open) => {
       sidebarTrigger.focus({ preventScroll: true });
     }
   }
+});
+
+watch(
+  () => historyBarrierVersion?.value,
+  (version, previous) => {
+    if (!version || version === previous) return;
+    crossChecklistHistoryAction.value = null;
+    showPackingUndo.value = false;
+    packingUndoPendingAfterCompletion = false;
+    window.clearTimeout(packingUndoTimer);
+  },
+  { flush: 'sync' }
+);
+
+watch(selectedChecklistId, () => {
+  showPackingUndo.value = false;
+  packingUndoPendingAfterCompletion = false;
+  window.clearTimeout(packingUndoTimer);
 });
 
 watch(canUndoPackingChange, (canUndo) => {

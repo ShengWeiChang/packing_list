@@ -33,6 +33,9 @@ const mockIsLoading = ref(false);
 const mockError = ref(null);
 const mockCanUndoPackingChange = ref(false);
 const mockCanRedoPackingChange = ref(false);
+const mockHistoryBarrierVersion = ref(0);
+const mockHistoryEventVersion = ref(0);
+const mockLastPackingHistoryAction = ref(null);
 
 const mockInitialize = vi.fn();
 const mockCreateChecklist = vi.fn();
@@ -53,6 +56,7 @@ const mockUpdateMultipleItems = vi.fn();
 const mockDeleteItem = vi.fn();
 const mockDuplicateItem = vi.fn();
 const mockSetCategoryPacked = vi.fn();
+const mockGetPackingBatchEventVersion = vi.fn();
 const mockUndoPackingChange = vi.fn();
 const mockRedoPackingChange = vi.fn();
 const mockTemplates = ref([]);
@@ -85,6 +89,9 @@ vi.mock('../../source/composables/usePackingLists', () => ({
     error: mockError,
     canUndoPackingChange: mockCanUndoPackingChange,
     canRedoPackingChange: mockCanRedoPackingChange,
+    historyBarrierVersion: mockHistoryBarrierVersion,
+    historyEventVersion: mockHistoryEventVersion,
+    lastPackingHistoryAction: mockLastPackingHistoryAction,
     initialize: mockInitialize,
     createChecklist: mockCreateChecklist,
     updateChecklist: mockUpdateChecklist,
@@ -104,6 +111,7 @@ vi.mock('../../source/composables/usePackingLists', () => ({
     deleteItem: mockDeleteItem,
     duplicateItem: mockDuplicateItem,
     setCategoryPacked: mockSetCategoryPacked,
+    getPackingBatchEventVersion: mockGetPackingBatchEventVersion,
     undoPackingChange: mockUndoPackingChange,
     redoPackingChange: mockRedoPackingChange,
   }),
@@ -157,6 +165,7 @@ const i18n = createI18n({
         pleaseCreate: 'Please create a new checklist first',
       },
       common: { packingUpdated: 'Packing status updated', undo: 'Undo' },
+      storage: { historyClearedByChange: 'History was cleared', dismissHistoryNotice: 'Dismiss' },
       category: { defaultName: 'New Category' },
       item: { defaultName: 'New Item' },
       template: { deleteConfirm: 'Are you sure you want to delete this template?' },
@@ -191,6 +200,9 @@ describe('App', () => {
     mockSelectedChecklistId.value = 'cl-1';
     mockCanUndoPackingChange.value = false;
     mockCanRedoPackingChange.value = false;
+    mockHistoryBarrierVersion.value = 0;
+    mockHistoryEventVersion.value = 0;
+    mockLastPackingHistoryAction.value = null;
     mockTemplates.value = [];
 
     // Clear call history and isolate the composable mock implementations.
@@ -215,6 +227,7 @@ describe('App', () => {
       mockDeleteItem,
       mockDuplicateItem,
       mockSetCategoryPacked,
+      mockGetPackingBatchEventVersion,
       mockUndoPackingChange,
       mockRedoPackingChange,
       mockLoadTemplates,
@@ -226,6 +239,7 @@ describe('App', () => {
     ])
       mock.mockReset();
     mockInitialize.mockResolvedValue(undefined);
+    mockGetPackingBatchEventVersion.mockImplementation(() => mockHistoryEventVersion.value);
 
     // Reset localStorage mock (global setup replaces globalThis.localStorage)
     localStorage.getItem.mockReturnValue(null);
@@ -418,6 +432,11 @@ describe('App', () => {
     it('shows the completion overlay only when redo completes the checklist', async () => {
       mockCanRedoPackingChange.value = true;
       mockRedoPackingChange.mockImplementationOnce(async () => {
+        mockLastPackingHistoryAction.value = {
+          checklistId: 'cl-1',
+          direction: 'redo',
+          eventVersion: 0,
+        };
         mockItems.value = mockItems.value.map((item) => ({ ...item, isPacked: true }));
         return true;
       });
@@ -477,6 +496,31 @@ describe('App', () => {
     });
 
     // Test Case 6: Should not show the journey for passive completed-state changes
+    it('does not celebrate another checklist completing while redo is pending', async () => {
+      mockCanRedoPackingChange.value = true;
+      let finish;
+      mockRedoPackingChange.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          })
+      );
+      const wrapper = createWrapper();
+      await flushPromises();
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, cancelable: true })
+      );
+      mockItems.value = mockItems.value.map((item) => ({ ...item, isPacked: true }));
+      mockLastPackingHistoryAction.value = {
+        checklistId: 'cl-2',
+        direction: 'redo',
+        eventVersion: 0,
+      };
+      finish(true);
+      await flushPromises();
+      expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(false);
+    });
+
     it('keeps completed initialization and checklist switching silent', async () => {
       mockItems.value = mockItems.value.map((item) => ({ ...item, isPacked: true }));
       setInnerWidth(1280);
@@ -1669,10 +1713,118 @@ describe('App', () => {
   // ---------------------------------------------------------------------------
 
   describe('packing undo', () => {
+    it('does not replace a newer barrier with an earlier delayed undo result', async () => {
+      mockCanUndoPackingChange.value = true;
+      let finish;
+      mockUndoPackingChange.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          })
+      );
+      const wrapper = createWrapper();
+      await flushPromises();
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true })
+      );
+      mockLastPackingHistoryAction.value = {
+        checklistId: 'cl-1',
+        direction: 'undo',
+        eventVersion: 0,
+      };
+      mockSelectedChecklistId.value = 'cl-2';
+      mockHistoryBarrierVersion.value = 1;
+      mockHistoryEventVersion.value = 1;
+      await wrapper.vm.$nextTick();
+      finish(true);
+      await flushPromises();
+      expect(wrapper.find('[data-testid="history-barrier-feedback"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="cross-checklist-history-feedback"]').exists()).toBe(false);
+    });
+
+    it('does not show an outdated batch toast after that batch was undone', async () => {
+      mockCanUndoPackingChange.value = true;
+      let finish;
+      mockSetCategoryPacked.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          })
+      );
+      const wrapper = createWrapper();
+      await flushPromises();
+      wrapper
+        .findComponent({ name: 'ChecklistComponent' })
+        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
+      mockHistoryEventVersion.value = 2;
+      mockGetPackingBatchEventVersion.mockReturnValueOnce(1);
+      finish([{ id: 'item-1', isPacked: true }]);
+      await flushPromises();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
+      expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(false);
+    });
+
+    it('keeps a newer packing toast while an older undo finishes or is busy', async () => {
+      mockCanUndoPackingChange.value = true;
+      let finish;
+      mockUndoPackingChange.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          })
+      );
+      mockSetCategoryPacked.mockResolvedValue([{ id: 'item-1', isPacked: true }]);
+      const wrapper = createWrapper();
+      await flushPromises();
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true })
+      );
+      mockLastPackingHistoryAction.value = {
+        checklistId: 'cl-1',
+        direction: 'undo',
+        eventVersion: 1,
+      };
+      mockHistoryEventVersion.value = 2;
+      mockSelectedChecklistId.value = 'cl-2';
+      await wrapper.vm.$nextTick();
+      await wrapper
+        .findComponent({ name: 'ChecklistComponent' })
+        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
+      await flushPromises();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
+      mockUndoPackingChange.mockResolvedValueOnce(false);
+      await wrapper.get('[data-testid="packing-undo-toast"] button').trigger('click');
+      await flushPromises();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
+      finish(true);
+      await flushPromises();
+      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="cross-checklist-history-feedback"]').exists()).toBe(false);
+    });
+
+    it('announces and dismisses a history barrier', async () => {
+      const wrapper = createWrapper();
+      mockHistoryBarrierVersion.value += 1;
+      await wrapper.vm.$nextTick();
+      const notice = wrapper
+        .findAll('[role="status"]')
+        .find((node) => node.text().includes('storage.historyClearedByChange'));
+      expect(notice).toBeDefined();
+      await notice.get('button').trigger('click');
+      expect(wrapper.text()).not.toContain('storage.historyClearedByChange');
+    });
+
     // Test Case 66: Should offer one-click undo after a category packing change
     it('should apply a category packing change and offer one-click undo', async () => {
       mockSetCategoryPacked.mockResolvedValue([{ id: 'item-1', isPacked: true }]);
-      mockUndoPackingChange.mockResolvedValue(true);
+      mockUndoPackingChange.mockImplementation(async () => {
+        mockLastPackingHistoryAction.value = {
+          checklistId: 'cl-1',
+          direction: 'undo',
+          eventVersion: 0,
+        };
+        return true;
+      });
       mockCanUndoPackingChange.value = true;
       setInnerWidth(1280);
       const wrapper = createWrapper();
