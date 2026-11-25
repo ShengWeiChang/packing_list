@@ -273,9 +273,8 @@ test.describe('Multi-tab sync', () => {
       await renameSelectedChecklist(page, 'Second trip');
       await page.getByTestId('sidebar-checklist-item').filter({ hasText: 'First trip' }).click();
       await page.getByTestId('category-checkbox').first().click();
-      await expect(page.getByTestId('packing-undo-toast')).toBeVisible();
+      await expect(page.getByTestId('category-checkbox').first()).toBeChecked();
       await page.getByTestId('sidebar-checklist-item').filter({ hasText: 'Second trip' }).click();
-      await expect(page.getByTestId('packing-undo-toast')).toBeHidden();
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
       await page.locator('main').evaluate((element) => {
         element.scrollTop = element.scrollHeight;
@@ -302,7 +301,7 @@ test.describe('Multi-tab sync', () => {
       );
       await page.getByTestId('category-checkbox').first().click();
       await expect(page.getByTestId('cross-checklist-history-feedback')).toBeHidden();
-      await expect(page.getByTestId('packing-undo-toast')).toBeVisible();
+      await expect(page.getByTestId('packing-undo-toast')).toHaveCount(0);
     });
 
     test('keeps long Chinese cross-checklist feedback operable at 320px', async ({ page }) => {

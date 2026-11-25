@@ -610,3 +610,26 @@ test('honors reduced motion for inline action expansion', async ({ page }) => {
   await page.keyboard.press('Escape');
   await expect(actions).toHaveCount(0);
 });
+
+test('keeps item hover controls available after confirming an inline name edit', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openFixture(page);
+  const row = page.locator('[data-testid="item-row"][data-item-id="a0"]');
+  const name = row.getByTestId('item-name');
+  await name.hover();
+  await name.click();
+  const input = row.getByTestId('item-edit-input');
+  await input.fill('Renamed item');
+  await input.press('Enter');
+  await expect(name).toHaveText('Renamed item');
+  const bounds = await row.boundingBox();
+  await page.mouse.move(bounds.x + bounds.width * 0.7, bounds.y + bounds.height / 2);
+  const trigger = row.getByTestId('overflow-trigger-item-a0');
+  await expect
+    .poll(() => trigger.evaluate((element) => getComputedStyle(element).opacity))
+    .toBe('1');
+  await trigger.click();
+  await expect(page.getByTestId('overflow-action-copy-item-a0')).toBeVisible();
+});

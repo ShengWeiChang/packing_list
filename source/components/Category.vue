@@ -225,6 +225,7 @@ Created: 2025-09-19
                   :update-item-action="updateItemAction"
                   :retain-draft="retainDraft"
                   :edit-cancelled="editCancelled"
+                  :edit-started="editStarted"
                   @toggle-actions="$emit('toggle-item-actions', $event)"
                   @close-actions="$emit('close-item-actions')"
                   @update:item="(...args) => $emit('update:item', ...args)"
@@ -360,6 +361,7 @@ const props = defineProps({
   commitEditOnBlur: { type: Boolean, default: false },
   retainDraft: { type: Function as PropType<RetainDraft | null>, default: null },
   editCancelled: { type: Function as PropType<EditCancelled | null>, default: null },
+  editStarted: { type: Function as PropType<EditCancelled | null>, default: null },
   saveCategoryEdit: { type: Function as PropType<SaveCategoryEdit | null>, default: null },
   saveItemEdit: { type: Function as PropType<SaveItemEdit | null>, default: null },
   editErrorCode: { type: String as PropType<string | null>, default: null },
@@ -685,6 +687,7 @@ function handleConfirmFocusOut(event: FocusEvent) {
 async function startEdit() {
   cleanupEditingFocus();
   isEditing.value = true;
+  props.editStarted?.('category', props.category.id);
   editSaveFailed.value = false;
   editBaseline = { ...props.category };
   editedName.value = props.category.name;
@@ -729,8 +732,8 @@ async function saveEdit() {
   }
   if (editSaveFailed.value) {
     editSaveFailed.value = false;
-    props.editCancelled?.('category', props.category.id);
   }
+  props.editCancelled?.('category', props.category.id);
   isEditing.value = false;
 }
 

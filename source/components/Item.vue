@@ -30,7 +30,7 @@ Created: 2025-09-19
     @mouseenter="handleMouseEnter"
     @mouseleave="isHovered = false"
     @focusin="handleFocusIn"
-    @focusout="isHovered = false"
+    @focusout="handleFocusOut"
   >
     <div class="flex items-center">
       <label
@@ -415,6 +415,7 @@ const props = defineProps({
   commitEditOnBlur: { type: Boolean, default: false },
   retainDraft: { type: Function as PropType<RetainDraft | null>, default: null },
   editCancelled: { type: Function as PropType<EditCancelled | null>, default: null },
+  editStarted: { type: Function as PropType<EditCancelled | null>, default: null },
   saveItemEdit: { type: Function as PropType<SaveItemEdit | null>, default: null },
   editErrorCode: { type: String as PropType<string | null>, default: null },
   updateItemAction: { type: Function as PropType<UpdateItemAction | null>, default: null },
@@ -659,6 +660,18 @@ function handleFocusIn(event: FocusEvent) {
   }
 }
 
+/** Keep hover feedback when editing focus leaves but the mouse is still on this row. */
+function handleFocusOut(event: FocusEvent) {
+  const next = event.relatedTarget;
+  const keyboardFocusInside =
+    next instanceof Element && itemRoot.value?.contains(next) && next.matches(':focus-visible');
+  const pointerInside =
+    !props.suppressDragHover &&
+    window.matchMedia('(hover: hover)').matches &&
+    itemRoot.value?.matches(':hover');
+  isHovered.value = Boolean(keyboardFocusInside || pointerInside);
+}
+
 /** Open the controlled inline region only after the current edit can finish. */
 async function toggleActions() {
   if (isEditing.value) {
@@ -756,6 +769,7 @@ async function startEdit() {
   }
   cleanupEditingFocus();
   isEditing.value = true;
+  props.editStarted?.('item', props.item.id);
   editSaveFailed.value = false;
   editBaseline = { ...props.item };
   editedName.value = props.item.name;
@@ -834,10 +848,10 @@ async function performSaveEdit() {
   }
   if (editSaveFailed.value) {
     editSaveFailed.value = false;
-    props.editCancelled?.('item', props.item.id);
   }
   if (gestureFinished) await gestureFinished;
   if (editedName.value !== savedDraft) return;
+  props.editCancelled?.('item', props.item.id);
   isEditing.value = false;
 }
 

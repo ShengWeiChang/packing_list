@@ -9,9 +9,15 @@
     "saveFailed": "儲存失敗。你的選擇或草稿仍在，請再試一次。",
     "confirm": "確認",
     "copySuffix": " (複製)",
-    "moreOptions": "更多選項",
-    "packingUpdated": "打包狀態已更新",
-    "undo": "復原"
+    "moreOptions": "更多選項"
+  },
+  "history": {
+    "undo": "復原",
+    "redo": "重做",
+    "interrupted": "操作已變更，請再按一次復原或重做。",
+    "undone": "已復原",
+    "redone": "已重做",
+    "actions": "歷史操作"
   },
   "storage": {
     "mainHeading": "打包清單",

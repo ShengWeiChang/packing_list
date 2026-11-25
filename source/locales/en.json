@@ -9,9 +9,15 @@
     "saveFailed": "Could not save. Your selection or draft is still here; please try again.",
     "confirm": "Confirm",
     "copySuffix": " (Copy)",
-    "moreOptions": "More options",
-    "packingUpdated": "Packing status updated",
-    "undo": "Undo"
+    "moreOptions": "More options"
+  },
+  "history": {
+    "undo": "Undo",
+    "redo": "Redo",
+    "interrupted": "Action changed; try undo or redo again.",
+    "undone": "Undone",
+    "redone": "Redone",
+    "actions": "History actions"
   },
   "storage": {
     "mainHeading": "Packing List",

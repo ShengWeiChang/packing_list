@@ -1,4 +1,4 @@
-import { computed, shallowRef } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 
 /** In-memory history; apply must resolve true only after the change is committed. */
 export function useUndoHistory<T>(
@@ -13,7 +13,7 @@ export function useUndoHistory<T>(
   const undoStack = shallowRef<T[]>([]);
   const redoStack = shallowRef<T[]>([]);
   let revision = 0;
-  let applying = false;
+  const applying = ref(false);
 
   /** Discard all history after an invalidating change. */
   function clear() {
@@ -36,12 +36,12 @@ export function useUndoHistory<T>(
    * @returns {Promise<boolean>} Whether the action committed.
    */
   async function execute(undo: boolean, allowed: () => boolean): Promise<boolean> {
-    if (applying || !allowed()) return false;
+    if (applying.value || !allowed()) return false;
     const source = undo ? undoStack : redoStack;
     const destination = undo ? redoStack : undoStack;
     const entry = source.value.at(-1);
     if (!entry) return false;
-    applying = true;
+    applying.value = true;
     const startedAt = revision;
     let committed = false;
     const isCurrent = () => allowed() && revision === startedAt && source.value.at(-1) === entry;
@@ -56,11 +56,12 @@ export function useUndoHistory<T>(
       await apply(entry, undo, isCurrent, onCommitted);
       return committed;
     } finally {
-      applying = false;
+      applying.value = false;
     }
   }
 
   return {
+    isApplying: computed(() => applying.value),
     canUndo: computed(() => undoStack.value.length > 0),
     canRedo: computed(() => redoStack.value.length > 0),
     clear,

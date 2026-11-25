@@ -566,6 +566,34 @@ describe('Item', () => {
       matches.mockRestore();
     });
 
+    it('keeps hover controls when focus leaves an editor while the pointer remains on the row', async () => {
+      const w = createWrapper();
+      const row = w.get('[data-testid="item-row"]');
+      const matches = vi
+        .spyOn(row.element, 'matches')
+        .mockImplementation((selector) => selector === ':hover');
+      await row.trigger('mouseenter');
+      await row.trigger('focusout');
+      expect(w.findComponent({ name: 'OverflowMenu' }).props('forceVisible')).toBe(true);
+      await row.trigger('mouseleave');
+      expect(w.findComponent({ name: 'OverflowMenu' }).props('forceVisible')).toBe(false);
+      matches.mockRestore();
+    });
+
+    it('does not restore mouse hover on touch-only devices or during drag suppression', async () => {
+      const w = createWrapper();
+      const row = w.get('[data-testid="item-row"]');
+      const matches = vi.spyOn(row.element, 'matches').mockReturnValue(true);
+      window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+      await row.trigger('focusout');
+      expect(w.findComponent({ name: 'OverflowMenu' }).props('forceVisible')).toBe(false);
+      window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+      await w.setProps({ suppressDragHover: true });
+      await row.trigger('focusout');
+      expect(w.findComponent({ name: 'OverflowMenu' }).props('forceVisible')).toBe(false);
+      matches.mockRestore();
+    });
+
     // Test Case 25: Should hide controls on mouseleave
     it('should hide action buttons on mouseleave', async () => {
       const w = createWrapper();

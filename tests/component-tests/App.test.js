@@ -164,7 +164,6 @@ const i18n = createI18n({
         deleteConfirm: 'Are you sure you want to delete this checklist?',
         pleaseCreate: 'Please create a new checklist first',
       },
-      common: { packingUpdated: 'Packing status updated', undo: 'Undo' },
       storage: { historyClearedByChange: 'History was cleared', dismissHistoryNotice: 'Dismiss' },
       category: { defaultName: 'New Category' },
       item: { defaultName: 'New Item' },
@@ -303,6 +302,8 @@ describe('App', () => {
               'selectedTemplateId',
             ],
             emits: [
+              'undo',
+              'redo',
               'toggle-sidebar',
               'create-checklist',
               'select-checklist',
@@ -328,6 +329,7 @@ describe('App', () => {
               'saveItemEdit',
               'retainDraft',
               'editCancelled',
+              'editStarted',
             ],
             emits: [
               'update:checklist',
@@ -513,6 +515,7 @@ describe('App', () => {
       window.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, cancelable: true })
       );
+      await flushPromises();
       mockItems.value = mockItems.value.map((item) => ({ ...item, isPacked: true }));
       mockLastPackingHistoryAction.value = {
         checklistId: 'cl-2',
@@ -1730,6 +1733,7 @@ describe('App', () => {
       window.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true })
       );
+      await flushPromises();
       mockLastPackingHistoryAction.value = {
         checklistId: 'cl-1',
         direction: 'undo',
@@ -1765,58 +1769,6 @@ describe('App', () => {
       await flushPromises();
       expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
       expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(false);
-    });
-
-    it('keeps a newer packing toast while an older undo finishes or is busy', async () => {
-      mockCanUndoPackingChange.value = true;
-      let finish;
-      mockUndoPackingChange.mockImplementationOnce(
-        () =>
-          new Promise((resolve) => {
-            finish = resolve;
-          })
-      );
-      mockSetCategoryPacked.mockResolvedValue([{ id: 'item-1', isPacked: true }]);
-      const wrapper = createWrapper();
-      await flushPromises();
-      window.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true })
-      );
-      mockLastPackingHistoryAction.value = {
-        checklistId: 'cl-1',
-        direction: 'undo',
-        eventVersion: 1,
-      };
-      mockHistoryEventVersion.value = 2;
-      mockSelectedChecklistId.value = 'cl-2';
-      await wrapper.vm.$nextTick();
-      await wrapper
-        .findComponent({ name: 'ChecklistComponent' })
-        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
-      await flushPromises();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
-      mockUndoPackingChange.mockResolvedValueOnce(false);
-      await wrapper.get('[data-testid="packing-undo-toast"] button').trigger('click');
-      await flushPromises();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
-      finish(true);
-      await flushPromises();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
-      expect(wrapper.find('[data-testid="cross-checklist-history-feedback"]').exists()).toBe(false);
-    });
-
-    it('dismisses the packing toast when a newer action changes history', async () => {
-      mockCanUndoPackingChange.value = true;
-      mockSetCategoryPacked.mockResolvedValue([{ id: 'item-1', isPacked: true }]);
-      const wrapper = createWrapper();
-      await wrapper
-        .findComponent({ name: 'ChecklistComponent' })
-        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
-      await flushPromises();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
-      mockHistoryEventVersion.value += 1;
-      await wrapper.vm.$nextTick();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
     });
 
     it('does not route global undo into the checklist while a template editor is open', async () => {
@@ -1872,6 +1824,7 @@ describe('App', () => {
       const afterSave = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
       window.dispatchEvent(afterSave);
       expect(afterSave.defaultPrevented).toBe(true);
+      await flushPromises();
       expect(mockUndoPackingChange).toHaveBeenCalledOnce();
     });
 
@@ -1904,7 +1857,169 @@ describe('App', () => {
       const key = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
       window.dispatchEvent(key);
       expect(key.defaultPrevented).toBe(true);
+      await flushPromises();
       expect(mockUndoPackingChange).toHaveBeenCalledOnce();
+    });
+
+    it('keeps history blocked after a save until the editor actually closes', async () => {
+      mockCanUndoPackingChange.value = true;
+      const wrapper = createWrapper();
+      const checklist = wrapper.findComponent({ name: 'ChecklistComponent' });
+      const item = {
+        id: 'item-1',
+        name: 'Hat',
+        categoryId: 'cat-1',
+        checklistId: 'cl-1',
+        quantity: 1,
+        order: 0,
+        isPacked: false,
+        isPending: false,
+      };
+      checklist.props('editStarted')('item', item.id);
+      mockUpdateItem.mockResolvedValueOnce({ ...item, name: 'Cap' });
+      await checklist.props('saveItemEdit')({ ...item, name: 'Cap' }, item);
+      const duringEdit = new KeyboardEvent('keydown', {
+        key: 'z',
+        ctrlKey: true,
+        cancelable: true,
+      });
+      window.dispatchEvent(duringEdit);
+      expect(duringEdit.defaultPrevented).toBe(false);
+      expect(mockUndoPackingChange).not.toHaveBeenCalled();
+      checklist.props('editCancelled')('item', item.id);
+      const afterEdit = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+      window.dispatchEvent(afterEdit);
+      expect(afterEdit.defaultPrevented).toBe(true);
+      await flushPromises();
+      expect(mockUndoPackingChange).toHaveBeenCalledOnce();
+    });
+
+    it('does not dismiss a newer barrier after a delayed redo finishes', async () => {
+      setInnerWidth(1280);
+      mockCanRedoPackingChange.value = true;
+      let finish;
+      mockRedoPackingChange.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          })
+      );
+      const wrapper = createWrapper();
+      await flushPromises();
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, cancelable: true })
+      );
+      await flushPromises();
+      mockLastPackingHistoryAction.value = {
+        checklistId: 'cl-1',
+        direction: 'redo',
+        eventVersion: 0,
+      };
+      mockHistoryEventVersion.value = 1;
+      mockHistoryBarrierVersion.value = 1;
+      await wrapper.vm.$nextTick();
+      finish(true);
+      await flushPromises();
+      expect(wrapper.find('[data-testid="history-barrier-feedback"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="history-result"]').exists()).toBe(false);
+    });
+
+    it('replaces the success notice with a subsequent external history barrier', async () => {
+      setInnerWidth(1280);
+      mockCanUndoPackingChange.value = true;
+      mockUndoPackingChange.mockImplementation(async () => {
+        mockLastPackingHistoryAction.value = {
+          checklistId: 'cl-1',
+          direction: 'undo',
+          eventVersion: mockHistoryEventVersion.value,
+        };
+        return true;
+      });
+      const wrapper = createWrapper();
+      await flushPromises();
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true })
+      );
+      await flushPromises();
+      expect(wrapper.find('[data-testid="history-result"]').exists()).toBe(true);
+      mockHistoryBarrierVersion.value += 1;
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('[data-testid="history-result"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="history-barrier-feedback"]').exists()).toBe(true);
+    });
+
+    it('replaces an older history barrier when a later undo succeeds', async () => {
+      setInnerWidth(1280);
+      mockCanUndoPackingChange.value = true;
+      mockUndoPackingChange.mockImplementation(async () => {
+        mockLastPackingHistoryAction.value = {
+          checklistId: 'cl-1',
+          direction: 'undo',
+          eventVersion: mockHistoryEventVersion.value,
+        };
+        return true;
+      });
+      const wrapper = createWrapper();
+      await flushPromises();
+      mockHistoryBarrierVersion.value += 1;
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('[data-testid="history-barrier-feedback"]').exists()).toBe(true);
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true })
+      );
+      await flushPromises();
+      expect(wrapper.find('[data-testid="history-barrier-feedback"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="history-result"]').exists()).toBe(true);
+    });
+
+    it('waits for a button history action before running the next keyboard shortcut', async () => {
+      mockCanUndoPackingChange.value = true;
+      let finish;
+      mockUndoPackingChange
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              finish = resolve;
+            })
+        )
+        .mockResolvedValueOnce(true);
+      const wrapper = createWrapper();
+      await flushPromises();
+      wrapper.findComponent({ name: 'Sidebar' }).vm.$emit('undo');
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true })
+      );
+      await flushPromises();
+      expect(mockUndoPackingChange).toHaveBeenCalledTimes(1);
+      finish(true);
+      await flushPromises();
+      expect(mockUndoPackingChange).toHaveBeenCalledTimes(2);
+    });
+
+    it('explains when a newer action interrupts a queued shortcut', async () => {
+      setInnerWidth(1280);
+      mockCanUndoPackingChange.value = true;
+      let finish;
+      mockUpdateItem
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              finish = resolve;
+            })
+        )
+        .mockResolvedValueOnce(null);
+      const wrapper = createWrapper();
+      await flushPromises();
+      const checklist = wrapper.findComponent({ name: 'ChecklistComponent' });
+      checklist.vm.$emit('update:item', { id: 'item-1', name: 'First' });
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true })
+      );
+      checklist.vm.$emit('update:item', { id: 'item-1', name: 'Second' });
+      finish({ id: 'item-1', name: 'First' });
+      await flushPromises();
+      expect(mockUndoPackingChange).not.toHaveBeenCalled();
+      expect(wrapper.get('[data-testid="history-result"]').text()).toContain('history.interrupted');
     });
 
     it('announces and dismisses a history barrier', async () => {
@@ -1919,61 +2034,18 @@ describe('App', () => {
       expect(wrapper.text()).not.toContain('storage.historyClearedByChange');
     });
 
-    // Test Case 66: Should offer one-click undo after a category packing change
-    it('should apply a category packing change and offer one-click undo', async () => {
+    // Category packing changes do not produce a contextual Undo notice.
+    it('applies a category packing change without a contextual undo notice', async () => {
       mockSetCategoryPacked.mockResolvedValue([{ id: 'item-1', isPacked: true }]);
-      mockUndoPackingChange.mockImplementation(async () => {
-        mockLastPackingHistoryAction.value = {
-          checklistId: 'cl-1',
-          direction: 'undo',
-          eventVersion: 0,
-        };
-        return true;
-      });
       mockCanUndoPackingChange.value = true;
-      setInnerWidth(1280);
       const wrapper = createWrapper();
-
       await wrapper
         .findComponent({ name: 'ChecklistComponent' })
         .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
       await flushPromises();
-
       expect(mockSetCategoryPacked).toHaveBeenCalledWith('cat-1', true);
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
-
-      mockCanUndoPackingChange.value = false;
-      await wrapper.vm.$nextTick();
       expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
-
-      mockCanUndoPackingChange.value = true;
-      await wrapper
-        .findComponent({ name: 'ChecklistComponent' })
-        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
-      await flushPromises();
-      const undoToast = wrapper.get('[data-testid="packing-undo-toast"]');
-      await undoToast.get('button').trigger('click');
-      await flushPromises();
-
-      expect(mockUndoPackingChange).toHaveBeenCalledOnce();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
-
-      let resolveStaleBatch;
-      mockSetCategoryPacked.mockReturnValueOnce(
-        new Promise((resolve) => {
-          resolveStaleBatch = resolve;
-        })
-      );
-      mockSelectedChecklistId.value = 'cl-1';
-      void wrapper
-        .findComponent({ name: 'ChecklistComponent' })
-        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: false });
-      mockSelectedChecklistId.value = 'cl-2';
-      resolveStaleBatch([{ id: 'item-1', isPacked: false }]);
-      await flushPromises();
-
-      expect(mockCanUndoPackingChange.value).toBe(true);
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="history-result"]').exists()).toBe(false);
     });
 
     // Test Case 67: Should preserve native undo inside an input
@@ -2026,141 +2098,6 @@ describe('App', () => {
       expect(mockRedoPackingChange).toHaveBeenCalledOnce();
       input.remove();
       wrapper.unmount();
-    });
-
-    // Test Case 68: Should defer the complete undo window until the completion overlay closes
-    it('should defer the complete undo window until the completion overlay closes', async () => {
-      vi.useFakeTimers();
-      mockCanUndoPackingChange.value = true;
-      mockCategories.value = [
-        { id: 'cat-1', name: 'Clothing', checklistId: 'cl-1', order: 0 },
-        { id: 'cat-2', name: 'Documents', checklistId: 'cl-1', order: 1 },
-      ];
-      mockItems.value = [
-        { id: 'item-1', name: 'Shirt', categoryId: 'cat-1', isPacked: false, order: 0 },
-        { id: 'item-2', name: 'Passport', categoryId: 'cat-2', isPacked: false, order: 0 },
-      ];
-      mockSetCategoryPacked.mockImplementation(async (categoryId) => {
-        mockItems.value = mockItems.value.map((item) =>
-          item.categoryId === categoryId ? { ...item, isPacked: true } : item
-        );
-        return mockItems.value.filter((item) => item.categoryId === categoryId);
-      });
-      setInnerWidth(1280);
-      const focusTrigger = document.createElement('button');
-      document.body.append(focusTrigger);
-      const wrapper = createWrapper();
-
-      await wrapper
-        .findComponent({ name: 'ChecklistComponent' })
-        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
-      await flushPromises();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
-
-      focusTrigger.focus();
-      await wrapper
-        .findComponent({ name: 'ChecklistComponent' })
-        .vm.$emit('set-category-packed', { categoryId: 'cat-2', isPacked: true });
-      await flushPromises();
-
-      expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(true);
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
-      expect(wrapper.element.inert).toBe(true);
-      expect(document.body.style.overflow).toBe('hidden');
-
-      await wrapper.findComponent({ name: 'PackingCompletionOverlay' }).vm.$emit('close');
-      await flushPromises();
-
-      expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(false);
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
-      expect(wrapper.element.inert).toBe(false);
-      expect(document.body.style.overflow).toBe('');
-      expect(document.activeElement).toBe(focusTrigger);
-
-      vi.advanceTimersByTime(4999);
-      await wrapper.vm.$nextTick();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
-      vi.advanceTimersByTime(1);
-      await wrapper.vm.$nextTick();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
-      focusTrigger.remove();
-    });
-
-    it('does not reopen a deferred packing toast when history changes during completion', async () => {
-      mockCanUndoPackingChange.value = true;
-      mockItems.value = [
-        { id: 'item-1', name: 'Hat', categoryId: 'cat-1', isPacked: false, order: 0 },
-      ];
-      mockSetCategoryPacked.mockImplementation(async () => {
-        mockItems.value = mockItems.value.map((item) => ({ ...item, isPacked: true }));
-        return mockItems.value;
-      });
-      const wrapper = createWrapper();
-      await wrapper
-        .findComponent({ name: 'ChecklistComponent' })
-        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
-      await flushPromises();
-      expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(true);
-      mockHistoryEventVersion.value += 1;
-      await wrapper.findComponent({ name: 'PackingCompletionOverlay' }).vm.$emit('close');
-      await flushPromises();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
-    });
-
-    // Test Case 69: Should restart a visible category Undo window after item completion closes
-    it('should defer an existing category undo window when a final item opens completion', async () => {
-      vi.useFakeTimers();
-      mockCanUndoPackingChange.value = true;
-      mockCategories.value = [
-        { id: 'cat-1', name: 'Clothing', checklistId: 'cl-1', order: 0 },
-        { id: 'cat-2', name: 'Documents', checklistId: 'cl-1', order: 1 },
-      ];
-      mockItems.value = [
-        { id: 'item-1', name: 'Shirt', categoryId: 'cat-1', isPacked: false, order: 0 },
-        { id: 'item-2', name: 'Passport', categoryId: 'cat-2', isPacked: false, order: 0 },
-      ];
-      mockSetCategoryPacked.mockImplementation(async (categoryId) => {
-        mockItems.value = mockItems.value.map((item) =>
-          item.categoryId === categoryId ? { ...item, isPacked: true } : item
-        );
-        return mockItems.value.filter((item) => item.categoryId === categoryId);
-      });
-      mockUpdateItem.mockImplementation(async (updatedItem) => {
-        mockItems.value = mockItems.value.map((item) =>
-          item.id === updatedItem.id ? { ...item, ...updatedItem } : item
-        );
-        return updatedItem;
-      });
-      setInnerWidth(1280);
-      const wrapper = createWrapper();
-
-      await wrapper
-        .findComponent({ name: 'ChecklistComponent' })
-        .vm.$emit('set-category-packed', { categoryId: 'cat-1', isPacked: true });
-      await flushPromises();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
-
-      vi.advanceTimersByTime(4000);
-      await wrapper.findComponent({ name: 'ChecklistComponent' }).vm.$emit('update:item', {
-        ...mockItems.value.find((item) => item.id === 'item-2'),
-        isPacked: true,
-      });
-      await flushPromises();
-
-      expect(wrapper.findComponent({ name: 'PackingCompletionOverlay' }).exists()).toBe(true);
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
-      vi.advanceTimersByTime(1000);
-
-      await wrapper.findComponent({ name: 'PackingCompletionOverlay' }).vm.$emit('close');
-      await flushPromises();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
-
-      vi.advanceTimersByTime(4999);
-      await wrapper.vm.$nextTick();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(true);
-      vi.advanceTimersByTime(1);
-      await wrapper.vm.$nextTick();
-      expect(wrapper.find('[data-testid="packing-undo-toast"]').exists()).toBe(false);
     });
   });
 });

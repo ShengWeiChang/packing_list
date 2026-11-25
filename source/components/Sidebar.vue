@@ -24,25 +24,47 @@ Created: 2025-09-19
           ],
     ]"
     :data-expanded="isExpanded || isMobile"
+    :data-sidebar-desktop="!isMobile ? '' : undefined"
     aria-label="Sidebar"
   >
-    <!-- Toggle Button -->
-    <button
-      ref="sidebarToggle"
-      class="touch-target mb-2 flex w-full items-center rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
-      :aria-label="$t('sidebar.toggle')"
-      data-sidebar-control
-      data-testid="sidebar-toggle"
-      @click="$emit('toggle-sidebar')"
-    >
-      <div class="shrink-0 p-3">
-        <AppIcon
-          class="text-secondary"
-          name="menu"
-          size="navigation"
+    <div class="mb-2 flex items-center">
+      <!-- Toggle Button -->
+      <button
+        ref="sidebarToggle"
+        class="touch-target mb-2 flex w-full items-center rounded-lg hover:bg-interactive-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-interactive-focus"
+        :class="'!mb-0 !w-auto'"
+        :aria-label="$t('sidebar.toggle')"
+        data-sidebar-control
+        data-testid="sidebar-toggle"
+        @click="$emit('toggle-sidebar')"
+      >
+        <div class="shrink-0 p-3">
+          <AppIcon
+            class="text-secondary"
+            name="menu"
+            size="navigation"
+          />
+        </div>
+      </button>
+
+      <div
+        v-if="!isMobile"
+        ref="historyControlsRoot"
+        :inert="!isExpanded || !historyControlsInteractive || undefined"
+        :aria-hidden="!isExpanded || !historyControlsInteractive ? 'true' : undefined"
+        data-sidebar-history-reveal
+        @transitionend="handleHistoryTransitionEnd"
+      >
+        <HistoryControls
+          :can-undo="canUndo"
+          :can-redo="canRedo"
+          :blocked="historyBlocked"
+          :editing="editing"
+          @undo="$emit('undo')"
+          @redo="$emit('redo')"
         />
       </div>
-    </button>
+    </div>
 
     <!-- New Checklist Button -->
     <button
@@ -77,13 +99,13 @@ Created: 2025-09-19
       data-testid="sidebar-checklists-scrollport"
     >
       <div class="flex flex-col">
-        <h1 class="mb-2 overflow-hidden whitespace-nowrap px-2 text-2xl font-bold md:text-xl">
+        <h1
+          class="mb-2 overflow-hidden whitespace-nowrap pl-4 pr-2 text-2xl font-bold md:text-xl"
+          :class="isMobile ? '!pl-5' : ''"
+        >
           <span
             class="inline-block text-primary transition-all duration-300 ease-in-out"
-            :class="{
-              '-translate-x-4 opacity-0': !isExpanded && !isMobile,
-              'translate-x-0 opacity-100 delay-150': isExpanded || isMobile,
-            }"
+            data-sidebar-heading
           >
             {{ $t('sidebar.title') }}
           </span>
@@ -334,6 +356,7 @@ import { useTouchLayout } from '../composables/useTouchLayout';
 import type { ChecklistDTO } from '../models/contracts';
 import AppIcon from './AppIcon.vue';
 import type { DragStart, TemplateView } from './componentContracts';
+import HistoryControls from './HistoryControls.vue';
 import OverflowMenu from './OverflowMenu.vue';
 import { draggableFor, useDraggableControls } from './typedDraggable';
 
@@ -360,6 +383,10 @@ const checklistDraggable = useDraggableControls();
 
 // Props
 const props = defineProps({
+  canUndo: Boolean,
+  canRedo: Boolean,
+  historyBlocked: Boolean,
+  editing: Boolean,
   isExpanded: {
     type: Boolean,
     required: true,
@@ -392,6 +419,8 @@ const props = defineProps({
 
 // Emits
 const emit = defineEmits<{
+  undo: [];
+  redo: [];
   'toggle-sidebar': [];
   'create-checklist': [];
   'select-checklist': [id: string];
@@ -421,6 +450,9 @@ const languageButtonRef = ref<HTMLButtonElement | null>(null);
 
 // Only fully visible entries remain interactive while the narrow rail is clipped.
 const sidebarToggle = ref<HTMLButtonElement | null>(null);
+const historyControlsRoot = ref<HTMLElement | null>(null);
+const historyControlsInteractive = ref(props.isExpanded);
+let historyRevealTimer: number | undefined;
 const checklistScrollport = ref<HTMLElement | null>(null);
 const visibleCollapsedChecklistIds = ref(new Set<string>());
 let checklistResizeObserver: ResizeObserver | undefined;
@@ -698,6 +730,49 @@ function scheduleCollapsedChecklistUpdate() {
   checklistResizeFrame = window.requestAnimationFrame(update);
 }
 
+/** Only make the controls focusable once their shared label fade is complete. */
+function handleHistoryTransitionEnd(event: TransitionEvent) {
+  if (
+    event.target === event.currentTarget &&
+    event.propertyName === 'opacity' &&
+    props.isExpanded
+  ) {
+    window.clearTimeout(historyRevealTimer);
+    historyControlsInteractive.value = true;
+  }
+}
+
+/** Handle cancelled or absent transitions without enabling a transparent control. */
+function checkHistoryVisibility() {
+  if (!props.isExpanded || historyControlsInteractive.value) return;
+  const control = historyControlsRoot.value;
+  if (control && Number(window.getComputedStyle(control).opacity) >= 1) {
+    historyControlsInteractive.value = true;
+  } else {
+    historyRevealTimer = window.setTimeout(checkHistoryVisibility, 50);
+  }
+}
+
+watch(
+  () => props.isExpanded,
+  (expanded) => {
+    window.clearTimeout(historyRevealTimer);
+    historyControlsInteractive.value = false;
+    if (expanded) {
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+        historyControlsInteractive.value = true;
+      } else {
+        historyRevealTimer = window.setTimeout(checkHistoryVisibility, 350);
+      }
+    } else if (
+      document.activeElement?.closest('[data-testid="history-undo"], [data-testid="history-redo"]')
+    ) {
+      sidebarToggle.value?.focus({ preventScroll: true });
+    }
+  },
+  { flush: 'sync' }
+);
+
 watch(
   () => [props.isExpanded, props.isMobile, draggableChecklists.value] as const,
   () => void nextTick(updateVisibleCollapsedChecklists),
@@ -724,6 +799,7 @@ onMounted(() => {
 
 // Clean up event listeners
 onUnmounted(() => {
+  window.clearTimeout(historyRevealTimer);
   checklistResizeObserver?.disconnect();
   window.removeEventListener('resize', scheduleCollapsedChecklistUpdate);
   if (checklistResizeFrame !== undefined) window.cancelAnimationFrame(checklistResizeFrame);
@@ -736,12 +812,16 @@ onUnmounted(() => {
 
 <style scoped>
 [data-sidebar-label],
-[data-sidebar-checklist-label] {
+[data-sidebar-heading],
+[data-sidebar-checklist-label],
+[data-sidebar-history-reveal] {
   opacity: 0;
   transition: opacity 150ms ease-in-out;
 }
 aside[data-expanded='true'] [data-sidebar-label],
-aside[data-expanded='true'] [data-sidebar-checklist-label] {
+aside[data-expanded='true'] [data-sidebar-heading],
+aside[data-expanded='true'] [data-sidebar-checklist-label],
+aside[data-expanded='true'] [data-sidebar-history-reveal] {
   opacity: 1;
   transition-delay: 150ms;
 }
@@ -754,6 +834,23 @@ aside[data-expanded='false'] [data-testid='sidebar-checklists-draggable'] > li >
 aside[data-expanded='false'] [data-testid='sidebar-checklists-draggable'] > li > div > button {
   min-width: min(44px, 100%);
 }
+/* Keep the same left edge for the initial and full name during sidebar transitions. */
+aside[data-sidebar-desktop] [data-sidebar-initial] {
+  right: auto;
+  justify-content: flex-start;
+  width: 48px;
+  padding-left: 16px;
+}
+aside[data-sidebar-desktop][data-expanded='true'] [data-sidebar-initial] {
+  left: -4px;
+}
+aside[data-sidebar-desktop][data-expanded='true'] [data-sidebar-checklist-label] {
+  transform: translateX(-4px);
+}
+aside[data-sidebar-desktop][data-expanded='false'] [data-sidebar-checklist-label] {
+  transform: none;
+}
+
 [data-sidebar-initial] {
   opacity: 1;
   transition: opacity 150ms ease-in-out 300ms;
@@ -833,6 +930,16 @@ aside[data-expanded='true'] [data-sidebar-initial] {
 }
 
 @media (min-width: 600px) and (any-pointer: coarse), (min-width: 600px) and (hover: none) {
+  aside[data-sidebar-desktop][data-expanded='true'] [data-sidebar-initial] {
+    left: 0;
+  }
+  aside[data-sidebar-desktop][data-expanded='true'] [data-sidebar-checklist-label] {
+    max-width: max(0px, calc(100% - 3rem - 4px));
+  }
+  aside[data-sidebar-desktop][data-expanded='true'] [data-sidebar-checklist-label],
+  aside[data-sidebar-desktop][data-expanded='false'] [data-sidebar-checklist-label] {
+    transform: translateX(4px);
+  }
   [data-testid='sidebar-checklists-draggable'] > li > div {
     padding-inline: 0;
   }

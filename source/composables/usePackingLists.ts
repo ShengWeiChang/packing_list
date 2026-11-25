@@ -965,6 +965,7 @@ export function usePackingLists() {
     canUndoPackingChange,
     canRedoPackingChange,
     clearPackingHistory,
+    historyBusy: packingHistory.isApplying,
     historyBarrierVersion: readonly(historyBarrierVersion),
     historyEventVersion: readonly(historyEventVersion),
     lastPackingHistoryAction: readonly(lastPackingHistoryAction),

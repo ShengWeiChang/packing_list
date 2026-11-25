@@ -43,7 +43,9 @@ import {
   Minus,
   Pencil,
   Plus,
+  Redo2,
   Trash2,
+  Undo2,
 } from '@lucide/vue';
 import type { PropType } from 'vue';
 import { computed, useAttrs } from 'vue';
@@ -55,6 +57,8 @@ import { computed, useAttrs } from 'vue';
 const icons = {
   add: Plus,
   back: ArrowLeft,
+  undo: Undo2,
+  redo: Redo2,
   clipboard: Clipboard,
   clipboardCheck: ClipboardCheck,
   collapse: ChevronUp,
@@ -113,6 +117,8 @@ const props = defineProps({
         'language',
         'menu',
         'more',
+        'undo',
+        'redo',
         'saveTemplate',
         'templateLibrary',
       ].includes(value),

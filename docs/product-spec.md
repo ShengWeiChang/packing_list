@@ -268,18 +268,18 @@ Checklist, Category, and Item are the three core data entities of the app. Below
   - Cross-category moves: Source/target category completion updates correctly; checklist total progress stays correct.
   - Completion journey: Only a successful local incomplete-to-complete transition for a non-empty checklist opens the overlay; skip, narrow viewport, and reduced-motion paths remain usable.
 
-#### Packing Undo and Redo
+#### Undo and Redo
 
-- Purpose: Recover category-wide packing mistakes without rolling back unrelated content edits.
+- Purpose: Recover checklist, category, and item changes during the current browser tab session.
 - Key features:
-  - Each category-wide pack/unpack action creates one history entry containing only `isPacked` and `isPending` changes.
-  - Individual item packed/pending changes are not recorded; making one after an undo clears the redo entry so it cannot overwrite the newer choice.
-  - `Ctrl+Z` / `Cmd+Z` undoes and `Ctrl+Shift+Z` / `Cmd+Shift+Z` redoes when focus is outside editable controls; text inputs retain native browser undo.
-  - Category-wide changes show a five-second status notice with an Undo button. When that action opens the completion journey, or a later individual item completes the checklist while the notice is visible, the notice waits until the overlay closes and then receives a fresh five-second window. `Escape` continues to cancel inline name editing without saving.
-  - History is limited to 50 entries, stays in memory for the current tab, and clears when switching checklists, deleting items/categories, or receiving external storage changes.
+  - Creation, duplication, deletion, edits, packing, pending, and reordering each form one history action; a category batch is one action.
+  - Desktop controls appear beside the sidebar toggle when expanded and hide when collapsed; keyboard shortcuts remain available. Mobile controls appear in the topbar, which hides while scrolling down and returns when scrolling up.
+  - `Ctrl+Z` / `Cmd+Z` undoes; `Ctrl+Shift+Z` / `Cmd+Shift+Z` or `Ctrl+Y` redoes. Text inputs retain native undo, and active drafts and dialogs block global history actions.
+  - The controls show disabled states and brief feedback after undo or redo.
+  - Up to 50 actions remain in memory across checklists in the same tab. Reloading, closing the tab, external storage changes, or committed template changes clear history.
 - Validation:
-  - Undoing a category-wide change restores the previous mixed packed/pending state in one action; redo reapplies it.
-  - Undo changes only packing fields, preserving later name, quantity, order, and category edits on items that still exist.
+  - Restoring a deleted checklist or category restores its associated records and ordering as one action.
+  - Storage conflicts are checked atomically before history changes are applied; unrelated fields are preserved.
 
 #### Responsive Design
 
@@ -592,7 +592,7 @@ The application uses a centralized color management system with semantic naming:
 - Short command menus are teleported outside card transforms, fit above/below their trigger in the visual viewport, and scroll internally when space is limited. If neither side can fit a full command, the menu may overlap the trigger to make commands accessible. Keyboard opening focuses the first command; Escape restores the trigger.
 - Desktop: Inline sticky sidebar that can collapse to an icon-only mode; manual collapse/expand is persisted in localStorage.
 - On desktop and tablet, a collapsed sidebar cannot scroll; only complete visible checklist rows remain interactive. Expanding restores the full, vertically scrollable list; collapse returns the list to the top.
-- The new-checklist, template, and language labels use the same fade timing. Collapsed checklist initials remain fully visible and centered; full names fade at their left origin before the centered initials appear after the width transition.
+- The new-checklist, template, and language labels use the same fade timing. Collapsed checklist initials remain fully visible and share a left edge with the heading and full names; full names fade before the initials appear after the width transition.
 - Template and language options use the command overflow menu typography, padding, and touch row height. Settings popovers retain a readable width beside a collapsed sidebar, constrain their height, and allow internal scrolling. Escape closes the open settings popover and restores its trigger before a second Escape closes a drawer.
 
 #### Content Layout
