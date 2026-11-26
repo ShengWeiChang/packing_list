@@ -64,6 +64,48 @@ test('keeps a failed item draft when undo is pressed after focus leaves the edit
   });
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto('/');
+  await page.evaluate(() => {
+    window.draftFocusTrace = [];
+    document.addEventListener(
+      'focusin',
+      (event) => {
+        window.draftFocusTrace.push({
+          type: 'focusin',
+          target: event.target?.getAttribute('data-testid') || event.target?.tagName,
+        });
+      },
+      true
+    );
+    document.addEventListener(
+      'beforeinput',
+      (event) => {
+        window.draftFocusTrace.push({
+          type: 'beforeinput',
+          inputType: event.inputType,
+          target: event.target?.getAttribute('data-testid') || event.target?.tagName,
+        });
+      },
+      true
+    );
+    window.addEventListener(
+      'keydown',
+      (event) => {
+        if (!event.ctrlKey || event.key.toLowerCase() !== 'z') return;
+        const entry = {
+          type: 'keydown',
+          target: event.target?.getAttribute('data-testid') || event.target?.tagName,
+          active:
+            document.activeElement?.getAttribute('data-testid') || document.activeElement?.tagName,
+          prevented: false,
+        };
+        setTimeout(() => {
+          entry.prevented = event.defaultPrevented;
+        }, 0);
+        window.draftFocusTrace.push(entry);
+      },
+      true
+    );
+  });
   await page.getByTestId('add-item-button').first().click();
   const draft = page.getByTestId('item-edit-input').first();
   await expect(draft).toBeVisible();
@@ -93,7 +135,22 @@ test('keeps a failed item draft when undo is pressed after focus leaves the edit
   await expect(draft).toHaveValue('Unsaved hat');
   await expect(sidebarToggle).toBeFocused();
   await page.keyboard.press('Control+z');
-  await expect(draft).toHaveValue('Unsaved hat');
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 0)));
+  const focusTrace = await page.evaluate(() => window.draftFocusTrace);
+  const shortcut = focusTrace.findLast((event) => event.type === 'keydown');
+  try {
+    expect(shortcut, JSON.stringify(focusTrace)).toMatchObject({
+      target: 'sidebar-toggle',
+      active: 'sidebar-toggle',
+      prevented: true,
+    });
+    await expect(draft).toHaveValue('Unsaved hat');
+  } catch (error) {
+    const latestTrace = await page.evaluate(() => window.draftFocusTrace);
+    throw new Error(`Draft shortcut failed; events: ${JSON.stringify(latestTrace)}`, {
+      cause: error,
+    });
+  }
   await draft.focus();
   await page.evaluate(
     () =>

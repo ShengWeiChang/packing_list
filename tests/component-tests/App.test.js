@@ -1880,7 +1880,7 @@ describe('App', () => {
       const retry = save({ ...original, name: 'Unsaved draft' }, original);
       const key = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
       window.dispatchEvent(key);
-      expect(key.defaultPrevented).toBe(false);
+      expect(key.defaultPrevented).toBe(true);
       expect(mockUndoPackingChange).not.toHaveBeenCalled();
       expect(checklist.exists()).toBe(true);
       finish({ ...original, name: 'Unsaved draft' });
@@ -1950,8 +1950,27 @@ describe('App', () => {
         cancelable: true,
       });
       window.dispatchEvent(duringEdit);
-      expect(duringEdit.defaultPrevented).toBe(false);
+      expect(duringEdit.defaultPrevented).toBe(true);
       expect(mockUndoPackingChange).not.toHaveBeenCalled();
+      const repeated = new KeyboardEvent('keydown', {
+        key: 'z',
+        ctrlKey: true,
+        repeat: true,
+        cancelable: true,
+      });
+      window.dispatchEvent(repeated);
+      expect(repeated.defaultPrevented).toBe(true);
+      const nativeInput = document.createElement('input');
+      document.body.append(nativeInput);
+      const nativeUndo = new KeyboardEvent('keydown', {
+        key: 'z',
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      });
+      nativeInput.dispatchEvent(nativeUndo);
+      expect(nativeUndo.defaultPrevented).toBe(false);
+      nativeInput.remove();
       checklist.props('editCancelled')('item', item.id);
       const afterEdit = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
       window.dispatchEvent(afterEdit);

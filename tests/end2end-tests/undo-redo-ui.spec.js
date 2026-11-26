@@ -485,12 +485,25 @@ test('touch scrolling hides and reveals the topbar after closing the drawer', as
   await expect.poll(async () => (await snapshot()).scroll).toBeGreaterThan(first.scroll);
   const second = await snapshot();
   expect(second.offset - first.offset).toBeCloseTo(second.scroll - first.scroll, 0);
-  await client.send('Input.dispatchTouchEvent', {
-    type: 'touchMove',
-    touchPoints: [{ x: 365, y: 668 }],
-  });
-  await expect.poll(async () => (await snapshot()).scroll).toBeLessThan(second.scroll);
-  const reverse = await snapshot();
+  // A small direction change can be absorbed by the browser's touch gesture
+  // threshold. Move progressively while keeping the finger down until the page
+  // actually reverses, then compare the bar against the resulting scroll delta.
+  let reverse = second;
+  for (const y of [666, 674, 682, 690]) {
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: 365, y }],
+    });
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    reverse = await snapshot();
+    if (reverse.scroll < second.scroll) break;
+  }
+  await expect
+    .poll(async () => (await snapshot()).scroll, {
+      message: `Touch did not reverse scrolling: ${JSON.stringify({ first, second })}`,
+    })
+    .toBeLessThan(second.scroll);
+  reverse = await snapshot();
   expect(reverse.offset - second.offset).toBeCloseTo(reverse.scroll - second.scroll, 0);
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await page.evaluate(() => window.scrollTo(0, 0));

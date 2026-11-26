@@ -1319,9 +1319,7 @@ function handleMobileScroll(event: Event) {
  */
 function handlePackingHistoryKeydown(event: KeyboardEvent) {
   if (
-    !isHistoryActionAllowed() ||
     event.isComposing ||
-    event.repeat ||
     event.altKey ||
     (!event.ctrlKey && !event.metaKey) ||
     !['z', 'y'].includes(event.key.toLowerCase()) ||
@@ -1331,6 +1329,18 @@ function handlePackingHistoryKeydown(event: KeyboardEvent) {
     return;
   }
 
+  if (!isHistoryActionAllowed()) {
+    if (
+      !showPackingCompletion.value &&
+      !isDialogVisible.value &&
+      !templateEditing.value &&
+      (activeEditors.value.size > 0 || failedInlineDrafts.size > 0)
+    )
+      event.preventDefault();
+    return;
+  }
+
+  if (event.repeat) return;
   const redo = event.shiftKey || event.key.toLowerCase() === 'y';
   if (
     !(redo ? canRedoPackingChange.value : canUndoPackingChange.value) &&
