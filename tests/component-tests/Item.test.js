@@ -102,7 +102,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('rendering', () => {
-    // Test Case 1: Retain the item name draft until save succeeds.
+    // Retain the item name draft until save succeeds.
+    // Test Case 1: keeps an item name draft on failed save and closes only after a successful retry.
     it('keeps an item name draft on failed save and closes only after a successful retry', async () => {
       const saveItemEdit = vi
         .fn()
@@ -121,6 +122,7 @@ describe('Item', () => {
       expect(w.find('[data-testid="item-edit-input"]').exists()).toBe(false);
       expect(saveItemEdit).toHaveBeenCalledTimes(2);
     });
+    // Test Case 2: releases its draft owner on unmount while a failed edit retry is pending.
     it('releases its draft owner on unmount while a failed edit retry is pending', async () => {
       let finish;
       const saveItemEdit = vi
@@ -148,7 +150,8 @@ describe('Item', () => {
       await flushPromises();
     });
 
-    // Test Case 2: A failed save retains the draft during another item's gesture.
+    // A failed save retains the draft during another item's gesture.
+    // Test Case 3: preserves a failed draft during another item pointer gesture.
     it('preserves a failed draft during another item pointer gesture', async () => {
       const saveItemEdit = vi.fn().mockResolvedValue(null);
       const retainDraft = vi.fn();
@@ -187,7 +190,8 @@ describe('Item', () => {
         list.remove();
       }
     });
-    // Test Cases 3-4: The matching pointer release or cancellation ends the gesture.
+    // The matching pointer release or cancellation ends the gesture.
+    // Test Cases 4–5: releases a held edit after each case.
     it.each(['pointerup', 'pointercancel'])('releases a held edit after %s', async (endType) => {
       const w = createWrapper({ commitEditOnBlur: true });
       const list = document.createElement('div');
@@ -224,20 +228,23 @@ describe('Item', () => {
         list.remove();
       }
     });
-    // Test Case 5: Should display the item name
+    // Should display the item name
+    // Test Case 6: should display the item name.
     it('should display the item name', () => {
       const w = createWrapper();
       expect(w.text()).toContain('Passport');
     });
 
-    // Test Case 6: Should render a checkbox input
+    // Should render a checkbox input
+    // Test Case 7: should render a checkbox input.
     it('should render a checkbox input', () => {
       const w = createWrapper();
       const checkbox = w.get('input[type="checkbox"]');
       expect(checkbox.attributes('type')).toBe('checkbox');
     });
 
-    // Test Case 7: Should check the checkbox when item is packed
+    // Should check the checkbox when item is packed
+    // Test Case 8: should check the checkbox when item is packed.
     it('should check the checkbox when item is packed', () => {
       const w = createWrapper({
         item: createMockItem({ isPacked: true }),
@@ -246,7 +253,8 @@ describe('Item', () => {
       expect(checkbox.element.checked).toBe(true);
     });
 
-    // Test Case 8: Should apply line-through styling when item is packed
+    // Should apply line-through styling when item is packed
+    // Test Case 9: should apply line-through styling when item is packed.
     it('should apply line-through styling when item is packed', () => {
       const w = createWrapper({
         item: createMockItem({ isPacked: true }),
@@ -255,7 +263,8 @@ describe('Item', () => {
       expect(nameSpan.classes()).toContain('line-through');
     });
 
-    // Test Case 9: Should display quantity
+    // Should display quantity
+    // Test Case 10: should display quantity value.
     it('should display quantity value', () => {
       const w = createWrapper({
         item: createMockItem({ quantity: 3 }),
@@ -270,7 +279,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('checkbox interaction', () => {
-    // Test Case 10: Should emit update:item with toggled isPacked
+    // Should emit update:item with toggled isPacked
+    // Test Case 11: should emit.
     it('should emit "update:item" with toggled isPacked when checkbox is clicked', async () => {
       const w = createWrapper();
       const checkbox = w.find('input[type="checkbox"]');
@@ -281,7 +291,8 @@ describe('Item', () => {
       expect(emitted[0][0].isPacked).toBe(true);
     });
 
-    // Test Case 11: Should clear isPending when item becomes packed
+    // Should clear isPending when item becomes packed
+    // Test Case 12: should clear isPending when item becomes packed.
     it('should clear isPending when item becomes packed', async () => {
       const w = createWrapper({
         item: createMockItem({ isPending: true }),
@@ -300,7 +311,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('edit mode', () => {
-    // Test Case 12: Should show input field when item name is clicked
+    // Should show input field when item name is clicked
+    // Test Case 13: should enter edit mode when item name is clicked.
     it('should enter edit mode when item name is clicked', async () => {
       const w = createWrapper();
       const nameSpan = w.get('span[role="button"]');
@@ -313,7 +325,8 @@ describe('Item', () => {
       expect(input.element.selectionEnd).toBe('Passport'.length);
     });
 
-    // Test Case 13: Should save edited name on Enter key
+    // Should save edited name on Enter key
+    // Test Case 14: should save edited name on Enter key.
     it('should save edited name on Enter key', async () => {
       const w = createWrapper();
       await w.find('span[role="button"]').trigger('click');
@@ -327,7 +340,8 @@ describe('Item', () => {
       expect(emitted[0][0].name).toBe('Updated Passport');
     });
 
-    // Test Case 14: Should cancel edit mode on Escape key
+    // Should cancel edit mode on Escape key
+    // Test Case 15: should cancel edit mode on Escape key.
     it('should cancel edit mode on Escape key', async () => {
       const w = createWrapper();
       await w.find('span[role="button"]').trigger('click');
@@ -347,7 +361,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('quantity controls', () => {
-    // Test Case 15: Should increment quantity
+    // Should increment quantity
+    // Test Case 16: should emit.
     it('should emit "update:item" with incremented quantity', async () => {
       const w = createWrapper({
         item: createMockItem({ quantity: 2 }),
@@ -363,7 +378,8 @@ describe('Item', () => {
       expect(emitted[0][0].quantity).toBe(3);
     });
 
-    // Test Case 16: Should decrement quantity
+    // Should decrement quantity
+    // Test Case 17: should emit.
     it('should emit "update:item" with decremented quantity', async () => {
       const w = createWrapper({
         item: createMockItem({ quantity: 3 }),
@@ -379,7 +395,8 @@ describe('Item', () => {
       expect(emitted[0][0].quantity).toBe(2);
     });
 
-    // Test Case 17: Should emit delete:item when quantity is 1 and delete button clicked
+    // Should emit delete:item when quantity is 1 and delete button clicked
+    // Test Case 18: should emit.
     it('should emit "delete:item" when quantity is 1 and delete button is clicked', async () => {
       const w = createWrapper({
         item: createMockItem({ quantity: 1 }),
@@ -400,7 +417,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('pending state', () => {
-    // Test Case 18: Should toggle pending state
+    // Should toggle pending state
+    // Test Case 19: should emit.
     it('should emit "update:item" with toggled isPending', async () => {
       const w = createWrapper();
 
@@ -415,7 +433,8 @@ describe('Item', () => {
       expect(emitted[0][0].isPacked).toBe(false);
     });
 
-    // Test Case 19: Should clear isPacked when item is marked as pending
+    // Should clear isPacked when item is marked as pending
+    // Test Case 20: should clear isPacked when item is marked as pending.
     it('should clear isPacked when item is marked as pending', async () => {
       const w = createWrapper({
         item: createMockItem({ isPacked: true }),
@@ -437,7 +456,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('copy event', () => {
-    // Test Case 20: Should emit copy:item from OverflowMenu
+    // Should emit copy:item from OverflowMenu
+    // Test Case 21: should emit.
     it('should emit "copy:item" when OverflowMenu triggers copy', async () => {
       const w = createWrapper();
       const menu = w.findComponent({ name: 'OverflowMenu' });
@@ -453,7 +473,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('blur save', () => {
-    // Test Case 21: Should save on blur when name is changed
+    // Should save on blur when name is changed
+    // Test Case 22: should emit.
     it('should emit "update:item" on blur with changed name', async () => {
       vi.useFakeTimers();
       const w = createWrapper();
@@ -480,7 +501,8 @@ describe('Item', () => {
       vi.useRealTimers();
     });
 
-    // Test Case 22: Should not save empty name on blur
+    // Should not save empty name on blur
+    // Test Case 23: should not emit.
     it('should not emit "update:item" on blur with empty name', async () => {
       vi.useFakeTimers();
       const w = createWrapper();
@@ -508,7 +530,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('delete from overflow menu', () => {
-    // Test Case 23: Should emit delete:item from OverflowMenu
+    // Should emit delete:item from OverflowMenu
+    // Test Case 24: should emit.
     it('should emit "delete:item" when OverflowMenu triggers delete', async () => {
       const w = createWrapper();
       const menu = w.findComponent({ name: 'OverflowMenu' });
@@ -524,7 +547,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('hover and visibility', () => {
-    // Test Case 24: Should show controls on mouseenter
+    // Should show controls on mouseenter
+    // Test Case 25: should show action buttons on mouseenter.
     it('should show action buttons on mouseenter', async () => {
       const w = createWrapper();
       const mainDiv = w.get('[data-testid="item-row"]');
@@ -566,6 +590,7 @@ describe('Item', () => {
       matches.mockRestore();
     });
 
+    // Test Case 26: keeps hover controls when focus leaves an editor while the pointer remains on the row.
     it('keeps hover controls when focus leaves an editor while the pointer remains on the row', async () => {
       const w = createWrapper();
       const row = w.get('[data-testid="item-row"]');
@@ -580,6 +605,7 @@ describe('Item', () => {
       matches.mockRestore();
     });
 
+    // Test Case 27: does not restore mouse hover on touch-only devices or during drag suppression.
     it('does not restore mouse hover on touch-only devices or during drag suppression', async () => {
       const w = createWrapper();
       const row = w.get('[data-testid="item-row"]');
@@ -594,7 +620,8 @@ describe('Item', () => {
       matches.mockRestore();
     });
 
-    // Test Case 25: Should hide controls on mouseleave
+    // Should hide controls on mouseleave
+    // Test Case 28: should hide action buttons on mouseleave.
     it('should hide action buttons on mouseleave', async () => {
       const w = createWrapper();
       const mainDiv = w.get('[data-testid="item-row"]');
@@ -611,7 +638,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('IME composition', () => {
-    // Test Case 26: Should not save on Enter during IME composition
+    // Should not save on Enter during IME composition
+    // Test Case 29: should not save during IME composition.
     it('should not save during IME composition', async () => {
       const w = createWrapper();
       await w.find('span[role="button"]').trigger('click');
@@ -638,7 +666,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('newly created item watcher', () => {
-    // Test Case 27: Should auto-start edit when newlyCreatedItemId matches
+    // Should auto-start edit when newlyCreatedItemId matches
+    // Test Case 30: should enter edit mode when newlyCreatedItemId matches.
     it('should enter edit mode when newlyCreatedItemId matches', async () => {
       const w = createWrapper({ newlyCreatedItemId: null });
 
@@ -654,7 +683,8 @@ describe('Item', () => {
       expect(input.element.selectionEnd).toBe('Passport'.length);
     });
 
-    // Test Case 28: Should not start edit for non-matching item ID
+    // Should not start edit for non-matching item ID
+    // Test Case 31: should not enter edit mode when newlyCreatedItemId does not match.
     it('should not enter edit mode when newlyCreatedItemId does not match', async () => {
       const w = createWrapper({ newlyCreatedItemId: null });
       await w.setProps({ newlyCreatedItemId: 'item-other' });
@@ -669,7 +699,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('quantity edge cases', () => {
-    // Test Case 29: Should not decrement below 1
+    // Should not decrement below 1
+    // Test Case 32: should not decrement quantity below 1.
     it('should not decrement quantity below 1', async () => {
       const w = createWrapper({
         item: createMockItem({ quantity: 1 }),
@@ -692,7 +723,8 @@ describe('Item', () => {
   // ---------------------------------------------------------------------------
 
   describe('dragging state', () => {
-    // Test Case 30: Should apply dragging class when isDragging is true
+    // Should apply dragging class when isDragging is true
+    // Test Case 33: should apply cursor-grabbing when isDragging is true.
     it('should apply cursor-grabbing when isDragging is true', () => {
       const w = createWrapper({ isDragging: true });
       const mainDiv = w.get('[data-testid="item-row"]');
@@ -702,7 +734,8 @@ describe('Item', () => {
 });
 
 describe('Item touch editing boundaries', () => {
-  // Test Case 31: A toolbar action waits for the final IME model update.
+  // A toolbar action waits for the final IME model update.
+  // Test Case 34: defers an inline action until composition ends and the name is saved.
   it('defers an inline action until composition ends and the name is saved', async () => {
     const saveItemEdit = vi.fn().mockResolvedValue({ ...createMockItem(), name: '中文' });
     const w = mount(Item, {
@@ -728,7 +761,8 @@ describe('Item touch editing boundaries', () => {
       w.unmount();
     }
   });
-  // Test Case 32: Save acknowledgement gates actions and failures preserve the draft.
+  // Save acknowledgement gates actions and failures preserve the draft.
+  // Test Case 35: waits for the name save before an inline action and retains a failed draft.
   it('waits for the name save before an inline action and retains a failed draft', async () => {
     let finishSave;
     const saveItemEdit = vi
@@ -759,7 +793,8 @@ describe('Item touch editing boundaries', () => {
       w.unmount();
     }
   });
-  // Test Case 33: Repeated rename entry keeps a failed draft and the original optimistic baseline.
+  // Repeated rename entry keeps a failed draft and the original optimistic baseline.
+  // Test Case 36: preserves a failed name draft when another edit entry is activated.
   it('preserves a failed name draft when another edit entry is activated', async () => {
     const saveItemEdit = vi.fn().mockResolvedValue(null);
     const w = mount(Item, {
@@ -784,7 +819,8 @@ describe('Item touch editing boundaries', () => {
       w.unmount();
     }
   });
-  // Test Case 34: Quantity one retains the trash action while pending and copy remain ordinary inline buttons.
+  // Quantity one retains the trash action while pending and copy remain ordinary inline buttons.
+  // Test Case 37: keeps the quantity-one delete action in the expanded touch region.
   it('keeps the quantity-one delete action in the expanded touch region', async () => {
     const w = mount(Item, {
       props: { item: createMockItem(), touchControls: true, actionsOpen: true },

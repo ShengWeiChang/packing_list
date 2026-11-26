@@ -175,7 +175,7 @@ require users to remember workflow prompt keywords.
 If the user raises an objection, record the decision, revise the affected scope,
 and validate its changed boundary. Defer a new review to the final gate unless
 an intermediate gate or a prior blocking or important finding requires it.
-`$feature-completion` owns follow-up review, evidence reuse, and bounded repair
+`$feature-completion` owns follow-up review, evidence reuse, and repair
 escalation; record its verdict and the candidate revision in the plan.
 
 Only after required validation passes and any tier-required reviewer verdict is

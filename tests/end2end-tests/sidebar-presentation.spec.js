@@ -35,12 +35,13 @@ async function rowStyle(locator) {
   });
 }
 
-// Test Cases 1-6: English and Traditional Chinese presentation on phone, tablet, and desktop.
+// English and Traditional Chinese presentation on phone, tablet, and desktop.
 for (const scenario of scenarios) {
   test.describe(scenario.name, () => {
     test.use({ viewport: scenario.viewport, hasTouch: scenario.hasTouch });
 
     for (const locale of ['en', 'zh-TW']) {
+      // Test Cases 1–6: sidebar presentation stays consistent in each configuration.
       test(`sidebar presentation stays consistent in ${locale}`, async ({ page }) => {
         await page.addInitScript(
           ({ language, withoutObserver }) => {
@@ -333,8 +334,9 @@ for (const scenario of scenarios) {
   });
 }
 
-// Test Cases 7-8: Short mobile drawers keep navigation and settings operable.
+// Short mobile drawers keep navigation and settings operable.
 for (const locale of ['en', 'zh-TW']) {
+  // Test Cases 7–8: short mobile sidebar remains operable in each configuration.
   test(`short mobile sidebar remains operable in ${locale}`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: { width: 320, height: 200 },
@@ -469,6 +471,7 @@ for (const locale of ['en', 'zh-TW']) {
   });
 }
 
+// Test Case 9: collapsed initials and expanded names keep the same first-character position.
 test('collapsed initials and expanded names keep the same first-character position', async ({
   page,
 }) => {
@@ -536,6 +539,7 @@ for (const viewport of [
   { width: 820, height: 1000 },
   { width: 390, height: 844 },
 ]) {
+  // Test Cases 10–12: sidebar heading aligns with checklist names at each viewport width.
   test(`sidebar heading aligns with checklist names at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.addInitScript(() => {

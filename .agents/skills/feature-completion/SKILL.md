@@ -83,7 +83,7 @@ At a final gate, select evidence and review from the approved tier:
 | T2   | Run `npm run verify:feature`, obtain one fresh read-only `$code-review`, and add fresh `$test-analysis` only for persistence, state/data transformations, browser-only or cross-boundary behavior, complex interaction, or missing direct behavior proof. |
 | T3   | Run `npm run verify:feature`, obtain one fresh read-only `$code-review` and one fresh `$test-analysis`; include the risk-specific runtime, E2E, or manual proof defined in the plan.                                                                      |
 
-Follow the bounded repair policy below for findings. A T1 final gate does not
+Follow the repair policy below for findings. A T1 final gate does not
 make CI optional: the repository's required PR checks remain required before
 merge.
 
@@ -102,10 +102,11 @@ new risk boundary, security or data
 correctness remains uncertain, the original reviewer cannot assess objectively,
 or the same important issue recurs. Broaden review when impact is uncertain.
 
-Allow at most two repair rounds by default. If the required evidence or verdict
-is still missing, stop the automatic loop and present the unresolved findings,
-what was tried, and options to the user. Further investigation or repair requires
-user approval. An exhausted budget is never a pass: failing validation,
+Continue investigating, repairing, validating, and obtaining the applicable
+follow-up review until the approved scope is ready. Do not stop merely because a
+fixed number of repair rounds has elapsed. If an external blocker, missing
+material decision, or the user's scope or authorization prevents safe progress,
+report the blocker and request only the decision needed. Failing validation,
 insufficient evidence, and unresolved blocking or important findings prevent
 handoff or a commit candidate. Non-blocking risks require recorded user acceptance.
 

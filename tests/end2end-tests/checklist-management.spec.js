@@ -132,8 +132,8 @@ test.describe('Checklist Management', () => {
   // ---------------------------------------------------------------------------
 
   test.describe('delete checklist', () => {
-    // Test Case 5: Should delete a checklist via confirmation dialog
-    test('should delete checklist after confirmation', async ({ page }) => {
+    // Test Case 5: Should delete a checklist without a confirmation dialog
+    test('should delete checklist without confirmation', async ({ page }) => {
       // Create two checklists so we can delete one
       await createAndConfirmChecklist(page);
       await createAndConfirmChecklist(page);
@@ -141,9 +141,6 @@ test.describe('Checklist Management', () => {
       const sidebarItems = page.getByTestId('sidebar-checklist-item');
       const countBefore = await sidebarItems.count();
       expect(countBefore).toBeGreaterThanOrEqual(2);
-
-      // Accept the confirmation dialog
-      page.on('dialog', (dialog) => dialog.accept());
 
       // Find and click the overflow menu on the main checklist header area
       const overflowButton = page.locator('[aria-haspopup="true"]').first();

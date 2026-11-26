@@ -108,7 +108,7 @@ provider-specific copies unless a future host demonstrably requires one.
 
 `$feature-workflow` owns planning tiers, implementation milestones, and the
 approval sequence. `$feature-completion` owns verification, independent review,
-evidence reuse, and bounded repair cycles. Use the smallest justified tier;
+evidence reuse, and repair cycles. Use the smallest justified tier;
 persistence, sensitive data, access control, external boundaries, irreversible
 actions, or high user impact remain a floor of T3. Apply `$ui-ux-design` to
 non-trivial user-visible interaction changes as directed by the workflow.

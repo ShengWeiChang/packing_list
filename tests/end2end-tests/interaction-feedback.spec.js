@@ -117,7 +117,7 @@ const scenarios = [
   { name: 'phone', viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true },
 ];
 
-// Test Cases 1-6: Feedback and collapsed-category drops on each input/layout combination.
+// Feedback and collapsed-category drops on each input/layout combination.
 for (const scenario of scenarios) {
   test.describe(scenario.name, () => {
     test.use({
@@ -125,6 +125,9 @@ for (const scenario of scenarios) {
       hasTouch: scenario.hasTouch,
       isMobile: scenario.isMobile,
     });
+    // Test Case 1: Feedback and inline actions on desktop.
+    // Test Case 3: Feedback and inline actions on tablet.
+    // Test Case 5: Feedback and inline actions on phone.
     test('keeps normal and completed feedback consistent and animates inline actions', async ({
       page,
       context,
@@ -218,6 +221,9 @@ for (const scenario of scenarios) {
       }
     });
 
+    // Test Case 2: Collapsed-category drop on desktop.
+    // Test Case 4: Collapsed-category drop on tablet.
+    // Test Case 6: Collapsed-category drop on phone.
     test('accepts items into a collapsed category and retains counts and order', async ({
       page,
       context,
@@ -401,7 +407,8 @@ for (const scenario of scenarios) {
   });
 }
 
-// Test Case 7: Dragging a different item finishes unchanged and changed edits.
+// Dragging a different item finishes unchanged and changed edits.
+// Test Case 7: ends an old name edit when dragging a different item.
 test('ends an old name edit when dragging a different item', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await openFixture(page);
@@ -530,7 +537,8 @@ test('ends an old name edit when dragging a different item', async ({ page }) =>
   }
 });
 
-// Test Case 8: Clicking another item saves the first name and starts the second edit.
+// Clicking another item saves the first name and starts the second edit.
+// Test Case 8: saves a name when clicking another item without dragging.
 test('saves a name when clicking another item without dragging', async ({ page, browser }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await openFixture(page);
@@ -595,7 +603,8 @@ test('saves a name when clicking another item without dragging', async ({ page, 
   }
 });
 
-// Test Case 9: Reduced motion keeps inline actions immediately usable and closing controls inert.
+// Reduced motion keeps inline actions immediately usable and closing controls inert.
+// Test Case 9: honors reduced motion for inline action expansion.
 test('honors reduced motion for inline action expansion', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -611,6 +620,7 @@ test('honors reduced motion for inline action expansion', async ({ page }) => {
   await expect(actions).toHaveCount(0);
 });
 
+// Test Case 10: keeps item hover controls available after confirming an inline name edit.
 test('keeps item hover controls available after confirming an inline name edit', async ({
   page,
 }) => {

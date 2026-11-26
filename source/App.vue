@@ -36,9 +36,11 @@ Created: 2025-09-19
       :can-redo="canRedoPackingChange"
       :history-blocked="historyBlocked"
       :editing="activeEditors.size > 0"
-      :hidden="mobileTopbarHidden"
+      :hidden="mobileTopbarOffset >= mobileTopbarHeight"
+      :offset="mobileTopbarOffset"
       @undo="handleUndoPackingChange"
       @redo="handleRedoPackingChange"
+      @reveal="mobileTopbarOffset = 0"
       @toggle="toggleSidebar"
       @new="handleChecklistCreate"
     />
@@ -89,6 +91,57 @@ Created: 2025-09-19
             @edit-template="handleTemplateEdit"
             @delete-template="handleTemplateDelete"
           />
+          <div
+            v-if="
+              !drawerFeedbackDismissed &&
+              (visibleOperationError ||
+                crossChecklistHistoryFeedback ||
+                (historyBarrierVersion && historyBarrierVersion > dismissedHistoryBarrierVersion) ||
+                historyResult)
+            "
+            class="absolute inset-x-2 bottom-4 rounded-lg bg-primary px-4 py-3 text-sm text-white shadow-lg"
+            :class="
+              !visibleOperationError && crossChecklistHistoryFeedback
+                ? 'w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)]'
+                : ''
+            "
+            :role="visibleOperationError ? 'alert' : 'status'"
+            data-testid="sidebar-history-feedback"
+          >
+            <span
+              :class="
+                !visibleOperationError && crossChecklistHistoryFeedback ? 'block truncate' : ''
+              "
+            >
+              {{
+                visibleOperationError
+                  ? $t(`storage.${visibleOperationError}`)
+                  : crossChecklistHistoryFeedback ||
+                    (historyBarrierVersion && historyBarrierVersion > dismissedHistoryBarrierVersion
+                      ? $t('storage.historyClearedByChange')
+                      : $t(
+                          historyResult === 'undo'
+                            ? 'history.undone'
+                            : historyResult === 'redo'
+                              ? 'history.redone'
+                              : 'history.interrupted'
+                        ))
+              }}
+            </span>
+            <button
+              v-if="
+                visibleOperationError ||
+                (!crossChecklistHistoryFeedback &&
+                  historyBarrierVersion &&
+                  historyBarrierVersion > dismissedHistoryBarrierVersion)
+              "
+              type="button"
+              class="ml-2 font-semibold underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              @click="dismissDrawerHistoryFeedback"
+            >
+              {{ $t('storage.dismissHistoryNotice') }}
+            </button>
+          </div>
         </div>
       </Transition>
     </teleport>
@@ -355,18 +408,11 @@ Created: 2025-09-19
           !isDialogVisible &&
           !isOverlayVisible
         "
-        class="fixed bottom-4 left-1/2 z-[60] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-4 rounded-lg bg-primary px-4 py-3 text-white shadow-lg"
+        class="fixed bottom-4 left-1/2 z-[60] flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-4 rounded-lg bg-primary px-4 py-3 text-white shadow-lg"
         role="status"
         data-testid="cross-checklist-history-feedback"
       >
-        <span class="min-w-0 break-all">{{ crossChecklistHistoryFeedback }}</span>
-        <button
-          type="button"
-          class="font-semibold text-white underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          @click="crossChecklistHistoryAction = null"
-        >
-          {{ $t('storage.dismissHistoryNotice') }}
-        </button>
+        <span class="min-w-0 truncate">{{ crossChecklistHistoryFeedback }}</span>
       </div>
     </Teleport>
 
@@ -550,9 +596,13 @@ let inlineFailureVersion: number | null = null;
 let inlineFailureOwner: string | null = null;
 const failedInlineDrafts = new Map<string, symbol>();
 const activeEditors = ref(new Set<string>());
-const mobileTopbarHidden = ref(false);
+const mobileTopbarOffset = ref(0);
+const mobileTopbarHeight = ref(1);
+const drawerFeedbackDismissed = ref(false);
 const mainScrollport = ref<HTMLElement | null>(null);
-let lastMobileScroll = 0;
+let lastDocumentScroll = 0;
+let lastMainScroll = 0;
+let wasShortMobileViewport = false;
 const displacedDrafts = ref<(RetainedDraft & { id: number })[]>([]);
 let nextDisplacedDraftId = 0;
 const exportFailure = ref<string | null>(null);
@@ -632,7 +682,7 @@ function retainDisplacedDraft(draft: RetainedDraft) {
 /** Track edit mode before blur can submit a draft. */
 function startInlineEdit(kind: EditKind, id: string) {
   activeEditors.value.add(`${kind}:${id}`);
-  mobileTopbarHidden.value = false;
+  mobileTopbarOffset.value = 0;
 }
 
 /** Clear the suppression for an inline editor that was cancelled or removed.
@@ -829,7 +879,16 @@ function checkScreenSize() {
  * Handle window resize events and update viewport state
  */
 function handleResize() {
+  const widthChanged = previousViewportWidth !== window.innerWidth;
+  const isShortViewport = window.innerHeight <= 250;
+  const shortViewportChanged = isShortViewport !== wasShortMobileViewport;
+  wasShortMobileViewport = isShortViewport;
   checkScreenSize();
+  if (widthChanged || shortViewportChanged) {
+    mobileTopbarOffset.value = 0;
+    lastDocumentScroll = Math.max(0, window.scrollY);
+    lastMainScroll = Math.max(0, mainScrollport.value?.scrollTop ?? 0);
+  }
 }
 
 /**
@@ -1083,6 +1142,7 @@ function announceHistoryResult(direction: 'undo' | 'redo' | 'interrupted') {
   window.clearTimeout(historyResultTimer);
   historyResultTimer = window.setTimeout(() => {
     historyResult.value = null;
+    crossChecklistHistoryAction.value = null;
   }, 2500);
 }
 
@@ -1135,13 +1195,39 @@ function runHistoryAction(redo: boolean): Promise<void> {
   return action;
 }
 
+/** Serialize toolbar and keyboard history after the mutations they follow. */
+function queueHistoryAction(redo: boolean): Promise<void> {
+  const pending = [...pendingActions];
+  const actionVersion = actionStartVersion;
+  const activeHistory = ongoingHistory;
+  const barrierVersion = historyBarrierVersion?.value ?? 0;
+  shortcutTail = shortcutTail.then(async () => {
+    const completed = await Promise.all(pending);
+    if (activeHistory) await activeHistory;
+    if (
+      completed.some((success) => !success) ||
+      barrierVersion !== (historyBarrierVersion?.value ?? 0) ||
+      !isHistoryActionAllowed()
+    )
+      return;
+    if (actionVersion !== actionStartVersion) {
+      announceHistoryResult('interrupted');
+      return;
+    }
+    if (redo ? canRedoPackingChange.value : canUndoPackingChange.value) {
+      await runHistoryAction(redo);
+    }
+  });
+  return shortcutTail;
+}
+
 /** Run an undo action through the shared history operation. */
 function handleUndoPackingChange() {
-  return runHistoryAction(false);
+  return queueHistoryAction(false);
 }
 /** Run a redo action through the shared history operation. */
 function handleRedoPackingChange() {
-  return runHistoryAction(true);
+  return queueHistoryAction(true);
 }
 
 /**
@@ -1184,12 +1270,32 @@ function isHistoryActionAllowed() {
 
 const historyBlocked = computed(() => !isHistoryActionAllowed() || Boolean(historyBusy?.value));
 
-/** Hide the mobile bar on a deliberate downward scroll and reveal it immediately in reverse. */
+/** Move the mobile bar by the same distance as the active scrollport. */
 function handleMobileScroll(event: Event) {
   if (!isMobileViewport.value) return;
+  if (window.innerHeight <= 250) {
+    mobileTopbarOffset.value = 0;
+    return;
+  }
   const target = event.target;
   if (target !== document && target !== mainScrollport.value) return;
-  const position = target === document ? window.scrollY : (mainScrollport.value?.scrollTop ?? 0);
+  const isDocument = target === document;
+  const maxScroll = isDocument
+    ? Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+    : Math.max(
+        0,
+        (mainScrollport.value?.scrollHeight ?? 0) - (mainScrollport.value?.clientHeight ?? 0)
+      );
+  const position = Math.min(
+    maxScroll,
+    Math.max(0, isDocument ? window.scrollY : (mainScrollport.value?.scrollTop ?? 0))
+  );
+  const previous = isDocument ? lastDocumentScroll : lastMainScroll;
+  if (isDocument) lastDocumentScroll = position;
+  else lastMainScroll = position;
+  const bar = document.querySelector<HTMLElement>('[data-testid="mobile-topbar"]');
+  if (!bar) return;
+  mobileTopbarHeight.value = bar.getBoundingClientRect().height || 1;
   const active = document.activeElement;
   const keepVisible =
     isOverlayVisible.value ||
@@ -1197,13 +1303,14 @@ function handleMobileScroll(event: Event) {
     showPackingCompletion.value ||
     activeEditors.value.size > 0 ||
     isEditableTarget(active) ||
-    Boolean(active?.closest('[data-testid="mobile-topbar"]')) ||
+    Boolean(active?.matches(':focus-visible') && active.closest('[data-testid="mobile-topbar"]')) ||
     Boolean(document.querySelector('.chosen-item, .chosen-category, .chosen-checklist'));
-  if (position <= 8 || keepVisible) mobileTopbarHidden.value = false;
-  else if (position < lastMobileScroll) mobileTopbarHidden.value = false;
-  else if (position - lastMobileScroll >= 8) mobileTopbarHidden.value = true;
-  if (Math.abs(position - lastMobileScroll) >= 8 || position < lastMobileScroll)
-    lastMobileScroll = position;
+  if (position <= 0 || keepVisible) mobileTopbarOffset.value = 0;
+  else
+    mobileTopbarOffset.value = Math.min(
+      mobileTopbarHeight.value,
+      Math.max(0, mobileTopbarOffset.value + position - previous)
+    );
 }
 
 /**
@@ -1225,34 +1332,14 @@ function handlePackingHistoryKeydown(event: KeyboardEvent) {
   }
 
   const redo = event.shiftKey || event.key.toLowerCase() === 'y';
-  const pending = [...pendingActions];
-  const actionVersion = actionStartVersion;
-  const activeHistory = ongoingHistory;
-  const barrierVersion = historyBarrierVersion?.value ?? 0;
   if (
     !(redo ? canRedoPackingChange.value : canUndoPackingChange.value) &&
-    !pending.length &&
+    !pendingActions.size &&
     !historyBusy?.value
   )
     return;
   event.preventDefault();
-  shortcutTail = shortcutTail.then(async () => {
-    const completed = await Promise.all(pending);
-    if (activeHistory) await activeHistory;
-    if (
-      completed.some((success) => !success) ||
-      barrierVersion !== (historyBarrierVersion?.value ?? 0) ||
-      !isHistoryActionAllowed()
-    )
-      return;
-    if (actionVersion !== actionStartVersion) {
-      announceHistoryResult('interrupted');
-      return;
-    }
-    if (redo ? canRedoPackingChange.value : canUndoPackingChange.value) {
-      await (redo ? handleRedoPackingChange() : handleUndoPackingChange());
-    }
-  });
+  void queueHistoryAction(redo);
 }
 
 /**
@@ -1470,14 +1557,17 @@ async function copyChecklistAfterNavigation(checklistId: string) {
 }
 
 /**
- * Delete a checklist by ID after user confirmation
+ * Delete a checklist by ID; the change remains available in history.
  * @param {string} checklistId - The ID of the checklist to delete
  */
 async function handleChecklistDelete(checklistId: string) {
-  const confirmed = confirm(t('checklist.deleteConfirm'));
-  if (!confirmed) return;
-
+  const active = document.activeElement;
+  const wasInDrawer = Boolean(active && sidebarOverlay.value?.contains(active));
   await handleAsyncAction(deleteChecklist, checklistId);
+  await nextTick();
+  if (wasInDrawer && isOverlayVisible.value && document.activeElement === document.body) {
+    sidebarOverlay.value?.querySelector<HTMLElement>('[data-testid="sidebar-toggle"]')?.focus();
+  }
 }
 
 /**
@@ -1721,6 +1811,9 @@ onMounted(async () => {
 
   // Set up responsive behavior
   checkScreenSize();
+  wasShortMobileViewport = window.innerHeight <= 250;
+  lastDocumentScroll = Math.max(0, window.scrollY);
+  lastMainScroll = Math.max(0, mainScrollport.value?.scrollTop ?? 0);
   window.addEventListener('resize', handleResize);
   window.addEventListener('keydown', handlePackingHistoryKeydown);
   window.addEventListener('scroll', handleMobileScroll, true);
@@ -1812,11 +1905,51 @@ watch(isOverlayVisible, async (open) => {
   }
 });
 
+/** Keep drawer feedback dismissible without clearing the underlying storage error. */
+function dismissDrawerHistoryFeedback() {
+  sidebarOverlay.value?.querySelector<HTMLElement>('[data-testid="sidebar-toggle"]')?.focus();
+  drawerFeedbackDismissed.value = true;
+  crossChecklistHistoryAction.value = null;
+  dismissedHistoryBarrierVersion.value = historyBarrierVersion?.value ?? 0;
+}
+
+watch(
+  [
+    visibleOperationError,
+    checklistOperationErrorVersion,
+    historyEventVersion,
+    historyBarrierVersion,
+  ],
+  () => {
+    drawerFeedbackDismissed.value = false;
+  }
+);
+
+watch(
+  () =>
+    Boolean(
+      visibleOperationError.value ||
+        crossChecklistHistoryFeedback.value ||
+        (historyBarrierVersion?.value &&
+          historyBarrierVersion.value > dismissedHistoryBarrierVersion.value)
+    ),
+  (hasFeedback, hadFeedback) => {
+    if (
+      !hasFeedback &&
+      hadFeedback &&
+      document.activeElement?.closest('[data-testid="sidebar-history-feedback"]')
+    ) {
+      sidebarOverlay.value?.querySelector<HTMLElement>('[data-testid="sidebar-toggle"]')?.focus();
+    }
+  },
+  { flush: 'sync' }
+);
+
 // A contextual packing action must never target a newer, unrelated history entry.
 watch(
   [isOverlayVisible, isDialogVisible, showPackingCompletion],
   ([drawer, dialog, completion]) => {
-    if (drawer || dialog || completion) mobileTopbarHidden.value = false;
+    if (drawer || dialog || completion) mobileTopbarOffset.value = 0;
   }
 );
 

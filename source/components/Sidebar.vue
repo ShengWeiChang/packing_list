@@ -48,10 +48,11 @@ Created: 2025-09-19
       </button>
 
       <div
-        v-if="!isMobile"
         ref="historyControlsRoot"
-        :inert="!isExpanded || !historyControlsInteractive || undefined"
-        :aria-hidden="!isExpanded || !historyControlsInteractive ? 'true' : undefined"
+        :inert="!isMobile && (!isExpanded || !historyControlsInteractive) ? true : undefined"
+        :aria-hidden="
+          !isMobile && (!isExpanded || !historyControlsInteractive) ? 'true' : undefined
+        "
         data-sidebar-history-reveal
         @transitionend="handleHistoryTransitionEnd"
       >

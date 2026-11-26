@@ -14,13 +14,13 @@
 
 | Metric                        | Value  |
 | ----------------------------- | ------ |
-| Total tests 總測試數          | 862    |
-| Unit tests 單元測試           | 323    |
-| Component tests 組件測試      | 322    |
-| E2E tests E2E 測試            | 217    |
-| Line coverage 行覆蓋率        | 88.1%  |
-| Statement coverage 語句覆蓋率 | 86.03% |
-| Branch coverage 分支覆蓋率    | 76.65% |
+| Total tests 總測試數          | 929    |
+| Unit tests 單元測試           | 348    |
+| Component tests 組件測試      | 338    |
+| E2E tests E2E 測試            | 243    |
+| Line coverage 行覆蓋率        | 87.75% |
+| Statement coverage 語句覆蓋率 | 85.82% |
+| Branch coverage 分支覆蓋率    | 76.27% |
 | Pass rate 測試通過率          | 100%   |
 
 ## 2. Test Architecture 測試架構
@@ -29,26 +29,26 @@
 
 | Layer     | Tool                           | Tests | Purpose                                     |
 | --------- | ------------------------------ | ----- | ------------------------------------------- |
-| Unit      | Vitest                         | 323   | models、services、composables、utils 純邏輯 |
-| Component | Vitest + @vue/test-utils       | 322   | Vue 組件渲染、事件、狀態                    |
-| E2E       | Playwright + Chromium / WebKit | 217   | 在瀏覽器中檢查完整使用者流程                |
+| Unit      | Vitest                         | 348   | models、services、composables、utils 純邏輯 |
+| Component | Vitest + @vue/test-utils       | 338   | Vue 組件渲染、事件、狀態                    |
+| E2E       | Playwright + Chromium / WebKit | 243   | 在瀏覽器中檢查完整使用者流程                |
 
 ### Platform Verification Matrix 平台驗證矩陣
 
 | 在哪裡跑              | Unit／Component                                       | E2E                                                               | 怎麼跑                                                                                                   |
 | --------------------- | ----------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 本機 macOS            | 可在本機跑全部 323 個 Unit 和 322 個 Component 測試。 | 可跑全部 217 次瀏覽器執行，也可只選重點案例。                     | `npm run verify:feature` 在 Mac 跑完整功能 gate；開發時可用 Vitest 或 Playwright 指令跑重點檢查。        |
-| 本機 Linux container  | 全部 323 個 Unit 和 322 個 Component 測試。           | 全部 217 次瀏覽器執行。                                           | 使用 Docker 執行 `sh scripts/ci-container.sh full`，包含功能 gate 與另外執行的 Node 容器／報告契約測試。 |
+| 本機 macOS            | 可在本機跑全部 348 個 Unit 和 338 個 Component 測試。 | 可跑全部 243 次瀏覽器執行，也可只選重點案例。                     | `npm run verify:feature` 在 Mac 跑完整功能 gate；開發時可用 Vitest 或 Playwright 指令跑重點檢查。        |
+| 本機 Linux container  | 全部 348 個 Unit 和 338 個 Component 測試。           | 全部 243 次瀏覽器執行。                                           | 使用 Docker 執行 `sh scripts/ci-container.sh full`，包含功能 gate 與另外執行的 Node 容器／報告契約測試。 |
 | GitHub Linux CI       | Node 容器／報告契約測試。                             | Chromium 的 6 個共用核心 smoke 案例。                             | 每個 PR 以 Docker 執行 `sh scripts/ci-container.sh smoke`。                                              |
-| GitHub Windows runner | 全部 323 個 Unit 和 322 個 Component 測試。           | 全部 217 次瀏覽器執行。                                           | Windows 2025 job 在每個 PR 執行 `npm run verify:feature`。                                               |
-| GitHub macOS runner   | 全部 323 個 Unit 和 322 個 Component 測試。           | 全部 217 次瀏覽器執行。                                           | macOS job 在每個 PR 執行 `npm run verify:feature`。                                                      |
+| GitHub Windows runner | 全部 348 個 Unit 和 338 個 Component 測試。           | 全部 243 次瀏覽器執行。                                           | Windows 2025 job 在每個 PR 執行 `npm run verify:feature`。                                               |
+| GitHub macOS runner   | 全部 348 個 Unit 和 338 個 Component 測試。           | 全部 243 次瀏覽器執行。                                           | macOS job 在每個 PR 執行 `npm run verify:feature`。                                                      |
 | Android 與 iOS 裝置   | 不適用。                                              | 沒有手機實機測試；Chromium 與 WebKit 模擬手機畫面及部分觸控操作。 | 瀏覽器模擬不提供手機作業系統。                                                                           |
 
 PR 的 `macos-full` 和 `windows-full` 執行完整 gate；`linux-smoke` 執行六個共用核心案例。各完整 gate 分別上傳執行時已產生的測試報告、失敗附件、checkout 資訊及 Playwright 瀏覽器版本。Linux smoke 不包含編輯中拖曳另一物品的回歸案例；要在 Linux 檢查此情境，可使用下方 focused 或 full container 指令。獨立的 failure-artifact probe 只在 workflow、Docker、測試腳本、依賴清單、patch 或 Playwright 設定變更時執行。路徑篩選維護於 `.github/workflows/failure-artifact-probe.yml`；該 workflow 存在於預設分支後也可手動執行。probe 檢查受控失敗與附件上傳，不測試產品行為。變更平台 check 名稱時，先確認新 check 能執行，再同步更新 GitHub required status checks；不要將路徑篩選的 probe 設為全域 required。
 
 Linux smoke 以固定清單及執行報告拒絕漏收、多收、skip、flaky 或 runner error。`node scripts/windowsSmoke.js` 可在本機執行相同六個案例，結果屬執行時的作業系統。每個平台 job 將已產生的 checkout 資訊與診斷檔上傳至獨立 artifact。
 
-217 次 E2E 執行包含 Chromium 的 207 次、Playwright WebKit 核心案例（`webkit-core`）6 次，以及 Playwright WebKit 響應式案例（`webkit-rwd`）4 次。同一原始案例在多個 project 執行時，每次執行分別計數。Chromium 執行一般 E2E 基準，包含相同的四個響應式案例；WebKit 額外執行選定的核心與響應式檢查，並非完整 Chromium 套件。Playwright Chromium 和 WebKit 並非 Google Chrome 或原生 Safari。
+243 次 E2E 執行包含 Chromium 的 233 次、Playwright WebKit 核心案例（`webkit-core`）6 次，以及 Playwright WebKit 響應式案例（`webkit-rwd`）4 次。同一原始案例在多個 project 執行時，每次執行分別計數。Chromium 執行一般 E2E 基準，包含相同的四個響應式案例；WebKit 額外執行選定的核心與響應式檢查，並非完整 Chromium 套件。Playwright Chromium 和 WebKit 並非 Google Chrome 或原生 Safari。
 
 六個核心案例涵蓋物品建立、編輯、數量、待處理及打包狀態、重載與刪除；兩種視窗寬度的日期編輯；儲存失敗與草稿恢復；鍵盤選單焦點；以及滑鼠排序後重載。五個選自既有案例，另一個串接原先缺少完整重載證據的物品生命週期。四個響應式案例涵蓋觸控模擬操作、短畫面 dialog 與日期、平板版面及短畫面手機導覽。
 
@@ -93,7 +93,7 @@ tests/
 │   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
 │   └── fixtures/                        # Typed probe and deliberately invalid inputs
 │
-├── unit-tests/                          # 323 tests
+├── unit-tests/                          # 348 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -106,8 +106,9 @@ tests/
 │   │   ├── templateService.test.js      # 15  tests
 │   │   ├── storageTransaction.test.js  # 27  tests
 │   │   └── recommendedListService.test.js  #  4  tests
-│   ├── composables/                     # 70  tests
-│   │   └── usePackingLists.test.js      # 52  tests
+│   ├── composables/                     # 95  tests
+│   │   ├── useUndoHistory.test.js       # 6   tests
+│   │   ├── usePackingLists.test.js      # 71  tests
 │   │   └── useTemplates.test.js         # 16  tests
 │   │   └── useTouchLayout.test.js       #  1  test
 │   │   └── useVisualViewport.test.js    #  1  test
@@ -127,12 +128,12 @@ tests/
 │       ├── cssVars.test.js              #  5  tests
 │       └── verifyFeature.test.js        #  6  tests
 │
-├── component-tests/                     # 323 tests
-│   ├── App.test.js                      # 69  tests
+├── component-tests/                     # 338 tests
+│   ├── App.test.js                      # 81  tests
 │   ├── PackingCompletionOverlay.test.js # 10  tests
 │   ├── AppIcon.test.js                  #  4  tests
 │   ├── Checklist.test.js                # 44  tests
-│   ├── Item.test.js                     # 31  tests
+│   ├── Item.test.js                     # 37  tests
 │   ├── Sidebar.test.js                  # 36  tests
 │   ├── typedDraggable.test.js           #  7  tests
 │   ├── Category.test.js                 # 32  tests
@@ -146,13 +147,13 @@ tests/
 │   ├── TemplateEditor.test.js           # 16  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 217 tests
+└── end2end-tests/                       # 243 tests
     ├── touchDragHelpers.js              # 長按微動與原生捲動手勢
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
     ├── rwd-overlays.spec.js             #  6  tests
     ├── rwd-webkit.spec.js               #  8  tests
-    ├── sidebar-presentation.spec.js     #  8  tests
+    ├── sidebar-presentation.spec.js     #  12  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
@@ -163,14 +164,15 @@ tests/
     ├── drag-settlement.spec.js           # 15  tests
     ├── drag-membership-conflict.spec.js  #  1  test
     ├── category-motion.spec.js          #  8  tests
-    ├── interaction-feedback.spec.js      #  9  tests
-    ├── multi-tab-sync.spec.js           #  6  tests
+    ├── interaction-feedback.spec.js      #  10  tests
+    ├── multi-tab-sync.spec.js           #  10  tests
     ├── core-smoke.spec.js               #  2  tests
     ├── checklist-dates.spec.js          # 18  tests
     ├── template-navigation.spec.js      # 23  tests
     ├── template-management.spec.js      #  8  tests
     ├── recommended-lists.spec.js        #  1  test
-    └── storage-recovery.spec.js         # 29  tests
+    ├── undo-redo-ui.spec.js             # 16  tests
+    └── storage-recovery.spec.js         # 30  tests
 ```
 
 各 E2E 檔案數量統計瀏覽器 project 執行次數；`Test Case` 註解編號代表不同原始案例，共用案例在原始檔只編一次，此處則每個 project 列一次。
@@ -195,30 +197,30 @@ tests/
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 84.21%     | 74.43% | 83.53% |
-| source/      | 74.72%     | 65.86% | 78.12% |
-| components/  | 81.77%     | 74.08% | 84.66% |
-| composables/ | 95.04%     | 85.26% | 97.28% |
+| scripts/     | 83.16%     | 73.33% | 82.59% |
+| source/      | 75.57%     | 65.51% | 79.32% |
+| components/  | 81.2%      | 73.48% | 83.97% |
+| composables/ | 96.29%     | 88.56% | 97.28% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 95.53%     | 83.5%  | 95.44% |
-| utils/       | 96.36%     | 85.92% | 96.62% |
+| services/    | 95.04%     | 84.98% | 95.41% |
+| utils/       | 96.96%     | 87.4%  | 96.62% |
 
 ### By Component 各組件覆蓋率
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 74.72%     | 78.12% | 68    |
+| App.vue                      | 75.57%     | 79.32% | 81    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
 | ProgressBar.vue              | 100%       | 100%   | 8     |
-| Topbar.vue                   | 100%       | 100%   | 2     |
+| Topbar.vue                   | 57.14%     | 57.14% | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
-| Sidebar.vue                  | 88.13%     | 90.06% | 36    |
+| Sidebar.vue                  | 82.58%     | 84.23% | 36    |
 | OverflowMenu.vue             | 87.5%      | 89.81% | 24    |
-| Category.vue                 | 79.2%      | 82.95% | 32    |
-| Checklist.vue                | 70.98%     | 75.07% | 44    |
-| Item.vue                     | 87.92%     | 91.91% | 34    |
+| Category.vue                 | 80%        | 83.48% | 32    |
+| Checklist.vue                | 71.54%     | 75.47% | 44    |
+| Item.vue                     | 88.43%     | 92.46% | 37    |
 | NewChecklistDialog.vue       | 95%        | 95.94% | 12    |
 | PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
 | SaveTemplateDialog.vue       | 92.72%     | 93.87% | 10    |
@@ -320,31 +322,31 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 
 ## 8. Complete Test Inventory 完整測試案例清單
 
-### 8.1 Unit Tests（323）
+### 8.1 Unit Tests（348）
 
 #### 8.1.1 Models（40）
 
 ##### 8.1.1.1 Item.test.js（17）
 
-| #   | Test                                             | 測試重點                                   |
-| --- | ------------------------------------------------ | ------------------------------------------ |
-| 1   | should create an item with default values        | 預設值正確（isPacked: false, quantity: 1） |
-| 2   | should accept custom values                      | 所有欄位可自訂                             |
-| 3   | should generate a unique ID                      | 每個實例 ID 不重複                         |
-| 4   | should generate ID with correct prefix           | ID 前綴格式正確                            |
-| 5   | should throw error for empty name                | 空名稱驗證                                 |
-| 6   | should throw error for name exceeding max length | 超長名稱驗證                               |
-| 7   | should accept name at max length                 | 邊界值：最大長度通過                       |
-| 8   | should throw error for non-string name           | 非字串型別驗證（number、null、boolean）    |
-| 9   | should throw error for quantity less than 1      | 數量最小值驗證                             |
-| 10  | should throw error for negative quantity         | 負數驗證                                   |
-| 11  | should accept large quantity                     | 大數值有效                                 |
-| 12  | should serialize to JSON correctly               | toJSON() 輸出正確                          |
-| 13  | should deserialize from JSON correctly           | fromJSON() 還原正確                        |
-| 14  | should preserve all properties through roundtrip | 序列化無損                                 |
-| 15  | should toggle isPacked from false to true        | togglePacked() 切換                        |
-| 16  | should toggle isPacked from true to false        | togglePacked() 切回                        |
-| 17  | should throw error for quantity greater than 999 | 邊界：數量上限驗證                         |
+| #   | Test                                             |
+| --- | ------------------------------------------------ |
+| 1   | should create an item with default values        |
+| 2   | should accept custom values                      |
+| 3   | should generate a unique ID                      |
+| 4   | should generate ID with correct prefix           |
+| 5   | should throw error for empty name                |
+| 6   | should throw error for name exceeding max length |
+| 7   | should accept name at max length                 |
+| 8   | should throw error for non-string name           |
+| 9   | should throw error for quantity less than 1      |
+| 10  | should throw error for negative quantity         |
+| 11  | should accept large quantity                     |
+| 12  | should throw error for quantity greater than 999 |
+| 13  | should serialize to JSON correctly               |
+| 14  | should deserialize from JSON correctly           |
+| 15  | should preserve all properties through roundtrip |
+| 16  | should toggle isPacked from false to true        |
+| 17  | should toggle isPacked from true to false        |
 
 ##### 8.1.1.2 Category.test.js（9）
 
@@ -539,64 +541,83 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 26  | 保留範本巢狀欄位並隔離新建立的 runtime 狀態                                   | Snapshot 保留與全新狀態      |
 | 27  | 複製原始資料時不偷偷修復缺漏的舊名稱                                          | 既有失敗行為與原文保留       |
 
-#### 8.1.3 Composables（70）
+#### 8.1.3 Composables（95）
 
-##### 8.1.3.1 usePackingLists.test.js（52）
+##### 8.1.3.1 usePackingLists.test.js（71）
 
-| #   | Test                                                                               | 測試重點                         |
-| --- | ---------------------------------------------------------------------------------- | -------------------------------- |
-| 1   | should return initial empty state                                                  | 預設空狀態                       |
-| 2   | should have computed properties                                                    | computed refs 存在               |
-| 3   | should load data from storage on initialize                                        | 初始化讀取 service               |
-| 4   | should manage loading state during initialization                                  | isLoading 切換                   |
-| 5   | should normalize missing checklist order in memory and restore the saved checklist | 舊版預設值與已儲存選取           |
-| 6   | should fallback selected checklist and reload scoped categories/items              | 側欄頂端回退                     |
-| 7   | should set error and clear state when initialize fails unexpectedly                | 初始化失敗復原                   |
-| 8   | should create a new checklist                                                      | 建立 + 刷新                      |
-| 9   | should select the first checklist after creation                                   | 自動選取                         |
-| 10  | should update an existing checklist                                                | 更新 + 刷新                      |
-| 11  | should delete a checklist                                                          | 刪除 + 刷新                      |
-| 12  | should return null when createChecklist service call fails                         | Service 失敗路徑                 |
-| 13  | should return null when updateChecklist service call fails                         | Service 失敗路徑                 |
-| 14  | should create a category in the selected checklist                                 | 建立分類                         |
-| 15  | should return null if no checklist is selected                                     | 空選取檢查                       |
-| 16  | should create an item in the selected checklist                                    | 建立物品                         |
-| 17  | should toggle item packed status                                                   | 切換 + 刷新；不建立復原          |
-| 18  | should calculate progress correctly                                                | 進度計算                         |
-| 19  | should return 0 progress for empty checklist                                       | 零物品邊界                       |
-| 20  | should handle storage errors gracefully during initialization                      | 錯誤容錯                         |
-| 21  | should duplicate a checklist and refresh state                                     | 複製清單                         |
-| 22  | should duplicate a category and refresh state                                      | 複製分類                         |
-| 23  | should duplicate an item and refresh state                                         | 複製物品                         |
-| 24  | should delete a category and refresh both categories and items                     | 分類級聯刪除                     |
-| 25  | should delete an item and refresh items                                            | 物品刪除                         |
-| 26  | should update multiple checklists and refresh state                                | 批量更新                         |
-| 27  | should return null when creating item without selected checklist                   | 空選取檢查                       |
-| 28  | should return null when duplicating item without selected checklist                | 空選取檢查                       |
-| 29  | should return null when updating item without selected checklist                   | 空選取檢查                       |
-| 30  | should return empty array when getting categories without selected checklist       | 空選取檢查                       |
-| 31  | should return empty array when getting items without selected checklist            | 空選取檢查                       |
-| 32  | should return early when deleting item without selected checklist                  | 空選取檢查                       |
-| 33  | should return null when createItem service call fails (with checklist)             | Service 失敗路徑                 |
-| 34  | should return null when duplicateCategory service call fails (with checklist)      | Service 失敗路徑                 |
-| 35  | should return null when updateItem service call fails (with checklist)             | Service 失敗路徑                 |
-| 36  | should return null when duplicateItem service call fails (with checklist)          | Service 失敗路徑                 |
-| 37  | should return null when createCategory service call fails (with checklist)         | Service 失敗路徑                 |
-| 38  | should return null when duplicateChecklist service call fails (no checklist)       | Service 失敗路徑                 |
-| 39  | should return null when updateCategory service call fails (no checklist)           | Service 失敗路徑                 |
-| 40  | should return null when updateCategory service returns undefined                   | falsy 結果防禦                   |
-| 41  | should return null when updateMultipleChecklists service returns undefined         | falsy 結果防禦                   |
-| 42  | should return null when updateCategory throws (real service)                       | throw → null 後備                |
-| 43  | should refresh categories and return updated category on success                   | 成功路徑 + refresh               |
-| 44  | should preserve valid selection and recover deleted selection on app data refresh  | 跨分頁選取復原                   |
-| 45  | 刪除失敗後保留歷史與資料                                                           | 刪除失敗                         |
-| 46  | 重新讀取失敗後保留畫面上的分類與物品                                               | 讀取失敗                         |
-| 47  | 區分寫入成功與後續更新失敗                                                         | 寫入確認                         |
-| 48  | 新清單無法讀取時清除先前清單資料                                                   | 選取歸屬                         |
-| 49  | should treat a category pack-all as one undoable action and restore mixed state    | 群組歷史與重做安全               |
-| 50  | should clear packing history when switching checklists                             | 歷史範圍隔離                     |
-| 51  | preserves remote item edits when committing a stale drag payload                   | 明確拖曳意圖                     |
-| 52  | rejects stale drag membership without overwriting a remotely added item            | 原始拖曳baseline不被後續讀取覆蓋 |
+| #   | Test                                                                                      |
+| --- | ----------------------------------------------------------------------------------------- |
+| 1   | should return initial empty state                                                         |
+| 2   | should have computed properties                                                           |
+| 3   | should load data from storage on initialize                                               |
+| 4   | should manage loading state during initialization                                         |
+| 5   | should normalize missing checklist order in memory and restore the saved checklist        |
+| 6   | should fallback selected checklist and reload scoped categories/items                     |
+| 7   | should set error and clear state when initialize fails unexpectedly                       |
+| 8   | should create a new checklist                                                             |
+| 9   | should select the first checklist after creation                                          |
+| 10  | should update an existing checklist                                                       |
+| 11  | should delete a checklist                                                                 |
+| 12  | should return null when createChecklist service call fails                                |
+| 13  | should return null when updateChecklist service call fails                                |
+| 14  | should create a category in the selected checklist                                        |
+| 15  | should return null if no checklist is selected                                            |
+| 16  | should create an item in the selected checklist                                           |
+| 17  | should toggle item packed status                                                          |
+| 18  | should calculate progress correctly                                                       |
+| 19  | should return 0 progress for empty checklist                                              |
+| 20  | should handle storage errors gracefully during initialization                             |
+| 21  | should duplicate a checklist and refresh state                                            |
+| 22  | should duplicate a category and refresh state                                             |
+| 23  | should duplicate an item and refresh state                                                |
+| 24  | should delete a category and refresh both categories and items                            |
+| 25  | should delete an item and refresh items                                                   |
+| 26  | should update multiple checklists and refresh state                                       |
+| 27  | should return null when creating item without selected checklist                          |
+| 28  | should return null when duplicating item without selected checklist                       |
+| 29  | should return null when updating item without selected checklist                          |
+| 30  | should return empty array when getting categories without selected checklist              |
+| 31  | should return empty array when getting items without selected checklist                   |
+| 32  | should return early when deleting item without selected checklist                         |
+| 33  | should return null when createItem service call fails (with checklist)                    |
+| 34  | should return null when duplicateCategory service call fails (with checklist)             |
+| 35  | should return null when updateItem service call fails (with checklist)                    |
+| 36  | should return null when duplicateItem service call fails (with checklist)                 |
+| 37  | should return null when createCategory service call fails (with checklist)                |
+| 38  | should return null when duplicateChecklist service call fails (no checklist)              |
+| 39  | should return null when updateCategory service call fails (no checklist)                  |
+| 40  | should return null when updateCategory service returns undefined                          |
+| 41  | should return null when updateMultipleChecklists service returns undefined                |
+| 42  | should return null when updateCategory throws (real service)                              |
+| 43  | should refresh categories and return updated category on success                          |
+| 44  | should preserve valid selection and recover deleted selection on app data refresh         |
+| 45  | restores a deleted checklist subtree with the same IDs and values, then redoes deletion   |
+| 46  | undoes and redoes item edits, pending status, duplication and deletion as separate steps  |
+| 47  | restores a category deletion with its items and reverses a cross-category move            |
+| 48  | rejects undoing a cross-category move when the destination membership changed             |
+| 49  | undoes and redoes category duplication with its complete item subtree                     |
+| 50  | rejects undoing a created checklist if another tab added a descendant before its event    |
+| 51  | undoes and redoes checklist, category and item reorder as separate steps                  |
+| 52  | rejects undo of a reorder after another tab changes membership, preserving the other edit |
+| 53  | reverses an edit without overwriting an unrelated external field change                   |
+| 54  | rejects undo if a different tab changed the saved status before its event arrives         |
+| 55  | keeps history for a no-op and undoes a later edit before the packing change               |
+| 56  | preserves a committed batch in history if the following refresh fails                     |
+| 57  | does not redirect an in-flight undo when the selected checklist changes                   |
+| 58  | preserves newer redo when an older item update refresh finishes later                     |
+| 59  | keeps the committed batch version even when its refresh finishes after undo               |
+| 60  | retains a newer action committed while an undo refresh is pending                         |
+| 61  | prevents an older undo from committing after a newer packing action                       |
+| 62  | clears history only when a template change actually commits                               |
+| 63  | does not clear history when a stale delete changes no data                                |
+| 64  | keeps history and visible data when item or category deletion fails                       |
+| 65  | retains visible categories and items if a later refresh fails                             |
+| 66  | reports a committed change separately when the subsequent refresh fails                   |
+| 67  | clears the previous checklist data when switching and the new read fails                  |
+| 68  | should treat a category pack-all as one undoable action and restore mixed state           |
+| 69  | undoes and redoes a batch on its owning checklist after switching                         |
+| 70  | preserves remote item edits when committing a stale drag payload                          |
+| 71  | rejects stale drag membership without overwriting a remotely added item                   |
 
 ##### 8.1.3.2 useTemplates.test.js（16）
 
@@ -630,6 +651,17 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | #   | Test                                                                 | 測試重點               |
 | --- | -------------------------------------------------------------------- | ---------------------- |
 | 1   | updates fixed modal bounds and removes viewport listeners on unmount | 鍵盤可見視窗範圍與清理 |
+
+##### 8.1.3.5 useUndoHistory.test.js（6）
+
+| #   | Test                                                                                 |
+| --- | ------------------------------------------------------------------------------------ |
+| 1   | moves committed actions in order and drops redo only for a new action                |
+| 2   | keeps the action available when persistence fails                                    |
+| 3   | prevents double execution and discards stale stacks after a concurrent change        |
+| 4   | retains a newer action committed while an earlier undo refreshes                     |
+| 5   | does not commit queued undo when an editor begins saving before the lock is acquired |
+| 6   | retains only the most recent actions within the limit                                |
 
 #### 8.1.4 i18n（12）
 
@@ -784,81 +816,93 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 4   | protects manual CSS outside the marked region and fails for missing markers                | 保留 CSS 區域與標記            |
 | 5   | CLI check is read-only and returns a useful failure for a drifted fixture                  | 唯讀檢查與命令列重新生成       |
 
-### 8.2 Component Tests（323）
+### 8.2 Component Tests（338）
 
-#### 8.2.1 App.test.js（69）
+#### 8.2.1 App.test.js（81）
 
-| #   | Test                                                                                 | 測試重點                             |
-| --- | ------------------------------------------------------------------------------------ | ------------------------------------ |
-| 1   | should render the main layout with sidebar and content                               | 主佈局渲染                           |
-| 2   | should show empty state when no checklist is selected                                | 空狀態顯示                           |
-| 3   | should show ChecklistComponent when a checklist is selected                          | 清單可見性                           |
-| 4   | should set isMobileViewport to true for narrow screens                               | 行動版視窗偵測                       |
-| 5   | should auto-collapse sidebar on mobile viewport                                      | 行動版自動收合                       |
-| 6   | should auto-expand sidebar on wide desktop when not manually collapsed               | 桌面版自動展開                       |
-| 7   | should not auto-expand sidebar when manually collapsed key exists                    | 收合持久化                           |
-| 8   | should detect small desktop viewport as overlay zone                                 | 覆蓋區域偵測                         |
-| 9   | should toggle sidebar when sidebar emits toggle-sidebar                              | 側邊欄切換事件                       |
-| 10  | should persist sidebar collapse to localStorage on desktop                           | 收合持久化                           |
-| 11  | should remove collapsed key from localStorage when sidebar re-opened                 | 展開清除                             |
-| 12  | should toggle sidebar from Topbar on mobile                                          | Topbar 切換事件                      |
-| 13  | should open source selection from Sidebar without creating immediately               | 側邊欄來源 dialog                    |
-| 14  | should open source selection from Topbar on mobile                                   | Topbar 來源 dialog                   |
-| 15  | should select and mark checklist for editing on handleChecklistEdit                  | 編輯模式觸發                         |
-| 16  | should duplicate checklist and select the copy on handleChecklistCopy                | 清單複製                             |
-| 17  | should delete checklist after user confirms the dialog                               | 確認刪除                             |
-| 18  | should not delete checklist when user cancels the dialog                             | 取消刪除                             |
-| 19  | should delegate selected checklist deletion to the composable                        | 刪除委派                             |
-| 20  | should update checklist via ChecklistComponent emit                                  | 清單更新                             |
-| 21  | should call updateMultipleChecklists on handleChecklistMove                          | 清單移動                             |
-| 22  | should update selectedChecklistId from overlay sidebar select-checklist              | overlay 側欄選取同步                 |
-| 23  | should update selectedChecklistId from inline sidebar select-checklist               | inline 側欄選取同步                  |
-| 24  | should create item with maxOrder + 1 in the target category                          | 物品建立順序                         |
-| 25  | should create item with order 0 in an empty category                                 | 空分類物品                           |
-| 26  | should update item and clear newlyCreatedItemId if matching                          | 物品更新 + 旗標清除                  |
-| 27  | should call duplicateItem on copy:item emit                                          | 物品複製                             |
-| 28  | should call deleteItem on delete:item emit                                           | 物品刪除                             |
-| 29  | should update item categoryId and reordered items on move type                       | 跨分類移動                           |
-| 30  | should update all items with new order on reorder type                               | 同分類重排                           |
-| 31  | should handle move with empty reorderedItems gracefully                              | 空重排邊界                           |
-| 32  | should create category with correct order                                            | 分類建立順序                         |
-| 33  | should update category and clear newlyCreatedCategoryId if matching                  | 分類更新 + 旗標清除                  |
-| 34  | should call duplicateCategory on copy:category emit                                  | 分類複製                             |
-| 35  | should call deleteCategory on delete:category emit                                   | 分類刪除                             |
-| 36  | should update each category and call getCategories                                   | 分類重排                             |
-| 37  | should display overlay backdrop when sidebar is open on mobile                       | 覆蓋層渲染                           |
-| 38  | should close sidebar when overlay backdrop is clicked                                | 覆蓋層關閉                           |
-| 39  | should set body overflow hidden when overlay is active                               | Body 捲動鎖定                        |
-| 40  | should preserve the existing right padding while compensating for a hidden scrollbar | Scroll-lock 補償與還原               |
-| 41  | should set body overflow hidden when sidebar opens on small desktop                  | 小型桌面捲動鎖定                     |
-| 42  | should call initialize on mount                                                      | 生命週期：掛載初始化                 |
-| 43  | should clean up resize event listener on unmount                                     | 生命週期：卸載清理                   |
-| 44  | should open an isolated editor without creating a checklist                          | Template editor 隔離                 |
-| 45  | should save only through the templates composable                                    | Template 儲存路由                    |
-| 46  | should open the named template dialog and save its selected checklist                | 命名 template 儲存流程               |
-| 47  | should create a checklist from a selected personal template                          | Template 套用流程                    |
-| 48  | should delete the active template and leave the editor                               | Template 刪除流程                    |
-| 49  | should create an explicitly empty checklist                                          | 空白來源流程                         |
-| 50  | handles failed template creation and ignores missing sources                         | 建立失敗與缺少來源防護               |
-| 51  | should ignore requests to edit a missing template                                    | 缺少 template guard                  |
-| 52  | should keep the editor open when saving fails                                        | 儲存失敗狀態                         |
-| 53  | should discard a template draft when canceled                                        | 草稿取消                             |
-| 54  | should preserve a template when deletion is canceled                                 | 刪除取消                             |
-| 55  | should close both template dialogs without operations                                | Dialog 取消                          |
-| 56  | should leave state unchanged when empty creation fails                               | 空白建立失敗                         |
-| 57  | should keep the editor open when template deletion fails                             | Delete 失敗狀態                      |
-| 58  | should use an empty initial name for an unknown checklist                            | 缺少 checklist 後備                  |
-| 59  | should ignore duplicate save events after source state clears                        | 重複儲存 guard                       |
-| 60  | should create a checklist from a selected recommended list                           | 推薦清單流程                         |
-| 61  | should apply a category packing change and offer one-click undo                      | 批次打包復原操作                     |
-| 62  | should use Ctrl+Z for packing undo but preserve input-native undo                    | 鍵盤快捷鍵隔離                       |
-| 63  | shows the completion overlay after the final local item is packed                    | 本機完成轉場                         |
-| 64  | should defer the complete undo window until the completion overlay closes            | inert 背景、焦點返回與完整 Undo 時窗 |
-| 65  | shows the completion overlay only when redo completes the checklist                  | redo 轉場、sidebar 隔離與 guard      |
-| 66  | keeps completed initialization and checklist switching silent                        | 被動轉場排除                         |
-| 67  | should defer an existing category undo window when a final item opens completion     | 跨路徑完整 Undo 時窗                 |
-| 68  | 範本 dialog 保持開啟直到重試成功                                                     | 範本草稿與重試                       |
-| 69  | 清單來源選擇保持開啟直到重試成功                                                     | 建立清單重試                         |
+| #   | Test                                                                                       |
+| --- | ------------------------------------------------------------------------------------------ |
+| 1   | should render the main layout with sidebar and content                                     |
+| 2   | should show empty state when no checklist is selected                                      |
+| 3   | should show ChecklistComponent when a checklist is selected                                |
+| 4   | shows the completion overlay after the final local item is packed                          |
+| 5   | shows the completion overlay only when redo completes the checklist                        |
+| 6   | does not celebrate another checklist completing while redo is pending                      |
+| 7   | keeps completed initialization and checklist switching silent                              |
+| 8   | should set isMobileViewport to true for narrow screens                                     |
+| 9   | should auto-collapse sidebar on mobile viewport                                            |
+| 10  | should auto-expand sidebar on wide desktop when not manually collapsed                     |
+| 11  | should not auto-expand sidebar when manually collapsed key exists after resize from mobile |
+| 12  | should detect small desktop viewport as overlay zone                                       |
+| 13  | should toggle sidebar when sidebar emits toggle-sidebar                                    |
+| 14  | should persist sidebar collapse to localStorage on desktop                                 |
+| 15  | should remove collapsed key from localStorage when sidebar re-opened                       |
+| 16  | should toggle sidebar from Topbar on mobile                                                |
+| 17  | should open source selection from Sidebar without creating immediately                     |
+| 18  | should open source selection from Topbar on mobile                                         |
+| 19  | should select and mark checklist for editing on handleChecklistEdit                        |
+| 20  | should duplicate checklist and select the copy on handleChecklistCopy                      |
+| 21  | deletes a checklist without a confirmation dialog                                          |
+| 22  | delegates a failed checklist deletion without confirmation                                 |
+| 23  | should delegate selected checklist deletion to the composable                              |
+| 24  | should update checklist via ChecklistComponent emit                                        |
+| 25  | should call updateMultipleChecklists on handleChecklistMove                                |
+| 26  | should update selectedChecklistId from overlay sidebar select-checklist event              |
+| 27  | should update selectedChecklistId from inline sidebar select-checklist event               |
+| 28  | should create item with maxOrder + 1 in the target category                                |
+| 29  | should create item with order 0 in an empty category                                       |
+| 30  | should update item and clear newlyCreatedItemId if matching                                |
+| 31  | should call duplicateItem on copy:item emit                                                |
+| 32  | should call deleteItem on delete:item emit                                                 |
+| 33  | should batch all source and target item updates on move type                               |
+| 34  | should update all items with new order on reorder type                                     |
+| 35  | should ignore a move payload without item updates                                          |
+| 36  | should create category with correct order                                                  |
+| 37  | should update category and clear newlyCreatedCategoryId if matching                        |
+| 38  | should call duplicateCategory on copy:category emit                                        |
+| 39  | should call deleteCategory on delete:category emit                                         |
+| 40  | should submit all categories in one operation                                              |
+| 41  | should display overlay backdrop when sidebar is open on mobile                             |
+| 42  | should close sidebar when overlay backdrop is clicked                                      |
+| 43  | should set body overflow hidden when overlay is active                                     |
+| 44  | should preserve the existing right padding while compensating for a hidden scrollbar       |
+| 45  | should set body overflow hidden when sidebar opens on small desktop                        |
+| 46  | should call initialize on mount                                                            |
+| 47  | should clean up resize event listener on unmount                                           |
+| 48  | should open an isolated editor without creating a checklist                                |
+| 49  | should save only through the templates composable                                          |
+| 50  | opens the named template dialog and saves its selected checklist                           |
+| 51  | keeps the template dialog open after failure and closes after retry succeeds               |
+| 52  | creates a checklist from a selected personal template                                      |
+| 53  | deletes the active template and leaves the editor                                          |
+| 54  | creates an explicitly empty checklist                                                      |
+| 55  | handles failed template creation and ignores missing sources                               |
+| 56  | keeps checklist source selection open after a failed creation and closes on retry          |
+| 57  | ignores requests to edit a missing template                                                |
+| 58  | keeps the editor open when saving a template fails                                         |
+| 59  | discards a template draft when editing is canceled                                         |
+| 60  | preserves a template when deletion is canceled                                             |
+| 61  | closes both template dialogs without performing an operation                               |
+| 62  | leaves checklist state unchanged when empty creation fails                                 |
+| 63  | keeps the editor open when template deletion fails                                         |
+| 64  | uses an empty initial name for an unknown checklist                                        |
+| 65  | ignores duplicate template save events after source state is cleared                       |
+| 66  | creates a checklist from a selected recommended list                                       |
+| 67  | does not replace a newer barrier with an earlier delayed undo result                       |
+| 68  | does not show an outdated batch toast after that batch was undone                          |
+| 69  | does not route global undo into the checklist while a template editor is open              |
+| 70  | does not undo the underlying item when its inline edit failed to save                      |
+| 71  | keeps draft owners independent when another editor is displaced during a save              |
+| 72  | keeps history blocked after a save until the editor actually closes                        |
+| 73  | does not dismiss a newer barrier after a delayed redo finishes                             |
+| 74  | replaces the success notice with a subsequent external history barrier                     |
+| 75  | replaces an older history barrier when a later undo succeeds                               |
+| 76  | waits for a button history action before running the next keyboard shortcut                |
+| 77  | waits for a pending item update before a toolbar undo                                      |
+| 78  | explains when a newer action interrupts a queued shortcut                                  |
+| 79  | announces and dismisses a history barrier                                                  |
+| 80  | applies a category packing change without a contextual undo notice                         |
+| 81  | should use Ctrl+Z for packing undo but preserve input-native undo                          |
 
 #### 8.2.2 Topbar.test.js（2）
 
@@ -910,44 +954,47 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 4   | should show quantity badge when quantity > 1                 | 數量顯示       |
 | 5   | should emit "update:item" with isPending=false on completion | 清除 pending   |
 
-#### 8.2.7 Item.test.js（34）
+#### 8.2.7 Item.test.js（37）
 
-| #   | Test                                                                             | 測試重點                 |
-| --- | -------------------------------------------------------------------------------- | ------------------------ |
-| 1   | keeps an item name draft on failed save and closes only after a successful retry | 行內寫入確認             |
-| 2   | preserves a failed draft during another item pointer gesture                     | 儲存失敗保留草稿及錯誤   |
-| 3   | releases a held edit after pointerup                                             | 對應的指標放開後結束編輯 |
-| 4   | releases a held edit after pointercancel                                         | 對應的指標取消後結束編輯 |
-| 5   | should display the item name                                                     | 名稱渲染                 |
-| 6   | should render a checkbox input                                                   | checkbox 存在            |
-| 7   | should check the checkbox when item is packed                                    | checked 綁定             |
-| 8   | should apply line-through styling when item is packed                            | 打包樣式                 |
-| 9   | should display quantity value                                                    | 數量標籤                 |
-| 10  | should emit "update:item" with toggled isPacked when checkbox is clicked         | checkbox 切換事件        |
-| 11  | should clear isPending when item becomes packed                                  | 打包清除 pending         |
-| 12  | should enter edit mode when item name is clicked                                 | 編輯時聚焦全選           |
-| 13  | should save edited name on Enter key                                             | Enter 確認               |
-| 14  | should cancel edit mode on Escape key                                            | Escape 取消              |
-| 15  | should emit "update:item" with incremented quantity                              | 數量 +1                  |
-| 16  | should emit "update:item" with decremented quantity                              | 數量 -1                  |
-| 17  | should emit "delete:item" when quantity is 1 and delete button is clicked        | 刪除（數量1）            |
-| 18  | should emit "update:item" with toggled isPending                                 | 切換 pending             |
-| 19  | should clear isPacked when item is marked as pending                             | pending 清除 packed      |
-| 20  | should emit "copy:item" when OverflowMenu triggers copy                          | 複製轉發                 |
-| 21  | should emit "update:item" on blur with changed name                              | blur 儲存                |
-| 22  | should not emit "update:item" on blur with empty name                            | 空名稱檢查               |
-| 23  | should emit "delete:item" when OverflowMenu triggers delete                      | 刪除轉發                 |
-| 24  | should show action buttons on mouseenter                                         | hover 顯示               |
-| 25  | should hide action buttons on mouseleave                                         | hover 隱藏               |
-| 26  | should not save during IME composition                                           | IME 檢查                 |
-| 27  | should enter edit mode when newlyCreatedItemId matches                           | 新建自動聚焦全選         |
-| 28  | should not enter edit mode when newlyCreatedItemId does not match                | 無誤觸發                 |
-| 29  | should not decrement quantity below 1                                            | 最小數量檢查             |
-| 30  | should apply cursor-grabbing when isDragging is true                             | 拖曳視覺狀態             |
-| 31  | defers an inline action until composition ends and the name is saved             | 操作前取得最終組字文字   |
-| 32  | waits for the name save before an inline action and retains a failed draft       | 儲存確認與失敗保護       |
-| 33  | preserves a failed name draft when another edit entry is activated               | 失敗草稿與 baseline 保留 |
-| 34  | keeps the quantity-one delete action in the expanded touch region                | 數量為一的刪除操作       |
+| #   | Test                                                                                  |
+| --- | ------------------------------------------------------------------------------------- |
+| 1   | keeps an item name draft on failed save and closes only after a successful retry      |
+| 2   | releases its draft owner on unmount while a failed edit retry is pending              |
+| 3   | preserves a failed draft during another item pointer gesture                          |
+| 4   | releases a held edit after pointerup                                                  |
+| 5   | releases a held edit after pointercancel                                              |
+| 6   | should display the item name                                                          |
+| 7   | should render a checkbox input                                                        |
+| 8   | should check the checkbox when item is packed                                         |
+| 9   | should apply line-through styling when item is packed                                 |
+| 10  | should display quantity value                                                         |
+| 11  | should emit "update:item" with toggled isPacked when checkbox is clicked              |
+| 12  | should clear isPending when item becomes packed                                       |
+| 13  | should enter edit mode when item name is clicked                                      |
+| 14  | should save edited name on Enter key                                                  |
+| 15  | should cancel edit mode on Escape key                                                 |
+| 16  | should emit "update:item" with incremented quantity                                   |
+| 17  | should emit "update:item" with decremented quantity                                   |
+| 18  | should emit "delete:item" when quantity is 1 and delete button is clicked             |
+| 19  | should emit "update:item" with toggled isPending                                      |
+| 20  | should clear isPacked when item is marked as pending                                  |
+| 21  | should emit "copy:item" when OverflowMenu triggers copy                               |
+| 22  | should emit "update:item" on blur with changed name                                   |
+| 23  | should not emit "update:item" on blur with empty name                                 |
+| 24  | should emit "delete:item" when OverflowMenu triggers delete                           |
+| 25  | should show action buttons on mouseenter                                              |
+| 26  | keeps hover controls when focus leaves an editor while the pointer remains on the row |
+| 27  | does not restore mouse hover on touch-only devices or during drag suppression         |
+| 28  | should hide action buttons on mouseleave                                              |
+| 29  | should not save during IME composition                                                |
+| 30  | should enter edit mode when newlyCreatedItemId matches                                |
+| 31  | should not enter edit mode when newlyCreatedItemId does not match                     |
+| 32  | should not decrement quantity below 1                                                 |
+| 33  | should apply cursor-grabbing when isDragging is true                                  |
+| 34  | defers an inline action until composition ends and the name is saved                  |
+| 35  | waits for the name save before an inline action and retains a failed draft            |
+| 36  | preserves a failed name draft when another edit entry is activated                    |
+| 37  | keeps the quantity-one delete action in the expanded touch region                     |
 
 #### 8.2.8 OverflowMenu.test.js（24）
 
@@ -1194,7 +1241,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | 觸控跨清單正常新增／移除              |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | 滑鼠跨清單正常新增／移除              |
 
-### 8.3 E2E Tests（217）
+### 8.3 E2E Tests（243）
 
 #### 8.3.1 app-loading.spec.js（5）
 
@@ -1214,7 +1261,7 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 2   | should auto-select and enter edit mode                                                  | 自動編輯 UX     |
 | 3   | should rename checklist by clicking on the name                                         | 重命名流程      |
 | 4   | should switch between checklists                                                        | 導航流程        |
-| 5   | should delete checklist after confirmation                                              | 刪除流程        |
+| 5   | should delete checklist without confirmation                                            | 刪除流程        |
 | 6   | should restore the last opened checklist and fallback to sidebar top after invalidation | 重載恢復 + 回退 |
 
 #### 8.3.3 category-crud.spec.js（3）
@@ -1279,16 +1326,20 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 9   | should update progress when items are packed on mobile              | 行動版進度       |
 | 10  | should filter packed items with an accessible icon button on mobile | 可存取行動版篩選 |
 
-#### 8.3.8 multi-tab-sync.spec.js（6）
+#### 8.3.8 multi-tab-sync.spec.js（10）
 
-| #   | Test                                                                     | 測試重點                     |
-| --- | ------------------------------------------------------------------------ | ---------------------------- |
-| 1   | should sync checklist create and rename across tabs                      | 跨頁籤同步（storage event）  |
-| 2   | should converge when tabs rename sequentially after synchronization      | 依序同步                     |
-| 3   | should converge after rapid alternating cross-tab edits                  | 快速交替編輯一致性           |
-| 4   | should converge to deletion when one tab renames and another tab deletes | rename+delete 衝突收斂一致性 |
-| 5   | should keep remote completion synchronization silent                     | storage sync 不觸發慶祝      |
-| 6   | keeps both templates when two tabs save behind the same lock barrier     | 併發模板寫入                 |
+| #   | Test                                                                                 |
+| --- | ------------------------------------------------------------------------------------ |
+| 1   | should sync checklist create and rename across tabs                                  |
+| 2   | should converge when tabs rename sequentially after synchronization                  |
+| 3   | should converge after rapid alternating cross-tab edits                              |
+| 4   | should converge to deletion when one tab renames and another tab deletes             |
+| 5   | should keep remote completion synchronization silent                                 |
+| 6   | restores the last deleted checklist with its contents through keyboard undo and redo |
+| 7   | identifies the affected checklist after cross-checklist undo and redo                |
+| 8   | keeps long Chinese cross-checklist feedback operable at 320px                        |
+| 9   | does not undo a later packing change from another tab                                |
+| 10  | keeps both templates when two tabs save behind the same lock barrier                 |
 
 #### 8.3.9 template-management.spec.js（8）
 
@@ -1309,39 +1360,40 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | --- | ------------------------------------------------------------- | ---------------------- |
 | 1   | should create and persist a checklist from a recommended list | 來源識別名稱與重新載入 |
 
-#### 8.3.11 storage-recovery.spec.js（29）
+#### 8.3.11 storage-recovery.spec.js（30）
 
-| #   | Test                                                                                     | 測試重點                   |
-| --- | ---------------------------------------------------------------------------------------- | -------------------------- |
-| 1   | 儲存失敗後保留清單草稿                                                                   | 寫入失敗與重試             |
-| 2   | 儲存失敗後保留新範本草稿                                                                 | Dialog 來源與重試          |
-| 3   | 儲存失敗後保留範本編輯草稿                                                               | 範本 editor 重試           |
-| 4   | 拒絕跨分頁的同欄位過期編輯                                                               | 衝突與保留草稿             |
-| 5   | 合併跨分頁不同欄位編輯                                                                   | 欄位意圖                   |
-| 6   | 回報瀏覽器 storage 無法存取                                                              | 明確阻擋狀態               |
-| 7   | 拒絕失敗的分類打包                                                                       | 不誤報完成或復原           |
-| 8   | 範本不支援時保留清單可用性                                                               | Domain 隔離                |
-| 9   | 說明 Web Locks 無法使用                                                                  | 安全寫入後備行為           |
-| 10  | 切換清單時保留失敗草稿                                                                   | 草稿歸屬                   |
-| 11  | 拒絕遠端刪除後排隊的編輯                                                                 | 不復活資料並保留草稿       |
-| 12  | 回報寫入成功但重新讀取失敗                                                               | 區分寫入與讀取失敗         |
-| 13  | 取消編輯後顯示後續範本失敗                                                               | 錯誤歸屬                   |
-| 14  | 複製成功但重新讀取失敗時保留原選取                                                       | 選取與寫入確認             |
-| 15  | 取消舊草稿時保留較新的錯誤                                                               | 錯誤歸屬                   |
-| 16  | 取消失敗的範本編輯後顯示後續清單錯誤                                                     | 錯誤歸屬                   |
-| 17  | 儲存等待鎖時阻止切換範本                                                                 | 等待中的編輯器歸屬         |
-| 18  | 拒絕切換時保留儲存失敗的範本草稿                                                         | 明確放棄決策               |
-| 19  | 還原物品原名稱後顯示後續錯誤                                                             | 無變更退出的錯誤歸屬       |
-| 20  | 英文桌面匯出損壞資料並重試                                                               | 原始資料與鍵盤復原         |
-| 21  | 繁中 390px 匯出損壞資料並重試                                                            | 本地化窄版復原             |
-| 22  | 切換清單後顯示排隊儲存失敗                                                               | 已移除編輯器錯誤可見       |
-| 23  | 儲存正在編輯的範本標題                                                                   | 不按 Enter 直接儲存        |
-| 24  | 儲存正在編輯的範本分類                                                                   | 不按 Enter 直接儲存        |
-| 25  | 儲存正在編輯的範本物品                                                                   | 不按 Enter 直接儲存        |
-| 26  | 完成範本標題組字後才儲存                                                                 | 輸入法事件與最終文字       |
-| 27  | 拒絕打包後排隊的待處理                                                                   | 跨分頁物品衝突             |
-| 28  | 拒絕待處理後排隊的分類打包                                                               | 跨分頁原子批次             |
-| 29  | keeps a checklist draft after a real storage failure and saves it on retry [webkit-core] | 相同核心行為，另一引擎執行 |
+| #   | Test                                                                               |
+| --- | ---------------------------------------------------------------------------------- |
+| 1   | keeps a checklist draft after a real storage failure and saves it on retry         |
+| 2   | keeps a failed item draft when undo is pressed after focus leaves the editor       |
+| 3   | preserves a template name and source after a failed write and retries successfully |
+| 4   | retains an edited template draft after a failed save                               |
+| 5   | preserves a stale name draft and rejects a same-field edit from another tab        |
+| 6   | merges a local name draft with a different field changed in another tab            |
+| 7   | shows unavailable domains instead of crashing when browser storage is denied       |
+| 8   | does not show packing success or undo when a category write fails                  |
+| 9   | keeps checklist operations available when only template data is unsupported        |
+| 10  | explains when safe browser locking is unavailable                                  |
+| 11  | preserves a failed draft separately when switching checklists                      |
+| 12  | preserves the draft when a queued edit follows a remote deletion                   |
+| 13  | reports a saved checklist when only the following refresh fails                    |
+| 14  | shows a later template deletion error after cancelling a failed checklist edit     |
+| 15  | keeps the original checklist selected after copy succeeds and refresh fails        |
+| 16  | retains a newer operation error when an older failed draft is cancelled            |
+| 17  | shows a later checklist error after cancelling a failed template save              |
+| 18  | does not switch template editors while a save is pending                           |
+| 19  | keeps a failed template draft when switching is declined                           |
+| 20  | shows later errors after restoring the original item name                          |
+| 21  | preserves and exports corrupt data, then retries in en at 1280px                   |
+| 22  | preserves and exports corrupt data, then retries in zh-TW at 390px                 |
+| 23  | shows a queued save failure after switching checklists                             |
+| 24  | saves an active template name when Save is clicked                                 |
+| 25  | saves an active template category when Save is clicked                             |
+| 26  | saves an active template item when Save is clicked                                 |
+| 27  | waits for composition to finish before saving a template title                     |
+| 28  | rejects queued pending after another tab commits item-pack                         |
+| 29  | rejects queued category-pack after another tab commits pending                     |
+| 30  | keeps a checklist draft after a real storage failure and saves it on retry         |
 
 #### 8.3.12 rwd-phone.spec.js (8 tests)
 
@@ -1380,18 +1432,22 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 7   | WebKit tablet columns retain visible touch actions [chromium]           | 相同核心行為，另一引擎執行                    |
 | 8   | WebKit short mobile sidebar keeps navigation reachable [chromium]       | 相同核心行為，另一引擎執行                    |
 
-#### 8.3.15 sidebar-presentation.spec.js（8）
+#### 8.3.15 sidebar-presentation.spec.js（12）
 
-| #   | Test                                                    | 測試重點                                              |
-| --- | ------------------------------------------------------- | ----------------------------------------------------- |
-| 1   | phone: sidebar presentation stays consistent in en      | 入口標籤、長按微動／三點排除、選單、清單捲動與 Escape |
-| 2   | phone: sidebar presentation stays consistent in zh-TW   | 在地化入口標籤、選單幾何與手機清單捲動                |
-| 3   | tablet: sidebar presentation stays consistent in en     | 長按微動／三點排除、收合捲動鎖、字首與選單幾何        |
-| 4   | tablet: sidebar presentation stays consistent in zh-TW  | 收合禁止捲動、中文字首與選單幾何                      |
-| 5   | desktop: sidebar presentation stays consistent in en    | 收合禁止捲動、完整字首、縮放與焦點恢復                |
-| 6   | desktop: sidebar presentation stays consistent in zh-TW | 收合禁止捲動、中文字首與 ResizeObserver 後備          |
-| 7   | short mobile sidebar remains operable in en             | 極短側欄觸控、鍵盤及範本導覽                          |
-| 8   | short mobile sidebar remains operable in zh-TW          | 中文極短側欄導覽                                      |
+| #   | Test                                                                         |
+| --- | ---------------------------------------------------------------------------- |
+| 1   | sidebar presentation stays consistent in en [phone]                          |
+| 2   | sidebar presentation stays consistent in zh-TW [phone]                       |
+| 3   | sidebar presentation stays consistent in en [tablet]                         |
+| 4   | sidebar presentation stays consistent in zh-TW [tablet]                      |
+| 5   | sidebar presentation stays consistent in en [desktop]                        |
+| 6   | sidebar presentation stays consistent in zh-TW [desktop]                     |
+| 7   | short mobile sidebar remains operable in en                                  |
+| 8   | short mobile sidebar remains operable in zh-TW                               |
+| 9   | collapsed initials and expanded names keep the same first-character position |
+| 10  | sidebar heading aligns with checklist names at 1280px                        |
+| 11  | sidebar heading aligns with checklist names at 820px                         |
+| 12  | sidebar heading aligns with checklist names at 390px                         |
 
 #### 8.3.16 desktop-drag-presentation.spec.js（19）
 
@@ -1430,19 +1486,20 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | 7   | settles rapid collapse reversals and viewport changes            | 反向操作、清理與無水平溢位     |
 | 8   | honors reduced motion and cancels active reflow                  | 即時動態偏好與直接完成版面     |
 
-#### 8.3.18 interaction-feedback.spec.js（9）
+#### 8.3.18 interaction-feedback.spec.js（10）
 
-| #   | Test                                                                                | 驗證內容                               |
-| --- | ----------------------------------------------------------------------------------- | -------------------------------------- |
-| 1   | desktop: keeps normal and completed feedback consistent and animates inline actions | 一般／完成回饋、物品虛線與對齊         |
-| 2   | desktop: accepts items into a collapsed category and retains counts and order       | 物品虛線對齊、收回、拖離與數量保存     |
-| 3   | tablet: keeps normal and completed feedback consistent and animates inline actions  | 觸控操作列動效、物品虛線與對齊         |
-| 4   | tablet: accepts items into a collapsed category and retains counts and order        | 觸控物品虛線對齊、收回／取消與排序保存 |
-| 5   | phone: keeps normal and completed feedback consistent and animates inline actions   | 觸控操作列動效、物品虛線與對齊         |
-| 6   | phone: accepts items into a collapsed category and retains counts and order         | 觸控物品虛線對齊、收回／取消與排序保存 |
-| 7   | ends an old name edit when dragging a different item                                | 未改名／已改名的編輯收尾與保存         |
-| 8   | saves a name when clicking another item without dragging                            | 儲存名稱並聚焦另一個物品               |
-| 9   | honors reduced motion for inline action expansion                                   | 直接展開、可用控制項與 Escape          |
+| #   | Test                                                                                 |
+| --- | ------------------------------------------------------------------------------------ |
+| 1   | keeps normal and completed feedback consistent and animates inline actions [desktop] |
+| 2   | accepts items into a collapsed category and retains counts and order [desktop]       |
+| 3   | keeps normal and completed feedback consistent and animates inline actions [tablet]  |
+| 4   | accepts items into a collapsed category and retains counts and order [tablet]        |
+| 5   | keeps normal and completed feedback consistent and animates inline actions [phone]   |
+| 6   | accepts items into a collapsed category and retains counts and order [phone]         |
+| 7   | ends an old name edit when dragging a different item                                 |
+| 8   | saves a name when clicking another item without dragging                             |
+| 9   | honors reduced motion for inline action expansion                                    |
+| 10  | keeps item hover controls available after confirming an inline name edit             |
 
 #### 8.3.19 drag-settlement.spec.js（15）
 
@@ -1527,3 +1584,24 @@ npm run verify:feature -- --docs # 僅文件驗證；會報告跳過的測試與
 | --- | ---------------------------------------------------------------- | -------------------------------- |
 | 1   | creates, edits, packs and deletes a persisted item [chromium]    | 建立、編輯、打包、保存重載與刪除 |
 | 2   | creates, edits, packs and deletes a persisted item [webkit-core] | 建立、編輯、打包、保存重載與刪除 |
+
+#### 8.3.24 undo-redo-ui.spec.js（16）
+
+| #   | Test                                                                                         |
+| --- | -------------------------------------------------------------------------------------------- |
+| 1   | desktop history controls undo and redo a status change and protect an active draft           |
+| 2   | mobile topbar hides on downward scroll and returns on upward scroll                          |
+| 3   | mobile controls restore the last deleted checklist and reset after reload                    |
+| 4   | category packing has no toast and undo shows a brief result                                  |
+| 5   | keyboard history works immediately after packing and quantity controls retain checkbox focus |
+| 6   | desktop history controls share the menu row and mobile controls stay beside the menu         |
+| 7   | collapsed desktop sidebar hides history controls while shortcuts still work                  |
+| 8   | sidebar heading and checklist names fade with New Checklist without horizontal motion        |
+| 9   | sidebar history respects reduced motion and rapid open-close                                 |
+| 10  | history controls remain inert until their shared fade completes                              |
+| 11  | toolbar undo waits for a pending locked status update                                        |
+| 12  | dragging a checklist creates one reversible history step                                     |
+| 13  | mobile sidebar controls undo and redo a checklist deletion                                   |
+| 14  | keyboard focus keeps the mobile topbar visible while scrolling                               |
+| 15  | failed checklist deletion is visible and dismissible inside mobile sidebar                   |
+| 16  | touch scrolling hides and reveals the topbar after closing the drawer                        |

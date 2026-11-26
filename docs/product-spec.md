@@ -273,7 +273,7 @@ Checklist, Category, and Item are the three core data entities of the app. Below
 - Purpose: Recover checklist, category, and item changes during the current browser tab session.
 - Key features:
   - Creation, duplication, deletion, edits, packing, pending, and reordering each form one history action; a category batch is one action.
-  - Desktop controls appear beside the sidebar toggle when expanded and hide when collapsed; keyboard shortcuts remain available. Mobile controls appear in the topbar, which hides while scrolling down and returns when scrolling up.
+  - Desktop controls appear beside the sidebar toggle when expanded and hide when collapsed; keyboard shortcuts remain available. Mobile controls appear in the topbar and in the open sidebar; the topbar follows the scroll distance while hiding on downward scroll and reappearing on upward scroll; in very short viewports it scrolls with the page to keep content reachable. Deleting a checklist requires no confirmation and can be undone during the current session.
   - `Ctrl+Z` / `Cmd+Z` undoes; `Ctrl+Shift+Z` / `Cmd+Shift+Z` or `Ctrl+Y` redoes. Text inputs retain native undo, and active drafts and dialogs block global history actions.
   - The controls show disabled states and brief feedback after undo or redo.
   - Up to 50 actions remain in memory across checklists in the same tab. Reloading, closing the tab, external storage changes, or committed template changes clear history.

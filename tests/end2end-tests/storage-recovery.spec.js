@@ -4,7 +4,8 @@ import { readFile } from 'node:fs/promises';
 
 import { expect, test } from '@playwright/test';
 
-// Test Case 1: Retain the checklist draft through storage failure and retry.
+// Retain the checklist draft through storage failure and retry.
+// Test Case 1: keeps a checklist draft after a real storage failure and saves it on retry.
 test(
   'keeps a checklist draft after a real storage failure and saves it on retry',
   { tag: '@core-smoke' },
@@ -41,6 +42,7 @@ test(
   }
 );
 
+// Test Case 2: keeps a failed item draft when undo is pressed after focus leaves the editor.
 test('keeps a failed item draft when undo is pressed after focus leaves the editor', async ({
   page,
 }) => {
@@ -81,7 +83,8 @@ test('keeps a failed item draft when undo is pressed after focus leaves the edit
   await expect(page.getByTestId('item-name').filter({ hasText: 'Unsaved hat' })).toBeVisible();
 });
 
-// Test Case 2: Retain the template name and source through failure and retry.
+// Retain the template name and source through failure and retry.
+// Test Case 3: preserves a template name and source after a failed write and retries successfully.
 test('preserves a template name and source after a failed write and retries successfully', async ({
   page,
 }) => {
@@ -124,7 +127,8 @@ test('preserves a template name and source after a failed write and retries succ
     .toBe('My template draft');
 });
 
-// Test Case 3: Retain an edited template draft through failure and retry.
+// Retain an edited template draft through failure and retry.
+// Test Case 4: retains an edited template draft after a failed save.
 test('retains an edited template draft after a failed save', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -162,7 +166,8 @@ test('retains an edited template draft after a failed save', async ({ page }) =>
   ).toBe('Edited Weekend');
 });
 
-// Test Case 4: Reject conflicting edits while preserving the local draft.
+// Reject conflicting edits while preserving the local draft.
+// Test Case 5: preserves a stale name draft and rejects a same-field edit from another tab.
 test('preserves a stale name draft and rejects a same-field edit from another tab', async ({
   page,
   context,
@@ -192,7 +197,8 @@ test('preserves a stale name draft and rejects a same-field edit from another ta
   ).toBe('Remote name');
 });
 
-// Test Case 5: Merge changes to different fields across tabs.
+// Merge changes to different fields across tabs.
+// Test Case 6: merges a local name draft with a different field changed in another tab.
 test('merges a local name draft with a different field changed in another tab', async ({
   page,
   context,
@@ -226,7 +232,8 @@ test('merges a local name draft with a different field changed in another tab', 
   expect(stored).toMatchObject({ name: 'Local name', startDate: '2030-06-01' });
 });
 
-// Test Case 6: Report unavailable domains when browser storage is denied.
+// Report unavailable domains when browser storage is denied.
+// Test Case 7: shows unavailable domains instead of crashing when browser storage is denied.
 test('shows unavailable domains instead of crashing when browser storage is denied', async ({
   page,
 }) => {
@@ -246,7 +253,8 @@ test('shows unavailable domains instead of crashing when browser storage is deni
   await expect(page.getByTestId('empty-state')).toHaveCount(0);
 });
 
-// Test Case 7: Do not report packing success when the write fails.
+// Do not report packing success when the write fails.
+// Test Case 8: does not show packing success or undo when a category write fails.
 test('does not show packing success or undo when a category write fails', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -289,7 +297,8 @@ test('does not show packing success or undo when a category write fails', async 
   ).toBe(false);
 });
 
-// Test Case 8: Keep healthy checklist data available when templates are unsupported.
+// Keep healthy checklist data available when templates are unsupported.
+// Test Case 9: keeps checklist operations available when only template data is unsupported.
 test('keeps checklist operations available when only template data is unsupported', async ({
   page,
 }) => {
@@ -309,7 +318,8 @@ test('keeps checklist operations available when only template data is unsupporte
   );
 });
 
-// Test Case 9: Refuse writes and explain unavailable Web Locks.
+// Refuse writes and explain unavailable Web Locks.
+// Test Case 10: explains when safe browser locking is unavailable.
 test('explains when safe browser locking is unavailable', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'locks', { configurable: true, value: undefined });
@@ -324,7 +334,8 @@ test('explains when safe browser locking is unavailable', async ({ page }) => {
   expect(await page.evaluate(() => localStorage.getItem('packingListApp'))).toBeNull();
 });
 
-// Test Case 10: Keep a failed draft attached to its original checklist.
+// Keep a failed draft attached to its original checklist.
+// Test Case 11: preserves a failed draft separately when switching checklists.
 test('preserves a failed draft separately when switching checklists', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -367,7 +378,8 @@ test('preserves a failed draft separately when switching checklists', async ({ p
   ).toBe('List A');
 });
 
-// Test Case 11: A queued stale save cannot resurrect an item deleted in another tab.
+// A queued stale save cannot resurrect an item deleted in another tab.
+// Test Case 12: preserves the draft when a queued edit follows a remote deletion.
 test('preserves the draft when a queued edit follows a remote deletion', async ({
   page,
   context,
@@ -425,7 +437,8 @@ test('preserves the draft when a queued edit follows a remote deletion', async (
   ).toEqual([]);
 });
 
-// Test Case 12: A committed write with failed refresh is not reported as a failed save.
+// A committed write with failed refresh is not reported as a failed save.
+// Test Case 13: reports a saved checklist when only the following refresh fails.
 test('reports a saved checklist when only the following refresh fails', async ({ page }) => {
   await page.addInitScript(() => {
     const originalGet = Storage.prototype.getItem;
@@ -460,7 +473,8 @@ test('reports a saved checklist when only the following refresh fails', async ({
   ).toBe(1);
 });
 
-// Test Case 13: Cancelling a failed draft must not hide a later unrelated failure.
+// Cancelling a failed draft must not hide a later unrelated failure.
+// Test Case 14: shows a later template deletion error after cancelling a failed checklist edit.
 test('shows a later template deletion error after cancelling a failed checklist edit', async ({
   page,
 }) => {
@@ -506,7 +520,8 @@ test('shows a later template deletion error after cancelling a failed checklist 
   ).toBe(1);
 });
 
-// Test Case 14: Keep the original selection when copying succeeds but refresh fails.
+// Keep the original selection when copying succeeds but refresh fails.
+// Test Case 15: keeps the original checklist selected after copy succeeds and refresh fails.
 test('keeps the original checklist selected after copy succeeds and refresh fails', async ({
   page,
 }) => {
@@ -557,7 +572,8 @@ test('keeps the original checklist selected after copy succeeds and refresh fail
   await expect(page.getByTestId('checklist-name')).toHaveText('Original trip');
 });
 
-// Test Case 15: Cancelling an old draft cannot dismiss a newer failure.
+// Cancelling an old draft cannot dismiss a newer failure.
+// Test Case 16: retains a newer operation error when an older failed draft is cancelled.
 test('retains a newer operation error when an older failed draft is cancelled', async ({
   page,
 }) => {
@@ -607,7 +623,8 @@ test('retains a newer operation error when an older failed draft is cancelled', 
   await expect(page.getByTestId('item-name')).toHaveText('Hat');
 });
 
-// Test Case 16: Closing a failed template editor cannot hide later failures.
+// Closing a failed template editor cannot hide later failures.
+// Test Case 17: shows a later checklist error after cancelling a failed template save.
 test('shows a later checklist error after cancelling a failed template save', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -643,13 +660,13 @@ test('shows a later checklist error after cancelling a failed template save', as
   await page.getByRole('button', { name: 'Cancel' }).click();
   await page.getByTestId('template-unsaved-discard').click();
   await page.getByRole('main').getByTestId('overflow-trigger-checklist-cl').click();
-  page.once('dialog', (dialog) => dialog.accept());
   await page.getByTestId('overflow-action-delete-checklist-cl').click();
   await expect(page.getByRole('alert').filter({ hasText: 'storage is full' })).toBeVisible();
   await expect(page.getByTestId('checklist-name')).toHaveText('Trip');
 });
 
-// Test Case 17: Do not switch editors while a template save waits for a lock.
+// Do not switch editors while a template save waits for a lock.
+// Test Case 18: does not switch template editors while a save is pending.
 test('does not switch template editors while a save is pending', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -692,7 +709,8 @@ test('does not switch template editors while a save is pending', async ({ page }
   expect(templates.find((template) => template.id === 'b').name).toBe('Template B');
 });
 
-// Test Case 18: Require consent before discarding a failed template draft.
+// Require consent before discarding a failed template draft.
+// Test Case 19: keeps a failed template draft when switching is declined.
 test('keeps a failed template draft when switching is declined', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -736,7 +754,8 @@ test('keeps a failed template draft when switching is declined', async ({ page }
   await expect(page.getByText('Editing template: Template B')).toBeVisible();
 });
 
-// Test Case 19: Exiting an unchanged failed edit must release its own error.
+// Exiting an unchanged failed edit must release its own error.
+// Test Case 20: shows later errors after restoring the original item name.
 test('shows later errors after restoring the original item name', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -806,7 +825,8 @@ for (const { locale, width, heading, exportLabel, retryLabel } of [
     retryLabel: '重新讀取',
   },
 ]) {
-  // Test Cases 20–21: Export original data and retry in each locale and viewport.
+  // Export original data and retry in each locale and viewport.
+  // Test Cases 21–22: preserves and exports corrupt data, then retries for each locale and viewport width.
   test(`preserves and exports corrupt data, then retries in ${locale} at ${width}px`, async ({
     page,
   }) => {
@@ -840,7 +860,8 @@ for (const { locale, width, heading, exportLabel, retryLabel } of [
   });
 }
 
-// Test Case 22: A queued failure remains visible after its editor is removed.
+// A queued failure remains visible after its editor is removed.
+// Test Case 23: shows a queued save failure after switching checklists.
 test('shows a queued save failure after switching checklists', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -899,7 +920,8 @@ for (const { field, label, input, expected } of [
   },
   { field: 'item', label: 'item-name', input: 'item-edit-input', expected: 'New item' },
 ]) {
-  // Test Cases 23–25: Save active inline edits without requiring Enter first.
+  // Save active inline edits without requiring Enter first.
+  // Test Cases 24–26: saves an active template name, category, or item when Save is clicked.
   test(`saves an active template ${field} when Save is clicked`, async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem(
@@ -936,7 +958,8 @@ for (const { field, label, input, expected } of [
   });
 }
 
-// Test Case 26: Composition must finish before a template draft is saved.
+// Composition must finish before a template draft is saved.
+// Test Case 27: waits for composition to finish before saving a template title.
 test('waits for composition to finish before saving a template title', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -977,7 +1000,8 @@ for (const { firstAction, secondAction } of [
   { firstAction: 'item-pack', secondAction: 'pending' },
   { firstAction: 'pending', secondAction: 'category-pack' },
 ]) {
-  // Test Cases 27–28: Conflicting item and category status changes cannot merge.
+  // Conflicting item and category status changes cannot merge.
+  // Test Cases 28–29: rejects conflicting item and category status updates in either order.
   test(`rejects queued ${secondAction} after another tab commits ${firstAction}`, async ({
     page,
     context,

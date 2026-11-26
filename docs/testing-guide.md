@@ -14,13 +14,13 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Metric             | Value  |
 | ------------------ | ------ |
-| Total tests        | 862    |
-| Unit tests         | 323    |
-| Component tests    | 322    |
-| E2E tests          | 217    |
-| Line coverage      | 88.1%  |
-| Statement coverage | 86.03% |
-| Branch coverage    | 76.65% |
+| Total tests        | 929    |
+| Unit tests         | 348    |
+| Component tests    | 338    |
+| E2E tests          | 243    |
+| Line coverage      | 87.75% |
+| Statement coverage | 85.82% |
+| Branch coverage    | 76.27% |
 | Pass rate          | 100%   |
 
 ## 2. Test Architecture
@@ -29,26 +29,26 @@ Applies to this project's stack: Vue 3 + Vite + Vitest + @vue/test-utils + Playw
 
 | Layer     | Tool                           | Tests | Purpose                                            |
 | --------- | ------------------------------ | ----- | -------------------------------------------------- |
-| Unit      | Vitest                         | 323   | Pure logic in models, services, composables, utils |
-| Component | Vitest + @vue/test-utils       | 322   | Vue component rendering, events, state             |
-| E2E       | Playwright + Chromium / WebKit | 217   | Full user flows in browser engines                 |
+| Unit      | Vitest                         | 348   | Pure logic in models, services, composables, utils |
+| Component | Vitest + @vue/test-utils       | 338   | Vue component rendering, events, state             |
+| E2E       | Playwright + Chromium / WebKit | 243   | Full user flows in browser engines                 |
 
 ### Platform Verification Matrix
 
 | Where                   | Unit / Component                                      | E2E                                                                                                   | How                                                                                                                   |
 | ----------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Local macOS             | All 323 Unit and 322 Component tests can run locally. | All 217 browser executions can run, or select focused tests.                                          | `npm run verify:feature` runs the full feature gate on the Mac; use Vitest or Playwright commands for focused checks. |
-| Local Linux container   | All 323 Unit and 322 Component tests.                 | All 217 browser executions.                                                                           | `sh scripts/ci-container.sh full` runs the feature gate and separate Node container/report contract tests in Docker.  |
+| Local macOS             | All 348 Unit and 338 Component tests can run locally. | All 243 browser executions can run, or select focused tests.                                          | `npm run verify:feature` runs the full feature gate on the Mac; use Vitest or Playwright commands for focused checks. |
+| Local Linux container   | All 348 Unit and 338 Component tests.                 | All 243 browser executions.                                                                           | `sh scripts/ci-container.sh full` runs the feature gate and separate Node container/report contract tests in Docker.  |
 | GitHub Linux CI         | Node container/report contract tests.                 | Six shared Chromium core smoke cases.                                                                 | `sh scripts/ci-container.sh smoke` runs in Docker on each PR.                                                         |
-| GitHub Windows runner   | All 323 Unit and 322 Component tests.                 | All 217 browser executions.                                                                           | The Windows 2025 job runs `npm run verify:feature` on each PR.                                                        |
-| GitHub macOS runner     | All 323 Unit and 322 Component tests.                 | All 217 browser executions.                                                                           | The macOS job runs `npm run verify:feature` on each PR.                                                               |
+| GitHub Windows runner   | All 348 Unit and 338 Component tests.                 | All 243 browser executions.                                                                           | The Windows 2025 job runs `npm run verify:feature` on each PR.                                                        |
+| GitHub macOS runner     | All 348 Unit and 338 Component tests.                 | All 243 browser executions.                                                                           | The macOS job runs `npm run verify:feature` on each PR.                                                               |
 | Android and iOS devices | Not applicable.                                       | No tests on mobile devices; Chromium and WebKit emulate mobile viewports and some touch interactions. | Browser emulation does not provide a mobile operating system.                                                         |
 
 The PR checks `macos-full` and `windows-full` run the full gates; `linux-smoke` runs the six shared core cases. Each full gate uploads available test reports, failure attachments, checkout metadata and Playwright browser versions in its own artifact. Linux smoke does not include the edit-while-dragging regression; use the focused or full container command below to check that scenario on Linux. A separate failure-artifact probe runs when workflows, Docker, test scripts, dependency manifests, patches or Playwright configuration change. Its path filters are maintained in `.github/workflows/failure-artifact-probe.yml`; the workflow can also be run manually after it exists on the default branch. The probe checks a controlled failure and attachment upload, not product behavior. When renaming platform checks, verify the new checks run and update GitHub required status checks; do not make the path-filtered probe globally required.
 
 The Linux smoke uses a fixed list and execution report to reject missing, extra, skipped, flaky or runner-error cases. `node scripts/windowsSmoke.js` can exercise the same six cases locally; its result belongs to the host OS. Each platform job uploads available checkout metadata and diagnostics to a separate artifact.
 
-The 217 E2E executions are 207 in Chromium, 6 selected core cases in Playwright WebKit (`webkit-core`), and 4 responsive cases in Playwright WebKit (`webkit-rwd`). A source case executed in multiple projects counts once per execution. Chromium runs the general E2E baseline, including the same four responsive cases; WebKit adds the selected core and responsive checks, not the full Chromium suite. Playwright Chromium and WebKit are not branded Google Chrome or native Safari.
+The 243 E2E executions are 233 in Chromium, 6 selected core cases in Playwright WebKit (`webkit-core`), and 4 responsive cases in Playwright WebKit (`webkit-rwd`). A source case executed in multiple projects counts once per execution. Chromium runs the general E2E baseline, including the same four responsive cases; WebKit adds the selected core and responsive checks, not the full Chromium suite. Playwright Chromium and WebKit are not branded Google Chrome or native Safari.
 
 The six core cases cover item creation, editing, quantity, pending and packed status, reload and deletion; two viewport sizes for date editing; storage failure and draft recovery; keyboard menu focus; and mouse sorting with reload. Five are selected existing cases and one joins an item lifecycle that previously lacked complete reload evidence. The four responsive cases cover touch-emulated actions, short dialogs and dates, tablet layout, and short mobile navigation.
 
@@ -93,7 +93,7 @@ tests/
 │   ├── typecheckInfrastructure.test.ts   # Strict inference and component contracts
 │   └── fixtures/                        # Typed probe and deliberately invalid inputs
 │
-├── unit-tests/                          # 323 tests
+├── unit-tests/                          # 348 tests
 │   ├── data/                            #  4  tests
 │   │   └── recommendedLists.test.js        #  4  tests
 │   ├── models/                          # 40  tests
@@ -106,8 +106,9 @@ tests/
 │   │   ├── templateService.test.js      # 15  tests
 │   │   ├── storageTransaction.test.js  # 27  tests
 │   │   └── recommendedListService.test.js  #  4  tests
-│   ├── composables/                     # 70  tests
-│   │   └── usePackingLists.test.js      # 52  tests
+│   ├── composables/                     # 95  tests
+│   │   ├── useUndoHistory.test.js       # 6   tests
+│   │   ├── usePackingLists.test.js      # 71  tests
 │   │   └── useTemplates.test.js         # 16  tests
 │   │   └── useTouchLayout.test.js       #  1  test
 │   │   └── useVisualViewport.test.js    #  1  test
@@ -127,12 +128,12 @@ tests/
 │       ├── cssVars.test.js              #  5  tests
 │       └── verifyFeature.test.js        #  6  tests
 │
-├── component-tests/                     # 323 tests
-│   ├── App.test.js                      # 69  tests
+├── component-tests/                     # 338 tests
+│   ├── App.test.js                      # 81  tests
 │   ├── PackingCompletionOverlay.test.js # 10  tests
 │   ├── AppIcon.test.js                  #  4  tests
 │   ├── Checklist.test.js                # 44  tests
-│   ├── Item.test.js                     # 31  tests
+│   ├── Item.test.js                     # 37  tests
 │   ├── Sidebar.test.js                  # 36  tests
 │   ├── typedDraggable.test.js           #  7  tests
 │   ├── Category.test.js                 # 32  tests
@@ -146,13 +147,13 @@ tests/
 │   ├── TemplateEditor.test.js           # 16  tests
 │   └── SaveTemplateDialog.test.js       # 10  tests
 │
-└── end2end-tests/                       # 217 tests
+└── end2end-tests/                       # 243 tests
     ├── touchDragHelpers.js              # Hold-motion and native-scroll gestures
     ├── mobile-workflow.spec.js          # 10  tests
     ├── rwd-phone.spec.js                #  8  tests
     ├── rwd-overlays.spec.js             #  6  tests
     ├── rwd-webkit.spec.js               #  8  tests
-    ├── sidebar-presentation.spec.js     #  8  tests
+    ├── sidebar-presentation.spec.js     #  12  tests
     ├── item-packing.spec.js             # 10  tests
     ├── language-switch.spec.js          #  6  tests
     ├── app-loading.spec.js              #  5  tests
@@ -163,14 +164,15 @@ tests/
     ├── drag-settlement.spec.js           # 15  tests
     ├── drag-membership-conflict.spec.js  #  1  test
     ├── category-motion.spec.js          #  8  tests
-    ├── interaction-feedback.spec.js      #  9  tests
-    ├── multi-tab-sync.spec.js           #  6  tests
+    ├── interaction-feedback.spec.js      #  10  tests
+    ├── multi-tab-sync.spec.js           #  10  tests
     ├── core-smoke.spec.js               #  2  tests
     ├── checklist-dates.spec.js          # 18  tests
     ├── template-navigation.spec.js      # 23  tests
     ├── template-management.spec.js      #  8  tests
     ├── recommended-lists.spec.js        #  1  test
-    └── storage-recovery.spec.js         # 29  tests
+    ├── undo-redo-ui.spec.js             # 16  tests
+    └── storage-recovery.spec.js         # 30  tests
 ```
 
 Each per-file E2E count records browser-project executions; `Test Case` comments number distinct source cases, so shared cases appear once in source and once per project here.
@@ -195,30 +197,30 @@ Validation: Local `npm run test:inventory` executes Vitest and Playwright, then 
 
 | Module       | Statements | Branch | Lines  |
 | ------------ | ---------- | ------ | ------ |
-| scripts/     | 84.21%     | 74.43% | 83.53% |
-| source/      | 74.72%     | 65.86% | 78.12% |
-| components/  | 81.77%     | 74.08% | 84.66% |
-| composables/ | 95.04%     | 85.26% | 97.28% |
+| scripts/     | 83.16%     | 73.33% | 82.59% |
+| source/      | 75.57%     | 65.51% | 79.32% |
+| components/  | 81.2%      | 73.48% | 83.97% |
+| composables/ | 96.29%     | 88.56% | 97.28% |
 | models/      | 100%       | 100%   | 100%   |
-| services/    | 95.53%     | 83.5%  | 95.44% |
-| utils/       | 96.36%     | 85.92% | 96.62% |
+| services/    | 95.04%     | 84.98% | 95.41% |
+| utils/       | 96.96%     | 87.4%  | 96.62% |
 
 ### By Component
 
 | Component                    | Statements | Lines  | Tests |
 | ---------------------------- | ---------- | ------ | ----- |
-| App.vue                      | 74.72%     | 78.12% | 68    |
+| App.vue                      | 75.57%     | 79.32% | 81    |
 | AppIcon.vue                  | 100%       | 100%   | 4     |
 | AddCategoryButton.vue        | 100%       | 100%   | 2     |
 | AddItemButton.vue            | 100%       | 100%   | 8     |
 | ProgressBar.vue              | 100%       | 100%   | 8     |
-| Topbar.vue                   | 100%       | 100%   | 2     |
+| Topbar.vue                   | 57.14%     | 57.14% | 2     |
 | PendingItemsCategory.vue     | 100%       | 100%   | 5     |
-| Sidebar.vue                  | 88.13%     | 90.06% | 36    |
+| Sidebar.vue                  | 82.58%     | 84.23% | 36    |
 | OverflowMenu.vue             | 87.5%      | 89.81% | 24    |
-| Category.vue                 | 79.2%      | 82.95% | 32    |
-| Checklist.vue                | 70.98%     | 75.07% | 44    |
-| Item.vue                     | 87.92%     | 91.91% | 34    |
+| Category.vue                 | 80%        | 83.48% | 32    |
+| Checklist.vue                | 71.54%     | 75.47% | 44    |
+| Item.vue                     | 88.43%     | 92.46% | 37    |
 | NewChecklistDialog.vue       | 95%        | 95.94% | 12    |
 | PackingCompletionOverlay.vue | 97.14%     | 100%   | 10    |
 | SaveTemplateDialog.vue       | 92.72%     | 93.87% | 10    |
@@ -320,31 +322,31 @@ This project uses three layers to balance speed and reliability.
 
 ## 8. Complete Test Inventory
 
-### 8.1 Unit Tests (323 tests)
+### 8.1 Unit Tests (348 tests)
 
 #### 8.1.1 Models (40 tests)
 
 ##### 8.1.1.1 Item.test.js (17 tests)
 
-| #   | Test                                             | What it verifies                                              |
-| --- | ------------------------------------------------ | ------------------------------------------------------------- |
-| 1   | should create an item with default values        | Constructor defaults (`isPacked: false`, `quantity: 1`, etc.) |
-| 2   | should accept custom values                      | Constructor with all fields specified                         |
-| 3   | should generate a unique ID                      | Each instance gets a different ID                             |
-| 4   | should generate ID with correct prefix           | ID starts with the expected prefix string                     |
-| 5   | should throw error for empty name                | Validation rejects `name: ""`                                 |
-| 6   | should throw error for name exceeding max length | Validation rejects over-length names                          |
-| 7   | should accept name at max length                 | Boundary: name exactly at limit passes                        |
-| 8   | should throw error for non-string name           | Validation rejects non-string types (number, null, boolean)   |
-| 9   | should throw error for quantity less than 1      | Validation rejects `quantity: 0`                              |
-| 10  | should throw error for negative quantity         | Validation rejects negative values                            |
-| 11  | should accept large quantity                     | Large numbers are valid                                       |
-| 12  | should serialize to JSON correctly               | `toJSON()` output matches expected shape                      |
-| 13  | should deserialize from JSON correctly           | `fromJSON()` reconstructs the instance                        |
-| 14  | should preserve all properties through roundtrip | `fromJSON(toJSON())` is lossless                              |
-| 15  | should toggle isPacked from false to true        | `togglePacked()` flips the flag                               |
-| 16  | should toggle isPacked from true to false        | `togglePacked()` flips back                                   |
-| 17  | should throw error for quantity greater than 999 | Validation rejects `quantity > 999`                           |
+| #   | Test                                             |
+| --- | ------------------------------------------------ |
+| 1   | should create an item with default values        |
+| 2   | should accept custom values                      |
+| 3   | should generate a unique ID                      |
+| 4   | should generate ID with correct prefix           |
+| 5   | should throw error for empty name                |
+| 6   | should throw error for name exceeding max length |
+| 7   | should accept name at max length                 |
+| 8   | should throw error for non-string name           |
+| 9   | should throw error for quantity less than 1      |
+| 10  | should throw error for negative quantity         |
+| 11  | should accept large quantity                     |
+| 12  | should throw error for quantity greater than 999 |
+| 13  | should serialize to JSON correctly               |
+| 14  | should deserialize from JSON correctly           |
+| 15  | should preserve all properties through roundtrip |
+| 16  | should toggle isPacked from false to true        |
+| 17  | should toggle isPacked from true to false        |
 
 ##### 8.1.1.2 Category.test.js (9 tests)
 
@@ -539,64 +541,83 @@ This project uses three layers to balance speed and reliability.
 | 26  | preserves nested template fields and isolates newly materialized runtime state              | Snapshot preservation and fresh state        |
 | 27  | does not silently repair missing legacy names when duplicating raw records                  | Existing failure and byte preservation       |
 
-#### 8.1.3 Composables (70 tests)
+#### 8.1.3 Composables (95 tests)
 
-##### 8.1.3.1 usePackingLists.test.js (52 tests)
+##### 8.1.3.1 usePackingLists.test.js (71 tests)
 
-| #   | Test                                                                               | What it verifies                            |
-| --- | ---------------------------------------------------------------------------------- | ------------------------------------------- |
-| 1   | should return initial empty state                                                  | Default refs are empty                      |
-| 2   | should have computed properties                                                    | Computed refs exist                         |
-| 3   | should load data from storage on initialize                                        | Init reads from service                     |
-| 4   | should manage loading state during initialization                                  | `isLoading` toggles correctly               |
-| 5   | should normalize missing checklist order in memory and restore the saved checklist | Legacy defaults + saved restore             |
-| 6   | should fallback selected checklist and reload scoped categories/items              | Sidebar-top fallback                        |
-| 7   | should set error and clear state when initialize fails unexpectedly                | Init failure recovery                       |
-| 8   | should create a new checklist                                                      | Creates and refreshes state                 |
-| 9   | should select the first checklist after creation                                   | Auto-selection logic                        |
-| 10  | should update an existing checklist                                                | Update + refresh                            |
-| 11  | should delete a checklist                                                          | Delete + refresh                            |
-| 12  | should return null when createChecklist service call fails                         | Service failure path                        |
-| 13  | should return null when updateChecklist service call fails                         | Service failure path                        |
-| 14  | should create a category in the selected checklist                                 | Category creation                           |
-| 15  | should return null if no checklist is selected                                     | Null guard                                  |
-| 16  | should create an item in the selected checklist                                    | Item creation                               |
-| 17  | should toggle item packed status                                                   | Toggle + refresh; no undo                   |
-| 18  | should calculate progress correctly                                                | Progress computation                        |
-| 19  | should return 0 progress for empty checklist                                       | Zero-item edge case                         |
-| 20  | should handle storage errors gracefully during initialization                      | Error recovery                              |
-| 21  | should duplicate a checklist and refresh state                                     | Checklist duplication                       |
-| 22  | should duplicate a category and refresh state                                      | Category duplication                        |
-| 23  | should duplicate an item and refresh state                                         | Item duplication                            |
-| 24  | should delete a category and refresh both categories and items                     | Category delete cascade                     |
-| 25  | should delete an item and refresh items                                            | Item delete                                 |
-| 26  | should update multiple checklists and refresh state                                | Batch update                                |
-| 27  | should return null when creating item without selected checklist                   | Null guard                                  |
-| 28  | should return null when duplicating item without selected checklist                | Null guard                                  |
-| 29  | should return null when updating item without selected checklist                   | Null guard                                  |
-| 30  | should return empty array when getting categories without selected checklist       | Null guard                                  |
-| 31  | should return empty array when getting items without selected checklist            | Null guard                                  |
-| 32  | should return early when deleting item without selected checklist                  | Null guard                                  |
-| 33  | should return null when createItem service call fails (with checklist)             | Service failure path                        |
-| 34  | should return null when duplicateCategory service call fails (with checklist)      | Service failure path                        |
-| 35  | should return null when updateItem service call fails (with checklist)             | Service failure path                        |
-| 36  | should return null when duplicateItem service call fails (with checklist)          | Service failure path                        |
-| 37  | should return null when createCategory service call fails (with checklist)         | Service failure path                        |
-| 38  | should return null when duplicateChecklist service call fails (no checklist)       | Service failure path                        |
-| 39  | should return null when updateCategory service call fails (no checklist)           | Service failure path                        |
-| 40  | should return null when updateCategory service returns undefined                   | Falsy result guard                          |
-| 41  | should return null when updateMultipleChecklists service returns undefined         | Falsy result guard                          |
-| 42  | should return null when updateCategory throws (real service)                       | Throw fallback                              |
-| 43  | should refresh categories and return updated category on success                   | Success path + refresh                      |
-| 44  | should preserve valid selection and recover deleted selection on app data refresh  | Cross-tab selection recovery                |
-| 45  | preserves history and data after failed deletion                                   | Failed deletion                             |
-| 46  | retains visible categories and items after failed refresh                          | Read failure                                |
-| 47  | distinguishes a committed write from failed refresh                                | Commit acknowledgement                      |
-| 48  | clears previous checklist data when the new selection cannot be read               | Selection ownership                         |
-| 49  | should treat a category pack-all as one undoable action and restore mixed state    | Grouped history; redo safety                |
-| 50  | should clear packing history when switching checklists                             | History scope isolation                     |
-| 51  | preserves remote item edits when committing a stale drag payload                   | Explicit drag intent                        |
-| 52  | rejects stale drag membership without overwriting a remotely added item            | Original drag baseline survives later reads |
+| #   | Test                                                                                      |
+| --- | ----------------------------------------------------------------------------------------- |
+| 1   | should return initial empty state                                                         |
+| 2   | should have computed properties                                                           |
+| 3   | should load data from storage on initialize                                               |
+| 4   | should manage loading state during initialization                                         |
+| 5   | should normalize missing checklist order in memory and restore the saved checklist        |
+| 6   | should fallback selected checklist and reload scoped categories/items                     |
+| 7   | should set error and clear state when initialize fails unexpectedly                       |
+| 8   | should create a new checklist                                                             |
+| 9   | should select the first checklist after creation                                          |
+| 10  | should update an existing checklist                                                       |
+| 11  | should delete a checklist                                                                 |
+| 12  | should return null when createChecklist service call fails                                |
+| 13  | should return null when updateChecklist service call fails                                |
+| 14  | should create a category in the selected checklist                                        |
+| 15  | should return null if no checklist is selected                                            |
+| 16  | should create an item in the selected checklist                                           |
+| 17  | should toggle item packed status                                                          |
+| 18  | should calculate progress correctly                                                       |
+| 19  | should return 0 progress for empty checklist                                              |
+| 20  | should handle storage errors gracefully during initialization                             |
+| 21  | should duplicate a checklist and refresh state                                            |
+| 22  | should duplicate a category and refresh state                                             |
+| 23  | should duplicate an item and refresh state                                                |
+| 24  | should delete a category and refresh both categories and items                            |
+| 25  | should delete an item and refresh items                                                   |
+| 26  | should update multiple checklists and refresh state                                       |
+| 27  | should return null when creating item without selected checklist                          |
+| 28  | should return null when duplicating item without selected checklist                       |
+| 29  | should return null when updating item without selected checklist                          |
+| 30  | should return empty array when getting categories without selected checklist              |
+| 31  | should return empty array when getting items without selected checklist                   |
+| 32  | should return early when deleting item without selected checklist                         |
+| 33  | should return null when createItem service call fails (with checklist)                    |
+| 34  | should return null when duplicateCategory service call fails (with checklist)             |
+| 35  | should return null when updateItem service call fails (with checklist)                    |
+| 36  | should return null when duplicateItem service call fails (with checklist)                 |
+| 37  | should return null when createCategory service call fails (with checklist)                |
+| 38  | should return null when duplicateChecklist service call fails (no checklist)              |
+| 39  | should return null when updateCategory service call fails (no checklist)                  |
+| 40  | should return null when updateCategory service returns undefined                          |
+| 41  | should return null when updateMultipleChecklists service returns undefined                |
+| 42  | should return null when updateCategory throws (real service)                              |
+| 43  | should refresh categories and return updated category on success                          |
+| 44  | should preserve valid selection and recover deleted selection on app data refresh         |
+| 45  | restores a deleted checklist subtree with the same IDs and values, then redoes deletion   |
+| 46  | undoes and redoes item edits, pending status, duplication and deletion as separate steps  |
+| 47  | restores a category deletion with its items and reverses a cross-category move            |
+| 48  | rejects undoing a cross-category move when the destination membership changed             |
+| 49  | undoes and redoes category duplication with its complete item subtree                     |
+| 50  | rejects undoing a created checklist if another tab added a descendant before its event    |
+| 51  | undoes and redoes checklist, category and item reorder as separate steps                  |
+| 52  | rejects undo of a reorder after another tab changes membership, preserving the other edit |
+| 53  | reverses an edit without overwriting an unrelated external field change                   |
+| 54  | rejects undo if a different tab changed the saved status before its event arrives         |
+| 55  | keeps history for a no-op and undoes a later edit before the packing change               |
+| 56  | preserves a committed batch in history if the following refresh fails                     |
+| 57  | does not redirect an in-flight undo when the selected checklist changes                   |
+| 58  | preserves newer redo when an older item update refresh finishes later                     |
+| 59  | keeps the committed batch version even when its refresh finishes after undo               |
+| 60  | retains a newer action committed while an undo refresh is pending                         |
+| 61  | prevents an older undo from committing after a newer packing action                       |
+| 62  | clears history only when a template change actually commits                               |
+| 63  | does not clear history when a stale delete changes no data                                |
+| 64  | keeps history and visible data when item or category deletion fails                       |
+| 65  | retains visible categories and items if a later refresh fails                             |
+| 66  | reports a committed change separately when the subsequent refresh fails                   |
+| 67  | clears the previous checklist data when switching and the new read fails                  |
+| 68  | should treat a category pack-all as one undoable action and restore mixed state           |
+| 69  | undoes and redoes a batch on its owning checklist after switching                         |
+| 70  | preserves remote item edits when committing a stale drag payload                          |
+| 71  | rejects stale drag membership without overwriting a remotely added item                   |
 
 ##### 8.1.3.2 useTemplates.test.js (16 tests)
 
@@ -630,6 +651,17 @@ This project uses three layers to balance speed and reliability.
 | #   | Test                                                                 | What it verifies                     |
 | --- | -------------------------------------------------------------------- | ------------------------------------ |
 | 1   | updates fixed modal bounds and removes viewport listeners on unmount | Keyboard viewport bounds and cleanup |
+
+##### 8.1.3.5 useUndoHistory.test.js (6 tests)
+
+| #   | Test                                                                                 |
+| --- | ------------------------------------------------------------------------------------ |
+| 1   | moves committed actions in order and drops redo only for a new action                |
+| 2   | keeps the action available when persistence fails                                    |
+| 3   | prevents double execution and discards stale stacks after a concurrent change        |
+| 4   | retains a newer action committed while an earlier undo refreshes                     |
+| 5   | does not commit queued undo when an editor begins saving before the lock is acquired |
+| 6   | retains only the most recent actions within the limit                                |
 
 #### 8.1.4 i18n (12 tests)
 
@@ -784,81 +816,93 @@ This project uses three layers to balance speed and reliability.
 | 4   | protects manual CSS outside the marked region and fails for missing markers                | CSS region preservation and markers         |
 | 5   | CLI check is read-only and returns a useful failure for a drifted fixture                  | Read-only check and CLI regeneration        |
 
-### 8.2 Component Tests (323 tests)
+### 8.2 Component Tests (338 tests)
 
-#### 8.2.1 App.test.js (69 tests)
+#### 8.2.1 App.test.js (81 tests)
 
-| #   | Test                                                                                 | What it verifies                                     |
-| --- | ------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| 1   | should render the main layout with sidebar and content                               | Main layout rendering                                |
-| 2   | should show empty state when no checklist is selected                                | Empty state display                                  |
-| 3   | should show ChecklistComponent when a checklist is selected                          | Checklist visibility                                 |
-| 4   | should set isMobileViewport to true for narrow screens                               | Mobile viewport detection                            |
-| 5   | should auto-collapse sidebar on mobile viewport                                      | Auto-collapse on mobile                              |
-| 6   | should auto-expand sidebar on wide desktop when not manually collapsed               | Auto-expand on desktop                               |
-| 7   | should not auto-expand sidebar when manually collapsed key exists                    | Collapse persistence                                 |
-| 8   | should detect small desktop viewport as overlay zone                                 | Overlay zone detection                               |
-| 9   | should toggle sidebar when sidebar emits toggle-sidebar                              | Sidebar toggle event                                 |
-| 10  | should persist sidebar collapse to localStorage on desktop                           | Collapse persistence                                 |
-| 11  | should remove collapsed key from localStorage when sidebar re-opened                 | Expand cleanup                                       |
-| 12  | should toggle sidebar from Topbar on mobile                                          | Topbar toggle event                                  |
-| 13  | should open source selection from Sidebar without creating immediately               | Sidebar source dialog                                |
-| 14  | should open source selection from Topbar on mobile                                   | Topbar source dialog                                 |
-| 15  | should select and mark checklist for editing on handleChecklistEdit                  | Edit mode trigger                                    |
-| 16  | should duplicate checklist and select the copy on handleChecklistCopy                | Checklist duplication                                |
-| 17  | should delete checklist after user confirms the dialog                               | Confirmed deletion                                   |
-| 18  | should not delete checklist when user cancels the dialog                             | Cancelled deletion                                   |
-| 19  | should delegate selected checklist deletion to the composable                        | Delete delegation                                    |
-| 20  | should update checklist via ChecklistComponent emit                                  | Checklist update                                     |
-| 21  | should call updateMultipleChecklists on handleChecklistMove                          | Checklist move                                       |
-| 22  | should update selectedChecklistId from overlay sidebar select-checklist              | Overlay sidebar selection                            |
-| 23  | should update selectedChecklistId from inline sidebar select-checklist               | Inline sidebar selection                             |
-| 24  | should create item with maxOrder + 1 in the target category                          | Item order calculation                               |
-| 25  | should create item with order 0 in an empty category                                 | Empty category item creation                         |
-| 26  | should update item and clear newlyCreatedItemId if matching                          | Item update + flag clear                             |
-| 27  | should call duplicateItem on copy:item emit                                          | Item duplication                                     |
-| 28  | should call deleteItem on delete:item emit                                           | Item deletion                                        |
-| 29  | should update item categoryId and reordered items on move type                       | Cross-category move                                  |
-| 30  | should update all items with new order on reorder type                               | Same-category reorder                                |
-| 31  | should handle move with empty reorderedItems gracefully                              | Empty reorder boundary                               |
-| 32  | should create category with correct order                                            | Category order calculation                           |
-| 33  | should update category and clear newlyCreatedCategoryId if matching                  | Category update + flag clear                         |
-| 34  | should call duplicateCategory on copy:category emit                                  | Category duplication                                 |
-| 35  | should call deleteCategory on delete:category emit                                   | Category deletion                                    |
-| 36  | should update each category and call getCategories                                   | Category reorder                                     |
-| 37  | should display overlay backdrop when sidebar is open on mobile                       | Overlay rendering                                    |
-| 38  | should close sidebar when overlay backdrop is clicked                                | Overlay close                                        |
-| 39  | should set body overflow hidden when overlay is active                               | Body scroll lock                                     |
-| 40  | should preserve the existing right padding while compensating for a hidden scrollbar | Scroll-lock compensation and restoration             |
-| 41  | should set body overflow hidden when sidebar opens on small desktop                  | Small desktop scroll lock                            |
-| 42  | should call initialize on mount                                                      | Lifecycle: mount init                                |
-| 43  | should clean up resize event listener on unmount                                     | Lifecycle: unmount cleanup                           |
-| 44  | should open an isolated editor without creating a checklist                          | Template editor isolation                            |
-| 45  | should save only through the templates composable                                    | Template persistence routing                         |
-| 46  | should open the named template dialog and save its selected checklist                | Named template save flow                             |
-| 47  | should create a checklist from a selected personal template                          | Template application flow                            |
-| 48  | should delete the active template and leave the editor                               | Template delete flow                                 |
-| 49  | should create an explicitly empty checklist                                          | Empty source flow                                    |
-| 50  | handles failed template creation and ignores missing sources                         | Creation failure and missing-source guard            |
-| 51  | should ignore requests to edit a missing template                                    | Missing template guard                               |
-| 52  | should keep the editor open when saving fails                                        | Save failure state                                   |
-| 53  | should discard a template draft when canceled                                        | Draft cancellation                                   |
-| 54  | should preserve a template when deletion is canceled                                 | Delete cancellation                                  |
-| 55  | should close both template dialogs without operations                                | Dialog cancellation                                  |
-| 56  | should leave state unchanged when empty creation fails                               | Empty creation failure                               |
-| 57  | should keep the editor open when template deletion fails                             | Delete failure state                                 |
-| 58  | should use an empty initial name for an unknown checklist                            | Missing checklist fallback                           |
-| 59  | should ignore duplicate save events after source state clears                        | Duplicate save guard                                 |
-| 60  | should create a checklist from a selected recommended list                           | Recommended list flow                                |
-| 61  | should apply a category packing change and offer one-click undo                      | Batch packing undo action                            |
-| 62  | should use Ctrl+Z for packing undo but preserve input-native undo                    | Keyboard shortcut isolation                          |
-| 63  | shows the completion overlay after the final local item is packed                    | Local completion transition                          |
-| 64  | should defer the complete undo window until the completion overlay closes            | Inert background, focus return, and full Undo window |
-| 65  | shows the completion overlay only when redo completes the checklist                  | Redo transition, sidebar isolation, and guard        |
-| 66  | keeps completed initialization and checklist switching silent                        | Passive transition exclusions                        |
-| 67  | should defer an existing category undo window when a final item opens completion     | Cross-path full Undo window                          |
-| 68  | keeps a template dialog open until retry succeeds                                    | Template draft and retry                             |
-| 69  | keeps checklist source selection open until retry succeeds                           | Checklist creation retry                             |
+| #   | Test                                                                                       |
+| --- | ------------------------------------------------------------------------------------------ |
+| 1   | should render the main layout with sidebar and content                                     |
+| 2   | should show empty state when no checklist is selected                                      |
+| 3   | should show ChecklistComponent when a checklist is selected                                |
+| 4   | shows the completion overlay after the final local item is packed                          |
+| 5   | shows the completion overlay only when redo completes the checklist                        |
+| 6   | does not celebrate another checklist completing while redo is pending                      |
+| 7   | keeps completed initialization and checklist switching silent                              |
+| 8   | should set isMobileViewport to true for narrow screens                                     |
+| 9   | should auto-collapse sidebar on mobile viewport                                            |
+| 10  | should auto-expand sidebar on wide desktop when not manually collapsed                     |
+| 11  | should not auto-expand sidebar when manually collapsed key exists after resize from mobile |
+| 12  | should detect small desktop viewport as overlay zone                                       |
+| 13  | should toggle sidebar when sidebar emits toggle-sidebar                                    |
+| 14  | should persist sidebar collapse to localStorage on desktop                                 |
+| 15  | should remove collapsed key from localStorage when sidebar re-opened                       |
+| 16  | should toggle sidebar from Topbar on mobile                                                |
+| 17  | should open source selection from Sidebar without creating immediately                     |
+| 18  | should open source selection from Topbar on mobile                                         |
+| 19  | should select and mark checklist for editing on handleChecklistEdit                        |
+| 20  | should duplicate checklist and select the copy on handleChecklistCopy                      |
+| 21  | deletes a checklist without a confirmation dialog                                          |
+| 22  | delegates a failed checklist deletion without confirmation                                 |
+| 23  | should delegate selected checklist deletion to the composable                              |
+| 24  | should update checklist via ChecklistComponent emit                                        |
+| 25  | should call updateMultipleChecklists on handleChecklistMove                                |
+| 26  | should update selectedChecklistId from overlay sidebar select-checklist event              |
+| 27  | should update selectedChecklistId from inline sidebar select-checklist event               |
+| 28  | should create item with maxOrder + 1 in the target category                                |
+| 29  | should create item with order 0 in an empty category                                       |
+| 30  | should update item and clear newlyCreatedItemId if matching                                |
+| 31  | should call duplicateItem on copy:item emit                                                |
+| 32  | should call deleteItem on delete:item emit                                                 |
+| 33  | should batch all source and target item updates on move type                               |
+| 34  | should update all items with new order on reorder type                                     |
+| 35  | should ignore a move payload without item updates                                          |
+| 36  | should create category with correct order                                                  |
+| 37  | should update category and clear newlyCreatedCategoryId if matching                        |
+| 38  | should call duplicateCategory on copy:category emit                                        |
+| 39  | should call deleteCategory on delete:category emit                                         |
+| 40  | should submit all categories in one operation                                              |
+| 41  | should display overlay backdrop when sidebar is open on mobile                             |
+| 42  | should close sidebar when overlay backdrop is clicked                                      |
+| 43  | should set body overflow hidden when overlay is active                                     |
+| 44  | should preserve the existing right padding while compensating for a hidden scrollbar       |
+| 45  | should set body overflow hidden when sidebar opens on small desktop                        |
+| 46  | should call initialize on mount                                                            |
+| 47  | should clean up resize event listener on unmount                                           |
+| 48  | should open an isolated editor without creating a checklist                                |
+| 49  | should save only through the templates composable                                          |
+| 50  | opens the named template dialog and saves its selected checklist                           |
+| 51  | keeps the template dialog open after failure and closes after retry succeeds               |
+| 52  | creates a checklist from a selected personal template                                      |
+| 53  | deletes the active template and leaves the editor                                          |
+| 54  | creates an explicitly empty checklist                                                      |
+| 55  | handles failed template creation and ignores missing sources                               |
+| 56  | keeps checklist source selection open after a failed creation and closes on retry          |
+| 57  | ignores requests to edit a missing template                                                |
+| 58  | keeps the editor open when saving a template fails                                         |
+| 59  | discards a template draft when editing is canceled                                         |
+| 60  | preserves a template when deletion is canceled                                             |
+| 61  | closes both template dialogs without performing an operation                               |
+| 62  | leaves checklist state unchanged when empty creation fails                                 |
+| 63  | keeps the editor open when template deletion fails                                         |
+| 64  | uses an empty initial name for an unknown checklist                                        |
+| 65  | ignores duplicate template save events after source state is cleared                       |
+| 66  | creates a checklist from a selected recommended list                                       |
+| 67  | does not replace a newer barrier with an earlier delayed undo result                       |
+| 68  | does not show an outdated batch toast after that batch was undone                          |
+| 69  | does not route global undo into the checklist while a template editor is open              |
+| 70  | does not undo the underlying item when its inline edit failed to save                      |
+| 71  | keeps draft owners independent when another editor is displaced during a save              |
+| 72  | keeps history blocked after a save until the editor actually closes                        |
+| 73  | does not dismiss a newer barrier after a delayed redo finishes                             |
+| 74  | replaces the success notice with a subsequent external history barrier                     |
+| 75  | replaces an older history barrier when a later undo succeeds                               |
+| 76  | waits for a button history action before running the next keyboard shortcut                |
+| 77  | waits for a pending item update before a toolbar undo                                      |
+| 78  | explains when a newer action interrupts a queued shortcut                                  |
+| 79  | announces and dismisses a history barrier                                                  |
+| 80  | applies a category packing change without a contextual undo notice                         |
+| 81  | should use Ctrl+Z for packing undo but preserve input-native undo                          |
 
 #### 8.2.2 Topbar.test.js (2 tests)
 
@@ -910,44 +954,47 @@ This project uses three layers to balance speed and reliability.
 | 4   | should show quantity badge when quantity is greater than 1                    | Quantity display             |
 | 5   | should emit "update:item" with isPending=false when completion button clicked | Clear pending                |
 
-#### 8.2.7 Item.test.js (34 tests)
+#### 8.2.7 Item.test.js (37 tests)
 
-| #   | Test                                                                             | What it verifies                            |
-| --- | -------------------------------------------------------------------------------- | ------------------------------------------- |
-| 1   | keeps an item name draft on failed save and closes only after a successful retry | Inline acknowledgement                      |
-| 2   | preserves a failed draft during another item pointer gesture                     | Failed save retains the draft and error     |
-| 3   | releases a held edit after pointerup                                             | Matching pointer release ends the edit      |
-| 4   | releases a held edit after pointercancel                                         | Matching pointer cancellation ends the edit |
-| 5   | should display the item name                                                     | Name rendering                              |
-| 6   | should render a checkbox input                                                   | Checkbox exists                             |
-| 7   | should check the checkbox when item is packed                                    | Checked state binding                       |
-| 8   | should apply line-through styling when item is packed                            | Packed visual style                         |
-| 9   | should display quantity value                                                    | Quantity label                              |
-| 10  | should emit "update:item" with toggled isPacked when checkbox is clicked         | Checkbox toggle event                       |
-| 11  | should clear isPending when item becomes packed                                  | Packed clears pending                       |
-| 12  | should enter edit mode when item name is clicked                                 | Focus + select on edit                      |
-| 13  | should save edited name on Enter key                                             | Enter confirms edit                         |
-| 14  | should cancel edit mode on Escape key                                            | Escape cancels edit                         |
-| 15  | should emit "update:item" with incremented quantity                              | Quantity increment                          |
-| 16  | should emit "update:item" with decremented quantity                              | Quantity decrement                          |
-| 17  | should emit "delete:item" when quantity is 1 and delete button is clicked        | Delete at quantity 1                        |
-| 18  | should emit "update:item" with toggled isPending                                 | Toggle pending                              |
-| 19  | should clear isPacked when item is marked as pending                             | Pending clears packed                       |
-| 20  | should emit "copy:item" when OverflowMenu triggers copy                          | Copy event forward                          |
-| 21  | should emit "update:item" on blur with changed name                              | Blur-save                                   |
-| 22  | should not emit "update:item" on blur with empty name                            | Empty name guard                            |
-| 23  | should emit "delete:item" when OverflowMenu triggers delete                      | Delete event forward                        |
-| 24  | should show action buttons on mouseenter                                         | Hover-in shows controls                     |
-| 25  | should hide action buttons on mouseleave                                         | Hover-out hides controls                    |
-| 26  | should not save during IME composition                                           | IME guard                                   |
-| 27  | should enter edit mode when newlyCreatedItemId matches                           | Auto-focus + select                         |
-| 28  | should not enter edit mode when newlyCreatedItemId does not match                | No false trigger                            |
-| 29  | should not decrement quantity below 1                                            | Minimum quantity guard                      |
-| 30  | should apply cursor-grabbing when isDragging is true                             | Drag visual state                           |
-| 31  | defers an inline action until composition ends and the name is saved             | Final IME text before action                |
-| 32  | waits for the name save before an inline action and retains a failed draft       | Save acknowledgement and failure guard      |
-| 33  | preserves a failed name draft when another edit entry is activated               | Failed draft and baseline retention         |
-| 34  | keeps the quantity-one delete action in the expanded touch region                | Quantity-one trash action                   |
+| #   | Test                                                                                  |
+| --- | ------------------------------------------------------------------------------------- |
+| 1   | keeps an item name draft on failed save and closes only after a successful retry      |
+| 2   | releases its draft owner on unmount while a failed edit retry is pending              |
+| 3   | preserves a failed draft during another item pointer gesture                          |
+| 4   | releases a held edit after pointerup                                                  |
+| 5   | releases a held edit after pointercancel                                              |
+| 6   | should display the item name                                                          |
+| 7   | should render a checkbox input                                                        |
+| 8   | should check the checkbox when item is packed                                         |
+| 9   | should apply line-through styling when item is packed                                 |
+| 10  | should display quantity value                                                         |
+| 11  | should emit "update:item" with toggled isPacked when checkbox is clicked              |
+| 12  | should clear isPending when item becomes packed                                       |
+| 13  | should enter edit mode when item name is clicked                                      |
+| 14  | should save edited name on Enter key                                                  |
+| 15  | should cancel edit mode on Escape key                                                 |
+| 16  | should emit "update:item" with incremented quantity                                   |
+| 17  | should emit "update:item" with decremented quantity                                   |
+| 18  | should emit "delete:item" when quantity is 1 and delete button is clicked             |
+| 19  | should emit "update:item" with toggled isPending                                      |
+| 20  | should clear isPacked when item is marked as pending                                  |
+| 21  | should emit "copy:item" when OverflowMenu triggers copy                               |
+| 22  | should emit "update:item" on blur with changed name                                   |
+| 23  | should not emit "update:item" on blur with empty name                                 |
+| 24  | should emit "delete:item" when OverflowMenu triggers delete                           |
+| 25  | should show action buttons on mouseenter                                              |
+| 26  | keeps hover controls when focus leaves an editor while the pointer remains on the row |
+| 27  | does not restore mouse hover on touch-only devices or during drag suppression         |
+| 28  | should hide action buttons on mouseleave                                              |
+| 29  | should not save during IME composition                                                |
+| 30  | should enter edit mode when newlyCreatedItemId matches                                |
+| 31  | should not enter edit mode when newlyCreatedItemId does not match                     |
+| 32  | should not decrement quantity below 1                                                 |
+| 33  | should apply cursor-grabbing when isDragging is true                                  |
+| 34  | defers an inline action until composition ends and the name is saved                  |
+| 35  | waits for the name save before an inline action and retains a failed draft            |
+| 36  | preserves a failed name draft when another edit entry is activated                    |
+| 37  | keeps the quantity-one delete action in the expanded touch region                     |
 
 #### 8.2.8 OverflowMenu.test.js (24 tests)
 
@@ -1194,7 +1241,7 @@ This project uses three layers to balance speed and reliability.
 | 6   | preserves vuedraggable add/remove semantics for touchend                      | Completed touch cross-list add/remove                         |
 | 7   | preserves vuedraggable add/remove semantics for drop                          | Completed mouse cross-list add/remove                         |
 
-### 8.3 E2E Tests (217 tests)
+### 8.3 E2E Tests (243 tests)
 
 #### 8.3.1 app-loading.spec.js (5 tests)
 
@@ -1214,7 +1261,7 @@ This project uses three layers to balance speed and reliability.
 | 2   | should auto-select and enter edit mode for new checklist                                | Auto-edit UX              |
 | 3   | should rename checklist by clicking on the name                                         | Rename flow               |
 | 4   | should switch between checklists                                                        | Navigation flow           |
-| 5   | should delete checklist after confirmation                                              | Delete flow               |
+| 5   | should delete checklist without confirmation                                            | Delete flow               |
 | 6   | should restore the last opened checklist and fallback to sidebar top after invalidation | Reload restore + fallback |
 
 #### 8.3.3 category-crud.spec.js (3 tests)
@@ -1279,16 +1326,20 @@ This project uses three layers to balance speed and reliability.
 | 9   | should update progress when items are packed on mobile              | Mobile progress update    |
 | 10  | should filter packed items with an accessible icon button on mobile | Accessible mobile filter  |
 
-#### 8.3.8 multi-tab-sync.spec.js (6 tests)
+#### 8.3.8 multi-tab-sync.spec.js (10 tests)
 
-| #   | Test                                                                     | What it verifies                   |
-| --- | ------------------------------------------------------------------------ | ---------------------------------- |
-| 1   | should sync checklist create and rename across tabs                      | Cross-tab storage sync             |
-| 2   | should converge when tabs rename sequentially after synchronization      | Sequential synchronization         |
-| 3   | should converge after rapid alternating cross-tab edits                  | Rapid alternating edit safety      |
-| 4   | should converge to deletion when one tab renames and another tab deletes | Rename+delete conflict convergence |
-| 5   | should keep remote completion synchronization silent                     | No celebration from storage sync   |
-| 6   | keeps both templates when two tabs save behind the same lock barrier     | Concurrent template writes         |
+| #   | Test                                                                                 |
+| --- | ------------------------------------------------------------------------------------ |
+| 1   | should sync checklist create and rename across tabs                                  |
+| 2   | should converge when tabs rename sequentially after synchronization                  |
+| 3   | should converge after rapid alternating cross-tab edits                              |
+| 4   | should converge to deletion when one tab renames and another tab deletes             |
+| 5   | should keep remote completion synchronization silent                                 |
+| 6   | restores the last deleted checklist with its contents through keyboard undo and redo |
+| 7   | identifies the affected checklist after cross-checklist undo and redo                |
+| 8   | keeps long Chinese cross-checklist feedback operable at 320px                        |
+| 9   | does not undo a later packing change from another tab                                |
+| 10  | keeps both templates when two tabs save behind the same lock barrier                 |
 
 #### 8.3.9 template-management.spec.js (8 tests)
 
@@ -1309,39 +1360,40 @@ This project uses three layers to balance speed and reliability.
 | --- | ------------------------------------------------------------- | ---------------------------- |
 | 1   | should create and persist a checklist from a recommended list | Source-aware name and reload |
 
-#### 8.3.11 storage-recovery.spec.js (29 tests)
+#### 8.3.11 storage-recovery.spec.js (30 tests)
 
-| #   | Test                                                                                     | What it verifies                                |
-| --- | ---------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| 1   | Retain a checklist draft after storage failure                                           | Failed write and retry                          |
-| 2   | Retain a new template draft after storage failure                                        | Dialog source and retry                         |
-| 3   | Retain an edited template draft after storage failure                                    | Template editor retry                           |
-| 4   | Reject a stale same-field edit across tabs                                               | Conflict and draft preservation                 |
-| 5   | Merge different-field edits across tabs                                                  | Field intent                                    |
-| 6   | Report inaccessible browser storage                                                      | Explicit blocked state                          |
-| 7   | Reject failed category packing                                                           | No false completion or undo                     |
-| 8   | Keep checklist data usable with unsupported templates                                    | Domain isolation                                |
-| 9   | Explain unavailable Web Locks                                                            | Safe-write fallback                             |
-| 10  | Preserve a failed draft when switching lists                                             | Draft ownership                                 |
-| 11  | Reject an edit queued after a remote deletion                                            | No resurrection and retained draft              |
-| 12  | Report a successful write with failed refresh                                            | Saved versus refresh failure                    |
-| 13  | Show a later template failure after cancelling an edit                                   | Error ownership                                 |
-| 14  | Keep original selection after copy and failed refresh                                    | Selection and acknowledgement                   |
-| 15  | Preserve a newer error when an older draft is cancelled                                  | Error ownership                                 |
-| 16  | Show later checklist failure after cancelling a failed template edit                     | Error ownership                                 |
-| 17  | Prevent switching templates while a save waits for a lock                                | Pending editor identity                         |
-| 18  | Keep a failed template draft when switching is declined                                  | Explicit discard decision                       |
-| 19  | Show later errors after restoring an item's original name                                | No-op error ownership                           |
-| 20  | Export and retry corrupt data in English on desktop                                      | Raw data and keyboard recovery                  |
-| 21  | Export and retry corrupt data in Chinese at 390px                                        | Localized narrow recovery                       |
-| 22  | Show queued save failure after switching lists                                           | Displaced editor error visibility               |
-| 23  | Save an active template title                                                            | Direct save without Enter                       |
-| 24  | Save an active template category                                                         | Direct save without Enter                       |
-| 25  | Save an active template item                                                             | Direct save without Enter                       |
-| 26  | Finish composing a template title before saving                                          | IME event and final stored text                 |
-| 27  | Reject queued pending after another tab packs the item                                   | Cross-tab item conflict                         |
-| 28  | Reject queued category pack after another tab marks the item pending                     | Cross-tab atomic batch                          |
-| 29  | keeps a checklist draft after a real storage failure and saves it on retry [webkit-core] | Same core behavior executed in the other engine |
+| #   | Test                                                                               |
+| --- | ---------------------------------------------------------------------------------- |
+| 1   | keeps a checklist draft after a real storage failure and saves it on retry         |
+| 2   | keeps a failed item draft when undo is pressed after focus leaves the editor       |
+| 3   | preserves a template name and source after a failed write and retries successfully |
+| 4   | retains an edited template draft after a failed save                               |
+| 5   | preserves a stale name draft and rejects a same-field edit from another tab        |
+| 6   | merges a local name draft with a different field changed in another tab            |
+| 7   | shows unavailable domains instead of crashing when browser storage is denied       |
+| 8   | does not show packing success or undo when a category write fails                  |
+| 9   | keeps checklist operations available when only template data is unsupported        |
+| 10  | explains when safe browser locking is unavailable                                  |
+| 11  | preserves a failed draft separately when switching checklists                      |
+| 12  | preserves the draft when a queued edit follows a remote deletion                   |
+| 13  | reports a saved checklist when only the following refresh fails                    |
+| 14  | shows a later template deletion error after cancelling a failed checklist edit     |
+| 15  | keeps the original checklist selected after copy succeeds and refresh fails        |
+| 16  | retains a newer operation error when an older failed draft is cancelled            |
+| 17  | shows a later checklist error after cancelling a failed template save              |
+| 18  | does not switch template editors while a save is pending                           |
+| 19  | keeps a failed template draft when switching is declined                           |
+| 20  | shows later errors after restoring the original item name                          |
+| 21  | preserves and exports corrupt data, then retries in en at 1280px                   |
+| 22  | preserves and exports corrupt data, then retries in zh-TW at 390px                 |
+| 23  | shows a queued save failure after switching checklists                             |
+| 24  | saves an active template name when Save is clicked                                 |
+| 25  | saves an active template category when Save is clicked                             |
+| 26  | saves an active template item when Save is clicked                                 |
+| 27  | waits for composition to finish before saving a template title                     |
+| 28  | rejects queued pending after another tab commits item-pack                         |
+| 29  | rejects queued category-pack after another tab commits pending                     |
+| 30  | keeps a checklist draft after a real storage failure and saves it on retry         |
 
 #### 8.3.12 rwd-phone.spec.js (8 tests)
 
@@ -1380,18 +1432,22 @@ This project uses three layers to balance speed and reliability.
 | 7   | WebKit tablet columns retain visible touch actions [chromium]           | Same core behavior executed in the other engine                       |
 | 8   | WebKit short mobile sidebar keeps navigation reachable [chromium]       | Same core behavior executed in the other engine                       |
 
-#### 8.3.15 sidebar-presentation.spec.js (8 tests)
+#### 8.3.15 sidebar-presentation.spec.js (12 tests)
 
-| #   | Test                                                    | What it verifies                                                      |
-| --- | ------------------------------------------------------- | --------------------------------------------------------------------- |
-| 1   | phone: sidebar presentation stays consistent in en      | Entry labels, hold jitter/menu exclusion, menus, scrolling and Escape |
-| 2   | phone: sidebar presentation stays consistent in zh-TW   | Localized entry labels, menu geometry and phone list scrolling        |
-| 3   | tablet: sidebar presentation stays consistent in en     | Hold jitter/menu exclusion, collapsed scroll lock, initials and menus |
-| 4   | tablet: sidebar presentation stays consistent in zh-TW  | Collapsed scroll lock, Chinese initials and menu geometry             |
-| 5   | desktop: sidebar presentation stays consistent in en    | Collapsed scroll lock, visible initials, resize and focus recovery    |
-| 6   | desktop: sidebar presentation stays consistent in zh-TW | Collapsed scroll lock, Chinese initials and ResizeObserver fallback   |
-| 7   | short mobile sidebar remains operable in en             | Short drawer touch, keyboard and template navigation                  |
-| 8   | short mobile sidebar remains operable in zh-TW          | Localized short drawer navigation                                     |
+| #   | Test                                                                         |
+| --- | ---------------------------------------------------------------------------- |
+| 1   | sidebar presentation stays consistent in en [phone]                          |
+| 2   | sidebar presentation stays consistent in zh-TW [phone]                       |
+| 3   | sidebar presentation stays consistent in en [tablet]                         |
+| 4   | sidebar presentation stays consistent in zh-TW [tablet]                      |
+| 5   | sidebar presentation stays consistent in en [desktop]                        |
+| 6   | sidebar presentation stays consistent in zh-TW [desktop]                     |
+| 7   | short mobile sidebar remains operable in en                                  |
+| 8   | short mobile sidebar remains operable in zh-TW                               |
+| 9   | collapsed initials and expanded names keep the same first-character position |
+| 10  | sidebar heading aligns with checklist names at 1280px                        |
+| 11  | sidebar heading aligns with checklist names at 820px                         |
+| 12  | sidebar heading aligns with checklist names at 390px                         |
 
 #### 8.3.16 desktop-drag-presentation.spec.js (19 tests)
 
@@ -1430,19 +1486,20 @@ This project uses three layers to balance speed and reliability.
 | 7   | settles rapid collapse reversals and viewport changes            | Interruption, cleanup and no horizontal overflow      |
 | 8   | honors reduced motion and cancels active reflow                  | Live motion preference and immediate layout           |
 
-#### 8.3.18 interaction-feedback.spec.js (9 tests)
+#### 8.3.18 interaction-feedback.spec.js (10 tests)
 
-| #   | Test                                                                                | What it verifies                                                    |
-| --- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| 1   | desktop: keeps normal and completed feedback consistent and animates inline actions | Normal/completed feedback, item outline and alignment               |
-| 2   | desktop: accepts items into a collapsed category and retains counts and order       | Aligned item outline, retraction, leaving and saved counts          |
-| 3   | tablet: keeps normal and completed feedback consistent and animates inline actions  | Touch action motion, item outline and row alignment                 |
-| 4   | tablet: accepts items into a collapsed category and retains counts and order        | Aligned touch item outline, retraction/cancellation and saved order |
-| 5   | phone: keeps normal and completed feedback consistent and animates inline actions   | Touch action motion, item outline and row alignment                 |
-| 6   | phone: accepts items into a collapsed category and retains counts and order         | Aligned touch item outline, retraction/cancellation and saved order |
-| 7   | ends an old name edit when dragging a different item                                | Unchanged/changed edit teardown and saved name                      |
-| 8   | saves a name when clicking another item without dragging                            | Save the name and focus the other item                              |
-| 9   | honors reduced motion for inline action expansion                                   | Immediate expansion, usable controls and Escape                     |
+| #   | Test                                                                                 |
+| --- | ------------------------------------------------------------------------------------ |
+| 1   | keeps normal and completed feedback consistent and animates inline actions [desktop] |
+| 2   | accepts items into a collapsed category and retains counts and order [desktop]       |
+| 3   | keeps normal and completed feedback consistent and animates inline actions [tablet]  |
+| 4   | accepts items into a collapsed category and retains counts and order [tablet]        |
+| 5   | keeps normal and completed feedback consistent and animates inline actions [phone]   |
+| 6   | accepts items into a collapsed category and retains counts and order [phone]         |
+| 7   | ends an old name edit when dragging a different item                                 |
+| 8   | saves a name when clicking another item without dragging                             |
+| 9   | honors reduced motion for inline action expansion                                    |
+| 10  | keeps item hover controls available after confirming an inline name edit             |
 
 #### 8.3.19 drag-settlement.spec.js (15 tests)
 
@@ -1527,3 +1584,24 @@ This project uses three layers to balance speed and reliability.
 | --- | ---------------------------------------------------------------- | ----------------------------------------------------- |
 | 1   | creates, edits, packs and deletes a persisted item [chromium]    | Create, edit, pack, reload persisted state and delete |
 | 2   | creates, edits, packs and deletes a persisted item [webkit-core] | Create, edit, pack, reload persisted state and delete |
+
+#### 8.3.24 undo-redo-ui.spec.js (16 tests)
+
+| #   | Test                                                                                         |
+| --- | -------------------------------------------------------------------------------------------- |
+| 1   | desktop history controls undo and redo a status change and protect an active draft           |
+| 2   | mobile topbar hides on downward scroll and returns on upward scroll                          |
+| 3   | mobile controls restore the last deleted checklist and reset after reload                    |
+| 4   | category packing has no toast and undo shows a brief result                                  |
+| 5   | keyboard history works immediately after packing and quantity controls retain checkbox focus |
+| 6   | desktop history controls share the menu row and mobile controls stay beside the menu         |
+| 7   | collapsed desktop sidebar hides history controls while shortcuts still work                  |
+| 8   | sidebar heading and checklist names fade with New Checklist without horizontal motion        |
+| 9   | sidebar history respects reduced motion and rapid open-close                                 |
+| 10  | history controls remain inert until their shared fade completes                              |
+| 11  | toolbar undo waits for a pending locked status update                                        |
+| 12  | dragging a checklist creates one reversible history step                                     |
+| 13  | mobile sidebar controls undo and redo a checklist deletion                                   |
+| 14  | keyboard focus keeps the mobile topbar visible while scrolling                               |
+| 15  | failed checklist deletion is visible and dismissible inside mobile sidebar                   |
+| 16  | touch scrolling hides and reveals the topbar after closing the drawer                        |

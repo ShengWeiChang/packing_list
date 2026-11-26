@@ -12,12 +12,11 @@ Created: 2025-09-19
 <template>
   <header
     class="flex w-full items-center justify-between border-b border-border-color-light bg-white px-3 py-2 md:hidden"
-    :class="[
-      'sticky top-0 z-30 transition-transform duration-200',
-      hidden ? 'pointer-events-none -translate-y-full' : 'translate-y-0',
-    ]"
+    :class="['sticky top-0 z-30', hidden ? 'pointer-events-none' : '']"
     :inert="hidden || undefined"
+    :style="{ transform: `translateY(-${offset}px)` }"
     data-testid="mobile-topbar"
+    @focusin="$emit('reveal')"
   >
     <div class="flex items-center">
       <!-- Toggle sidebar navigation -->
@@ -75,6 +74,7 @@ defineProps({
   historyBlocked: Boolean,
   editing: Boolean,
   hidden: Boolean,
+  offset: { type: Number, default: 0 },
   title: {
     type: String,
     default: 'Packing List',
@@ -82,5 +82,13 @@ defineProps({
 });
 
 // Emits
-defineEmits<{ toggle: []; new: []; undo: []; redo: [] }>();
+defineEmits<{ toggle: []; new: []; undo: []; redo: []; reveal: [] }>();
 </script>
+
+<style scoped>
+@media (max-height: 250px) {
+  header {
+    position: relative;
+  }
+}
+</style>

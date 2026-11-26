@@ -45,7 +45,10 @@ repository evidence from recommendations and unresolved product choices.
 1. **User task and primary flow** — the actor, goal, normal path, and relevant
    success, failure, or recovery paths.
 2. **Existing product evidence** — affected components, nearby patterns,
-   terminology, tokens, assets, and constraints to preserve.
+   terminology, tokens, assets, and constraints to preserve. For motion or
+   layout changes, inspect related elements as a group, reuse their established
+   timing and alignment where appropriate, and include a rendered comparison
+   of the changed states in the evidence plan.
 3. **Hierarchy and controls** — what users must notice or act on first,
    grouping/order, and why each control suits the action.
 4. **Changed state matrix** — applicable default, hover, focus, active,

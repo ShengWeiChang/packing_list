@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { useUndoHistory } from '../../../source/composables/useUndoHistory';
 
 describe('undo history', () => {
+  // Test Case 1: moves committed actions in order and drops redo only for a new action.
   it('moves committed actions in order and drops redo only for a new action', async () => {
     const apply = vi.fn(async (_entry, _undo, _current, committed) => {
       committed();
@@ -25,6 +26,7 @@ describe('undo history', () => {
     expect(apply).toHaveBeenLastCalledWith('C', true, expect.any(Function), expect.any(Function));
   });
 
+  // Test Case 2: keeps the action available when persistence fails.
   it('keeps the action available when persistence fails', async () => {
     const apply = vi
       .fn()
@@ -42,6 +44,7 @@ describe('undo history', () => {
     expect(history.canRedo.value).toBe(true);
   });
 
+  // Test Case 3: prevents double execution and discards stale stacks after a concurrent change.
   it('prevents double execution and discards stale stacks after a concurrent change', async () => {
     let finish;
     const history = useUndoHistory(
@@ -61,6 +64,7 @@ describe('undo history', () => {
     expect(history.canRedo.value).toBe(false);
   });
 
+  // Test Case 4: retains a newer action committed while an earlier undo refreshes.
   it('retains a newer action committed while an earlier undo refreshes', async () => {
     let finish;
     let entered;
@@ -86,6 +90,7 @@ describe('undo history', () => {
     expect(history.canRedo.value).toBe(false);
   });
 
+  // Test Case 5: does not commit queued undo when an editor begins saving before the lock is acquired.
   it('does not commit queued undo when an editor begins saving before the lock is acquired', async () => {
     let allowed = true;
     let release;
@@ -112,6 +117,7 @@ describe('undo history', () => {
     expect(history.canRedo.value).toBe(false);
   });
 
+  // Test Case 6: retains only the most recent actions within the limit.
   it('retains only the most recent actions within the limit', async () => {
     const apply = vi.fn(async (_entry, _undo, _current, committed) => {
       committed();
