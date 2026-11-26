@@ -71,9 +71,53 @@ test('keeps a failed item draft when undo is pressed after focus leaves the edit
     window.failPackingWrites = true;
   });
   await draft.fill('Unsaved hat');
+  await page.evaluate(
+    () =>
+      new Promise((ready) => {
+        void navigator.locks.request('packing-list-storage-write', async () => {
+          ready();
+          await new Promise((release) => {
+            window.releaseDraftTestLock = release;
+          });
+        });
+      })
+  );
   await draft.press('Enter');
+  await expect(draft).toBeDisabled();
+  const sidebarToggle = page.getByTestId('sidebar-toggle');
+  await sidebarToggle.click();
+  await expect(sidebarToggle).toBeFocused();
+  await page.evaluate(() => window.releaseDraftTestLock());
+  await expect(page.getByRole('alert').filter({ hasText: 'storage is full' })).toBeVisible();
+  await expect(draft).toBeEnabled();
   await expect(draft).toHaveValue('Unsaved hat');
+  await expect(sidebarToggle).toBeFocused();
+  await page.keyboard.press('Control+z');
+  await expect(draft).toHaveValue('Unsaved hat');
+  await draft.focus();
+  await page.evaluate(
+    () =>
+      new Promise((ready) => {
+        void navigator.locks.request('packing-list-storage-write', async () => {
+          ready();
+          await new Promise((release) => {
+            window.releaseDraftTestLock = release;
+          });
+        });
+      })
+  );
+  await draft.press('Enter');
+  await expect(draft).toBeDisabled();
   await page.locator('body').click({ position: { x: 1, y: 1 } });
+  await page.evaluate(() => window.releaseDraftTestLock());
+  await expect(draft).toBeEnabled();
+  await expect(draft).not.toBeFocused();
+  await page.keyboard.press('Control+z');
+  await expect(draft).toHaveValue('Unsaved hat');
+  await draft.focus();
+  await page.keyboard.press('Tab');
+  await expect(page.getByTestId('item-quantity-decrement').first()).toBeFocused();
+  await expect(page.getByTestId('history-undo')).toBeDisabled();
   await page.keyboard.press('Control+z');
   await expect(draft).toHaveValue('Unsaved hat');
   await page.evaluate(() => {

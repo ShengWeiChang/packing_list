@@ -116,6 +116,7 @@ describe('Item', () => {
       await w.get('[data-testid="item-edit-input"]').trigger('keydown.enter');
       await flushPromises();
       expect(w.get('[data-testid="item-edit-input"]').element.value).toBe(draft);
+      expect(document.activeElement).toBe(w.get('[data-testid="item-edit-input"]').element);
       expect(w.find('[role="alert"]').exists()).toBe(true);
       await w.get('[data-testid="item-edit-input"]').trigger('keydown.enter');
       await flushPromises();

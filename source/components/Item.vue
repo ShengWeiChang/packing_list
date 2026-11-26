@@ -496,6 +496,7 @@ const isComposing = ref(false);
 let cleanupEditingFocus = () => {};
 let inlineActionInProgress = false;
 let pendingEditSave: Promise<void> | null = null;
+let cleanupPendingSaveFocus = () => {};
 let pendingCompositionAction: (() => void) | null = null;
 
 // Keep the blurred editor in place while another item's pointer gesture starts.
@@ -827,6 +828,20 @@ async function performSaveEdit() {
     });
     if (props.saveItemEdit) {
       const restoreFocus = document.activeElement === editInput.value;
+      let userMovedOn = false;
+      const markUserInteraction = () => {
+        userMovedOn = true;
+      };
+      if (restoreFocus) {
+        document.addEventListener('pointerdown', markUserInteraction, true);
+        document.addEventListener('keydown', markUserInteraction, true);
+        document.addEventListener('focusin', markUserInteraction, true);
+      }
+      cleanupPendingSaveFocus = () => {
+        document.removeEventListener('pointerdown', markUserInteraction, true);
+        document.removeEventListener('keydown', markUserInteraction, true);
+        document.removeEventListener('focusin', markUserInteraction, true);
+      };
       isSavingEdit.value = true;
       editSaveFailed.value = false;
       try {
@@ -834,11 +849,16 @@ async function performSaveEdit() {
           editSaveFailed.value = true;
           isSavingEdit.value = false;
           await nextTick();
-          if (restoreFocus)
+          if (
+            restoreFocus &&
+            !userMovedOn &&
+            (document.activeElement === document.body || document.activeElement === editInput.value)
+          )
             cleanupEditingFocus = focusEditingInput(editInput.value, { select: false });
           return;
         }
       } finally {
+        cleanupPendingSaveFocus();
         isSavingEdit.value = false;
       }
     } else {
@@ -940,6 +960,7 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  cleanupPendingSaveFocus();
   document.removeEventListener('pointerdown', watchOtherItemGesture, true);
   finishGesture?.();
   if (isEditing.value && editBaseline && editedName.value !== editBaseline.name) {
