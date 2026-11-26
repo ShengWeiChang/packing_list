@@ -334,7 +334,7 @@ Validation 驗證
 - 純型別依賴使用 `import type`。外部 JSON 與捕獲錯誤先視為 `unknown`，直到既有 runtime 檢查或正規化足以縮窄契約；TS 不能取代 storage validation。
 - 不得用 `any`、`@ts-ignore`、`@ts-nocheck`、blanket module shims 或無依據 assertion 通過 gate。第三方邊界的狹窄例外需附理由；附說明的 `@ts-expect-error` 只用於負向型別測試。
 - ESLint 對全部 TS／Vue 套用 TypeScript recommended rules，保留 Vue outer parser；TypeScript unused-variable rules 取代重疊 core rules。lint-staged 與 VSCode ESLint 包含 TS，應用中的 suppression comments 與 explicit any 會被拒絕。
-- Composable 集合輸出為深唯讀，選取 ID 仍可寫入 `string | null`，computed 選取實體可能為 `undefined`。泛型 loader 保留 `T | null`，寫入成功與刷新失敗分別回報；packing-only history 只保存不可變的狀態快照。
+- Composable 集合輸出為深唯讀，選取 ID 仍可寫入 `string | null`，computed 選取實體可能為 `undefined`。泛型 loader 保留 `T | null`，寫入成功與刷新失敗分別回報；分頁範圍 history 記錄受影響的實體與欄位，並以原子方式檢查衝突。
 - `componentContracts.ts` 定義共用 action／event／draft 契約；runtime props 的 constructor、required、default 與 validator 保留，事件 tuple 保留可選第二個 baseline。儲存 callback 為 Promise，失敗可能回傳 null；App 的泛型 action runner 保留完整參數及回傳型別。
 - `typedDraggable.ts` 只描述實際使用的 vuedraggable 4.1.0 API，以同一 runtime 元件提供依 list entity 型別化的 model、item slot 與 change payload；此具依據的第三方 assertion 不新增 wrapper，也不容許 any 擴散。`vueAttributes.d.ts` 僅補充 data attributes，沒有通用元件 shim。
 - Facade 的 `useDraggableControls` 管理 vuedraggable 4.1.0 `_sortable` 邊界，在建構後及手勢前透過 Sortable `option()` API 重設長按移動門檻。它統一 native／fallback 的 DPR 差異，並在卸載時移除 listeners；升級相依套件時須重查此版本相關邊界與觸控微動測試。它也套用目前減少動態偏好的排序設定。

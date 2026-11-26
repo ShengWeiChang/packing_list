@@ -35,12 +35,13 @@ async function rowStyle(locator) {
   });
 }
 
-// Test Cases 1-6: English and Traditional Chinese presentation on phone, tablet, and desktop.
+// English and Traditional Chinese presentation on phone, tablet, and desktop.
 for (const scenario of scenarios) {
   test.describe(scenario.name, () => {
     test.use({ viewport: scenario.viewport, hasTouch: scenario.hasTouch });
 
     for (const locale of ['en', 'zh-TW']) {
+      // Test Cases 1–6: sidebar presentation stays consistent in each configuration.
       test(`sidebar presentation stays consistent in ${locale}`, async ({ page }) => {
         await page.addInitScript(
           ({ language, withoutObserver }) => {
@@ -218,18 +219,19 @@ for (const scenario of scenarios) {
               text.selectNodeContents(element);
               const glyph = text.getBoundingClientRect();
               const tile = element.closest('button').getBoundingClientRect();
-              const rail = element.closest('aside').getBoundingClientRect();
+              const heading = element
+                .closest('aside')
+                .querySelector('[data-sidebar-heading]')
+                .getBoundingClientRect();
               return {
                 left: glyph.left - tile.left,
                 right: tile.right - glyph.right,
-                center: glyph.left + glyph.width / 2 - tile.left - tile.width / 2,
-                railCenter: glyph.left + glyph.width / 2 - rail.left - rail.width / 2,
+                headingDifference: glyph.left - heading.left,
               };
             });
             expect(geometry.left).toBeGreaterThan(0);
             expect(geometry.right).toBeGreaterThan(0);
-            expect(Math.abs(geometry.center)).toBeLessThan(1);
-            expect(Math.abs(geometry.railCenter)).toBeLessThan(1);
+            expect(Math.abs(geometry.headingDifference)).toBeLessThan(1);
           }
           const visibleCount = () =>
             tiles.evaluateAll(
@@ -332,8 +334,9 @@ for (const scenario of scenarios) {
   });
 }
 
-// Test Cases 7-8: Short mobile drawers keep navigation and settings operable.
+// Short mobile drawers keep navigation and settings operable.
 for (const locale of ['en', 'zh-TW']) {
+  // Test Cases 7–8: short mobile sidebar remains operable in each configuration.
   test(`short mobile sidebar remains operable in ${locale}`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: { width: 320, height: 200 },
@@ -465,5 +468,111 @@ for (const locale of ['en', 'zh-TW']) {
     await expect(sidebar).toHaveCount(0);
     await expect(page.getByTestId('template-editor-toolbar')).toContainText('Test template 7');
     await context.close();
+  });
+}
+
+// Test Case 9: collapsed initials and expanded names keep the same first-character position.
+test('collapsed initials and expanded names keep the same first-character position', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'packingListApp',
+      JSON.stringify({
+        checklists: ['新清單', 'Travel', 'Internet', 'Weekend'].map((name, order) => ({
+          id: `align-${order}`,
+          name,
+          order,
+        })),
+        categories: [],
+        items: [],
+      })
+    );
+  });
+  await page.goto('/');
+  await expect(page.getByTestId('sidebar-checklist-item')).toHaveCount(4);
+  const samples = await page.evaluate(async () => {
+    const toggle = document.querySelector('[data-testid="sidebar-toggle"]');
+    const rows = [...document.querySelectorAll('[data-testid="sidebar-checklist-item"]')];
+    const heading = document.querySelector('[data-sidebar-heading]');
+    const left = (element, firstOnly) => {
+      const range = document.createRange();
+      if (firstOnly) {
+        range.setStart(element.firstChild, 0);
+        range.setEnd(element.firstChild, 1);
+      } else range.selectNodeContents(element);
+      return range.getBoundingClientRect().left;
+    };
+    const frames = [];
+    for (let run = 0; run < 2; run++) {
+      toggle.click();
+      await Promise.resolve();
+      const start = performance.now();
+      while (performance.now() - start < 450) {
+        await new Promise(requestAnimationFrame);
+        frames.push(
+          rows.map((row) =>
+            Math.max(
+              Math.abs(
+                left(row.querySelector('[data-sidebar-checklist-label]'), true) -
+                  left(row.querySelector('[data-sidebar-initial]'), false)
+              ),
+              Math.abs(
+                left(row.querySelector('[data-sidebar-initial]'), false) -
+                  heading.getBoundingClientRect().left
+              )
+            )
+          )
+        );
+      }
+    }
+    return frames;
+  });
+  expect(samples.length).toBeGreaterThan(2);
+  for (const differences of samples)
+    for (const difference of differences) expect(Math.abs(difference)).toBeLessThanOrEqual(1);
+});
+
+for (const viewport of [
+  { width: 1280, height: 800 },
+  { width: 820, height: 1000 },
+  { width: 390, height: 844 },
+]) {
+  // Test Cases 10–12: sidebar heading aligns with checklist names at each viewport width.
+  test(`sidebar heading aligns with checklist names at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'packingListApp',
+        JSON.stringify({
+          checklists: ['新清單', 'Internet', 'Travel', 'Weekend'].map((name, order) => ({
+            id: `alignment-${order}`,
+            name,
+            order,
+          })),
+          categories: [],
+          items: [],
+        })
+      );
+    });
+    await page.goto('/');
+    if (viewport.width < 600) await page.getByTestId('topbar-toggle').click();
+    else if (viewport.width < 1000) await page.getByTestId('sidebar-toggle').click();
+    const difference = () =>
+      page.evaluate(() => {
+        const heading = document.querySelector('[data-sidebar-heading]');
+        return Math.max(
+          ...[...document.querySelectorAll('[data-sidebar-checklist-label]')].map((name) => {
+            const first = document.createRange();
+            first.setStart(name.firstChild, 0);
+            first.setEnd(name.firstChild, 1);
+            return Math.abs(
+              heading.getBoundingClientRect().left - first.getBoundingClientRect().left
+            );
+          })
+        );
+      });
+    await expect.poll(difference).toBeLessThanOrEqual(1);
   });
 }

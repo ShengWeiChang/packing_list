@@ -26,7 +26,8 @@ Use the planning depth selected by `$feature-workflow`:
   the evidence that justifies the higher tier.
 - **T2/T3**: a fresh, read-only UI/UX specialist must prepare the memo. It must
   return bounded conclusions, not redesign the product or hold an open-ended
-  agent debate.
+  agent debate. Count this role among the specialists selected by the workflow,
+  rather than adding a duplicate role for the same risk.
 
 The applicable T1 checklist or T2/T3 memo is the approved **UI/UX artifact**.
 Record it in the feature plan so final verification can compare the delivered
@@ -44,7 +45,10 @@ repository evidence from recommendations and unresolved product choices.
 1. **User task and primary flow** — the actor, goal, normal path, and relevant
    success, failure, or recovery paths.
 2. **Existing product evidence** — affected components, nearby patterns,
-   terminology, tokens, assets, and constraints to preserve.
+   terminology, tokens, assets, and constraints to preserve. For motion or
+   layout changes, inspect related elements as a group, reuse their established
+   timing and alignment where appropriate, and include a rendered comparison
+   of the changed states in the evidence plan.
 3. **Hierarchy and controls** — what users must notice or act on first,
    grouping/order, and why each control suits the action.
 4. **Changed state matrix** — applicable default, hover, focus, active,

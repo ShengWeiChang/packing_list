@@ -47,8 +47,6 @@ async function renameSelectedChecklist(page, name) {
  * @param {import('@playwright/test').Page} page - Active Playwright page.
  */
 async function deleteSelectedChecklist(page) {
-  page.once('dialog', (dialog) => dialog.accept());
-
   const overflowButton = page.locator('[aria-haspopup="true"]').first();
   await expect(overflowButton).toBeVisible();
   await overflowButton.click();
@@ -82,7 +80,8 @@ test.describe('Multi-tab sync', () => {
   // ---------------------------------------------------------------------------
 
   test.describe('cross-tab storage event sync', () => {
-    // Test Case 1: Should sync checklist create and rename across tabs
+    // Should sync checklist create and rename across tabs
+    // Test Case 1: should sync checklist create and rename across tabs.
     test('should sync checklist create and rename across tabs', async ({ browser }) => {
       const context = await browser.newContext();
 
@@ -111,7 +110,8 @@ test.describe('Multi-tab sync', () => {
       await context.close();
     });
 
-    // Test Case 2: Should converge when the second tab edits after receiving the first change
+    // Should converge when the second tab edits after receiving the first change
+    // Test Case 2: should converge when tabs rename sequentially after synchronization.
     test('should converge when tabs rename sequentially after synchronization', async ({
       browser,
     }) => {
@@ -137,7 +137,8 @@ test.describe('Multi-tab sync', () => {
       await context.close();
     });
 
-    // Test Case 3: Should still converge after rapid alternating edits across tabs
+    // Should still converge after rapid alternating edits across tabs
+    // Test Case 3: should converge after rapid alternating cross-tab edits.
     test('should converge after rapid alternating cross-tab edits', async ({ browser }) => {
       const context = await browser.newContext();
       const pageA = await context.newPage();
@@ -162,7 +163,8 @@ test.describe('Multi-tab sync', () => {
       await context.close();
     });
 
-    // Test Case 4: Rename in one tab and delete in another should converge to deletion
+    // Rename in one tab and delete in another should converge to deletion
+    // Test Case 4: should converge to deletion when one tab renames and another tab deletes.
     test('should converge to deletion when one tab renames and another tab deletes', async ({
       browser,
     }) => {
@@ -192,7 +194,8 @@ test.describe('Multi-tab sync', () => {
       await context.close();
     });
 
-    // Test Case 5: Remote completion should sync without opening the local completion journey
+    // Remote completion should sync without opening the local completion journey
+    // Test Case 5: should keep remote completion synchronization silent.
     test('should keep remote completion synchronization silent', async ({ browser }) => {
       const context = await browser.newContext();
       const pageA = await context.newPage();
@@ -223,7 +226,219 @@ test.describe('Multi-tab sync', () => {
       await context.close();
     });
 
-    // Test Case 6: Should serialize concurrent template saves across real browser tabs
+    // Test Case 6: restores the last deleted checklist with its contents through keyboard undo and redo.
+    test('restores the last deleted checklist with its contents through keyboard undo and redo', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await createChecklist(page);
+      await renameSelectedChecklist(page, 'Restorable trip');
+      await expect
+        .poll(() =>
+          page.evaluate(() =>
+            JSON.parse(localStorage.getItem('packingListApp')).checklists.some(
+              (entry) => entry.name === 'Restorable trip'
+            )
+          )
+        )
+        .toBe(true);
+      const before = await page.evaluate(() => JSON.parse(localStorage.getItem('packingListApp')));
+      const checklist = before.checklists.find((entry) => entry.name === 'Restorable trip');
+      expect(
+        before.items.filter((entry) => entry.checklistId === checklist.id).length
+      ).toBeGreaterThan(0);
+      await deleteSelectedChecklist(page);
+      await expect(
+        page.getByTestId('sidebar-checklist-item').filter({ hasText: 'Restorable trip' })
+      ).toHaveCount(0);
+      await page.keyboard.press('Control+z');
+      await expect(
+        page.getByTestId('sidebar-checklist-item').filter({ hasText: 'Restorable trip' })
+      ).toBeVisible();
+      const restored = await page.evaluate(() =>
+        JSON.parse(localStorage.getItem('packingListApp'))
+      );
+      expect(restored.items.filter((entry) => entry.checklistId === checklist.id)).toEqual(
+        before.items.filter((entry) => entry.checklistId === checklist.id)
+      );
+      await page.keyboard.press('Control+Shift+z');
+      await expect(
+        page.getByTestId('sidebar-checklist-item').filter({ hasText: 'Restorable trip' })
+      ).toHaveCount(0);
+    });
+
+    // Test Case 7: identifies the affected checklist after cross-checklist undo and redo.
+    test('identifies the affected checklist after cross-checklist undo and redo', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await createChecklist(page);
+      await renameSelectedChecklist(page, 'First trip');
+      await createChecklist(page);
+      await renameSelectedChecklist(page, 'Second trip');
+      await page.getByTestId('sidebar-checklist-item').filter({ hasText: 'First trip' }).click();
+      await page.getByTestId('category-checkbox').first().click();
+      await expect(page.getByTestId('category-checkbox').first()).toBeChecked();
+      await page.getByTestId('sidebar-checklist-item').filter({ hasText: 'Second trip' }).click();
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.locator('main').evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await expect
+        .poll(() =>
+          page.evaluate(() => Math.max(window.scrollY, document.querySelector('main').scrollTop))
+        )
+        .toBeGreaterThan(0);
+      await page.keyboard.press('Control+z');
+      await expect(page.getByTestId('cross-checklist-history-feedback')).toBeInViewport();
+      await expect(
+        page.getByRole('status').filter({ hasText: 'Undid a change in First trip' })
+      ).toBeVisible();
+      await page.keyboard.press('Control+Shift+z');
+      await expect(
+        page.getByRole('status').filter({ hasText: 'Redid a change in First trip' })
+      ).toBeVisible();
+      await expect(page.getByTestId('checklist-name')).toHaveText('Second trip');
+      await page.getByTestId('sidebar-language-button').click();
+      await page.getByTestId('sidebar-language-option-zh-TW').click();
+      await expect(page.getByTestId('cross-checklist-history-feedback')).toContainText(
+        '已重做 First trip 的變更'
+      );
+      await page.getByTestId('category-checkbox').first().click();
+      await expect(page.getByTestId('cross-checklist-history-feedback')).toBeHidden();
+      await expect(page.getByTestId('packing-undo-toast')).toHaveCount(0);
+    });
+
+    // Test Case 8: keeps long Chinese cross-checklist feedback operable at 320px.
+    test('keeps long Chinese cross-checklist feedback operable at 320px', async ({ page }) => {
+      await page.setViewportSize({ width: 320, height: 640 });
+      const longName = '旅'.repeat(100);
+      await page.addInitScript((name) => {
+        localStorage.setItem('user-locale', 'zh-TW');
+        localStorage.setItem('packingListLastOpenedChecklistId', 'list-a');
+        localStorage.setItem(
+          'packingListApp',
+          JSON.stringify({
+            checklists: [
+              { id: 'list-a', name, order: 0 },
+              { id: 'list-b', name: '第二份清單', order: 1 },
+            ],
+            categories: [
+              { id: 'cat-a', checklistId: 'list-a', name: '第一類', order: 0 },
+              { id: 'cat-a2', checklistId: 'list-a', name: '另一類', order: 1 },
+              { id: 'cat-b', checklistId: 'list-b', name: '用品', order: 0 },
+            ],
+            items: [
+              {
+                id: 'item-a',
+                checklistId: 'list-a',
+                categoryId: 'cat-a',
+                name: '護照',
+                quantity: 1,
+                isPacked: false,
+                isPending: false,
+                order: 0,
+              },
+              {
+                id: 'item-a2',
+                checklistId: 'list-a',
+                categoryId: 'cat-a2',
+                name: '衣服',
+                quantity: 1,
+                isPacked: false,
+                isPending: false,
+                order: 0,
+              },
+              ...Array.from({ length: 25 }, (_, index) => ({
+                id: `item-b-${index}`,
+                checklistId: 'list-b',
+                categoryId: 'cat-b',
+                name: `物品 ${index}`,
+                quantity: 1,
+                isPacked: false,
+                isPending: false,
+                order: index,
+              })),
+            ],
+          })
+        );
+      }, longName);
+      await page.goto('/');
+      await page.getByTestId('category-checkbox').first().click();
+      await page.getByTestId('topbar-toggle').click();
+      await page.getByTestId('sidebar-checklist-item').filter({ hasText: '第二份清單' }).click();
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.locator('main').evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await page.keyboard.press('Control+z');
+      const notice = page.getByTestId('cross-checklist-history-feedback');
+      await expect(notice).toBeInViewport();
+      await expect(notice).toContainText(longName);
+      const box = await notice.boundingBox();
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(320);
+      expect(box.width).toBeGreaterThan(275);
+      await expect(notice.getByRole('button')).toHaveCount(0);
+      const text = notice.locator('span');
+      const geometry = await text.evaluate((element) => ({
+        height: element.getBoundingClientRect().height,
+        lineHeight: parseFloat(getComputedStyle(element).lineHeight),
+        overflow: getComputedStyle(element).textOverflow,
+      }));
+      expect(geometry.height).toBeLessThanOrEqual(geometry.lineHeight + 1);
+      expect(geometry.overflow).toBe('ellipsis');
+      await expect(notice).toBeHidden();
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.getByTestId('topbar-toggle').click();
+      const drawer = page.getByTestId('overlay-sidebar');
+      await drawer.getByTestId('history-redo').click();
+      const drawerNotice = drawer.getByTestId('sidebar-history-feedback');
+      await expect(drawerNotice).toContainText(longName);
+      await expect(drawerNotice.getByRole('button')).toHaveCount(0);
+      const drawerBox = await drawerNotice.boundingBox();
+      expect(drawerBox.width).toBeGreaterThan(300);
+      expect(drawerBox.x + drawerBox.width).toBeLessThanOrEqual(320);
+      await expect(drawerNotice).toBeHidden();
+    });
+
+    // Test Case 9: does not undo a later packing change from another tab.
+    test('does not undo a later packing change from another tab', async ({ browser }) => {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+      const pageA = await context.newPage();
+      const pageB = await context.newPage();
+      await pageA.goto('/');
+      await pageB.goto('/');
+      await createChecklist(pageA);
+      const synced = pageB.getByTestId('sidebar-checklist-item').first();
+      await expect(synced).toBeVisible();
+      await synced.click();
+      const categoryA = pageA.getByTestId('category-card').first();
+      const categoryB = pageB.getByTestId('category-card').first();
+      await categoryA.getByTestId('category-checkbox').click();
+      const itemB = categoryB.getByTestId('item-checkbox').first();
+      await expect(itemB).toBeChecked();
+      await itemB.click();
+      await expect(itemB).not.toBeChecked();
+      const itemA = categoryA.getByTestId('item-checkbox').first();
+      await expect(itemA).not.toBeChecked();
+      await pageA.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await pageA.locator('main').evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await expect(pageA.getByTestId('history-barrier-feedback')).toBeInViewport();
+      await expect(
+        pageA.getByRole('status').filter({ hasText: 'Undo and redo history was cleared' })
+      ).toBeVisible();
+      await pageA.locator('main').click({ position: { x: 2, y: 2 } });
+      await pageA.keyboard.press('Control+z');
+      await expect(itemA).not.toBeChecked();
+      await expect(itemB).not.toBeChecked();
+      await context.close();
+    });
+
+    // Should serialize concurrent template saves across real browser tabs
+    // Test Case 10: keeps both templates when two tabs save behind the same lock barrier.
     test('keeps both templates when two tabs save behind the same lock barrier', async ({
       browser,
     }) => {

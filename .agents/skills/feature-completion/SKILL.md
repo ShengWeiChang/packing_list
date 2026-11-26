@@ -19,10 +19,6 @@ observable finish conditions, state, reviewed scope or revision, and prior
 evidence before validating. Return an evidence-backed verdict so the workflow
 can update the plan and wait for the user's decision.
 
-## README Impact Rule
-
-Treat README as a concise project entry point. During verification, assess whether the aggregate diff changes project purpose, principal capabilities, setup or run path, public interface, contribution entry point, or top-level navigation; require an update only then. Do not put detailed specifications, internal workflow, implementation details, or change history in README. If README is outside the approved write scope, report the missing required update instead of modifying it.
-
 For a milestone review, inspect the staged candidate with `git diff --cached`.
 For a final review, inspect the aggregate feature range from the plan's feature
 base HEAD SHA through current `HEAD`, plus any staged final candidate. Do not
@@ -55,18 +51,14 @@ Use the smallest applicable set of reviews; do not repeat their work here.
 | Bilingual product, code-quality, or test-documentation parity             | Relevant `doc-audit-*` Skill during implementation |
 
 For a milestone gate, run the smallest relevant validation. Do not automatically
-obtain a fresh reviewer: T1 never needs an intermediate independent review; T2
-needs one only for a meaningful non-final integration boundary; T3 needs one at
-each meaningful non-final integration boundary. The final-gate review satisfies
+obtain a fresh reviewer: T1 does not require an intermediate independent review;
+T2 and T3 require one at meaningful non-final integration boundaries. A user
+may explicitly request an intermediate review at any tier. The final-gate review satisfies
 the review requirement for the last integration-boundary milestone. Record an
 omitted intermediate review as `not required by tier/boundary`, rather than
-representing it as missing evidence. A fresh reviewer did not implement the
-reviewed scope and has not issued a verdict during its current repair cycle.
-After a blocking or important finding is fixed, use a different read-only
-context that did not review the earlier repair-cycle revision. For a bounded
-repair, the fresh reviewer may focus on the change and affected boundaries while
-receiving earlier findings and valid unchanged evidence; broaden scope when
-impact is uncertain. Record each evidence scope, reviewer and fingerprint.
+representing it as missing evidence. A fresh initial reviewer did not implement
+the reviewed scope and has not issued a verdict on that candidate. Reviewers must not edit implementation files. Record each
+review's scope, reviewer identity, candidate revision and evidence.
 
 Select milestone evidence from the changed boundary; do not replace relevant
 runtime proof with a cheaper unrelated command:
@@ -91,10 +83,41 @@ At a final gate, select evidence and review from the approved tier:
 | T2   | Run `npm run verify:feature`, obtain one fresh read-only `$code-review`, and add fresh `$test-analysis` only for persistence, state/data transformations, browser-only or cross-boundary behavior, complex interaction, or missing direct behavior proof. |
 | T3   | Run `npm run verify:feature`, obtain one fresh read-only `$code-review` and one fresh `$test-analysis`; include the risk-specific runtime, E2E, or manual proof defined in the plan.                                                                      |
 
-The reviewer may inspect the diff and evidence, but must not edit implementation
-files. After implementation fixes a finding, use a new fresh reviewer context
-for the follow-up verdict. A T1 final gate does not make CI optional: the
-repository's full PR checks remain required before merge.
+Follow the repair policy below for findings. A T1 final gate does not
+make CI optional: the repository's required PR checks remain required before
+merge.
+
+## Repair, Review, and Evidence Reuse
+
+A repair round is one attempt to resolve outstanding findings or failed
+validation, including its relevant checks and any required follow-up review.
+Count an attempt even when checks fail and review cannot yet occur; another
+change followed by another check is another round. Group related fixes in one
+attempt when practical, and record the result of each round. For a bounded
+repair, the original independent reviewer may review the fix and affected
+boundaries using prior findings and still-valid evidence. Do not reuse a verdict
+for a changed boundary without a follow-up review. Use a different independent
+reviewer who did not implement the reviewed scope when the repair introduces a
+new risk boundary, security or data
+correctness remains uncertain, the original reviewer cannot assess objectively,
+or the same important issue recurs. Broaden review when impact is uncertain.
+
+Continue investigating, repairing, validating, and obtaining the applicable
+follow-up review until the approved scope is ready. Do not stop merely because a
+fixed number of repair rounds has elapsed. If an external blocker, missing
+material decision, or the user's scope or authorization prevents safe progress,
+report the blocker and request only the decision needed. Failing validation,
+insufficient evidence, and unresolved blocking or important findings prevent
+handoff or a commit candidate. Non-blocking risks require recorded user acceptance.
+
+After a repair, first run the failing checks and relevant boundary evidence.
+Reuse an earlier completed gate or review evidence only for unaffected scope
+when candidate differences, dependencies, test discovery and configuration,
+environment, execution scope, provenance and successful results establish it
+still applies. Record both revisions, exact differences and rationale. Rerun the
+full local gate when its evidence is invalidated or the approved risk plan
+requires it; documentation-only changes may reuse unaffected behavior evidence
+with relevant documentation checks. Current-revision PR CI remains required.
 
 When delegation is unavailable, perform the applicable reviews sequentially,
 but label the handoff `degraded: no independent delegation`. Do not call this
@@ -144,7 +167,7 @@ For new or changed interactive UI, verify as applicable:
 
 ## 4. Documentation and Repository Hygiene
 
-1. Before final verification, reconcile the plan's documentation-impact matrix against the aggregate feature diff from the feature base through the candidate revision. Update the matrix and evidence log if implementation scope changed; a passing paired-document check does not prove that documentation content is complete.
+1. Before final verification, reconcile the plan's documentation-impact assessment against the aggregate feature diff from the feature base through the candidate revision. Update it and the evidence log if scope changed; a passing paired-document check does not prove content is complete.
 2. Treat a new or renamed production component, controlled dependency, shared UI primitive, architecture or design-system convention, documented file inventory, or user-facing contract as a product-spec impact signal. Assess private implementation details against the existing specification instead of automatically documenting them.
 3. For `README.md` and every assessed document pair, record `updated` with applicable validation, or `not affected` with a concrete diff-based reason. When a document pair is affected, update both English and Traditional Chinese files in the same candidate.
 4. Keep paired English and Traditional Chinese documents structurally aligned, with equivalent content and the same line count. Both files must be included in the Git diff.

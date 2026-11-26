@@ -17,6 +17,7 @@ import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usePackingLists } from '../../../source/composables/usePackingLists';
+import { useTemplates } from '../../../source/composables/useTemplates';
 import { LocalStorageService } from '../../../source/services/localStorageService';
 import { STORAGE_KEYS } from '../../../source/utils/constants';
 
@@ -61,7 +62,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('initial state', () => {
-    // Test Case 1: Composable should start with empty collections
+    // Composable should start with empty collections
+    // Test Case 1: should return initial empty state.
     it('should return initial empty state', () => {
       const { checklists, categories, items, selectedChecklistId, isLoading, error } =
         usePackingLists();
@@ -74,7 +76,8 @@ describe('usePackingLists', () => {
       expect(error.value).toBeNull();
     });
 
-    // Test Case 2: Computed properties should be accessible
+    // Computed properties should be accessible
+    // Test Case 2: should have computed properties.
     it('should have computed properties', () => {
       const { selectedChecklist, totalItems, packedItems, progress } = usePackingLists();
 
@@ -90,7 +93,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('initialize', () => {
-    // Test Case 3: Initialize should populate state from localStorage
+    // Initialize should populate state from localStorage
+    // Test Case 3: should load data from storage on initialize.
     it('should load data from storage on initialize', async () => {
       vi.spyOn(LocalStorageService.prototype, 'getData').mockResolvedValue({
         checklists: [
@@ -128,7 +132,8 @@ describe('usePackingLists', () => {
       expect(items.value).toHaveLength(1);
     });
 
-    // Test Case 4: isLoading should transition during async operation
+    // isLoading should transition during async operation
+    // Test Case 4: should manage loading state during initialization.
     it('should manage loading state during initialization', async () => {
       const { initialize, isLoading } = usePackingLists();
       mockStorage[STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID] = 'stale-checklist';
@@ -141,7 +146,8 @@ describe('usePackingLists', () => {
       expect(mockStorage[STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID]).toBeUndefined();
     });
 
-    // Test Case 5: Legacy checklist order repair should restore the saved checklist
+    // Legacy checklist order repair should restore the saved checklist
+    // Test Case 5: should normalize missing checklist order in memory and restore the saved checklist.
     it('should normalize missing checklist order in memory and restore the saved checklist', async () => {
       vi.spyOn(LocalStorageService.prototype, 'getData').mockResolvedValue({
         checklists: [
@@ -202,7 +208,8 @@ describe('usePackingLists', () => {
       expect(items.value).toEqual([expect.objectContaining({ id: 'item-legacy' })]);
     });
 
-    // Test Case 6: Deleted selected checklist should fallback to the sidebar top
+    // Deleted selected checklist should fallback to the sidebar top
+    // Test Case 6: should fallback selected checklist and reload scoped categories/items.
     it('should fallback selected checklist and reload scoped categories/items', async () => {
       vi.spyOn(LocalStorageService.prototype, 'getData').mockResolvedValue({
         checklists: [
@@ -250,7 +257,8 @@ describe('usePackingLists', () => {
       expect(api.items.value[0].checklistId).toBe('cl-2');
     });
 
-    // Test Case 7: Initialize should surface errors when data service throws
+    // Initialize should surface errors when data service throws
+    // Test Case 7: should set error and clear state when initialize fails unexpectedly.
     it('should set error and clear state when initialize fails unexpectedly', async () => {
       vi.spyOn(LocalStorageService.prototype, 'getData').mockRejectedValue(new Error('boom'));
 
@@ -269,7 +277,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('checklist operations', () => {
-    // Test Case 8: Creating a checklist should add it to state
+    // Creating a checklist should add it to state
+    // Test Case 8: should create a new checklist.
     it('should create a new checklist', async () => {
       const { initialize, createChecklist, checklists, selectedChecklistId } = usePackingLists();
 
@@ -282,7 +291,8 @@ describe('usePackingLists', () => {
       expect(selectedChecklistId.value).toBe(checklist.id);
     });
 
-    // Test Case 9: First checklist should be auto-selected
+    // First checklist should be auto-selected
+    // Test Case 9: should select the first checklist after creation.
     it('should select the first checklist after creation', async () => {
       const { initialize, createChecklist, selectedChecklistId, selectedChecklist } =
         usePackingLists();
@@ -294,7 +304,8 @@ describe('usePackingLists', () => {
       expect(selectedChecklist.value).toEqual(expect.objectContaining({ name: 'First' }));
     });
 
-    // Test Case 10: Update should modify checklist data
+    // Update should modify checklist data
+    // Test Case 10: should update an existing checklist.
     it('should update an existing checklist', async () => {
       const {
         initialize,
@@ -322,7 +333,8 @@ describe('usePackingLists', () => {
       expect(mockStorage[STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID]).toBe(created.id);
     });
 
-    // Test Case 11: Delete should remove checklist from state
+    // Delete should remove checklist from state
+    // Test Case 11: should delete a checklist.
     it('should delete a checklist', async () => {
       const { initialize, createChecklist, deleteChecklist, checklists, selectedChecklistId } =
         usePackingLists();
@@ -342,7 +354,8 @@ describe('usePackingLists', () => {
       expect(mockStorage[STORAGE_KEYS.LAST_OPENED_CHECKLIST_ID]).toBe(newest.id);
     });
 
-    // Test Case 12: createChecklist should return null when service call fails
+    // createChecklist should return null when service call fails
+    // Test Case 12: should return null when createChecklist service call fails.
     it('should return null when createChecklist service call fails', async () => {
       const api = usePackingLists();
       const selectedBefore = api.selectedChecklistId.value;
@@ -356,7 +369,8 @@ describe('usePackingLists', () => {
       expect(api.selectedChecklistId.value).toBe(selectedBefore);
     });
 
-    // Test Case 13: updateChecklist should return null when service call fails
+    // updateChecklist should return null when service call fails
+    // Test Case 13: should return null when updateChecklist service call fails.
     it('should return null when updateChecklist service call fails', async () => {
       const api = usePackingLists();
       await api.initialize();
@@ -376,7 +390,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('category operations', () => {
-    // Test Case 14: Category should be created in current checklist
+    // Category should be created in current checklist
+    // Test Case 14: should create a category in the selected checklist.
     it('should create a category in the selected checklist', async () => {
       const { initialize, createChecklist, createCategory, categories } = usePackingLists();
 
@@ -389,7 +404,8 @@ describe('usePackingLists', () => {
       expect(categories.value.some((c) => c.name === 'Clothes')).toBe(true);
     });
 
-    // Test Case 15: Category operations should fail without selected checklist
+    // Category operations should fail without selected checklist
+    // Test Case 15: should return null if no checklist is selected.
     it('should return null if no checklist is selected', async () => {
       const { createCategory } = usePackingLists();
 
@@ -404,7 +420,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('item operations', () => {
-    // Test Case 16: Item should be created with correct properties
+    // Item should be created with correct properties
+    // Test Case 16: should create an item in the selected checklist.
     it('should create an item in the selected checklist', async () => {
       const { initialize, createChecklist, categories, createItem, items } = usePackingLists();
 
@@ -422,7 +439,8 @@ describe('usePackingLists', () => {
       expect(items.value.some((i) => i.name === 'Passport')).toBe(true);
     });
 
-    // Test Case 17: Toggle should flip isPacked state
+    // Toggle should flip isPacked state
+    // Test Case 17: should toggle item packed status.
     it('should toggle item packed status', async () => {
       const {
         initialize,
@@ -448,7 +466,7 @@ describe('usePackingLists', () => {
 
       const updated = items.value.find((i) => i.id === item.id);
       expect(updated.isPacked).toBe(true);
-      expect(canUndoPackingChange.value).toBe(false);
+      expect(canUndoPackingChange.value).toBe(true);
     });
   });
 
@@ -457,7 +475,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('computed properties', () => {
-    // Test Case 18: Progress should reflect packed/total ratio
+    // Progress should reflect packed/total ratio
+    // Test Case 18: should calculate progress correctly.
     it('should calculate progress correctly', async () => {
       const {
         initialize,
@@ -490,7 +509,8 @@ describe('usePackingLists', () => {
       expect(progress.value).toBeGreaterThan(0);
     });
 
-    // Test Case 19: Empty items should result in 0 progress
+    // Empty items should result in 0 progress
+    // Test Case 19: should return 0 progress for empty checklist.
     it('should return 0 progress for empty checklist', async () => {
       const { progress, totalItems } = usePackingLists();
 
@@ -504,7 +524,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('error handling', () => {
-    // Test Case 20: localStorage corruption should be handled gracefully
+    // localStorage corruption should be handled gracefully
+    // Test Case 20: should handle storage errors gracefully during initialization.
     it('should handle storage errors gracefully during initialization', async () => {
       const { initialize, checklists, error } = usePackingLists();
 
@@ -524,7 +545,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('duplicate operations', () => {
-    // Test Case 21: Should duplicate a checklist
+    // Should duplicate a checklist
+    // Test Case 21: should duplicate a checklist and refresh state.
     it('should duplicate a checklist and refresh state', async () => {
       const { initialize, createChecklist, duplicateChecklist, checklists } = usePackingLists();
 
@@ -539,7 +561,8 @@ describe('usePackingLists', () => {
       expect(checklists.value.length).toBe(countBefore + 1);
     });
 
-    // Test Case 22: Should duplicate a category
+    // Should duplicate a category
+    // Test Case 22: should duplicate a category and refresh state.
     it('should duplicate a category and refresh state', async () => {
       const { initialize, createChecklist, categories, duplicateCategory } = usePackingLists();
 
@@ -558,7 +581,8 @@ describe('usePackingLists', () => {
       expect(categories.value.length).toBe(countBefore + 1);
     });
 
-    // Test Case 23: Should duplicate an item
+    // Should duplicate an item
+    // Test Case 23: should duplicate an item and refresh state.
     it('should duplicate an item and refresh state', async () => {
       const { initialize, createChecklist, categories, createItem, duplicateItem, items } =
         usePackingLists();
@@ -586,7 +610,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('delete category and item', () => {
-    // Test Case 24: Should delete a category and its items
+    // Should delete a category and its items
+    // Test Case 24: should delete a category and refresh both categories and items.
     it('should delete a category and refresh both categories and items', async () => {
       const { initialize, createChecklist, categories, items, createItem, deleteCategory } =
         usePackingLists();
@@ -609,7 +634,8 @@ describe('usePackingLists', () => {
       expect(stored.items.some((entry) => entry.id === item.id)).toBe(false);
     });
 
-    // Test Case 25: Should delete an item
+    // Should delete an item
+    // Test Case 25: should delete an item and refresh items.
     it('should delete an item and refresh items', async () => {
       const { initialize, createChecklist, categories, createItem, deleteItem, items } =
         usePackingLists();
@@ -636,7 +662,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('updateMultipleChecklists', () => {
-    // Test Case 26: Should update multiple checklists at once
+    // Should update multiple checklists at once
+    // Test Case 26: should update multiple checklists and refresh state.
     it('should update multiple checklists and refresh state', async () => {
       const { initialize, createChecklist, updateMultipleChecklists, checklists } =
         usePackingLists();
@@ -661,7 +688,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('null-guard paths', () => {
-    // Test Case 27: createItem without selected checklist should return null
+    // createItem without selected checklist should return null
+    // Test Case 27: should return null when creating item without selected checklist.
     it('should return null when creating item without selected checklist', async () => {
       const { createItem } = usePackingLists();
 
@@ -669,7 +697,8 @@ describe('usePackingLists', () => {
       expect(result).toBeNull();
     });
 
-    // Test Case 28: duplicateItem without selected checklist should return null
+    // duplicateItem without selected checklist should return null
+    // Test Case 28: should return null when duplicating item without selected checklist.
     it('should return null when duplicating item without selected checklist', async () => {
       const { duplicateItem } = usePackingLists();
 
@@ -677,7 +706,8 @@ describe('usePackingLists', () => {
       expect(result).toBeNull();
     });
 
-    // Test Case 29: updateItem without selected checklist should return null
+    // updateItem without selected checklist should return null
+    // Test Case 29: should return null when updating item without selected checklist.
     it('should return null when updating item without selected checklist', async () => {
       const { updateItem } = usePackingLists();
 
@@ -685,7 +715,8 @@ describe('usePackingLists', () => {
       expect(result).toBeNull();
     });
 
-    // Test Case 30: getCategories without selected checklist should return empty
+    // getCategories without selected checklist should return empty
+    // Test Case 30: should return empty array when getting categories without selected checklist.
     it('should return empty array when getting categories without selected checklist', async () => {
       const { getCategories, categories } = usePackingLists();
 
@@ -694,7 +725,8 @@ describe('usePackingLists', () => {
       expect(categories.value).toEqual([]);
     });
 
-    // Test Case 31: getItems without selected checklist should return empty
+    // getItems without selected checklist should return empty
+    // Test Case 31: should return empty array when getting items without selected checklist.
     it('should return empty array when getting items without selected checklist', async () => {
       const { getItems, items } = usePackingLists();
 
@@ -703,7 +735,8 @@ describe('usePackingLists', () => {
       expect(items.value).toEqual([]);
     });
 
-    // Test Case 32: deleteItem without selected checklist should return early
+    // deleteItem without selected checklist should return early
+    // Test Case 32: should return early when deleting item without selected checklist.
     it('should return early when deleting item without selected checklist', async () => {
       const { deleteItem } = usePackingLists();
 
@@ -717,8 +750,9 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('service failure paths', () => {
-    // Test Cases 33–37: Operations requiring a selected checklist should
+    // Operations requiring a selected checklist should
     // return null when the underlying service call rejects.
+    // Test Cases 33–37: should return null when each case service call fails (with checklist).
     it.each([
       ['createItem', 'createItem', { name: 'Item' }],
       ['duplicateCategory', 'duplicateCategory', 'fake-cat-id'],
@@ -741,8 +775,9 @@ describe('usePackingLists', () => {
       }
     );
 
-    // Test Cases 38–39: Operations that don't need a selected checklist should
+    // Operations that don't need a selected checklist should
     // also return null when the service rejects.
+    // Test Cases 38–39: should return null when each case service call fails (no checklist).
     it.each([
       ['duplicateChecklist', 'duplicateChecklist', 'fake-cl-id'],
       ['updateCategory', 'updateCategory', { id: 'fake', name: 'Updated' }],
@@ -760,7 +795,8 @@ describe('usePackingLists', () => {
       }
     );
 
-    // Test Cases 40–41: Should return null when the service resolves with a falsy value.
+    // Should return null when the service resolves with a falsy value.
+    // Test Cases 40–41: should return null when each case service returns undefined.
     it.each([
       ['updateCategory', 'updateCategory', { id: 'fake', name: 'Updated' }],
       [
@@ -780,7 +816,8 @@ describe('usePackingLists', () => {
       }
     );
 
-    // Test Case 42: Real service throws for non-existent entity
+    // Real service throws for non-existent entity
+    // Test Case 42: should return null when updateCategory throws (real service).
     it('should return null when updateCategory throws (real service)', async () => {
       const { updateCategory } = usePackingLists();
 
@@ -794,7 +831,8 @@ describe('usePackingLists', () => {
       expect(result).toBeNull();
     });
 
-    // Test Case 43: updateCategory should refresh and return updated data on success
+    // updateCategory should refresh and return updated data on success
+    // Test Case 43: should refresh categories and return updated category on success.
     it('should refresh categories and return updated category on success', async () => {
       const api = usePackingLists();
       const { initialize, createChecklist, getCategories, categories, updateCategory } = api;
@@ -818,7 +856,8 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('cross-tab sync', () => {
-    // Test Case 44: APP_DATA refresh should preserve valid selection and recover deleted selection
+    // APP_DATA refresh should preserve valid selection and recover deleted selection
+    // Test Case 44: should preserve valid selection and recover deleted selection on app data refresh.
     it('should preserve valid selection and recover deleted selection on app data refresh', async () => {
       vi.useFakeTimers();
 
@@ -909,7 +948,559 @@ describe('usePackingLists', () => {
   // ---------------------------------------------------------------------------
 
   describe('packing history', () => {
-    // Test Case 45: Preserve data and history after a failed deletion.
+    // Test Case 45: restores a deleted checklist subtree with the same IDs and values, then redoes deletion.
+    it('restores a deleted checklist subtree with the same IDs and values, then redoes deletion', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      const list = await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothes' });
+      const item = await api.createItem({
+        name: 'Hat',
+        categoryId: category.id,
+        quantity: 3,
+        isPending: true,
+      });
+      const before = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      expect(await api.deleteChecklist(list.id)).toBe(true);
+      expect(await api.undoPackingChange()).toBe(true);
+      const restored = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      expect(restored.checklists.find((entry) => entry.id === list.id)).toEqual(
+        before.checklists.find((entry) => entry.id === list.id)
+      );
+      expect(restored.categories.find((entry) => entry.id === category.id)).toEqual(
+        before.categories.find((entry) => entry.id === category.id)
+      );
+      expect(restored.items.find((entry) => entry.id === item.id)).toEqual(
+        before.items.find((entry) => entry.id === item.id)
+      );
+      expect(await api.redoPackingChange()).toBe(true);
+      const deleted = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      expect(deleted.checklists.some((entry) => entry.id === list.id)).toBe(false);
+      expect(deleted.items.some((entry) => entry.id === item.id)).toBe(false);
+    });
+
+    // Test Case 46: undoes and redoes item edits, pending status, duplication and deletion as separate steps.
+    it('undoes and redoes item edits, pending status, duplication and deletion as separate steps', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothes' });
+      const item = await api.createItem({ name: 'Hat', categoryId: category.id, quantity: 1 });
+      api.clearPackingHistory();
+      await api.updateItem({ ...item, name: 'Cap', quantity: 2 }, item);
+      const edited = api.items.value.find((entry) => entry.id === item.id);
+      await api.updateItem({ ...edited, isPending: true }, edited);
+      const copy = await api.duplicateItem(item.id);
+      await api.deleteItem(item.id);
+      expect(api.items.value.map((entry) => entry.id)).toEqual([copy.id]);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value.find((entry) => entry.id === item.id)).toMatchObject({
+        name: 'Cap',
+        quantity: 2,
+        isPending: true,
+      });
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value.some((entry) => entry.id === copy.id)).toBe(false);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value.find((entry) => entry.id === item.id).isPending).toBe(false);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value.find((entry) => entry.id === item.id)).toMatchObject({
+        name: 'Hat',
+        quantity: 1,
+      });
+      expect(api.canUndoPackingChange.value).toBe(false);
+      for (let index = 0; index < 4; index++) expect(await api.redoPackingChange()).toBe(true);
+      expect(api.items.value.map((entry) => entry.id)).toEqual([copy.id]);
+    });
+
+    // Test Case 47: restores a category deletion with its items and reverses a cross-category move.
+    it('restores a category deletion with its items and reverses a cross-category move', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const first = await api.createCategory({ name: 'First', order: 0 });
+      const second = await api.createCategory({ name: 'Second', order: 1 });
+      const item = await api.createItem({ name: 'Hat', categoryId: first.id, order: 0 });
+      api.clearPackingHistory();
+      await api.updateMultipleItems([{ ...item, categoryId: second.id, order: 0 }], {
+        fields: ['categoryId', 'order'],
+        expectedItems: [item],
+      });
+      await api.deleteCategory(second.id);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value.find((entry) => entry.id === item.id).categoryId).toBe(second.id);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value.find((entry) => entry.id === item.id).categoryId).toBe(first.id);
+      expect(await api.redoPackingChange()).toBe(true);
+      expect(await api.redoPackingChange()).toBe(true);
+      expect(api.items.value.some((entry) => entry.id === item.id)).toBe(false);
+    });
+
+    // Test Case 48: rejects undoing a cross-category move when the destination membership changed.
+    it('rejects undoing a cross-category move when the destination membership changed', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      const list = await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const first = await api.createCategory({ name: 'First' });
+      const second = await api.createCategory({ name: 'Second' });
+      const item = await api.createItem({ name: 'Hat', categoryId: first.id });
+      await api.updateMultipleItems([{ ...item, categoryId: second.id }], {
+        fields: ['categoryId', 'order'],
+        expectedItems: [item],
+      });
+      const external = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      external.items.push({
+        id: 'external',
+        checklistId: list.id,
+        categoryId: second.id,
+        name: 'External',
+        quantity: 1,
+        isPacked: false,
+        isPending: false,
+        order: 1,
+      });
+      mockStorage[STORAGE_KEYS.APP_DATA] = JSON.stringify(external);
+      expect(await api.undoPackingChange()).toBe(false);
+      expect(api.operationError.value).toBe('conflict');
+      expect(JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA])).toEqual(external);
+    });
+
+    // Test Case 49: undoes and redoes category duplication with its complete item subtree.
+    it('undoes and redoes category duplication with its complete item subtree', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothes' });
+      await api.createItem({ name: 'Hat', categoryId: category.id, quantity: 4 });
+      api.clearPackingHistory();
+      const copy = await api.duplicateCategory(category.id);
+      const copiedItem = api.items.value.find((entry) => entry.categoryId === copy.id);
+      expect(copiedItem.quantity).toBe(4);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.categories.value.some((entry) => entry.id === copy.id)).toBe(false);
+      expect(api.items.value.some((entry) => entry.id === copiedItem.id)).toBe(false);
+      expect(await api.redoPackingChange()).toBe(true);
+      expect(api.items.value.find((entry) => entry.id === copiedItem.id)).toMatchObject({
+        categoryId: copy.id,
+        quantity: 4,
+      });
+    });
+
+    // Test Case 50: rejects undoing a created checklist if another tab added a descendant before its event.
+    it('rejects undoing a created checklist if another tab added a descendant before its event', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      const list = await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const external = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      external.categories.push({
+        id: 'external',
+        checklistId: list.id,
+        name: 'External',
+        order: 0,
+      });
+      mockStorage[STORAGE_KEYS.APP_DATA] = JSON.stringify(external);
+      expect(await api.undoPackingChange()).toBe(false);
+      expect(api.operationError.value).toBe('conflict');
+      expect(JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA])).toEqual(external);
+    });
+
+    // Test Case 51: undoes and redoes checklist, category and item reorder as separate steps.
+    it('undoes and redoes checklist, category and item reorder as separate steps', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'First', order: 0 }, { source: 'empty' });
+      await api.createChecklist({ name: 'Second', order: 1 }, { source: 'empty' });
+      const lists = api.checklists.value.map((entry) => ({ ...entry }));
+      const swapped = (entries) =>
+        entries.map((entry, index) => ({ ...entry, order: entries[1 - index].order }));
+      const orders = (entries) => entries.map(({ id, order }) => [id, order]).sort();
+      api.clearPackingHistory();
+      await api.updateMultipleChecklists(swapped(lists), lists);
+      expect(orders(api.checklists.value)).toEqual(orders(swapped(lists)));
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(orders(api.checklists.value)).toEqual(orders(lists));
+      expect(await api.redoPackingChange()).toBe(true);
+      expect(orders(api.checklists.value)).toEqual(orders(swapped(lists)));
+      const cat1 = await api.createCategory({ name: 'First', order: 0 });
+      const cat2 = await api.createCategory({ name: 'Second', order: 1 });
+      const categories = [cat1, cat2];
+      api.clearPackingHistory();
+      await api.updateMultipleCategories(swapped(categories), categories);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(orders(api.categories.value)).toEqual(orders(categories));
+      expect(await api.redoPackingChange()).toBe(true);
+      expect(orders(api.categories.value)).toEqual(orders(swapped(categories)));
+      const item1 = await api.createItem({ name: 'First', categoryId: cat1.id, order: 0 });
+      const item2 = await api.createItem({ name: 'Second', categoryId: cat1.id, order: 1 });
+      const items = [item1, item2];
+      api.clearPackingHistory();
+      await api.updateMultipleItems(swapped(items), {
+        fields: ['order'],
+        expectedItems: items,
+        recordHistory: true,
+      });
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(orders(api.items.value)).toEqual(orders(items));
+      expect(await api.redoPackingChange()).toBe(true);
+      expect(orders(api.items.value)).toEqual(orders(swapped(items)));
+    });
+
+    // Test Case 52: rejects undo of a reorder after another tab changes membership, preserving the other edit.
+    it('rejects undo of a reorder after another tab changes membership, preserving the other edit', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const first = await api.createCategory({ name: 'First', order: 0 });
+      const second = await api.createCategory({ name: 'Second', order: 1 });
+      await api.updateMultipleCategories(
+        [
+          { ...first, order: 1 },
+          { ...second, order: 0 },
+        ],
+        [first, second]
+      );
+      const external = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      external.categories.push({
+        id: 'external',
+        checklistId: first.checklistId,
+        name: 'External',
+        order: 2,
+      });
+      mockStorage[STORAGE_KEYS.APP_DATA] = JSON.stringify(external);
+      expect(await api.undoPackingChange()).toBe(false);
+      expect(api.operationError.value).toBe('conflict');
+      expect(JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA])).toEqual(external);
+    });
+
+    // Test Case 53: reverses an edit without overwriting an unrelated external field change.
+    it('reverses an edit without overwriting an unrelated external field change', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothes' });
+      const item = await api.createItem({ name: 'Hat', categoryId: category.id, quantity: 1 });
+      await api.updateItem({ ...item, name: 'Cap' }, item);
+      const external = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      external.items.find((entry) => entry.id === item.id).quantity = 7;
+      mockStorage[STORAGE_KEYS.APP_DATA] = JSON.stringify(external);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(
+        JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).items.find((entry) => entry.id === item.id)
+      ).toMatchObject({ name: 'Hat', quantity: 7 });
+    });
+
+    // Test Case 54: rejects undo if a different tab changed the saved status before its event arrives.
+    it('rejects undo if a different tab changed the saved status before its event arrives', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      await flushPromises();
+      const category = await api.createCategory({ name: 'Clothing' });
+      const item = await api.createItem({ name: 'Hat', categoryId: category.id });
+      await api.setCategoryPacked(category.id, true);
+
+      const external = JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]);
+      const changed = external.items.find((entry) => entry.id === item.id);
+      changed.isPacked = false;
+      changed.isPending = true;
+      mockStorage[STORAGE_KEYS.APP_DATA] = JSON.stringify(external);
+
+      expect(await api.undoPackingChange()).toBe(false);
+      expect(JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).items[0]).toMatchObject({
+        isPacked: false,
+        isPending: true,
+      });
+      expect(api.canUndoPackingChange.value).toBe(true);
+      expect(api.operationError.value).toBe('conflict');
+    });
+    // Test Case 55: keeps history for a no-op and undoes a later edit before the packing change.
+    it('keeps history for a no-op and undoes a later edit before the packing change', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothing' });
+      await api.createItem({ name: 'Hat', categoryId: category.id });
+      await api.setCategoryPacked(category.id, true);
+      const unchanged = api.items.value[0];
+      await api.updateItem({ ...unchanged }, unchanged);
+      expect(api.canUndoPackingChange.value).toBe(true);
+      expect(api.historyBarrierVersion.value).toBe(0);
+      await api.updateItem({ ...unchanged, name: 'Cap' }, unchanged);
+      expect(api.historyBarrierVersion.value).toBe(0);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value[0].name).toBe('Hat');
+      expect(api.items.value[0].isPacked).toBe(true);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.items.value[0].isPacked).toBe(false);
+    });
+
+    // Test Case 56: preserves a committed batch in history if the following refresh fails.
+    it('preserves a committed batch in history if the following refresh fails', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothing' });
+      await api.createItem({ name: 'Hat', categoryId: category.id });
+      vi.spyOn(LocalStorageService.prototype, 'getItems').mockRejectedValueOnce(
+        new Error('denied')
+      );
+      const result = await api.setCategoryPacked(category.id, true);
+      expect(result).toHaveLength(1);
+      expect(api.refreshAfterSaveFailed.value).toBe(true);
+      expect(api.canUndoPackingChange.value).toBe(true);
+      expect(JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).items[0].isPacked).toBe(true);
+      expect(await api.undoPackingChange()).toBe(true);
+    });
+
+    // Test Case 57: does not redirect an in-flight undo when the selected checklist changes.
+    it('does not redirect an in-flight undo when the selected checklist changes', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      const first = await api.createChecklist({ name: 'First' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothing' });
+      const item = await api.createItem({ name: 'Hat', categoryId: category.id });
+      const second = await api.createChecklist({ name: 'Second' }, { source: 'empty' });
+      api.selectedChecklistId.value = first.id;
+      await flushPromises();
+      await api.setCategoryPacked(category.id, true);
+      const original = LocalStorageService.prototype.applyHistory;
+      let release;
+      let entered;
+      const ready = new Promise((resolve) => {
+        entered = resolve;
+      });
+      const gate = new Promise((resolve) => {
+        release = resolve;
+      });
+      vi.spyOn(LocalStorageService.prototype, 'applyHistory').mockImplementation(async function (
+        ...args
+      ) {
+        entered();
+        await gate;
+        return original.apply(this, args);
+      });
+      const pending = api.undoPackingChange();
+      await ready;
+      api.selectedChecklistId.value = second.id;
+      await flushPromises();
+      release();
+      expect(await pending).toBe(true);
+      expect(api.selectedChecklistId.value).toBe(second.id);
+      expect(
+        JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).items.find((row) => row.id === item.id)
+      ).toMatchObject({ isPacked: false });
+      expect(api.canRedoPackingChange.value).toBe(true);
+    });
+
+    // Test Case 58: preserves newer redo when an older item update refresh finishes later.
+    it('preserves newer redo when an older item update refresh finishes later', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const first = await api.createCategory({ name: 'First' });
+      const second = await api.createCategory({ name: 'Second' });
+      const firstItem = await api.createItem({ name: 'Hat', categoryId: first.id });
+      await api.createItem({ name: 'Coat', categoryId: second.id });
+      const original = LocalStorageService.prototype.getItems;
+      let calls = 0;
+      let release;
+      let entered;
+      const ready = new Promise((resolve) => {
+        entered = resolve;
+      });
+      const gate = new Promise((resolve) => {
+        release = resolve;
+      });
+      vi.spyOn(LocalStorageService.prototype, 'getItems').mockImplementation(async function (
+        ...args
+      ) {
+        calls += 1;
+        if (calls === 1) {
+          entered();
+          await gate;
+        }
+        return original.apply(this, args);
+      });
+      const earlierUpdate = api.updateItem({ ...firstItem, isPacked: true }, firstItem);
+      await ready;
+      expect(JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).items[0].isPacked).toBe(true);
+      await api.setCategoryPacked(second.id, true);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.canRedoPackingChange.value).toBe(true);
+      release();
+      await earlierUpdate;
+      expect(api.canRedoPackingChange.value).toBe(true);
+      expect(await api.redoPackingChange()).toBe(true);
+      expect(
+        JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).items.map((row) => row.isPacked)
+      ).toEqual([true, true]);
+    });
+
+    // Test Case 59: keeps the committed batch version even when its refresh finishes after undo.
+    it('keeps the committed batch version even when its refresh finishes after undo', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const older = await api.createCategory({ name: 'Older' });
+      const newer = await api.createCategory({ name: 'Newer' });
+      await api.createItem({ name: 'Hat', categoryId: older.id });
+      await api.createItem({ name: 'Coat', categoryId: newer.id });
+      await api.setCategoryPacked(older.id, true);
+      const original = LocalStorageService.prototype.getItems;
+      let calls = 0;
+      let release;
+      let entered;
+      const ready = new Promise((resolve) => {
+        entered = resolve;
+      });
+      const gate = new Promise((resolve) => {
+        release = resolve;
+      });
+      vi.spyOn(LocalStorageService.prototype, 'getItems').mockImplementation(async function (
+        ...args
+      ) {
+        calls += 1;
+        if (calls === 1) {
+          entered();
+          await gate;
+        }
+        return original.apply(this, args);
+      });
+      const pending = api.setCategoryPacked(newer.id, true);
+      await ready;
+      expect(await api.undoPackingChange()).toBe(true);
+      const undoVersion = api.historyEventVersion.value;
+      release();
+      const oldResult = await pending;
+      expect(api.getPackingBatchEventVersion(oldResult)).toBeLessThan(undoVersion);
+      expect(api.canUndoPackingChange.value).toBe(true);
+      expect(api.canRedoPackingChange.value).toBe(true);
+    });
+
+    // Test Case 60: retains a newer action committed while an undo refresh is pending.
+    it('retains a newer action committed while an undo refresh is pending', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const first = await api.createCategory({ name: 'First' });
+      const second = await api.createCategory({ name: 'Second' });
+      await api.createItem({ name: 'Hat', categoryId: first.id });
+      await api.createItem({ name: 'Coat', categoryId: second.id });
+      await api.setCategoryPacked(first.id, true);
+      const original = LocalStorageService.prototype.getItems;
+      let calls = 0;
+      let release;
+      let entered;
+      const ready = new Promise((resolve) => {
+        entered = resolve;
+      });
+      const gate = new Promise((resolve) => {
+        release = resolve;
+      });
+      vi.spyOn(LocalStorageService.prototype, 'getItems').mockImplementation(async function (
+        ...args
+      ) {
+        calls += 1;
+        if (calls === 1) {
+          entered();
+          await gate;
+        }
+        return original.apply(this, args);
+      });
+      const pending = api.undoPackingChange();
+      await ready;
+      await api.setCategoryPacked(second.id, true);
+      release();
+      expect(await pending).toBe(true);
+      expect(api.canUndoPackingChange.value).toBe(true);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(
+        JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).items.map((row) => row.isPacked)
+      ).toEqual([false, false]);
+    });
+
+    // Test Case 61: prevents an older undo from committing after a newer packing action.
+    it('prevents an older undo from committing after a newer packing action', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const first = await api.createCategory({ name: 'First' });
+      const second = await api.createCategory({ name: 'Second' });
+      await api.createItem({ name: 'Hat', categoryId: first.id });
+      await api.createItem({ name: 'Coat', categoryId: second.id });
+      await api.setCategoryPacked(first.id, true);
+      const original = LocalStorageService.prototype.applyHistory;
+      let release;
+      let entered;
+      const ready = new Promise((resolve) => {
+        entered = resolve;
+      });
+      const gate = new Promise((resolve) => {
+        release = resolve;
+      });
+      vi.spyOn(LocalStorageService.prototype, 'applyHistory').mockImplementation(async function (
+        ...args
+      ) {
+        entered();
+        await gate;
+        return original.apply(this, args);
+      });
+      const pending = api.undoPackingChange();
+      await ready;
+      await api.setCategoryPacked(second.id, true);
+      release();
+      expect(await pending).toBe(false);
+      expect(
+        JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).items.every((row) => row.isPacked)
+      ).toBe(true);
+      expect(api.operationError.value).toBe('conflict');
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(
+        JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).items.map((row) => row.isPacked)
+      ).toEqual([true, false]);
+    });
+
+    // Test Case 62: clears history only when a template change actually commits.
+    it('clears history only when a template change actually commits', async () => {
+      const api = usePackingLists();
+      let notifications = 0;
+      const templates = useTemplates(() => {
+        api.clearPackingHistory();
+        notifications += 1;
+      });
+      await api.initialize();
+      const checklist = await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothing' });
+      await api.createItem({ name: 'Hat', categoryId: category.id });
+      const saved = await templates.saveAsTemplate(checklist.id, 'Template');
+      expect(saved).toBeTruthy();
+      await api.setCategoryPacked(category.id, true);
+      expect(api.canUndoPackingChange.value).toBe(true);
+      const count = notifications;
+      await templates.updateTemplate(saved, saved);
+      expect(notifications).toBe(count);
+      expect(api.canUndoPackingChange.value).toBe(true);
+      await templates.updateTemplate({ ...saved, name: 'New name' }, saved);
+      expect(notifications).toBe(count + 1);
+      expect(api.canUndoPackingChange.value).toBe(false);
+    });
+
+    // Test Case 63: does not clear history when a stale delete changes no data.
+    it('does not clear history when a stale delete changes no data', async () => {
+      const api = usePackingLists();
+      await api.initialize();
+      await api.createChecklist({ name: 'Trip' }, { source: 'empty' });
+      const category = await api.createCategory({ name: 'Clothing' });
+      await api.createItem({ name: 'Hat', categoryId: category.id });
+      await api.setCategoryPacked(category.id, true);
+      expect(await api.deleteItem('missing')).toBe(true);
+      expect(api.canUndoPackingChange.value).toBe(true);
+      expect(await api.deleteCategory('missing')).toBe(true);
+      expect(api.canUndoPackingChange.value).toBe(true);
+    });
+
+    // Preserve data and history after a failed deletion.
+    // Test Case 64: keeps history and visible data when item or category deletion fails.
     it('keeps history and visible data when item or category deletion fails', async () => {
       const api = usePackingLists();
       await api.initialize();
@@ -931,7 +1522,8 @@ describe('usePackingLists', () => {
       expect(api.error.value).toContain('denied');
     });
 
-    // Test Case 46: Preserve visible data when refresh fails.
+    // Preserve visible data when refresh fails.
+    // Test Case 65: retains visible categories and items if a later refresh fails.
     it('retains visible categories and items if a later refresh fails', async () => {
       const api = usePackingLists();
       await api.initialize();
@@ -950,7 +1542,8 @@ describe('usePackingLists', () => {
       expect(api.items.value.some((entry) => entry.id === item.id)).toBe(true);
     });
 
-    // Test Case 47: Distinguish a committed write from a failed refresh.
+    // Distinguish a committed write from a failed refresh.
+    // Test Case 66: reports a committed change separately when the subsequent refresh fails.
     it('reports a committed change separately when the subsequent refresh fails', async () => {
       const api = usePackingLists();
       await api.initialize();
@@ -969,7 +1562,8 @@ describe('usePackingLists', () => {
       expect(JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).categories[0].name).toBe('Clothes');
     });
 
-    // Test Case 48: Never show a previous checklist's data under a new selection.
+    // Never show a previous checklist's data under a new selection.
+    // Test Case 67: clears the previous checklist data when switching and the new read fails.
     it('clears the previous checklist data when switching and the new read fails', async () => {
       const api = usePackingLists();
       await api.initialize();
@@ -993,7 +1587,8 @@ describe('usePackingLists', () => {
       expect(api.storageHealth.value).toBe('unavailable');
     });
 
-    // Test Case 49: Category pack-all should be one undoable mixed-state action
+    // Category pack-all should be one undoable mixed-state action
+    // Test Case 68: should treat a category pack-all as one undoable action and restore mixed state.
     it('should treat a category pack-all as one undoable action and restore mixed state', async () => {
       const api = usePackingLists();
       await api.initialize();
@@ -1041,85 +1636,43 @@ describe('usePackingLists', () => {
       expect(api.canRedoPackingChange.value).toBe(true);
       const currentPackedItem = api.items.value.find((item) => item.id === packed.id);
       await api.updateItem({ ...currentPackedItem, isPacked: false, isPending: true });
-      expect(api.canUndoPackingChange.value).toBe(false);
+      expect(api.canUndoPackingChange.value).toBe(true);
       expect(api.canRedoPackingChange.value).toBe(false);
-      expect(await api.undoPackingChange()).toBe(false);
+      expect(await api.undoPackingChange()).toBe(true);
       expect(api.items.value).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ id: packed.id, isPacked: false, isPending: true }),
+          expect.objectContaining({ id: packed.id, isPacked: true, isPending: false }),
         ])
       );
     });
 
-    // Test Case 50: Switching checklists should clear packing history
-    it('should clear packing history when switching checklists', async () => {
+    // Switching checklists retains history and preserves selection.
+    // Test Case 69: undoes and redoes a batch on its owning checklist after switching.
+    it('undoes and redoes a batch on its owning checklist after switching', async () => {
       const api = usePackingLists();
       await api.initialize();
-      await api.createChecklist({ name: 'First' }, { source: 'empty' });
+      const first = await api.createChecklist({ name: 'First' }, { source: 'empty' });
       await flushPromises();
-      const firstChecklistId = api.selectedChecklistId.value;
       const category = await api.createCategory({ name: 'Clothing' });
       const item = await api.createItem({ name: 'Hat', categoryId: category.id });
+      const second = await api.createChecklist({ name: 'Second' }, { source: 'empty' });
+      api.selectedChecklistId.value = first.id;
+      await flushPromises();
       await api.setCategoryPacked(category.id, true);
+      api.selectedChecklistId.value = second.id;
+      await flushPromises();
+
       expect(api.canUndoPackingChange.value).toBe(true);
-
-      await api.deleteItem(item.id);
-      expect(api.canUndoPackingChange.value).toBe(false);
-      const replacement = await api.createItem({ name: 'Coat', categoryId: category.id });
-      await api.setCategoryPacked(category.id, true);
-      expect(api.canUndoPackingChange.value).toBe(true);
-
-      await api.createChecklist({ name: 'Second' }, { source: 'empty' });
-      await flushPromises();
-      const secondChecklistId = api.selectedChecklistId.value;
-
-      expect(api.selectedChecklistId.value).not.toBe(firstChecklistId);
-      expect(api.canUndoPackingChange.value).toBe(false);
-
-      api.selectedChecklistId.value = firstChecklistId;
-      await flushPromises();
-      const firstChecklistItem = api.items.value.find(
-        (storedItem) => storedItem.id === replacement.id
-      );
-      await api.setCategoryPacked(category.id, false);
-      expect(api.canUndoPackingChange.value).toBe(true);
-
-      let resolveUndo;
-      const batchUpdateSpy = vi
-        .spyOn(LocalStorageService.prototype, 'updateMultipleItems')
-        .mockReturnValue(
-          new Promise((resolve) => {
-            resolveUndo = resolve;
-          })
-        );
-      const inFlightUndo = api.undoPackingChange();
-      api.selectedChecklistId.value = secondChecklistId;
-      await flushPromises();
-      api.selectedChecklistId.value = firstChecklistId;
-      await flushPromises();
-      resolveUndo([{ ...firstChecklistItem, isPacked: true }]);
-      expect(await inFlightUndo).toBe(false);
-      expect(api.canRedoPackingChange.value).toBe(false);
-      batchUpdateSpy.mockRestore();
-
-      const itemBeforeUpdateRace = api.items.value.find(
-        (storedItem) => storedItem.id === replacement.id
-      );
-      let resolveUpdate;
-      vi.spyOn(LocalStorageService.prototype, 'updateItem').mockReturnValue(
-        new Promise((resolve) => {
-          resolveUpdate = resolve;
-        })
-      );
-      const inFlightUpdate = api.updateItem({ ...itemBeforeUpdateRace, isPacked: true });
-      api.selectedChecklistId.value = secondChecklistId;
-      await flushPromises();
-      api.selectedChecklistId.value = firstChecklistId;
-      await flushPromises();
-      resolveUpdate({ ...itemBeforeUpdateRace, isPacked: true });
-      await inFlightUpdate;
-
-      expect(api.canUndoPackingChange.value).toBe(false);
+      expect(await api.undoPackingChange()).toBe(true);
+      expect(api.selectedChecklistId.value).toBe(second.id);
+      expect(
+        JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).items.find((row) => row.id === item.id)
+      ).toMatchObject({ isPacked: false });
+      expect(await api.redoPackingChange()).toBe(true);
+      expect(api.selectedChecklistId.value).toBe(second.id);
+      expect(
+        JSON.parse(mockStorage[STORAGE_KEYS.APP_DATA]).items.find((row) => row.id === item.id)
+      ).toMatchObject({ isPacked: true });
     });
   });
 
@@ -1127,7 +1680,8 @@ describe('usePackingLists', () => {
   // Test Group 15: Drag Intent and Concurrent Edits
   // ---------------------------------------------------------------------------
 
-  // Test Case 51: A stale drag must not overwrite unrelated remote edits
+  // A stale drag must not overwrite unrelated remote edits
+  // Test Case 70: preserves remote item edits when committing a stale drag payload.
   it('preserves remote item edits when committing a stale drag payload', async () => {
     const api = usePackingLists();
     await api.initialize();
@@ -1171,7 +1725,8 @@ describe('usePackingLists', () => {
     remote.dispose();
   });
 
-  // Test Case 52: A drag retains its original membership baseline across later reads
+  // A drag retains its original membership baseline across later reads
+  // Test Case 71: rejects stale drag membership without overwriting a remotely added item.
   it('rejects stale drag membership without overwriting a remotely added item', async () => {
     const api = usePackingLists();
     await api.initialize();

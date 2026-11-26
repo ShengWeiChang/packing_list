@@ -33,6 +33,8 @@ import { Template } from '../models/Template';
 import { STORAGE_KEYS, VALIDATION } from '../utils/constants';
 import { instantiateTemplateContent } from '../utils/instantiateTemplate';
 import { DataService } from './dataService';
+import type { HistoryPatch } from './historyPatch';
+import { applyHistoryPatch, createHistoryPatch } from './historyPatch';
 import { RecommendedListService } from './recommendedListService';
 import {
   decodeAppData,
@@ -117,6 +119,7 @@ export class LocalStorageService extends DataService {
   declare _cacheRaw: string | null;
   declare _initialized: boolean;
   declare _storageListener?: ((event: StorageEvent) => void) | null;
+  onDataCommitted?: (patch: HistoryPatch) => void;
   /**
    * Initialize the LocalStorage service with caching and cross-tab sync
    */
@@ -164,11 +167,31 @@ export class LocalStorageService extends DataService {
    * Save all data to localStorage and update cache
    * @param {object} data - Data object to save
    */
-  _saveData(data: StoredAppData) {
+  _saveData(data: StoredAppData, preserveHistory = false) {
     const candidate = decodeAppData(JSON.stringify(data));
+    const patch =
+      !preserveHistory && this._cache ? createHistoryPatch(this._cache, candidate) : null;
     const raw = writeStorage(this.STORAGE_KEY, candidate);
     this._cache = decodeAppData(raw);
     this._cacheRaw = raw;
+    if (patch) this.onDataCommitted?.(patch);
+  }
+
+  /** Apply a recorded mutation against the latest data under the shared lock. */
+  async applyHistory(
+    patch: HistoryPatch,
+    undo: boolean,
+    isCurrent: () => boolean,
+    onCommitted: () => void
+  ) {
+    return this._withWriteLock(async () => {
+      const data = await this.getData();
+      const result = applyHistoryPatch(data, patch, undo);
+      if (!isCurrent()) throw new StorageError('conflict', 'History changed before commit');
+      this._saveData(result, true);
+      onCommitted();
+      return true;
+    });
   }
 
   /**
@@ -845,6 +868,8 @@ export class LocalStorageService extends DataService {
         );
       }
 
+      const beforeItems = indexes.map((index) => Item.fromJSON(items[index]!).toJSON());
+
       updatedItems.forEach((item, index) => {
         const expected = expectedItems?.find((entry) => entry.id === item.id);
         if (expectedItems && !expected) {
@@ -868,9 +893,14 @@ export class LocalStorageService extends DataService {
         };
       });
       data.items = items;
-      this._saveData(data);
+      if (options.beforeWrite && !options.beforeWrite()) {
+        throw new StorageError('conflict', 'History changed before the operation could commit');
+      }
+      this._saveData(data, Boolean(options.preserveHistory));
       // Each returned index was overwritten above with the complete Item.toJSON result.
-      return indexes.map((index) => items[index]! as CommittedItem);
+      const committed = indexes.map((index) => items[index]! as CommittedItem);
+      options.onCommitted?.(beforeItems, committed);
+      return committed;
     });
   }
 

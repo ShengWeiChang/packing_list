@@ -6,6 +6,7 @@
 
 - **Multi-checklist management** — Create unlimited checklists with drag-and-drop reordering
 - **Categorized packing** — Organize items by category with quantity tracking
+- **Undo and redo** — Recover recent checklist changes within the current tab
 - **Progress visualization** — Real-time packing progress with visual indicators
 - **i18n support** — English and Traditional Chinese
 - **Responsive design** — Touch item actions and desktop hover controls

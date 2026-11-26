@@ -281,6 +281,7 @@ Created: 2025-09-19
               :update-item-action="updateItemAction"
               :retain-draft="retainDraft"
               :edit-cancelled="editCancelled"
+              :edit-started="editStarted"
               @toggle-item-actions="toggleItemActions"
               @close-item-actions="openItemActionsId = null"
               @collapse:category="closeCategoryActions"
@@ -370,6 +371,7 @@ const props = defineProps({
   commitEditOnBlur: { type: Boolean, default: false },
   retainDraft: { type: Function as PropType<RetainDraft | null>, default: null },
   editCancelled: { type: Function as PropType<EditCancelled | null>, default: null },
+  editStarted: { type: Function as PropType<EditCancelled | null>, default: null },
   saveChecklistEdit: { type: Function as PropType<SaveChecklistEdit | null>, default: null },
   saveCategoryEdit: { type: Function as PropType<SaveCategoryEdit | null>, default: null },
   saveItemEdit: { type: Function as PropType<SaveItemEdit | null>, default: null },
@@ -827,6 +829,7 @@ function handleConfirmFocusOut(event: FocusEvent) {
 async function startEdit() {
   cleanupEditingFocus();
   isEditing.value = true;
+  props.editStarted?.('checklist', props.checklist.id);
   editSaveFailed.value = false;
   editBaseline = { ...props.checklist };
   editedName.value = props.checklist.name;
@@ -883,8 +886,8 @@ async function saveEdit() {
   }
   if (editSaveFailed.value) {
     editSaveFailed.value = false;
-    props.editCancelled?.('checklist', props.checklist.id);
   }
+  props.editCancelled?.('checklist', props.checklist.id);
   isEditing.value = false;
 }
 
@@ -1087,7 +1090,7 @@ onBeforeUnmount(() => {
       endDate: editedEndDate.value,
     });
   }
-  if (editSaveFailed.value) props.editCancelled?.('checklist', props.checklist.id);
+  props.editCancelled?.('checklist', props.checklist.id);
 });
 onUnmounted(() => cleanupEditingFocus());
 </script>

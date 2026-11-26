@@ -32,6 +32,15 @@ Created: 2025-09-19
     <Topbar
       v-if="isMobileViewport"
       :title="templateEditing?.name || selectedChecklist?.name || 'Packing List'"
+      :can-undo="canUndoPackingChange"
+      :can-redo="canRedoPackingChange"
+      :history-blocked="historyBlocked"
+      :editing="activeEditors.size > 0"
+      :hidden="mobileTopbarOffset >= mobileTopbarHeight"
+      :offset="mobileTopbarOffset"
+      @undo="handleUndoPackingChange"
+      @redo="handleRedoPackingChange"
+      @reveal="mobileTopbarOffset = 0"
       @toggle="toggleSidebar"
       @new="handleChecklistCreate"
     />
@@ -65,6 +74,12 @@ Created: 2025-09-19
             :templates="templates"
             :selected-checklist-id="templateEditing ? null : selectedChecklistId"
             :selected-template-id="templateEditing?.id || null"
+            :can-undo="canUndoPackingChange"
+            :can-redo="canRedoPackingChange"
+            :history-blocked="historyBlocked"
+            :editing="activeEditors.size > 0"
+            @undo="handleUndoPackingChange"
+            @redo="handleRedoPackingChange"
             @toggle-sidebar="toggleSidebar"
             @create-checklist="handleChecklistCreate"
             @select-checklist="handleChecklistSelect"
@@ -76,6 +91,57 @@ Created: 2025-09-19
             @edit-template="handleTemplateEdit"
             @delete-template="handleTemplateDelete"
           />
+          <div
+            v-if="
+              !drawerFeedbackDismissed &&
+              (visibleOperationError ||
+                crossChecklistHistoryFeedback ||
+                (historyBarrierVersion && historyBarrierVersion > dismissedHistoryBarrierVersion) ||
+                historyResult)
+            "
+            class="absolute inset-x-2 bottom-4 rounded-lg bg-primary px-4 py-3 text-sm text-white shadow-lg"
+            :class="
+              !visibleOperationError && crossChecklistHistoryFeedback
+                ? 'w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)]'
+                : ''
+            "
+            :role="visibleOperationError ? 'alert' : 'status'"
+            data-testid="sidebar-history-feedback"
+          >
+            <span
+              :class="
+                !visibleOperationError && crossChecklistHistoryFeedback ? 'block truncate' : ''
+              "
+            >
+              {{
+                visibleOperationError
+                  ? $t(`storage.${visibleOperationError}`)
+                  : crossChecklistHistoryFeedback ||
+                    (historyBarrierVersion && historyBarrierVersion > dismissedHistoryBarrierVersion
+                      ? $t('storage.historyClearedByChange')
+                      : $t(
+                          historyResult === 'undo'
+                            ? 'history.undone'
+                            : historyResult === 'redo'
+                              ? 'history.redone'
+                              : 'history.interrupted'
+                        ))
+              }}
+            </span>
+            <button
+              v-if="
+                visibleOperationError ||
+                (!crossChecklistHistoryFeedback &&
+                  historyBarrierVersion &&
+                  historyBarrierVersion > dismissedHistoryBarrierVersion)
+              "
+              type="button"
+              class="ml-2 font-semibold underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              @click="dismissDrawerHistoryFeedback"
+            >
+              {{ $t('storage.dismissHistoryNotice') }}
+            </button>
+          </div>
         </div>
       </Transition>
     </teleport>
@@ -93,6 +159,12 @@ Created: 2025-09-19
         :templates="templates"
         :selected-checklist-id="templateEditing ? null : selectedChecklistId"
         :selected-template-id="templateEditing?.id || null"
+        :can-undo="canUndoPackingChange"
+        :can-redo="canRedoPackingChange"
+        :history-blocked="historyBlocked"
+        :editing="activeEditors.size > 0"
+        @undo="handleUndoPackingChange"
+        @redo="handleRedoPackingChange"
         @toggle-sidebar="toggleSidebar"
         @create-checklist="handleChecklistCreate"
         @select-checklist="handleChecklistSelect"
@@ -108,6 +180,7 @@ Created: 2025-09-19
 
     <!-- Main Content -->
     <main
+      ref="mainScrollport"
       :class="[
         'min-w-0 flex-1 bg-bg-secondary p-4 duration-200 md:p-6',
         !templateEditing && 'overflow-y-auto',
@@ -236,6 +309,7 @@ Created: 2025-09-19
           :update-item-action="handleItemUpdate"
           :retain-draft="retainDisplacedDraft"
           :edit-cancelled="clearInlineFailure"
+          :edit-started="startInlineEdit"
           @update:checklist="handleChecklistUpdate"
           @copy:checklist="handleChecklistCopy"
           @delete:checklist="handleChecklistDelete"
@@ -301,20 +375,68 @@ Created: 2025-09-19
       />
     </Teleport>
 
-    <div
-      v-if="showPackingUndo && canUndoPackingChange"
-      class="fixed bottom-4 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-4 rounded-lg bg-primary px-4 py-3 text-white shadow-lg"
-      role="status"
-      data-testid="packing-undo-toast"
-    >
-      <span>{{ $t('common.packingUpdated') }}</span>
-      <button
-        type="button"
-        class="font-semibold text-white underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-        @click="handleUndoPackingChange"
+    <Teleport to="body">
+      <div
+        v-if="
+          historyBarrierVersion &&
+          historyBarrierVersion > dismissedHistoryBarrierVersion &&
+          !crossChecklistHistoryFeedback &&
+          !showPackingCompletion &&
+          !isDialogVisible &&
+          !isOverlayVisible
+        "
+        class="fixed bottom-4 left-1/2 z-[60] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-4 rounded-lg bg-primary px-4 py-3 text-white shadow-lg"
+        role="status"
+        data-testid="history-barrier-feedback"
       >
-        {{ $t('common.undo') }}
-      </button>
+        <span class="min-w-0 break-words">{{ $t('storage.historyClearedByChange') }}</span>
+        <button
+          type="button"
+          class="shrink-0 font-semibold text-white underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          @click="dismissedHistoryBarrierVersion = historyBarrierVersion"
+        >
+          {{ $t('storage.dismissHistoryNotice') }}
+        </button>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div
+        v-if="
+          crossChecklistHistoryFeedback &&
+          !showPackingCompletion &&
+          !isDialogVisible &&
+          !isOverlayVisible
+        "
+        class="fixed bottom-4 left-1/2 z-[60] flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-4 rounded-lg bg-primary px-4 py-3 text-white shadow-lg"
+        role="status"
+        data-testid="cross-checklist-history-feedback"
+      >
+        <span class="min-w-0 truncate">{{ crossChecklistHistoryFeedback }}</span>
+      </div>
+    </Teleport>
+
+    <div
+      v-if="
+        historyResult &&
+        !crossChecklistHistoryFeedback &&
+        !showPackingCompletion &&
+        !isDialogVisible &&
+        !isOverlayVisible
+      "
+      class="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded-lg bg-primary px-4 py-3 text-sm text-white shadow-lg"
+      role="status"
+      data-testid="history-result"
+    >
+      {{
+        $t(
+          historyResult === 'undo'
+            ? 'history.undone'
+            : historyResult === 'redo'
+              ? 'history.redone'
+              : 'history.interrupted'
+        )
+      }}
     </div>
   </div>
 </template>
@@ -406,8 +528,14 @@ const {
   deleteItem,
   duplicateItem,
   setCategoryPacked,
+  getPackingBatchEventVersion,
   canUndoPackingChange,
   canRedoPackingChange,
+  historyBusy,
+  historyBarrierVersion,
+  historyEventVersion,
+  lastPackingHistoryAction,
+  invalidateHistoryForUnsupportedChange,
   undoPackingChange,
   redoPackingChange,
 } = usePackingLists();
@@ -422,7 +550,7 @@ const {
   storageHealth: templateStorageHealth,
   operationError: templateOperationError,
   refreshAfterSaveFailed: templateRefreshAfterSaveFailed,
-} = useTemplates();
+} = useTemplates(() => invalidateHistoryForUnsupportedChange());
 const recommendedListService = new RecommendedListService();
 
 // ------------------------------------------------------------------------------
@@ -430,6 +558,28 @@ const recommendedListService = new RecommendedListService();
 // ------------------------------------------------------------------------------
 
 // UI state
+const dismissedHistoryBarrierVersion = ref(0);
+const crossChecklistHistoryAction = ref<{
+  checklistId: string;
+  direction: 'undo' | 'redo';
+  eventVersion: number;
+} | null>(null);
+const crossChecklistHistoryFeedback = computed(() => {
+  const action = crossChecklistHistoryAction.value;
+  if (!action) return '';
+  const name = checklists.value.find((checklist) => checklist.id === action.checklistId)?.name;
+  if (!name) {
+    return t(
+      action.direction === 'undo'
+        ? 'storage.undoOtherChecklistUnknown'
+        : 'storage.redoOtherChecklistUnknown'
+    );
+  }
+  return t(
+    action.direction === 'undo' ? 'storage.undoOtherChecklist' : 'storage.redoOtherChecklist',
+    { name }
+  );
+});
 const isSidebarOpen = ref(true);
 const isMobileViewport = ref(false);
 const isSmallDesktop = ref(false);
@@ -444,8 +594,15 @@ const checklistCreateFailed = ref(false);
 const inlineSaveFailed = ref(false);
 let inlineFailureVersion: number | null = null;
 let inlineFailureOwner: string | null = null;
-// A displaced editor cannot display an async failure; leave that error global.
-let inlineDraftGeneration = 0;
+const failedInlineDrafts = new Map<string, symbol>();
+const activeEditors = ref(new Set<string>());
+const mobileTopbarOffset = ref(0);
+const mobileTopbarHeight = ref(1);
+const drawerFeedbackDismissed = ref(false);
+const mainScrollport = ref<HTMLElement | null>(null);
+let lastDocumentScroll = 0;
+let lastMainScroll = 0;
+let wasShortMobileViewport = false;
 const displacedDrafts = ref<(RetainedDraft & { id: number })[]>([]);
 let nextDisplacedDraftId = 0;
 const exportFailure = ref<string | null>(null);
@@ -461,7 +618,8 @@ let resolvingTemplateNavigation = false;
 const isSavingTemplateEdit = ref(false);
 const templateEditSaveFailed = ref(false);
 const templateDraftAtRisk = ref(false);
-const showPackingUndo = ref(false);
+const historyResult = ref<'undo' | 'redo' | 'interrupted' | null>(null);
+let historyResultTimer: number | undefined;
 const showPackingCompletion = ref(false);
 const packingCompletion = ref<ReturnType<typeof getPackingCompletionSnapshot> | null>(null);
 const appShell = ref<HTMLElement | null>(null);
@@ -470,9 +628,7 @@ let sidebarTrigger: HTMLElement | null = null;
 let previousBodyOverflow: string | null = null;
 let previousBodyPaddingRight: string | null = null;
 let previousViewportWidth: number | null = null;
-let packingUndoTimer: number | undefined;
 let packingCompletionTrigger: HTMLElement | null = null;
-let packingUndoPendingAfterCompletion = false;
 
 // Newly created item tracking for auto-edit
 const newlyCreatedItemId = ref<string | null>(null);
@@ -520,8 +676,13 @@ const visibleOperationError = computed(() => {
  */
 function retainDisplacedDraft(draft: RetainedDraft) {
   displacedDrafts.value.push({ ...draft, id: ++nextDisplacedDraftId });
-  inlineDraftGeneration++;
   inlineSaveFailed.value = false;
+}
+
+/** Track edit mode before blur can submit a draft. */
+function startInlineEdit(kind: EditKind, id: string) {
+  activeEditors.value.add(`${kind}:${id}`);
+  mobileTopbarOffset.value = 0;
 }
 
 /** Clear the suppression for an inline editor that was cancelled or removed.
@@ -529,6 +690,13 @@ function retainDisplacedDraft(draft: RetainedDraft) {
  * @param {string} id - ID of the edited entity.
  */
 function clearInlineFailure(kind: EditKind, id: string) {
+  activeEditors.value.delete(`${kind}:${id}`);
+  finishInlineSave(kind, id);
+}
+
+/** Release a completed save while retaining edit-mode protection until the editor closes. */
+function finishInlineSave(kind: EditKind, id: string) {
+  failedInlineDrafts.delete(`${kind}:${id}`);
   if (inlineFailureOwner !== `${kind}:${id}`) return;
   inlineSaveFailed.value = false;
   if (inlineFailureVersion !== null) clearChecklistOperationError?.(inlineFailureVersion);
@@ -588,6 +756,11 @@ function exportStorage(domain: string) {
 
 // ---------- General Helpers ----------
 
+// Track in-flight actions so a shortcut cannot jump ahead of the action it follows.
+const pendingActions = new Set<Promise<boolean>>();
+let actionStartVersion = 0;
+let shortcutTail: Promise<void> = Promise.resolve();
+
 // Generic error handler for async operations
 const handleAsyncAction = async <Args extends unknown[], Result>(
   action: (...args: Args) => Result,
@@ -595,7 +768,15 @@ const handleAsyncAction = async <Args extends unknown[], Result>(
 ): Promise<Awaited<Result>> => {
   inlineSaveFailed.value = false;
   templateEditSaveFailed.value = false;
-  return await action(...args);
+  actionStartVersion += 1;
+  const result = action(...args);
+  const settled = Promise.resolve(result).then(
+    (value) => value !== null && value !== false,
+    () => false
+  );
+  pendingActions.add(settled);
+  void settled.then(() => pendingActions.delete(settled));
+  return await result;
 };
 
 /**
@@ -622,13 +803,6 @@ function isPackingComplete(snapshot: { total: number; completed: number }) {
   return snapshot.total > 0 && snapshot.total === snapshot.completed;
 }
 
-/** Pause the current packing Undo notice until the completion overlay closes. */
-function deferPackingUndoUntilCompletionClose() {
-  showPackingUndo.value = false;
-  window.clearTimeout(packingUndoTimer);
-  packingUndoPendingAfterCompletion = true;
-}
-
 /**
  * Open the completion overlay only for a successful local incomplete-to-complete transition.
  * @param {{checklistId: string|null, total: number, completed: number}} before - Pre-action state.
@@ -653,9 +827,6 @@ function showPackingCompletionForTransition(before: {
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
   packingCompletion.value = after;
   showPackingCompletion.value = true;
-  if (showPackingUndo.value && canUndoPackingChange.value) {
-    deferPackingUndoUntilCompletionClose();
-  }
   return true;
 }
 
@@ -666,20 +837,6 @@ async function handlePackingCompletionClose() {
   packingCompletionTrigger?.focus();
   packingCompletionTrigger = null;
   packingCompletion.value = null;
-
-  if (packingUndoPendingAfterCompletion && canUndoPackingChange.value) {
-    packingUndoPendingAfterCompletion = false;
-    showPackingUndoToast();
-  }
-}
-
-/** Show the category packing recovery action for its complete five-second window. */
-function showPackingUndoToast() {
-  showPackingUndo.value = true;
-  window.clearTimeout(packingUndoTimer);
-  packingUndoTimer = window.setTimeout(() => {
-    showPackingUndo.value = false;
-  }, 5000);
 }
 
 /**
@@ -722,7 +879,16 @@ function checkScreenSize() {
  * Handle window resize events and update viewport state
  */
 function handleResize() {
+  const widthChanged = previousViewportWidth !== window.innerWidth;
+  const isShortViewport = window.innerHeight <= 250;
+  const shortViewportChanged = isShortViewport !== wasShortMobileViewport;
+  wasShortMobileViewport = isShortViewport;
   checkScreenSize();
+  if (widthChanged || shortViewportChanged) {
+    mobileTopbarOffset.value = 0;
+    lastDocumentScroll = Math.max(0, window.scrollY);
+    lastMainScroll = Math.max(0, mainScrollport.value?.scrollTop ?? 0);
+  }
 }
 
 /**
@@ -810,14 +976,18 @@ async function handleItemCreate(categoryId: string) {
  */
 async function handleItemUpdate(item: ItemDTO, expected?: ItemDTO) {
   const before = getPackingCompletionSnapshot();
-  const draftGeneration = inlineDraftGeneration;
+  const draftOwner = `item:${item.id}`;
+  const draftToken = expected ? Symbol(draftOwner) : null;
+  if (draftToken) failedInlineDrafts.set(draftOwner, draftToken);
   const updatedItem = await handleAsyncAction(updateItem, item, expected);
-  if (expected && !updatedItem && draftGeneration === inlineDraftGeneration) {
+  if (expected && !updatedItem && failedInlineDrafts.get(draftOwner) === draftToken) {
     inlineSaveFailed.value = true;
     inlineFailureVersion = checklistOperationErrorVersion?.value ?? null;
     inlineFailureOwner = `item:${item.id}`;
   }
   if (updatedItem) {
+    if (expected && failedInlineDrafts.get(draftOwner) === draftToken)
+      finishInlineSave('item', item.id);
     showPackingCompletionForTransition(before);
   }
 
@@ -896,12 +1066,18 @@ async function handleCategoryCreate() {
  * @returns {Promise<object|null>} Committed category or null on failure.
  */
 async function handleCategoryUpdate(category: CategoryDTO, expected?: CategoryDTO) {
-  const draftGeneration = inlineDraftGeneration;
+  const draftOwner = `category:${category.id}`;
+  const draftToken = expected ? Symbol(draftOwner) : null;
+  if (draftToken) failedInlineDrafts.set(draftOwner, draftToken);
   const updatedCategory = await handleAsyncAction(updateCategory, category, expected);
-  if (expected && !updatedCategory && draftGeneration === inlineDraftGeneration) {
+  if (expected && !updatedCategory && failedInlineDrafts.get(draftOwner) === draftToken) {
     inlineSaveFailed.value = true;
     inlineFailureVersion = checklistOperationErrorVersion?.value ?? null;
     inlineFailureOwner = `category:${category.id}`;
+  }
+
+  if (updatedCategory && expected && failedInlineDrafts.get(draftOwner) === draftToken) {
+    finishInlineSave('category', category.id);
   }
 
   // Clear the newly-created flag if this was the category being edited
@@ -928,7 +1104,7 @@ async function handleCategoryDelete(categoryId: string) {
 }
 
 /**
- * Pack or unpack all items in a category and offer a short-lived undo action.
+ * Pack or unpack all items in a category as one history action.
  * @param {object} change - Category packing intent
  * @param {string} change.categoryId - Category ID
  * @param {boolean} change.isPacked - Target packed state
@@ -937,38 +1113,121 @@ async function handleCategoryPacked({ categoryId, isPacked }: CategoryPackedChan
   const checklistId = selectedChecklistId.value;
   const before = getPackingCompletionSnapshot();
   const updatedItems = await handleAsyncAction(setCategoryPacked, categoryId, isPacked);
-  if (!updatedItems?.length || selectedChecklistId.value !== checklistId) {
+  if (
+    !updatedItems?.length ||
+    selectedChecklistId.value !== checklistId ||
+    getPackingBatchEventVersion(updatedItems) !== historyEventVersion.value
+  ) {
     return;
   }
 
-  const completionShown = showPackingCompletionForTransition(before);
-  if (completionShown) {
-    if (canUndoPackingChange.value) deferPackingUndoUntilCompletionClose();
-    return;
-  }
-
-  if (!canUndoPackingChange.value) return;
-  showPackingUndoToast();
+  showPackingCompletionForTransition(before);
 }
 
-/**
- * Undo the most recent category-wide packing status change.
- */
-async function handleUndoPackingChange() {
-  if (await undoPackingChange()) {
-    showPackingUndo.value = false;
-    window.clearTimeout(packingUndoTimer);
+/** Announce a history action affecting another checklist. */
+function showCrossChecklistHistoryFeedback() {
+  const action = lastPackingHistoryAction?.value;
+  if (action && action.eventVersion !== (historyEventVersion?.value ?? 0)) return;
+  if (action && action.checklistId !== selectedChecklistId.value) {
+    dismissedHistoryBarrierVersion.value = historyBarrierVersion?.value ?? 0;
   }
+  crossChecklistHistoryAction.value =
+    action && action.checklistId !== selectedChecklistId.value ? action : null;
+}
+
+/** Announce a successful history action without moving focus. */
+function announceHistoryResult(direction: 'undo' | 'redo' | 'interrupted') {
+  dismissedHistoryBarrierVersion.value = historyBarrierVersion?.value ?? 0;
+  historyResult.value = direction;
+  window.clearTimeout(historyResultTimer);
+  historyResultTimer = window.setTimeout(() => {
+    historyResult.value = null;
+    crossChecklistHistoryAction.value = null;
+  }, 2500);
+}
+
+/** Undo the most recent category-wide packing status change. */
+async function performUndoPackingChange() {
+  if (!(await undoPackingChange(isHistoryActionAllowed))) return;
+  const action = lastPackingHistoryAction?.value;
+  if (!action || action.eventVersion !== (historyEventVersion?.value ?? 0)) return;
+  showCrossChecklistHistoryFeedback();
+  announceHistoryResult('undo');
 }
 
 /**
  * Redo the most recent category-wide packing change and celebrate if it completes the list.
  */
-async function handleRedoPackingChange() {
+async function performRedoPackingChange() {
   const before = getPackingCompletionSnapshot();
-  if (await redoPackingChange()) {
-    showPackingCompletionForTransition(before);
+  if (await redoPackingChange(isHistoryActionAllowed)) {
+    const action = lastPackingHistoryAction?.value;
+    if (!action || action.eventVersion !== (historyEventVersion?.value ?? 0)) return;
+    showCrossChecklistHistoryFeedback();
+    announceHistoryResult('redo');
+    const ownerId = action.checklistId;
+    if (
+      ownerId &&
+      action.eventVersion === (historyEventVersion?.value ?? 0) &&
+      ownerId === before.checklistId &&
+      ownerId === selectedChecklistId.value
+    ) {
+      showPackingCompletionForTransition(before);
+    }
   }
+}
+
+let ongoingHistory: Promise<void> | null = null;
+
+/** Share the active history operation between buttons and queued shortcuts. */
+function runHistoryAction(redo: boolean): Promise<void> {
+  if (ongoingHistory) return ongoingHistory;
+  const action = redo ? performRedoPackingChange() : performUndoPackingChange();
+  ongoingHistory = action;
+  void action.then(
+    () => {
+      if (ongoingHistory === action) ongoingHistory = null;
+    },
+    () => {
+      if (ongoingHistory === action) ongoingHistory = null;
+    }
+  );
+  return action;
+}
+
+/** Serialize toolbar and keyboard history after the mutations they follow. */
+function queueHistoryAction(redo: boolean): Promise<void> {
+  const pending = [...pendingActions];
+  const actionVersion = actionStartVersion;
+  const activeHistory = ongoingHistory;
+  const barrierVersion = historyBarrierVersion?.value ?? 0;
+  shortcutTail = shortcutTail.then(async () => {
+    const completed = await Promise.all(pending);
+    if (activeHistory) await activeHistory;
+    if (
+      completed.some((success) => !success) ||
+      barrierVersion !== (historyBarrierVersion?.value ?? 0) ||
+      !isHistoryActionAllowed()
+    )
+      return;
+    if (actionVersion !== actionStartVersion) {
+      announceHistoryResult('interrupted');
+      return;
+    }
+    if (redo ? canRedoPackingChange.value : canUndoPackingChange.value) {
+      await runHistoryAction(redo);
+    }
+  });
+  return shortcutTail;
+}
+
+/** Run an undo action through the shared history operation. */
+function handleUndoPackingChange() {
+  return queueHistoryAction(false);
+}
+/** Run a redo action through the shared history operation. */
+function handleRedoPackingChange() {
+  return queueHistoryAction(true);
 }
 
 /**
@@ -980,37 +1239,117 @@ function isEditableTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
   return (
     target.isContentEditable ||
-    target.tagName === 'INPUT' ||
+    (target instanceof HTMLInputElement &&
+      ![
+        'checkbox',
+        'radio',
+        'button',
+        'submit',
+        'reset',
+        'range',
+        'color',
+        'file',
+        'image',
+        'hidden',
+      ].includes(target.type)) ||
     target.tagName === 'TEXTAREA' ||
     target.tagName === 'SELECT'
   );
 }
 
+/** History may be waiting for the storage lock while an editor starts saving. */
+function isHistoryActionAllowed() {
+  return (
+    !showPackingCompletion.value &&
+    !isDialogVisible.value &&
+    !templateEditing.value &&
+    failedInlineDrafts.size === 0 &&
+    activeEditors.value.size === 0
+  );
+}
+
+const historyBlocked = computed(() => !isHistoryActionAllowed() || Boolean(historyBusy?.value));
+
+/** Move the mobile bar by the same distance as the active scrollport. */
+function handleMobileScroll(event: Event) {
+  if (!isMobileViewport.value) return;
+  if (window.innerHeight <= 250) {
+    mobileTopbarOffset.value = 0;
+    return;
+  }
+  const target = event.target;
+  if (target !== document && target !== mainScrollport.value) return;
+  const isDocument = target === document;
+  const maxScroll = isDocument
+    ? Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+    : Math.max(
+        0,
+        (mainScrollport.value?.scrollHeight ?? 0) - (mainScrollport.value?.clientHeight ?? 0)
+      );
+  const position = Math.min(
+    maxScroll,
+    Math.max(0, isDocument ? window.scrollY : (mainScrollport.value?.scrollTop ?? 0))
+  );
+  const previous = isDocument ? lastDocumentScroll : lastMainScroll;
+  if (isDocument) lastDocumentScroll = position;
+  else lastMainScroll = position;
+  const bar = document.querySelector<HTMLElement>('[data-testid="mobile-topbar"]');
+  if (!bar) return;
+  mobileTopbarHeight.value = bar.getBoundingClientRect().height || 1;
+  const active = document.activeElement;
+  const keepVisible =
+    isOverlayVisible.value ||
+    isDialogVisible.value ||
+    showPackingCompletion.value ||
+    activeEditors.value.size > 0 ||
+    isEditableTarget(active) ||
+    Boolean(active?.matches(':focus-visible') && active.closest('[data-testid="mobile-topbar"]')) ||
+    Boolean(document.querySelector('.chosen-item, .chosen-category, .chosen-checklist'));
+  if (position <= 0 || keepVisible) mobileTopbarOffset.value = 0;
+  else
+    mobileTopbarOffset.value = Math.min(
+      mobileTopbarHeight.value,
+      Math.max(0, mobileTopbarOffset.value + position - previous)
+    );
+}
+
 /**
- * Handle global undo/redo shortcuts for category-wide packing status changes.
+ * Handle global undo/redo shortcuts when no modal or template editor owns focus.
  * @param {KeyboardEvent} event - Window keydown event
  */
 function handlePackingHistoryKeydown(event: KeyboardEvent) {
   if (
-    showPackingCompletion.value ||
-    event.repeat ||
+    event.isComposing ||
     event.altKey ||
     (!event.ctrlKey && !event.metaKey) ||
-    event.key.toLowerCase() !== 'z' ||
+    !['z', 'y'].includes(event.key.toLowerCase()) ||
+    (event.key.toLowerCase() === 'y' && (!event.ctrlKey || event.metaKey || event.shiftKey)) ||
     isEditableTarget(event.target)
   ) {
     return;
   }
 
-  if (event.shiftKey) {
-    if (!canRedoPackingChange.value) return;
-    event.preventDefault();
-    void handleRedoPackingChange();
-  } else {
-    if (!canUndoPackingChange.value) return;
-    event.preventDefault();
-    void handleUndoPackingChange();
+  if (!isHistoryActionAllowed()) {
+    if (
+      !showPackingCompletion.value &&
+      !isDialogVisible.value &&
+      !templateEditing.value &&
+      (activeEditors.value.size > 0 || failedInlineDrafts.size > 0)
+    )
+      event.preventDefault();
+    return;
   }
+
+  if (event.repeat) return;
+  const redo = event.shiftKey || event.key.toLowerCase() === 'y';
+  if (
+    !(redo ? canRedoPackingChange.value : canUndoPackingChange.value) &&
+    !pendingActions.size &&
+    !historyBusy?.value
+  )
+    return;
+  event.preventDefault();
+  void queueHistoryAction(redo);
 }
 
 /**
@@ -1160,12 +1499,17 @@ async function handleNewChecklistSelect(selection: ChecklistSelection) {
  * @returns {Promise<object|null>} Committed checklist or null on failure.
  */
 async function handleChecklistUpdate(checklist: ChecklistDTO, expected?: ChecklistDTO) {
-  const draftGeneration = inlineDraftGeneration;
+  const draftOwner = `checklist:${checklist.id}`;
+  const draftToken = expected ? Symbol(draftOwner) : null;
+  if (draftToken) failedInlineDrafts.set(draftOwner, draftToken);
   const result = await handleAsyncAction(updateChecklist, checklist, expected);
-  if (expected && !result && draftGeneration === inlineDraftGeneration) {
+  if (expected && !result && failedInlineDrafts.get(draftOwner) === draftToken) {
     inlineSaveFailed.value = true;
     inlineFailureVersion = checklistOperationErrorVersion?.value ?? null;
     inlineFailureOwner = `checklist:${checklist.id}`;
+  }
+  if (result && expected && failedInlineDrafts.get(draftOwner) === draftToken) {
+    finishInlineSave('checklist', checklist.id);
   }
   return result;
 }
@@ -1223,14 +1567,17 @@ async function copyChecklistAfterNavigation(checklistId: string) {
 }
 
 /**
- * Delete a checklist by ID after user confirmation
+ * Delete a checklist by ID; the change remains available in history.
  * @param {string} checklistId - The ID of the checklist to delete
  */
 async function handleChecklistDelete(checklistId: string) {
-  const confirmed = confirm(t('checklist.deleteConfirm'));
-  if (!confirmed) return;
-
+  const active = document.activeElement;
+  const wasInDrawer = Boolean(active && sidebarOverlay.value?.contains(active));
   await handleAsyncAction(deleteChecklist, checklistId);
+  await nextTick();
+  if (wasInDrawer && isOverlayVisible.value && document.activeElement === document.body) {
+    sidebarOverlay.value?.querySelector<HTMLElement>('[data-testid="sidebar-toggle"]')?.focus();
+  }
 }
 
 /**
@@ -1474,15 +1821,20 @@ onMounted(async () => {
 
   // Set up responsive behavior
   checkScreenSize();
+  wasShortMobileViewport = window.innerHeight <= 250;
+  lastDocumentScroll = Math.max(0, window.scrollY);
+  lastMainScroll = Math.max(0, mainScrollport.value?.scrollTop ?? 0);
   window.addEventListener('resize', handleResize);
   window.addEventListener('keydown', handlePackingHistoryKeydown);
+  window.addEventListener('scroll', handleMobileScroll, true);
 });
 
 // Clean up event listeners
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
   window.removeEventListener('keydown', handlePackingHistoryKeydown);
-  window.clearTimeout(packingUndoTimer);
+  window.removeEventListener('scroll', handleMobileScroll, true);
+  window.clearTimeout(historyResultTimer);
   if (appShell.value) appShell.value.inert = false;
   restoreBodyScroll();
 });
@@ -1563,12 +1915,75 @@ watch(isOverlayVisible, async (open) => {
   }
 });
 
-watch(canUndoPackingChange, (canUndo) => {
-  if (canUndo) return;
-  packingUndoPendingAfterCompletion = false;
-  showPackingUndo.value = false;
-  window.clearTimeout(packingUndoTimer);
-});
+/** Keep drawer feedback dismissible without clearing the underlying storage error. */
+function dismissDrawerHistoryFeedback() {
+  sidebarOverlay.value?.querySelector<HTMLElement>('[data-testid="sidebar-toggle"]')?.focus();
+  drawerFeedbackDismissed.value = true;
+  crossChecklistHistoryAction.value = null;
+  dismissedHistoryBarrierVersion.value = historyBarrierVersion?.value ?? 0;
+}
+
+watch(
+  [
+    visibleOperationError,
+    checklistOperationErrorVersion,
+    historyEventVersion,
+    historyBarrierVersion,
+  ],
+  () => {
+    drawerFeedbackDismissed.value = false;
+  }
+);
+
+watch(
+  () =>
+    Boolean(
+      visibleOperationError.value ||
+        crossChecklistHistoryFeedback.value ||
+        (historyBarrierVersion?.value &&
+          historyBarrierVersion.value > dismissedHistoryBarrierVersion.value)
+    ),
+  (hasFeedback, hadFeedback) => {
+    if (
+      !hasFeedback &&
+      hadFeedback &&
+      document.activeElement?.closest('[data-testid="sidebar-history-feedback"]')
+    ) {
+      sidebarOverlay.value?.querySelector<HTMLElement>('[data-testid="sidebar-toggle"]')?.focus();
+    }
+  },
+  { flush: 'sync' }
+);
+
+// A contextual packing action must never target a newer, unrelated history entry.
+watch(
+  [isOverlayVisible, isDialogVisible, showPackingCompletion],
+  ([drawer, dialog, completion]) => {
+    if (drawer || dialog || completion) mobileTopbarOffset.value = 0;
+  }
+);
+
+watch(
+  () => historyEventVersion?.value,
+  (version, previous) => {
+    if (version === previous) return;
+    crossChecklistHistoryAction.value = null;
+    historyResult.value = null;
+    window.clearTimeout(historyResultTimer);
+  },
+  { flush: 'sync' }
+);
+
+watch(
+  () => historyBarrierVersion?.value,
+  (version, previous) => {
+    if (!version || version === previous) return;
+    historyResult.value = null;
+    window.clearTimeout(historyResultTimer);
+    crossChecklistHistoryAction.value = null;
+  },
+  { flush: 'sync' }
+);
 </script>
 
 <style>

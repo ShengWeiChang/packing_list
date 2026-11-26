@@ -9,9 +9,15 @@
     "saveFailed": "Could not save. Your selection or draft is still here; please try again.",
     "confirm": "Confirm",
     "copySuffix": " (Copy)",
-    "moreOptions": "More options",
-    "packingUpdated": "Packing status updated",
-    "undo": "Undo"
+    "moreOptions": "More options"
+  },
+  "history": {
+    "undo": "Undo",
+    "redo": "Redo",
+    "interrupted": "Action changed; try undo or redo again.",
+    "undone": "Undone",
+    "redone": "Redone",
+    "actions": "History actions"
   },
   "storage": {
     "mainHeading": "Packing List",
@@ -24,6 +30,12 @@
     "quota": "The browser could not save because storage is full. Free space and try again.",
     "lock-unavailable": "Safe writing is unavailable in this browser context. Open the app in a supported, secure browser context.",
     "writeFailed": "The change could not be saved. Check browser storage and try again.",
+    "undoOtherChecklist": "Undid a change in {name}",
+    "redoOtherChecklist": "Redid a change in {name}",
+    "undoOtherChecklistUnknown": "Undid a change in another checklist",
+    "redoOtherChecklistUnknown": "Redid a change in another checklist",
+    "historyClearedByChange": "Undo and redo history was cleared because this change cannot yet be undone.",
+    "dismissHistoryNotice": "Dismiss",
     "savedRefreshFailed": "Your change was saved, but the display could not be refreshed. Retry reading instead of repeating the change.",
     "retry": "Retry reading",
     "export": "Download original data",

@@ -14,16 +14,18 @@ when a substantive conceptual explanation materially helps the user evaluate
 the milestone; ordinary handoff still explains behavior and evidence. Do not
 require users to remember workflow prompt keywords.
 
-## README Impact Rule
-
-Treat README as a concise project entry point, not a detailed delivery record. Assess whether each change affects the project purpose, principal capabilities, setup or run path, public interface, contribution entry point, or top-level navigation; update README in the approved scope only when one of those changes. Keep detailed specifications, internal workflow, implementation details, and change history elsewhere, and record a concrete reason when README is not affected.
-
 ## 1. Read-Only Discovery and Plan
 
 1. Begin with read-only investigation of the relevant source, tests,
    specifications, and existing behavior. Do not change tracked files, create a
    commit, or make external Git changes in this stage. Creating or updating the
-   ignored plan below is the sole permitted write.
+   ignored plan below is the sole permitted write, except user-requested
+   project-related discussion previews or prototypes in a dedicated ignored
+   directory under `plans/`. Keep them isolated from real user data and clearly
+   distinguish previews from implementation. When no longer needed for the
+   approved discussion or handoff, stop any preview server and clean up only
+   temporary artifacts created for the task. Retain plans and evidence still
+   needed for handoff; do not require the user to remember routine cleanup.
 2. Select the smallest justified planning tier using requirement clarity,
    existing patterns, blast radius, data or side effects, interaction
    complexity, evidence difficulty, and user impact. Persistence, sensitive
@@ -33,43 +35,40 @@ Treat README as a concise project entry point, not a detailed delivery record. A
    and record why; after plan approval, lower it only with documented new
    evidence and the user's explicit agreement because lowering reduces the
    approved validation and independent-review budget.
-3. For T1/T2/T3, create `plans/<feature>-plan-zh.md`. Include these headings: **Status**,
-   **Request**, **Observable finish conditions**, **Affected areas and risks**,
-   **Options and decision**, **Implementation checklist**, **Validation and
-   reviewer plan**, and **Approval/evidence log**. It must also record the
-   selected T0–T3 tier, its evidence and intentionally skipped roles; for T2/T3
-   it records the decision ledger (confirmed facts, consensus, conflicts, and
-   unresolved decisions). Before implementation approval, include a documentation-impact
-   matrix for `README.md`, `product-spec`, `code-quality`, and `testing-guide`: mark each pair or document
-   as `update` or `not affected`, give a concrete reason, and name the applicable
-   `$doc-audit-*` skill when an update is required. Treat a new or renamed
-   production component, controlled dependency, shared UI primitive, architecture
-   or design-system convention, documented file inventory, or user-facing contract
-   as a product-spec impact signal; do not automatically document private details
-   that are outside the existing specification. `Status` must be one of:
-   `draft`, `awaiting design decisions`, `awaiting implementation approval`,
-   `implementing milestone N`, `awaiting milestone review`, `awaiting commit approval`, `final
-verification`, `awaiting final decision`, `awaiting final commit approval`,
-   `awaiting push approval`, `awaiting PR approval`, `awaiting merge approval`, or
-   `complete`.
-   Record the feature base HEAD SHA before the first implementation change.
-   For a potential T0, do not create the full plan before the user explicitly
-   agrees it is trivial. Then create the same path as a **T0 reduced record**
-   containing only the read-only scope, base HEAD, explicit trivial agreement,
-   relevant minimum validation/evidence, and Git decision. It omits normal plan
-   headings, options, council, and decision questions.
+3. For T1/T2/T3, create `plans/<feature>-plan-zh.md` with status, request,
+   observable finish conditions, affected areas and risks, options and decision,
+   implementation checklist, validation and reviewer plan, approval/evidence
+   log, selected tier, and feature base HEAD SHA. Keep T1 compact: record affected
+   documentation and the README decision with reasons; omit an exhaustive matrix
+   and decision ledger. For T2/T3, assess README, product-spec, code-quality and
+   testing-guide as affected or not affected, with reasons, and record confirmed
+   facts, conflicts and unresolved decisions. Name the applicable doc-audit skill
+   for any paired document update. Reconcile this assessment with the final diff.
+   Use the states in the delivery steps below, recording milestone numbers where
+   relevant. Include a clearly visible progress section with numbered milestones
+   (`M1`, `M2`, ...) and Markdown checkboxes (`[ ]` / `[x]`) for meaningful
+   work, applicable evidence, and user acceptance. Mark a milestone complete
+   only when its required work, verification, and acceptance are complete;
+   distinguish planning progress from implementation not yet started. Update
+   the checkboxes after each meaningful milestone.
+
+   For potential T0, read-only discovery comes first. The user may explicitly
+   agree that the scope is trivial and approve its implementation in the same
+   decision. Then create a reduced record with scope, base HEAD, that agreement,
+   minimum validation and Git decision; omit normal plan headings and matrix.
+
 4. Apply the tier actions below. T0 is available only after read-only discovery
    and the user's explicit agreement that the scope is trivial. Every tier
    retains explicit implementation, commit, PR, and merge approvals; a PR request
    also authorizes the ordinary push needed for that PR. T0
    reduces planning and independent-review work only.
 
-   | Tier         | Required planning actions                                                                                                       | Milestone evidence and independent review                                                                       | Final local gate                                                       |
-   | ------------ | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-   | T0: trivial  | Reduced record and relevant minimal validation; explicit implementation and Git approvals                                       | Only the explicitly agreed reduced path; no council or independent reviewer                                     | Reduced path only                                                      |
-   | T1: small    | Compact plan, assumptions, observable finish condition, targeted validation; at most one material question                      | Focused proof for each changed boundary; no intermediate independent review                                     | Focused final evidence + one fresh code review                         |
-   | T2: standard | Normal plan; root plus one boundary-relevant read-only specialist by default; one bounded decision round                        | Focused proof for each changed boundary; add a fresh review only at a meaningful non-final integration boundary | `verify:feature` once + one fresh code review; triggered test analysis |
-   | T3: complex  | Full plan and decision ledger; root plus two complementary read-only specialists by default; resolve blocking decision frontier | Focused proof for each changed boundary; fresh review at each meaningful non-final integration boundary         | `verify:feature` once + fresh code review + fresh test analysis        |
+   | Tier         | Required planning actions                                                                                              | Milestone evidence and independent review                                                                       | Final local gate                                                       |
+   | ------------ | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+   | T0: trivial  | Reduced record and relevant minimal validation; explicit implementation and Git approvals                              | Only the explicitly agreed reduced path; no council or independent reviewer                                     | Reduced path only                                                      |
+   | T1: small    | Compact plan, assumptions, observable finish condition, targeted validation; at most one material question             | Focused proof for each changed boundary; no intermediate independent review                                     | Focused final evidence + one fresh code review                         |
+   | T2: standard | Normal plan; select planning specialists for concrete unresolved risks; one bounded decision round                     | Focused proof for each changed boundary; add a fresh review only at a meaningful non-final integration boundary | `verify:feature` once + one fresh code review; triggered test analysis |
+   | T3: complex  | Full plan and decision ledger; select complementary specialists for distinct risks; resolve blocking decision frontier | Focused proof for each changed boundary; fresh review at each meaningful non-final integration boundary         | `verify:feature` once + fresh code review + fresh test analysis        |
 
    A milestone is a user-observable behavior or integration boundary, not an
    arbitrary file slice. Do not repeat a full final gate at every milestone.
@@ -77,7 +76,8 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
    `$feature-completion` gate once after the feature's last implementation
    milestone; for documentation-only or agent-instruction-only candidates use
    its `--docs` gate and any separate evidence required by the changed content.
-   Source, test, execution-script or configuration changes require the full gate.
+   For T2/T3, source, test, execution-script or configuration changes require
+   the full gate; T1 uses the focused final evidence specified in the table.
    Repository CI remains the full merge safeguard for every pull
    request. Tiering reduces planning and independent-review cost without
    removing the user's implementation, commit, PR, or merge approvals.
@@ -85,7 +85,8 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
 5. For a non-trivial user-visible UI or interaction change, invoke
    `$ui-ux-design`: T1 uses its compact applicable checklist, while T2/T3 use
    a fresh read-only design specialist as part of their selected planning
-   roles. Do not invoke it for a pure data, tooling, documentation, or tiny
+   roles; count this specialist among the roles selected for the relevant risk.
+   Do not invoke it for a pure data, tooling, documentation, or tiny
    established-pattern change. The planning specialist returns a concise memo,
    never a product redesign or open-ended debate. Record the resulting T1
    checklist or T2/T3 memo as the approved UI/UX artifact in the plan.
@@ -93,15 +94,19 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
    a product-affecting tradeoff. Make every finish condition observable from a
    user's perspective. Investigate facts available from the repository,
    documentation, or focused tools rather than asking the user to rediscover
-   them.
+   them. For material architecture or dependency decisions, inspect the
+   repository and current official guidance; consider ownership, compatibility,
+   testing and migration, and record applicable tradeoffs.
 7. Ask the user only about the current material decision frontier: choices whose
    answer affects behavior, scope, evidence, risk, or an irreversible decision
    and whose prerequisites are known. Each question gives two or three viable
    options, a recommendation, and user and engineering consequences. T1 asks at
    most one question; T2 uses one bounded round by default. If no material
    decision remains, record the reversible low-risk assumption and reason.
-8. For T2/T3, have selected specialists investigate independently before root
-   synthesizes conclusions. Use targeted cross-review only for a material
+8. For T2/T3, select specialists only for concrete unresolved risks and record
+   why a role is needed or omitted. Have selected specialists investigate
+   independently before root synthesizes conclusions. Use targeted cross-review
+   only for a material
    conflict; do not use unbounded agent discussion. Present unresolved material
    product decisions and wait for answers before finalizing the implementation
    plan. A UI/UX heuristic review is not user research or usability proof.
@@ -125,11 +130,11 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
    items, changed scope, commands or manual evidence, unresolved questions,
    reviewed scope or revision, reviewer role and verdict, and user decision.
 4. Select and run the targeted validation required by `$feature-completion` for
-   the changed boundary. An intermediate independent review is required only if
-   the tier table calls for it, the milestone crosses a meaningful non-final
-   integration boundary, or the user explicitly asks for one; otherwise record
-   it as not required rather than manufacturing a review. The final-gate review
-   satisfies the review requirement for the last integration-boundary milestone.
+   the changed boundary. Apply the tier table to each meaningful non-final
+   integration boundary: T1 does not require an intermediate independent review;
+   T2 and T3 do. Also review when the user explicitly requests it. Otherwise,
+   record the review as not required. The final-gate review satisfies the review
+   requirement for the last integration-boundary milestone.
 5. Stage exactly the candidate scope when it will be reviewed independently or
    presented as a commit candidate, then run
    `npm run fingerprint:candidate -- <scoped files>`. The helper reports renames
@@ -167,17 +172,11 @@ verification`, `awaiting final decision`, `awaiting final commit approval`,
 
 ## 3. Feedback and Commit Control
 
-If the user raises an objection, record the decision in the plan, revise the
-affected implementation, and run the applicable validation again. Obtain a new
-fresh reviewer verdict immediately only when the current tier/boundary requires
-an intermediate review or a prior reviewer raised a blocking or important
-finding. For T1 and non-integration T2 feedback, defer the required fresh review
-to the final gate so a user-requested adjustment does not manufacture a duplicate
-review. Never reuse a prior reviewer verdict for a repaired or affected boundary.
-A different fresh reviewer may examine a bounded repair and its potentially
-affected boundaries, with prior findings and unchanged evidence supplied as
-context. Reuse unaffected evidence only after confirming its candidate, scope
-and dependencies remain valid; expand the review if impact is uncertain.
+If the user raises an objection, record the decision, revise the affected scope,
+and validate its changed boundary. Defer a new review to the final gate unless
+an intermediate gate or a prior blocking or important finding requires it.
+`$feature-completion` owns follow-up review, evidence reuse, and repair
+escalation; record its verdict and the candidate revision in the plan.
 
 Only after required validation passes and any tier-required reviewer verdict is
 `ready` may a user accept a milestone's content. If validation fails, evidence
@@ -211,8 +210,9 @@ PR, and merge remains separately authorized. Report the CI result after a pull
 request is opened; do not treat CI configuration alone as proof that a feature
 is ready. If CI or external review produces a finding, record it in the plan,
 present its impact and a repair proposal, and wait for user approval before
-fixing it. After a fix, use a new fresh reviewer and repeat the applicable gate;
-failed CI or unresolved blocking findings never authorize merge.
+fixing it. After a fix, apply `$feature-completion` repair and evidence-reuse
+policy. The applicable PR CI must pass on the current revision; failed CI or
+unresolved blocking findings never authorize merge.
 
 When a CI-only platform failure requires repeated experiments, consider a temporary
 debug branch based on the affected PR and a narrowly triggered workflow on the
@@ -242,5 +242,6 @@ user explicitly ends the workflow without a push or pull request.
 
 For a trivial wording, formatting, or documentation-only change, first conduct
 read-only investigation. Planning mode can be skipped only when the user then
-explicitly agrees it is trivial. Record the reduced scope and validation
+explicitly agrees it is trivial and approves implementation; those approvals
+may be combined in one decision. Record the reduced scope and validation
 performed; never infer that a feature request permits skipping these controls.

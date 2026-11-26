@@ -281,7 +281,7 @@ test.describe('Item Packing Workflow', () => {
 
       await page.getByTestId('packing-completion-skip').click();
       await expect(completionOverlay).toBeHidden();
-      await expect(page.getByTestId('packing-undo-toast')).toBeVisible();
+      await expect(page.getByTestId('packing-undo-toast')).toHaveCount(0);
       await expect
         .poll(async () => (await main.boundingBox())?.width)
         .toBe(mainBoxBeforeCompletion?.width);

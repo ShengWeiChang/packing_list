@@ -25,12 +25,13 @@ import { describeOperationError } from '../utils/operationErrors';
  * Composable for managing personal checklist templates
  * @returns {object} Templates management API with state and CRUD operations
  */
-export function useTemplates() {
+export function useTemplates(onTemplatesCommitted?: () => void) {
   // ---------------------------------------------------------------------------
   // Service initialization
   // ---------------------------------------------------------------------------
 
   const templateService = new TemplateService();
+  if (onTemplatesCommitted) templateService.onTemplatesCommitted = onTemplatesCommitted;
 
   // ---------------------------------------------------------------------------
   // State

@@ -39,6 +39,7 @@ export class TemplateService {
   declare STORAGE_KEY: string;
   declare _cache: StoredTemplate[] | null;
   declare _cacheRaw: string | null;
+  onTemplatesCommitted?: () => void;
   /**
    * Create a new TemplateService instance
    */
@@ -71,9 +72,11 @@ export class TemplateService {
    */
   _saveTemplates(templates: StoredTemplate[]) {
     const candidate = decodeTemplates(JSON.stringify(templates));
+    const changed = JSON.stringify(this._cache) !== JSON.stringify(candidate);
     const raw = writeStorage(this.STORAGE_KEY, candidate);
     this._cache = decodeTemplates(raw);
     this._cacheRaw = raw;
+    if (changed) this.onTemplatesCommitted?.();
   }
 
   /**
